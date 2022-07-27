@@ -12,6 +12,7 @@ PY36: Any
 PY37: Any
 PYPY: Any
 
+
 def set_function_name(f: Any, name: Any, cls: Any) -> Any:
     ...
 
@@ -20,21 +21,21 @@ def raise_with_traceback(exc: Any, traceback: Any = ...) -> None:
     ...
 
 
-def is_platform_little_endian():
+def is_platform_little_endian() -> bool:
     ...
 
 
-def is_platform_windows():
+def is_platform_windows() -> bool:
     ...
 
 
-def is_platform_linux():
+def is_platform_linux() -> bool:
     ...
 
 
-def is_platform_mac():
+def is_platform_mac() -> bool:
     ...
 
 
-def is_platform_32bit():
+def is_platform_32bit() -> bool:
     ...

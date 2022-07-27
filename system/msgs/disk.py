@@ -37,7 +37,7 @@ class DiskStore(MessageStore):
             yield hash[6:56]
             yield hash[56:]
 
-        all_segs = list(split_hash(message_hash.get_raw_hash()))
+        all_segs = list(split_hash(message_hash.to_parseable()))
         segs = all_segs[:-1]
         rest = all_segs[-1]
         return os.path.join(self._path, *segs, f"{rest}.msg")

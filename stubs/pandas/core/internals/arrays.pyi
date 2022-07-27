@@ -4,4 +4,5 @@
 
 from typing import Any
 
-def extract_array(obj: Any, extract_numpy: bool = ...): ...
+
+def extract_array(obj: Any, extract_numpy: bool = ...) -> Any: ...

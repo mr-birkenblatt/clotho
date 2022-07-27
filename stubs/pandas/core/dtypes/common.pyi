@@ -46,6 +46,7 @@ _NS_DTYPE = Any
 _TD_DTYPE = Any
 _INT64_DTYPE = Any
 
+
 def ensure_float(arr: Any) -> Any:
     ...
 
@@ -186,7 +187,7 @@ def is_numeric_v_string_like(a: Any, b: Any) -> Any:
     ...
 
 
-def is_datetimelike_v_numeric(a: Any, b: Any) -> Any:
+def is_datetimelike_v_numeric(a: Any, b: Any) -> bool:
     ...
 
 
@@ -194,7 +195,7 @@ def needs_i8_conversion(arr_or_dtype: Any) -> Any:
     ...
 
 
-def is_numeric_dtype(arr_or_dtype: Any) -> Any:
+def is_numeric_dtype(arr_or_dtype: Any) -> bool:
     ...
 
 

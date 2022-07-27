@@ -10,20 +10,18 @@ depr_msg: str
 
 
 class SparseDataFrame(DataFrame):
-    def __init__(self, data: Optional[Any] = ..., index: Optional[Any] = ...,
-                 columns: Optional[Any] = ...,
-                default_kind: Optional[Any] = ...,
-                default_fill_value: Optional[Any] = ...,
-                dtype: Optional[Any] = ..., copy: bool = ...) -> None:
+    def __init__(
+            self, data: Optional[Any] = ..., index: Optional[Any] = ...,
+            columns: Optional[Any] = ...,
+            default_kind: Optional[Any] = ...,
+            default_fill_value: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...) -> None:
         ...
 
     def to_coo(self) -> Any:
         ...
 
     def to_dense(self) -> Any:
-        ...
-
-    def astype(self, dtype: Any) -> Any:
         ...
 
     def copy(self, deep: bool = ...) -> Any:
@@ -41,12 +39,6 @@ class SparseDataFrame(DataFrame):
     def density(self) -> Any:
         ...
 
-    def fillna(self, value: Optional[Any] = ..., method: Optional[Any] = ...,
-               axis: int = ..., inplace: bool = ...,
-               limit: Optional[Any] = ...,
-               downcast: Optional[Any] = ...) -> Any:
-        ...
-
     def get_value(self, index: Any, col: Any, takeable: bool = ...) -> Any:
         ...
 
@@ -54,16 +46,10 @@ class SparseDataFrame(DataFrame):
                   takeable: bool = ...) -> Any:
         ...
 
-    def xs(self, key: Any, axis: int = ..., copy: bool = ...) -> Any:
-        ...
-
     def transpose(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
     T: Any = ...
-
-    def count(self, axis: int = ..., **kwds: Any) -> Any:
-        ...
 
     def cumsum(self, axis: int = ..., *args: Any, **kwargs: Any) -> Any:
         ...
@@ -77,11 +63,6 @@ class SparseDataFrame(DataFrame):
         ...
 
     notnull: Any = ...
-
-    def apply(self, func: Any, axis: int = ..., broadcast: Optional[Any] = ...,
-              reduce: Optional[Any] = ...,
-              result_type: Optional[Any] = ...) -> Any:
-        ...
 
     def applymap(self, func: Any) -> Any:
         ...

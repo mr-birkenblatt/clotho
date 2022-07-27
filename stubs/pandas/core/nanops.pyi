@@ -37,10 +37,8 @@ class bottleneck_switch:
     def __init__(self, name: Optional[Any] = ..., **kwargs: Any) -> None:
         ...
 
-
     def __call__(self, alt: Any) -> Any:
         ...
-
 
 
 def nanany(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,

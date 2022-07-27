@@ -9,9 +9,6 @@
 # pylint: disable=blacklisted-name,c-extension-no-member,import-error
 
 from typing import Any, Optional
-import matplotlib.dates as dates
-import matplotlib.units as units
-from matplotlib.ticker import Formatter, Locator
 
 HOURS_PER_DAY: float
 MIN_PER_HOUR: float
@@ -20,20 +17,24 @@ SEC_PER_HOUR: Any
 SEC_PER_DAY: Any
 MUSEC_PER_DAY: Any
 
+
 def get_pairs() -> Any:
     ...
+
 
 def register(explicit: bool = ...) -> None:
     ...
 
+
 def deregister() -> None:
     ...
+
 
 def time2num(d: Any) -> Any:
     ...
 
 
-class TimeConverter(units.ConversionInterface):
+class TimeConverter:
     @staticmethod
     def convert(value: Any, unit: Any, axis: Any) -> Any:
         ...
@@ -47,8 +48,9 @@ class TimeConverter(units.ConversionInterface):
         ...
 
 
-class TimeFormatter(Formatter):
+class TimeFormatter:
     locs: Any = ...
+
     def __init__(self, locs: Any) -> None:
         ...
 
@@ -56,7 +58,7 @@ class TimeFormatter(Formatter):
         ...
 
 
-class PeriodConverter(dates.DateConverter):
+class PeriodConverter:
     @staticmethod
     def convert(values: Any, units: Any, axis: Any) -> Any:
         ...
@@ -66,7 +68,7 @@ def get_datevalue(date: Any, freq: Any) -> Any:
     ...
 
 
-class DatetimeConverter(dates.DateConverter):
+class DatetimeConverter:
     @staticmethod
     def convert(values: Any, unit: Any, axis: Any) -> Any:
         ...
@@ -76,18 +78,21 @@ class DatetimeConverter(dates.DateConverter):
         ...
 
 
-class PandasAutoDateFormatter(dates.AutoDateFormatter):
-    def __init__(self, locator: Any, tz: Optional[Any] = ..., defaultfmt: str = ...) -> None:
+class PandasAutoDateFormatter:
+    def __init__(
+            self, locator: Any,
+            tz: Optional[Any] = ..., defaultfmt: str = ...) -> None:
         ...
 
 
-class PandasAutoDateLocator(dates.AutoDateLocator):
+class PandasAutoDateLocator:
     def get_locator(self, dmin: Any, dmax: Any) -> Any:
         ...
 
 
-class MilliSecondLocator(dates.DateLocator):
+class MilliSecondLocator:
     UNIT: Any = ...
+
     def __init__(self, tz: Any) -> None:
         ...
 
@@ -114,7 +119,7 @@ def get_finder(freq: Any) -> Any:
     ...
 
 
-class TimeSeries_DateLocator(Locator):
+class TimeSeries_DateLocator:
     freq: Any = ...
     base: Any = ...
     isminor: Any = ...
@@ -122,7 +127,12 @@ class TimeSeries_DateLocator(Locator):
     offset: int = ...
     plot_obj: Any = ...
     finder: Any = ...
-    def __init__(self, freq: Any, minor_locator: bool = ..., dynamic_mode: bool = ..., base: int = ..., quarter: int = ..., month: int = ..., day: int = ..., plot_obj: Optional[Any] = ...) -> None:
+
+    def __init__(
+            self, freq: Any, minor_locator: bool = ...,
+            dynamic_mode: bool = ..., base: int = ..., quarter: int = ...,
+            month: int = ..., day: int = ...,
+            plot_obj: Optional[Any] = ...) -> None:
         ...
 
     def __call__(self) -> Any:
@@ -132,7 +142,7 @@ class TimeSeries_DateLocator(Locator):
         ...
 
 
-class TimeSeries_DateFormatter(Formatter):
+class TimeSeries_DateFormatter:
     format: Any = ...
     freq: Any = ...
     locs: Any = ...
@@ -142,7 +152,10 @@ class TimeSeries_DateFormatter(Formatter):
     offset: int = ...
     plot_obj: Any = ...
     finder: Any = ...
-    def __init__(self, freq: Any, minor_locator: bool = ..., dynamic_mode: bool = ..., plot_obj: Optional[Any] = ...) -> None:
+
+    def __init__(
+            self, freq: Any, minor_locator: bool = ...,
+            dynamic_mode: bool = ..., plot_obj: Optional[Any] = ...) -> None:
         ...
 
     def set_locs(self, locs: Any) -> None:
@@ -152,7 +165,7 @@ class TimeSeries_DateFormatter(Formatter):
         ...
 
 
-class TimeSeries_TimedeltaFormatter(Formatter):
+class TimeSeries_TimedeltaFormatter:
     @staticmethod
     def format_timedelta_ticks(x: Any, pos: Any, n_decimals: Any) -> Any:
         ...

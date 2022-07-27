@@ -6,8 +6,10 @@
 import abc
 from typing import Any
 
+
 class NumExprClobberingError(NameError):
     ...
+
 
 class AbstractEngine(metaclass=abc.ABCMeta):
     has_neg_frac: bool = ...
@@ -31,7 +33,7 @@ class NumExprEngine(AbstractEngine):
     def __init__(self, expr: Any) -> None:
         ...
 
-    def convert(self):
+    def convert(self) -> Any:
         ...
 
 
@@ -41,5 +43,5 @@ class PythonEngine(AbstractEngine):
     def __init__(self, expr: Any) -> None:
         ...
 
-    def evaluate(self):
+    def evaluate(self) -> Any:
         ...

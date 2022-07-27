@@ -8,7 +8,7 @@
 from .common import (
     _INT64_DTYPE,
     _NS_DTYPE,
-    _POSSIBLY_CAST_DTYPES,
+    # _POSSIBLY_CAST_DTYPES,
     _TD_DTYPE,
     ensure_int16,
     ensure_int32,

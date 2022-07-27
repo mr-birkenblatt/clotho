@@ -54,13 +54,6 @@ class SparseSeries(Series):
     def npoints(self) -> Any:
         ...
 
-    @classmethod
-    def from_array(cls, arr: Any, index: Optional[Any] = ...,
-                   name: Optional[Any] = ..., copy: bool = ...,
-                   fill_value: Optional[Any] = ...,
-                   fastpath: bool = ...) -> Any:
-        ...
-
     @property
     def kind(self) -> Any:
         ...
@@ -95,11 +88,6 @@ class SparseSeries(Series):
     def copy(self, deep: bool = ...) -> Any:
         ...
 
-    def reindex(self, index: Optional[Any] = ..., method: Optional[Any] = ...,
-                copy: bool = ..., limit: Optional[Any] = ...,
-                **kwargs: Any) -> Any:
-        ...
-
     def sparse_reindex(self, new_index: Any) -> Any:
         ...
 
@@ -120,15 +108,12 @@ class SparseSeries(Series):
                **kwargs: Any) -> Any:
         ...
 
-
     def combine_first(self, other: Any) -> Any:
         ...
-
 
     def to_coo(self, row_levels: Any = ..., column_levels: Any = ...,
                sort_labels: bool = ...) -> Any:
         ...
-
 
     @classmethod
     def from_coo(cls, A: Any, dense_index: bool = ...) -> Any:

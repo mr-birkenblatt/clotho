@@ -14,7 +14,7 @@ from pandas.plotting._matplotlib.core import LinePlot
 
 
 class BoxPlot(LinePlot):
-    BP = namedtuple('Boxplot', ['ax', 'lines'])
+    BP = namedtuple('BP', ['ax', 'lines'])
     return_type: Any = ...
 
     def __init__(self,

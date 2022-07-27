@@ -1,7 +1,5 @@
 from typing import Dict, TypedDict
 
-from system.links.link import VoteDict, VoteType
-
 
 LoginResponse = TypedDict('LoginResponse', {
     "token": str,

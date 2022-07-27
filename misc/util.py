@@ -101,10 +101,6 @@ def is_json(value: str) -> bool:
     return True
 
 
-def is_numeric(value: pd.Series) -> bool:
-    return pd.api.types.is_numeric_dtype(value)
-
-
 def report_json_error(err: json.JSONDecodeError) -> None:
     raise ValueError(
         f"JSON parse error ({err.lineno}:{err.colno}): "

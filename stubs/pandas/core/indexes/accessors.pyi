@@ -12,32 +12,34 @@ from typing import Any
 from pandas.core.accessor import PandasDelegate
 from pandas.core.base import NoNewAttributesMixin, PandasObject
 
+
 class Properties(PandasDelegate, PandasObject, NoNewAttributesMixin):
     orig: Any = ...
     name: Any = ...
+
     def __init__(self, data: Any, orig: Any) -> None:
         ...
 
 
 class DatetimeProperties(Properties):
-    def to_pydatetime(self):
+    def to_pydatetime(self) -> Any:
         ...
 
     @property
-    def freq(self):
+    def freq(self) -> Any:
         ...
 
 
 class TimedeltaProperties(Properties):
-    def to_pytimedelta(self):
+    def to_pytimedelta(self) -> Any:
         ...
 
     @property
-    def components(self):
+    def components(self) -> Any:
         ...
 
     @property
-    def freq(self):
+    def freq(self) -> Any:
         ...
 
 
@@ -45,6 +47,7 @@ class PeriodProperties(Properties):
     ...
 
 
-class CombinedDatetimelikeProperties(DatetimeProperties, TimedeltaProperties, PeriodProperties):
+class CombinedDatetimelikeProperties(
+        DatetimeProperties, TimedeltaProperties, PeriodProperties):
     def __new__(cls, data: Any) -> Any:
         ...

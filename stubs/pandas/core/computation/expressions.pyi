@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 def set_use_numexpr(v: bool = ...) -> None:
     ...
 
@@ -16,7 +17,9 @@ def set_numexpr_threads(n: Optional[Any] = ...) -> None:
     ...
 
 
-def evaluate(op: Any, op_str: Any, a: Any, b: Any, use_numexpr: bool = ..., **eval_kwargs: Any) -> Any:
+def evaluate(
+        op: Any, op_str: Any, a: Any, b: Any,
+        use_numexpr: bool = ..., **eval_kwargs: Any) -> Any:
     ...
 
 
@@ -28,5 +31,5 @@ def set_test_mode(v: bool = ...) -> None:
     ...
 
 
-def get_test_result():
+def get_test_result() -> Any:
     ...

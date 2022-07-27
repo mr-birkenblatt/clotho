@@ -11,7 +11,7 @@ from pandas.core.groupby.base import GroupByMixin
 from typing import Any, Optional, Set
 
 from pandas.util._decorators import Appender
-from pandas.core.generic import _shared_docs
+
 
 class _Window(PandasObject, SelectionMixin):
     exclusions: Set[str] = ...
@@ -59,12 +59,6 @@ class _Window(PandasObject, SelectionMixin):
 class Window(_Window):
     def validate(self) -> None:
         ...
-
-    @Appender(_shared_docs["aggregate"])
-    def aggregate(self, arg: Any, *args: Any, **kwargs: Any) -> Any:
-        ...
-
-    agg: Any = aggregate
 
     def sum(self, *args: Any, **kwargs: Any) -> Any:
         ...
@@ -146,10 +140,8 @@ class Rolling(_Rolling_and_Expanding):
     def validate(self) -> None:
         ...
 
-    def aggregate(self, arg: Any, *args: Any, **kwargs: Any) -> Any:
-        ...
-
     agg: Any = ...
+
     def count(self) -> Any:
         ...
 
@@ -205,11 +197,6 @@ class Expanding(_Rolling_and_Expanding):
     def __init__(self, obj: Any, min_periods: int = 1, center: bool = False,
                  axis: int = 0, **kwargs: Any) -> None:
         ...
-
-    def aggregate(self, arg: Any, *args: Any, **kwargs: Any) -> Any:
-        ...
-
-    agg: Any = aggregate
 
     def count(self, **kwargs: Any) -> Any:
         ...
@@ -278,10 +265,6 @@ class EWM(_Rolling):
                  ) -> None:
         ...
 
-    def aggregate(self, arg: Any, *args: Any, **kwargs: Any):
-        ...
-
-    agg: Any = ...
     def mean(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
@@ -289,6 +272,7 @@ class EWM(_Rolling):
         ...
 
     vol: Any = ...
+
     def var(self, bias: bool = ..., *args: Any, **kwargs: Any) -> Any:
         ...
 

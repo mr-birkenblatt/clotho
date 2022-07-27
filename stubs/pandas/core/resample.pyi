@@ -49,9 +49,6 @@ class Resampler(_GroupBy):
     agg: Any = ...
     apply: Any = ...
 
-    def transform(self, arg: Any, *args: Any, **kwargs: Any) -> Any:
-        ...
-
     def pad(self, limit: Optional[Any] = ...) -> Any:
         ...
 
@@ -91,19 +88,6 @@ class Resampler(_GroupBy):
         ...
 
 
-def f(self, _method: Any = ..., min_count: int = ..., *args: Any,
-      **kwargs: Any) -> Any:
-    ...
-
-
-def g(self, _method: Any = ..., *args: Any, **kwargs: Any) -> Any:
-    ...
-
-
-def h(self, _method: Any = ...) -> Any:
-    ...
-
-
 class _GroupByMixin(GroupByMixin):
     groupby: Any = ...
 
@@ -114,17 +98,22 @@ class _GroupByMixin(GroupByMixin):
 class DatetimeIndexResampler(Resampler):
     ...
 
+
 class DatetimeIndexResamplerGroupby(_GroupByMixin, DatetimeIndexResampler):
     ...
+
 
 class PeriodIndexResampler(DatetimeIndexResampler):
     ...
 
+
 class PeriodIndexResamplerGroupby(_GroupByMixin, PeriodIndexResampler):
     ...
 
+
 class TimedeltaIndexResampler(DatetimeIndexResampler):
     ...
+
 
 class TimedeltaIndexResamplerGroupby(_GroupByMixin, TimedeltaIndexResampler):
     ...
