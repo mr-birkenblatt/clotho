@@ -1,0 +1,6 @@
+mypy
+numpy
+pandas
+python-redis-lock
+quick_server
+redis
