@@ -89,6 +89,7 @@ class RedisLinkStore(LinkStore):
         self._r = ObjectRedis("link")
 
     def get_link(self, parent: MHash, child: MHash) -> Link:
+        assert parent != child
         return RedisLink(self._r, parent, child)
 
     def get_all_children(self, parent: MHash) -> Iterable[Link]:

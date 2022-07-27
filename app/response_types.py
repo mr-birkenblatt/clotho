@@ -1,4 +1,4 @@
-from typing import Dict, TypedDict
+from typing import TypedDict
 
 
 LoginResponse = TypedDict('LoginResponse', {

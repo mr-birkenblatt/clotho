@@ -19,7 +19,8 @@ from app.response_types import (
     LoginResponse,
     TopicResponse,
 )
-from system.links.link import VT_UP, LinkResponse
+from misc.util import to_list
+from system.links.link import VT_UP, Link, LinkResponse, parse_vote_type
 from system.links.store import get_default_link_store
 from system.links.user import User
 from system.msgs.message import MHash, Message
@@ -96,11 +97,24 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         args = rargs["post"]
         user = get_user(args)
         parent = MHash.parse(f"{args['parent']}")
-        child = Message(msg=args["msg"])
-        mhash = message_store.write_message(child)
-        link = link_store.get_link(parent, mhash)
+        msg = Message(msg=args["msg"])
+        child = message_store.write_message(msg)
+        link = link_store.get_link(parent, child)
         now = now_ts()
         link.add_vote(VT_UP, user, now)
+        return link.get_response(now)
+
+    @server.json_post(f"{prefix}/vote")
+    def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
+        args = rargs["post"]
+        votes = to_list(args["votes"])
+        user = get_user(args)
+        parent = MHash.parse(f"{args['parent']}")
+        child = MHash.parse(f"{args['child']}")
+        link = link_store.get_link(parent, child)
+        now = now_ts()
+        for vtype in votes:
+            link.add_vote(parse_vote_type(f"{vtype}"), user, now)
         return link.get_response(now)
 
     return server
