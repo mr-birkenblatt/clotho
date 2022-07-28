@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Optional, Tuple, TypedDict
 import sys
 import threading
+from unittest import skip
 import pandas as pd
 from quick_server import (
     WorkerArgs,
@@ -16,15 +17,31 @@ from quick_server import ReqArgs, Response
 from misc.env import envload_int, envload_str
 from app.token import RedisTokenHandler
 from app.response_types import (
+    LinkListResponse,
     LoginResponse,
+    MessageResponse,
+    TopicListResponse,
     TopicResponse,
 )
 from misc.util import to_list
 from system.links.link import VT_UP, Link, LinkResponse, parse_vote_type
+from system.links.scorer import Scorer, get_scorer
 from system.links.store import get_default_link_store
 from system.links.user import User
 from system.msgs.message import MHash, Message
 from system.msgs.store import get_default_message_store
+
+
+LinkQuery = TypedDict('LinkQuery', {
+    "scorer": Scorer,
+    "now": pd.Timestamp,
+    "offset": int,
+    "limit": int,
+})
+
+
+MAX_RESPONSE = 1024 * 100  # 100kB  # rough size
+MAX_LINKS = 20
 
 
 def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
@@ -58,6 +75,18 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
 
     server.set_default_token_expiration(48 * 60 * 60)  # 2 days
 
+    def get_user(args: WorkerArgs) -> User:
+        with server.get_token_obj(args["token"]) as obj:
+            return User.parse_name(obj["user"])
+
+    def now_ts() -> pd.Timestamp:
+        return pd.Timestamp("now")
+
+    message_store = get_default_message_store()
+    link_store = get_default_link_store()
+
+    # *** user management ***
+
     @server.json_post(f"{prefix}/login")
     def _post_login(_req: QSRH, rargs: ReqArgs) -> LoginResponse:
         args = rargs["post"]
@@ -70,15 +99,7 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
             "user": user
         }
 
-    def get_user(args: WorkerArgs) -> User:
-        with server.get_token_obj(args["token"]) as obj:
-            return User.parse_name(obj["user"])
-
-    def now_ts() -> pd.Timestamp:
-        return pd.Timestamp("now")
-
-    message_store = get_default_message_store()
-    link_store = get_default_link_store()
+    # *** interactions ***
 
     @server.json_post(f"{prefix}/topic")
     def _post_topic(_req: QSRH, rargs: ReqArgs) -> TopicResponse:
@@ -116,6 +137,83 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         for vtype in votes:
             link.add_vote(parse_vote_type(f"{vtype}"), user, now)
         return link.get_response(now)
+
+    # *** read only ***
+
+    @server.json_get(f"{prefix}/topic")
+    def _get_topic(_req: QSRH, rargs: ReqArgs) -> TopicListResponse:
+        return {
+            "topics": {
+                msg.get_hash().to_parseable(): msg.get_text()
+                for msg in message_store.get_topics()
+            },
+        }
+
+    @server.json_post(f"{prefix}/read")
+    def _post_read(_req: QSRH, rargs: ReqArgs) -> MessageResponse:
+        args = rargs["post"]
+        hashes = to_list(args["hashes"])
+        cur_length = 0
+        msgs = {}
+        skipped = []
+        for mhash in hashes:
+            if cur_length > MAX_RESPONSE:
+                skipped.append(MHash.parse(mhash).to_parseable())
+                continue
+            msg = message_store.read_message(MHash.parse(mhash))
+            key = msg.get_hash().to_parseable()
+            value = msg.get_text()
+            msgs[key] = value
+            cur_length += len(key) + len(value)
+        return {
+            "messages": msgs,
+            "skipped": skipped,
+        }
+
+    def get_link_query_params(args: WorkerArgs) -> LinkQuery:
+        scorer = get_scorer(args["scorer"])
+        now = now_ts()
+        offset = int(args["offset"])
+        limit = min(int(args["limit"]), MAX_LINKS)
+        return {
+            "scorer": scorer,
+            "now": now,
+            "offset": offset,
+            "limit": limit,
+        }
+
+    @server.json_post(f"{prefix}/children")
+    def _post_children(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
+        args = rargs["post"]
+        parent = MHash.parse(args["parent"])
+        link_query = get_link_query_params(args)
+        links = link_store.get_children(parent, **link_query)
+        return {
+            "links": [link.get_response(link_query["now"]) for link in links],
+            "next": link_query["offset"] + len(links),
+        }
+
+    @server.json_post(f"{prefix}/parents")
+    def _post_parents(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
+        args = rargs["post"]
+        child = MHash.parse(args["child"])
+        link_query = get_link_query_params(args)
+        links = link_store.get_parents(child, **link_query)
+        return {
+            "links": [link.get_response(link_query["now"]) for link in links],
+            "next": link_query["offset"] + len(links),
+        }
+
+    @server.json_post(f"{prefix}/userlinks")
+    def _post_userlinks(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
+        args = rargs["post"]
+        user = User.parse_name(args["user"])
+        link_query = get_link_query_params(args)
+        links = link_store.get_user_links(user, **link_query)
+        return {
+            "links": [link.get_response(link_query["now"]) for link in links],
+            "next": link_query["offset"] + len(links),
+        }
 
     return server
 

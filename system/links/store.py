@@ -35,6 +35,7 @@ class LinkStore:
     def get_children(
             self,
             parent: MHash,
+            *,
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
@@ -45,6 +46,7 @@ class LinkStore:
     def get_parents(
             self,
             child: MHash,
+            *,
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
@@ -55,6 +57,7 @@ class LinkStore:
     def get_user_links(
             self,
             user: User,
+            *,
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
