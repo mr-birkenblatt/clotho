@@ -96,7 +96,16 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
             obj["user"] = user
         return {
             "token": token,
-            "user": user
+            "user": user,
+        }
+
+    @server.json_post(f"{prefix}/user")
+    def _post_user(_req: QSRH, rargs: ReqArgs) -> LoginResponse:
+        args = rargs["post"]
+        user = get_user(args)
+        return {
+            "token": args["token"],
+            "user": user.get_name(),
         }
 
     # *** interactions ***
