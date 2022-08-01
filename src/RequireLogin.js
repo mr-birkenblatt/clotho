@@ -1,6 +1,6 @@
-import { Component } from "react";
+import React, { PureComponent } from "react";
 
-export default class RequireLogin extends Component {
+export default class RequireLogin extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
@@ -8,13 +8,9 @@ export default class RequireLogin extends Component {
       user: localStorage.getItem("user"),
       token: localStorage.getItem("token"),
     };
-
-    this.handleChange = this.handleChange.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.logout = this.logout.bind(this);
   }
 
-  logout(event) {
+  logout = (event) => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     this.setState({
@@ -24,11 +20,11 @@ export default class RequireLogin extends Component {
     event.preventDefault();
   }
 
-  handleChange(event) {
+  handleChange = (event) => {
     this.setState({value: event.target.value});
   }
 
-  handleSubmit(event) {
+  handleSubmit = (event) => {
     const { value } = this.state;
     this.setState({
       user: value,
