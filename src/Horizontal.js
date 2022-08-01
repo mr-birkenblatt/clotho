@@ -11,7 +11,7 @@ const Outer = styled.div`
 `;
 
 const Overlay = styled.div`
-  height: ${props => props.itemHeight}px;
+  height: 100%;
   position: absolute;
   left: 0;
   top: 0;
@@ -21,6 +21,7 @@ const Overlay = styled.div`
   flex-wrap: nowrap;
   width: 100%;
   pointer-events: none;
+  opacity: 0.8;
 `;
 
 const NavButton = styled.button`
@@ -31,7 +32,7 @@ const NavButton = styled.button`
 
 const Band = styled.div`
   display: inline-block;
-  height: ${props => props.itemHeight}px;
+  height: 100%;
   width: ${props => props.itemWidth}px;
   background-color: green;
   white-space: nowrap;
@@ -50,7 +51,7 @@ const Band = styled.div`
 const Item = styled.span`
   display: inline-block;
   width: ${props => props.itemWidth}px;
-  height: ${props => props.itemHeight}px;
+  height: 100%;
   scroll-snap-align: center;
   background-color: cornflowerblue;
 `;
@@ -62,7 +63,7 @@ const ItemContent = styled.div`
   justify-content: center;
   text-align: center;
   width: ${props => props.itemWidth - 2 * props.itemPadding}px;
-  height: ${props => props.itemHeight - 2 * props.itemPadding}px;
+  height: calc(100% - ${props => 2 * props.itemPadding}px);
   margin: ${props => props.itemPadding}px auto;
   border-radius: ${props => props.itemRadius}px;
   padding: ${props => -props.itemPadding}px;
@@ -74,6 +75,10 @@ const Pad = styled.div`
   width: ${props => props.padSize}px;
   height: 1px;
 `;
+
+// TODO: lock in item
+// TODO: vertical
+// TODO: flexible height
 
 
 export default class Horizontal extends PureComponent {
@@ -210,11 +215,13 @@ export default class Horizontal extends PureComponent {
       buttonSize,
       itemPadding,
       getItem,
+      isParent,
+      lineName,
     } = this.props;
     const { offset, itemCount, padSize } = this.state;
     return (
       <Outer itemHeight={itemHeight} ref={this.rootView}>
-        <Overlay itemHeight={itemHeight}>
+        <Overlay>
           <NavButton buttonSize={buttonSize} onClick={this.handleLeft}>
             &lt;
           </NavButton>
@@ -222,7 +229,7 @@ export default class Horizontal extends PureComponent {
             &gt;
           </NavButton>
         </Overlay>
-        <Band itemWidth={itemWidth} itemHeight={itemHeight}>
+        <Band itemWidth={itemWidth}>
           <Pad padSize={padSize} />
           {
             [...Array(itemCount).keys()].map(ix => {
@@ -230,15 +237,13 @@ export default class Horizontal extends PureComponent {
               return (
                 <Item
                     key={realIx}
-                    itemWidth={itemWidth}
-                    itemHeight={itemHeight}>
+                    itemWidth={itemWidth}>
                   <ItemContent
                     itemPadding={itemPadding}
                     itemWidth={itemWidth}
-                    itemHeight={itemHeight}
                     itemRadius={itemRadius}
                     ref={this.activeRefs[realIx]}>
-                  {getItem(realIx, (hasItem, content) => {
+                  {getItem(isParent, lineName, realIx, (hasItem, content) => {
                     return `${hasItem ? content : "loading"} [${realIx}]`;
                   }, this.requestRedraw)}
                   </ItemContent>

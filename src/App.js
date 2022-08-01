@@ -67,14 +67,9 @@ export default class App extends PureComponent {
     });
   }
 
-  getParentItem = (index, contentCb, readyCb) => {
-    return this.parentLines.get(
-      this.state.parentName, index, contentCb, readyCb);
-  }
-
-  getChildItem = (index, contentCb, readyCb) => {
-    return this.childLines.get(
-      this.state.childName, index, contentCb, readyCb);
+  getItem = (isParent, name, index, contentCb, readyCb) => {
+    return (isParent ? this.parentLines : this.childLines).get(
+      name, index, contentCb, readyCb);
   }
 
   render() {
@@ -90,14 +85,18 @@ export default class App extends PureComponent {
             itemRadius={10}
             itemPadding={50}
             buttonSize={50}
-            getItem={this.getParentItem} />
+            isParent={true}
+            lineName={this.state.parentName}
+            getItem={this.getItem} />
           <Horizontal
             itemWidth={450}
             itemHeight={450}
             itemRadius={10}
             itemPadding={50}
             buttonSize={50}
-            getItem={this.getChildItem} />
+            isParent={false}
+            lineName={this.state.childName}
+            getItem={this.getItem} />
         </MainColumn>
       </Main>
     );
