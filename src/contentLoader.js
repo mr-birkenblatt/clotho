@@ -4,14 +4,14 @@ export default class ContentLoader {
   constructor(blockSize, loadCb) {
     this.blockSize = blockSize;
     this.loadCb = loadCb;
-    this.lines = {};
+    this.lines = new WeakValueMap(10);
     this.activeLoads = new Set();
   }
 
   getLine(name) {
     let res = this.lines[name];
     if (!res) {
-      res = new WeakValueMap();
+      res = new WeakValueMap(100);
       this.lines[name] = res;
     }
     return res;

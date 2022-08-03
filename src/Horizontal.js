@@ -91,9 +91,12 @@ export default class Horizontal extends PureComponent {
       padSize: 0,
       needViews: true,
       redraw: false,
+      locked: null,
     };
     this.activeRefs = {};
     this.activeView = {};
+    this.lockedRef = React.createRef();
+    this.lockedView = null;
     this.rootView = React.createRef();
     this.updateViews({});
   }
@@ -103,20 +106,29 @@ export default class Horizontal extends PureComponent {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    const { currentIx, offset, itemCount, padSize, needViews } = this.state;
+    const {
+      currentIx,
+      itemCount,
+      needViews,
+      offset,
+      padSize,
+    } = this.state;
     const { itemWidth } = this.props;
     if (prevState.currentIx !== currentIx) {
-      if (offset > 0 && currentIx < offset + itemCount * 0.5 - 1) {
-        this.setState({
-          offset: offset - 1,
-          padSize: padSize - itemWidth,
-        });
-      } else if (currentIx > offset + itemCount * 0.5) {
-        this.setState({
-          offset: offset + 1,
-          padSize: padSize + itemWidth,
-        });
+      let newOffset = offset;
+      let newPadSize = padSize;
+      while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
+        newOffset -= 1;
+        newPadSize -= itemWidth;
       }
+      while (currentIx > newOffset + itemCount * 0.5) {
+        newOffset += 1;
+        newPadSize += itemWidth;
+      }
+      this.setState({
+        offset: newOffset,
+        padSize: newPadSize,
+      });
     }
     const needViewsNew = this.updateViews(prevState);
     if (needViews !== needViewsNew) {
@@ -151,41 +163,92 @@ export default class Horizontal extends PureComponent {
         }
       });
     }
+
+    const that = this;
+
+    function createObserver(ref, index) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+          that.setState({
+            currentIx: index,
+          });
+        });
+      }, {
+        root: that.rootView.current,
+        rootMargin: "0px",
+        threshold: 1.0,
+      });
+      observer.observe(ref.current);
+      return observer;
+    }
+
     if (needViews) {
       [...Array(itemCount).keys()].forEach(ix => {
         const realIx = offset + ix;
         const curRef = this.activeRefs[realIx];
         if (curRef.current && this.rootView.current) {
           if (!this.activeView[realIx]) {
-            const observer = new IntersectionObserver((entries) => {
-              entries.forEach(entry => {
-                if (!entry.isIntersecting) {
-                  return;
-                }
-                this.setState({
-                  currentIx: realIx,
-                });
-              });
-            }, {
-              root: this.rootView.current,
-              rootMargin: "0px",
-              threshold: 1.0,
-            });
-            this.activeView[realIx] = observer;
-            observer.observe(curRef.current);
+            this.activeView[realIx] = createObserver(curRef, realIx);
           }
         }
       });
+    }
+    if (!this.lockedView && this.lockedRef.current && this.rootView.current) {
+      this.lockedView = createObserver(this.lockedRef, -1);
     }
     return needViewsNew;
   }
 
   focus(focusIx, smooth) {
-    const item = this.activeRefs[focusIx];
+    const item = focusIx < 0 ? this.lockedRef : this.activeRefs[focusIx];
     if (item && item.current) {
       item.current.scrollIntoView(
         smooth ? { behavior: "smooth", block: "center" } : {});
     }
+  }
+
+  getContent(isParent, lineName, index) {
+    const { getItem } = this.props;
+    const { locked } = this.state;
+    if (locked && index < 0) {
+      return this.getContent(locked.isParent, locked.lineName, locked.index);
+    }
+    return getItem(isParent, lineName, index, (hasItem, content) => {
+      return `${hasItem ? content : "loading"} [${index}]`;
+    }, this.requestRedraw);
+  }
+
+  adjustIndex(index) {
+    const { offset, itemCount, locked } = this.state;
+    const lockedIx = locked && locked.skipItem
+      ? locked.index : offset + itemCount;
+    return index + (lockedIx > index ? 0 : 1);
+  }
+
+  lockCurrent = (skipItem) => {
+    const { currentIx } = this.state;
+    if (currentIx < 0) {
+      return;
+    }
+    const { isParent, lineName } = this.props;
+    const locked = {
+      isParent,
+      lineName,
+      index: this.adjustIndex(currentIx),
+      skipItem,
+    };
+    this.setState({
+      locked,
+      currentIx: -1,
+      padSize: 0,
+      offset: 0,
+      needViews: false,
+    }, () => {
+      this.focus(-1, false);
+    });
   }
 
   requestRedraw = () => {
@@ -214,11 +277,11 @@ export default class Horizontal extends PureComponent {
       itemRadius,
       buttonSize,
       itemPadding,
-      getItem,
       isParent,
       lineName,
     } = this.props;
-    const { offset, itemCount, padSize } = this.state;
+    const { locked, offset, itemCount, padSize } = this.state;
+    const offShift = offset < 0 ? -offset : 0;
     return (
       <Outer itemHeight={itemHeight} ref={this.rootView}>
         <Overlay>
@@ -230,10 +293,22 @@ export default class Horizontal extends PureComponent {
           </NavButton>
         </Overlay>
         <Band itemWidth={itemWidth}>
+          { locked ? (
+            <Item
+                itemWidth={itemWidth}>
+              <ItemContent
+                itemPadding={itemPadding}
+                itemWidth={itemWidth}
+                itemRadius={itemRadius}
+                ref={this.lockedRef}>
+              {this.getContent(isParent, lineName, -1)}
+              </ItemContent>
+            </Item>
+          ) : null }
           <Pad padSize={padSize} />
           {
-            [...Array(itemCount).keys()].map(ix => {
-              const realIx = offset + ix;
+            [...Array(itemCount - offShift).keys()].map(ix => {
+              const realIx = offset + ix + offShift;
               return (
                 <Item
                     key={realIx}
@@ -243,9 +318,10 @@ export default class Horizontal extends PureComponent {
                     itemWidth={itemWidth}
                     itemRadius={itemRadius}
                     ref={this.activeRefs[realIx]}>
-                  {getItem(isParent, lineName, realIx, (hasItem, content) => {
-                    return `${hasItem ? content : "loading"} [${realIx}]`;
-                  }, this.requestRedraw)}
+                  {
+                    this.getContent(
+                      isParent, lineName, this.adjustIndex(realIx))
+                  }
                   </ItemContent>
                 </Item>
               );
