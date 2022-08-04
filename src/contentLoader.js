@@ -24,18 +24,19 @@ export default class ContentLoader {
       return contentCb(true, res);
     }
     const block = Math.floor(index / this.blockSize);
-    if (!this.activeLoads.has(block)) {
+    const blockName = `${name}-${block}`;
+    if (!this.activeLoads.has(blockName)) {
       setTimeout(() => {
         const offset = block * this.blockSize;
         this.loadCb(name, offset, this.blockSize, (arr) => {
           Object.keys(arr).forEach((ix) => {
             line.set(ix, arr[ix]);
           });
-          this.activeLoads.delete(block);
+          this.activeLoads.delete(blockName);
           readyCb();
         });
       }, 0);
-      this.activeLoads.add(block);
+      this.activeLoads.add(blockName);
     }
     return contentCb(false, null);
   }

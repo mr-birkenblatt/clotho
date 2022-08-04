@@ -3,6 +3,7 @@ import React, { PureComponent } from 'react';
 import styled from 'styled-components';
 import ContentLoader from './contentLoader.js';
 import Horizontal from './Horizontal.js';
+import Vertical from './Vertical.js';
 
 const Main = styled.div`
   text-align: center;
@@ -30,21 +31,20 @@ const MainColumn = styled.div`
   max-width: 500px;
   margin: 0 auto;
   width: 100%;
+  height: 100vh;
   background-color: pink;
   border: green 1px solid;
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  flex-grow: 0;
+  overflow: hidden;
 `
 
 
 export default class App extends PureComponent {
   constructor(props) {
     super(props);
-    this.state = {
-      parentName: "abc",
-      childName: "def",
-    };
+    this.state = {};
     this.parentLines = new ContentLoader(5, (name, offset, limit, cb) => {
       console.log(`loading ${name} ${offset} ${limit}`);
       setTimeout(() => {
@@ -72,6 +72,20 @@ export default class App extends PureComponent {
       name, index, contentCb, readyCb);
   }
 
+  getVItem = (index) => {
+    return (
+      <Horizontal
+        itemWidth={450}
+        itemHeight={450}
+        itemRadius={10}
+        itemPadding={50}
+        buttonSize={50}
+        isParent={true}
+        lineName={`row-${index}`}
+        getItem={this.getItem} />
+    );
+  }
+
   render() {
     return (
       <Main>
@@ -79,7 +93,8 @@ export default class App extends PureComponent {
           <RequireLogin />
         </MainHeader> */}
         <MainColumn>
-          <Horizontal
+          <Vertical getItem={this.getVItem} />
+          {/* <Horizontal
             itemWidth={450}
             itemHeight={450}
             itemRadius={10}
@@ -96,7 +111,7 @@ export default class App extends PureComponent {
             buttonSize={50}
             isParent={false}
             lineName={this.state.childName}
-            getItem={this.getItem} />
+            getItem={this.getItem} /> */}
         </MainColumn>
       </Main>
     );
