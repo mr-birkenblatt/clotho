@@ -27,7 +27,6 @@ const IntersectBoxBottom = styled.div`
   pointer-events: none;
 `;
 
-
 const Band = styled.div`
   width: 100%;
   height: 100%;
@@ -62,7 +61,6 @@ export default class Vertical extends PureComponent {
     super(props);
     this.state = {
       offset: 0,
-      currentIx: 0,
       itemCount: 4,
       padSize: 0,
     };
