@@ -1,5 +1,8 @@
 import React, { PureComponent } from "react";
+import ReactMarkdown from 'react-markdown';
+import { connect } from "react-redux";
 import styled from "styled-components";
+import { constructKey, focusAt, setCurrentIx } from "./lineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -76,22 +79,15 @@ const Pad = styled.div`
   height: 1px;
 `;
 
-// TODO: lock in item
-// TODO: vertical
-// TODO: flexible height
-
-
-export default class Horizontal extends PureComponent {
+class Horizontal extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
       offset: 0,
-      currentIx: 0,
       itemCount: 5,
       padSize: 0,
       needViews: true,
       redraw: false,
-      locked: null,
     };
     this.activeRefs = {};
     this.activeView = {};
@@ -107,14 +103,26 @@ export default class Horizontal extends PureComponent {
 
   componentDidUpdate(prevProps, prevState) {
     const {
-      currentIx,
+      isParent,
+      lineName,
+      currentLineIxs,
+      currentLineFocus,
+    } = this.props;
+    const key = constructKey(isParent, lineName);
+    const currentIx = currentLineIxs[key];
+    const lineFocus = currentLineFocus[key];
+    const prevCurrentIx =
+      prevProps.currentLineIxs && prevProps.currentLineIxs[key];
+    const prevLineFocus =
+      prevProps.currentLineFocus && prevProps.currentLineFocus[key];
+    const {
       itemCount,
       needViews,
       offset,
       padSize,
     } = this.state;
     const { itemWidth } = this.props;
-    if (prevState.currentIx !== currentIx) {
+    if (prevCurrentIx !== currentIx) {
       let newOffset = offset;
       let newPadSize = padSize;
       while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
@@ -136,9 +144,21 @@ export default class Horizontal extends PureComponent {
         needViews: needViewsNew,
       });
     }
+    if (prevLineFocus !== lineFocus) {
+      const isInstant = lineFocus < 0 && currentIx < 0;
+      if (isInstant) {
+        this.setState({
+          padSize: 0,
+          offset: 0,
+          needViews: false,
+        });
+      }
+      this.focus(lineFocus, !isInstant);
+    }
   }
 
   updateViews(prevState) {
+    const { isParent, lineName, dispatch } = this.props;
     const { offset, itemCount, needViews } = this.state;
     let needViewsNew = needViews;
     if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
@@ -172,9 +192,7 @@ export default class Horizontal extends PureComponent {
           if (!entry.isIntersecting) {
             return;
           }
-          that.setState({
-            currentIx: index,
-          });
+          dispatch(setCurrentIx({isParent, lineName, index}));
         });
       }, {
         root: that.rootView.current,
@@ -211,44 +229,26 @@ export default class Horizontal extends PureComponent {
   }
 
   getContent(isParent, lineName, index) {
-    const { getItem } = this.props;
-    const { locked } = this.state;
+    const { getItem, locks } = this.props;
+    const locked = locks[constructKey(isParent, lineName)];
     if (locked && index < 0) {
       return this.getContent(locked.isParent, locked.lineName, locked.index);
     }
     return getItem(isParent, lineName, index, (hasItem, content) => {
-      return `${hasItem ? content : "loading"} [${index}]`;
+      if (hasItem) {
+        return (<ReactMarkdown>{content}</ReactMarkdown>);
+      }
+      return `loading [${index}]`;
     }, this.requestRedraw);
   }
 
   adjustIndex(index) {
-    const { offset, itemCount, locked } = this.state;
+    const { isParent, lineName, locks } = this.props;
+    const { offset, itemCount } = this.state;
+    const locked = locks[constructKey(isParent, lineName)];
     const lockedIx = locked && locked.skipItem
       ? locked.index : offset + itemCount;
     return index + (lockedIx > index ? 0 : 1);
-  }
-
-  lockCurrent = (skipItem) => {
-    const { currentIx } = this.state;
-    if (currentIx < 0) {
-      return;
-    }
-    const { isParent, lineName } = this.props;
-    const locked = {
-      isParent,
-      lineName,
-      index: this.adjustIndex(currentIx),
-      skipItem,
-    };
-    this.setState({
-      locked,
-      currentIx: -1,
-      padSize: 0,
-      offset: 0,
-      needViews: false,
-    }, () => {
-      this.focus(-1, false);
-    });
   }
 
   requestRedraw = () => {
@@ -259,14 +259,16 @@ export default class Horizontal extends PureComponent {
   }
 
   handleLeft = (event) => {
-    const { currentIx } = this.state;
-    this.focus(currentIx - 1, true);
+    const { isParent, lineName, currentLineIxs, dispatch } = this.props;
+    const currentIx = currentLineIxs[constructKey(isParent, lineName)];
+    dispatch(focusAt({ isParent, lineName, index: currentIx - 1 }));
     event.preventDefault();
   }
 
   handleRight = (event) => {
-    const { currentIx } = this.state;
-    this.focus(currentIx + 1, true);
+    const { isParent, lineName, currentLineIxs, dispatch } = this.props;
+    const currentIx = currentLineIxs[constructKey(isParent, lineName)];
+    dispatch(focusAt({ isParent, lineName, index: currentIx + 1 }));
     event.preventDefault();
   }
 
@@ -279,8 +281,10 @@ export default class Horizontal extends PureComponent {
       itemPadding,
       isParent,
       lineName,
+      locks,
     } = this.props;
-    const { locked, offset, itemCount, padSize } = this.state;
+    const { offset, itemCount, padSize } = this.state;
+    const locked = locks[constructKey(isParent, lineName)];
     const offShift = offset < 0 ? -offset : 0;
     return (
       <Outer itemHeight={itemHeight} ref={this.rootView}>
@@ -332,3 +336,9 @@ export default class Horizontal extends PureComponent {
     );
   }
 } // Horizontal
+
+export default connect((state) => ({
+  currentLineIxs: state.lineState.currentLineIxs,
+  currentLineFocus: state.lineState.currentLineFocus,
+  locks: state.lineState.locks,
+}))(Horizontal);

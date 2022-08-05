@@ -1,4 +1,4 @@
-import WeakValueMap from "./weakValueMap.js";
+import WeakValueMap from "./WeakValueMap.js";
 
 export default class ContentLoader {
   constructor(blockSize, loadCb) {

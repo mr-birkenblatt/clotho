@@ -50,7 +50,7 @@ export default class App extends PureComponent {
       setTimeout(() => {
         const res = {};
         [...Array(limit).keys()].forEach(ix => {
-          res[ix + offset] = `name: ${name} ix: ${ix + offset}`;
+          res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
         });
         cb(res);
       }, 500);
@@ -60,7 +60,7 @@ export default class App extends PureComponent {
       setTimeout(() => {
         const res = {};
         [...Array(limit).keys()].forEach(ix => {
-          res[ix + offset] = `name: ${name} ix: ${ix + offset}`;
+          res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
         });
         cb(res);
       }, 500);

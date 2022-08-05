@@ -23,7 +23,7 @@ const IntersectBoxBottom = styled.div`
   height: 30%;
   position: absolute;
   left: 0;
-  top: 0;
+  bottom: 0;
   pointer-events: none;
 `;
 
