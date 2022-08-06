@@ -1,15 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-export function constructKey(isParent, lineName) {
-  return `${isParent}-${lineName}`;
-}
-
-export function constructLockKey(lineName) {
+export function constructKey(lineName) {
   return `${lineName}`;
 }
 
 function lockLine(state, isParent, lineName, adjustedIndex, skipItem) {
-  const key = constructLockKey(lineName);
+  const key = constructKey(lineName);
   const { currentLineIxs, currentLineFocus, locks } = state;
   if (currentLineIxs[key] < 0) {
     return;
@@ -39,12 +35,12 @@ export const lineStateSlice = createSlice({
   },
   reducers: {
     setHCurrentIx: (state, action) => {
-      const { isParent, lineName, index } = action.payload;
-      state.currentLineIxs[constructKey(isParent, lineName)] = index;
+      const { lineName, index } = action.payload;
+      state.currentLineIxs[constructKey(lineName)] = index;
     },
     focusAt: (state, action) => {
-      const { isParent, lineName, index } = action.payload;
-      state.currentLineFocus[constructKey(isParent, lineName)] = index;
+      const { lineName, index } = action.payload;
+      state.currentLineFocus[constructKey(lineName)] = index;
     },
     lockCurrent: (state, action) => {
       const { isParent, lineName, adjustedIndex, skipItem } = action.payload;

@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import ReactMarkdown from 'react-markdown';
 import { connect } from "react-redux";
 import styled from "styled-components";
-import { constructKey, constructLockKey, focusAt, setHCurrentIx } from "./lineStateSlice";
+import { constructKey, focusAt, setHCurrentIx } from "./lineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -103,12 +103,11 @@ class Horizontal extends PureComponent {
 
   componentDidUpdate(prevProps, prevState) {
     const {
-      isParent,
       lineName,
       currentLineIxs,
       currentLineFocus,
     } = this.props;
-    const key = constructKey(isParent, lineName);
+    const key = constructKey(lineName);
     const currentIx = currentLineIxs[key];
     const lineFocus = currentLineFocus[key];
     const prevCurrentIx =
@@ -233,7 +232,7 @@ class Horizontal extends PureComponent {
 
   getContent(isParent, lineName, index) {
     const { getItem, locks } = this.props;
-    const locked = locks[constructLockKey(lineName)];
+    const locked = locks[constructKey(lineName)];
     if (locked && index < 0) {
       return this.getContent(locked.isParent, locked.lineName, locked.index);
     }
@@ -248,7 +247,7 @@ class Horizontal extends PureComponent {
   adjustIndex(index) {
     const { lineName, locks } = this.props;
     const { offset, itemCount } = this.state;
-    const locked = locks[constructLockKey(lineName)];
+    const locked = locks[constructKey(lineName)];
     const lockedIx = locked && locked.skipItem
       ? locked.index : offset + itemCount;
     return index + (lockedIx > index ? 0 : 1);
@@ -263,14 +262,14 @@ class Horizontal extends PureComponent {
 
   handleLeft = (event) => {
     const { isParent, lineName, currentLineIxs, dispatch } = this.props;
-    const currentIx = currentLineIxs[constructKey(isParent, lineName)];
+    const currentIx = currentLineIxs[constructKey(lineName)];
     dispatch(focusAt({ isParent, lineName, index: currentIx - 1 }));
     event.preventDefault();
   }
 
   handleRight = (event) => {
     const { isParent, lineName, currentLineIxs, dispatch } = this.props;
-    const currentIx = currentLineIxs[constructKey(isParent, lineName)];
+    const currentIx = currentLineIxs[constructKey(lineName)];
     dispatch(focusAt({ isParent, lineName, index: currentIx + 1 }));
     event.preventDefault();
   }
@@ -287,7 +286,7 @@ class Horizontal extends PureComponent {
       locks,
     } = this.props;
     const { offset, itemCount, padSize } = this.state;
-    const locked = locks[constructLockKey(lineName)];
+    const locked = locks[constructKey(lineName)];
     const offShift = offset < 0 ? -offset : 0;
     return (
       <Outer itemHeight={itemHeight} ref={this.rootView}>

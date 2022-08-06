@@ -186,7 +186,7 @@ class Vertical extends PureComponent {
   }
 
   getHIndex(index) {
-    const key = constructKey(this.isParent(index), this.lineName(index));
+    const key = constructKey(this.lineName(index));
     const res = this.props.currentLineIxs[key];
     if (res === undefined) {
       return 0;
