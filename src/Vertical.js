@@ -51,11 +51,16 @@ class Vertical extends PureComponent {
     this.state = {
       itemCount: 4,
       needViews: true,
-      redraw: false,
       awaitOrderChange: true,
-      awaitOffsetChange: true,
+      awaitOffsetChange: false,
+      redraw: false,
+      scrollInit: false,
+      pendingPad: false,
+      isScrolling: false,
+      updateCurrentIx: false,
     };
     this.rootBox = React.createRef();
+    this.bandRef = React.createRef();
     this.activeRefs = {};
     this.activeView = {};
     this.currentVisible = new Set();
@@ -65,6 +70,40 @@ class Vertical extends PureComponent {
     this.componentDidUpdate({}, {});
   }
 
+  componentWillUnmount() {
+    if (this.bandRef.current) {
+      this.bandRef.current.removeEventListener("scroll", this.handleScroll);
+    }
+  }
+
+  handleScroll = () => {
+    const band = this.bandRef.current;
+    if (!band) {
+      return;
+    }
+    let startTime = null;
+    let startScroll = band.scrollTop;
+    const that = this;
+
+    function checkScroll(time) {
+      const isScrolling = band.scrollTop !== startScroll;
+      if (startTime === null) {
+        startTime = time;
+      }
+      const update = time - startTime >= 100 || isScrolling;
+      if (update) {
+        if (that.state.isScrolling !== isScrolling) {
+          console.log(`isScrollV ${isScrolling}`);
+          that.setState({ isScrolling });
+        }
+      } else {
+        requestAnimationFrame(checkScroll);
+      }
+    }
+
+    requestAnimationFrame(checkScroll);
+  }
+
   componentDidUpdate(prevProps, prevState) {
     const { offset, order, getChildLine, currentIx, dispatch } = this.props;
     const {
@@ -72,11 +111,42 @@ class Vertical extends PureComponent {
       needViews,
       awaitOrderChange,
       awaitOffsetChange,
+      scrollInit,
+      pendingPad,
+      isScrolling,
+      updateCurrentIx,
     } = this.state;
-    console.log(
-      "cix", currentIx, "order", order.length,
-      "offset", offset, "itemCount", itemCount,
-      "sum", currentIx - offset + itemCount);
+
+    if (!scrollInit && this.bandRef.current) {
+      this.bandRef.current.addEventListener(
+        "scroll", this.handleScroll, { passive: true });
+      this.setState({
+        scrollInit: true,
+      });
+    }
+
+    if (!isScrolling && updateCurrentIx) {
+      const computedIx = [...this.currentVisible.values()].reduce(
+        (cur, val) => {
+          if (cur === null) {
+            return val;
+          }
+          return Math.min(cur, val);
+        },
+        null);
+      if (computedIx !== currentIx) {
+        dispatch(setVCurrentIx({
+          vIndex: computedIx,
+          hIndex: this.getHIndex(computedIx),
+          isParent: this.isParent(computedIx),
+          lineName: this.lineName(computedIx),
+        }));
+      }
+      this.setState({
+        updateCurrentIx: false,
+      });
+    }
+
     if (!awaitOrderChange && (order.length - offset < itemCount
         || order.length < currentIx - offset + itemCount)) {
       console.log("addLine");
@@ -95,19 +165,25 @@ class Vertical extends PureComponent {
       });
     }
 
-    if (!awaitOffsetChange) {
-      if (currentIx - offset >= itemCount - 2) {
-        console.log(`offset inc change ${currentIx} ${offset}`);
-        dispatch(changeVOffset({ isIncrease: true }));
-        this.setState({
-          awaitOffsetChange: true,
-        });
-      // } else if (currentIx - offset < 1 && offset > 0) {
-      //   console.log(`offset dec change ${currentIx} ${offset}`);
-      //   dispatch(changeVOffset({ isIncrease: false }));
-      //   this.setState({
-      //     awaitOffsetChange: true,
-      //   });
+    if (pendingPad || !awaitOffsetChange) {
+      if (isScrolling) {
+        if (!pendingPad) {
+          this.setState({
+            pendingPad: true,
+          });
+        }
+      } else {
+        if (currentIx - offset >= itemCount - 2) {
+          console.log(`offset inc change ${currentIx} ${offset}`);
+          dispatch(changeVOffset({ isIncrease: true }));
+          this.setState({
+            awaitOffsetChange: true,
+            pendingPad: false,
+          });
+        // } else if (currentIx - offset < 1 && offset > 0) {
+        //   console.log(`offset dec change ${currentIx} ${offset}`);
+        //   dispatch(changeVOffset({ isIncrease: false }));
+        }
       }
     }
     if (awaitOffsetChange && prevProps.offset !== offset) {
@@ -160,7 +236,6 @@ class Vertical extends PureComponent {
     function createObserver(ref, index) {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-          const { currentIx, dispatch } = that.props;
           if (entry.isIntersecting) {
             that.currentVisible.add(index);
             console.log(`set current index ${index}`);
@@ -168,27 +243,14 @@ class Vertical extends PureComponent {
             console.log(`remove current index ${index}`);
             that.currentVisible.delete(index);
           }
-          const computedIx = [...that.currentVisible.values()].reduce(
-            (cur, val) => {
-              if (cur === null) {
-                return val;
-              }
-              return Math.min(cur, val);
-            },
-            null);
-          if (computedIx !== currentIx) {
-            dispatch(setVCurrentIx({
-              vIndex: computedIx,
-              hIndex: that.getHIndex(computedIx),
-              isParent: that.isParent(computedIx),
-              lineName: that.lineName(computedIx),
-            }));
-          }
+          that.setState({
+            updateCurrentIx: true,
+          });
         });
       }, {
         root: that.rootBox.current,
         rootMargin: "0px",
-        threshold: 0.8,
+        threshold: 0.9,
       });
       observer.observe(ref.current);
       return observer;
@@ -229,12 +291,19 @@ class Vertical extends PureComponent {
     return res;
   }
 
+  requestRedraw = () => {
+    const { redraw } = this.state;
+    this.setState({
+      redraw: !redraw,
+    });
+  }
+
   render() {
     const { padSize, height, getItem, order, currentIx } = this.props;
     const { itemCount } = this.state;
     return (
       <Outer ref={this.rootBox}>
-        <Band>
+        <Band ref={this.bandRef}>
           <Pad padSize={padSize} />
           {
             [...Array(itemCount).keys()].map(ix => {

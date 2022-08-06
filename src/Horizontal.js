@@ -88,12 +88,16 @@ class Horizontal extends PureComponent {
       padSize: 0,
       needViews: true,
       redraw: false,
+      scrollInit: false,
+      pendingPad: false,
+      isScrolling: false,
     };
     this.activeRefs = {};
     this.activeView = {};
     this.lockedRef = React.createRef();
     this.lockedView = null;
-    this.rootView = React.createRef();
+    this.rootBox = React.createRef();
+    this.bandRef = React.createRef();
     this.updateViews({});
   }
 
@@ -101,11 +105,45 @@ class Horizontal extends PureComponent {
     this.componentDidUpdate({}, {});
   }
 
+  componentWillUnmount() {
+    if (this.bandRef.current) {
+      this.bandRef.current.removeEventListener("scroll", this.handleScroll);
+    }
+  }
+
+  handleScroll = () => {
+    const band = this.bandRef.current;
+    if (!band) {
+      return;
+    }
+    let startTime = null;
+    let startScroll = band.scrollLeft;
+    const that = this;
+
+    function checkScroll(time) {
+      const isScrolling = band.scrollLeft !== startScroll;
+      if (startTime === null) {
+        startTime = time;
+      }
+      const update = time - startTime >= 100 || isScrolling;
+      if (update) {
+        if (that.state.isScrolling !== isScrolling) {
+          that.setState({ isScrolling });
+        }
+      } else {
+        requestAnimationFrame(checkScroll);
+      }
+    }
+
+    requestAnimationFrame(checkScroll);
+  }
+
   componentDidUpdate(prevProps, prevState) {
     const {
       lineName,
       currentLineIxs,
       currentLineFocus,
+      itemWidth,
     } = this.props;
     const key = constructKey(lineName);
     const currentIx = currentLineIxs[key];
@@ -119,24 +157,45 @@ class Horizontal extends PureComponent {
       needViews,
       offset,
       padSize,
+      scrollInit,
+      pendingPad,
+      isScrolling,
     } = this.state;
-    const { itemWidth } = this.props;
-    if (prevCurrentIx !== currentIx) {
-      let newOffset = offset;
-      let newPadSize = padSize;
-      while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
-        newOffset -= 1;
-        newPadSize -= itemWidth;
-      }
-      while (currentIx > newOffset + itemCount * 0.5) {
-        newOffset += 1;
-        newPadSize += itemWidth;
-      }
+
+    if (!scrollInit && this.bandRef.current) {
+      this.bandRef.current.addEventListener(
+        "scroll", this.handleScroll, { passive: true });
       this.setState({
-        offset: newOffset,
-        padSize: newPadSize,
+        scrollInit: true,
       });
     }
+
+    if (pendingPad || prevCurrentIx !== currentIx) {
+      if (isScrolling) {
+        if (!pendingPad) {
+          this.setState({
+            pendingPad: true,
+          });
+        }
+      } else {
+        let newOffset = offset;
+        let newPadSize = padSize;
+        while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
+          newOffset -= 1;
+          newPadSize -= itemWidth;
+        }
+        while (currentIx > newOffset + itemCount * 0.5) {
+          newOffset += 1;
+          newPadSize += itemWidth;
+        }
+        this.setState({
+          offset: newOffset,
+          padSize: newPadSize,
+          pendingPad: false,
+        });
+      }
+    }
+
     const needViewsNew = this.updateViews(prevState);
     if (needViews !== needViewsNew) {
       this.setState({
@@ -194,7 +253,7 @@ class Horizontal extends PureComponent {
           dispatch(setHCurrentIx({isParent, lineName, index}));
         });
       }, {
-        root: that.rootView.current,
+        root: that.rootBox.current,
         rootMargin: "0px",
         threshold: 1.0,
       });
@@ -206,14 +265,14 @@ class Horizontal extends PureComponent {
       [...Array(itemCount).keys()].forEach(ix => {
         const realIx = offset + ix;
         const curRef = this.activeRefs[realIx];
-        if (curRef.current && this.rootView.current) {
+        if (curRef.current && this.rootBox.current) {
           if (!this.activeView[realIx]) {
             this.activeView[realIx] = createObserver(curRef, realIx);
           }
         }
       });
     }
-    if (!this.lockedView && this.lockedRef.current && this.rootView.current) {
+    if (!this.lockedView && this.lockedRef.current && this.rootBox.current) {
       this.lockedView = createObserver(this.lockedRef, -1);
     }
     return needViewsNew;
@@ -289,7 +348,7 @@ class Horizontal extends PureComponent {
     const locked = locks[constructKey(lineName)];
     const offShift = offset < 0 ? -offset : 0;
     return (
-      <Outer itemHeight={itemHeight} ref={this.rootView}>
+      <Outer itemHeight={itemHeight} ref={this.rootBox}>
         <Overlay>
           <NavButton buttonSize={buttonSize} onClick={this.handleLeft}>
             &lt;
@@ -298,7 +357,7 @@ class Horizontal extends PureComponent {
             &gt;
           </NavButton>
         </Overlay>
-        <Band itemWidth={itemWidth}>
+        <Band itemWidth={itemWidth} ref={this.bandRef}>
           { locked ? (
             <Item
                 itemWidth={itemWidth}>
