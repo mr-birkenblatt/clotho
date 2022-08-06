@@ -46,7 +46,7 @@ export default class App extends PureComponent {
     super(props);
     this.state = {};
     this.parentLines = new ContentLoader(5, (name, offset, limit, cb) => {
-      console.log(`loading ${name} ${offset} ${limit}`);
+      console.log(`loading parent ${name} ${offset} ${limit}`);
       setTimeout(() => {
         const res = {};
         [...Array(limit).keys()].forEach(ix => {
@@ -56,14 +56,14 @@ export default class App extends PureComponent {
       }, 500);
     });
     this.childLines = new ContentLoader(5, (name, offset, limit, cb) => {
-      console.log(`loading ${name} ${offset} ${limit}`);
+      console.log(`loading child ${name} ${offset} ${limit}`);
       setTimeout(() => {
         const res = {};
         [...Array(limit).keys()].forEach(ix => {
           res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
         });
         cb(res);
-      }, 500);
+      }, 1000);
     });
   }
 

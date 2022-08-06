@@ -11,24 +11,6 @@ const Outer = styled.div`
   height: 100%;
 `;
 
-const IntersectBoxTop = styled.div`
-  width: 100%;
-  height: 30%;
-  position: absolute;
-  left: 0;
-  top: 0;
-  pointer-events: none;
-`;
-
-const IntersectBoxBottom = styled.div`
-  width: 100%;
-  height: 30%;
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  pointer-events: none;
-`;
-
 const Band = styled.div`
   width: 100%;
   height: 100%;
@@ -55,7 +37,7 @@ const Item = styled.div`
   width: 100%;
   height: auto;
   scroll-snap-align: start;
-  background-color: cornflowerblue;
+  background-color: ${props => props.isCurrent ? "blue" : "cornflowerblue"};
 `;
 
 class Vertical extends PureComponent {
@@ -65,12 +47,12 @@ class Vertical extends PureComponent {
       itemCount: 4,
       needViews: true,
       redraw: false,
+      awaitOrderChange: true,
     };
-    this.topBox = React.createRef();
-    this.bottomBox = React.createRef();
+    this.rootBox = React.createRef();
     this.activeRefs = {};
-    this.activeViewTop = {};
-    this.activeViewBottom = {};
+    this.activeView = {};
+    this.currentVisible = new Set();
   }
 
   componentDidMount() {
@@ -79,15 +61,26 @@ class Vertical extends PureComponent {
 
   componentDidUpdate(prevProps, prevState) {
     const { offset, order, getChildLine, currentIx, dispatch } = this.props;
-    const { itemCount, needViews } = this.state;
-    console.log(order.length, offset, itemCount);
-    if (prevProps.order === order && (order.length - offset < itemCount
+    const { itemCount, needViews, awaitOrderChange } = this.state;
+    console.log(
+      "cix", currentIx, "order", order.length,
+      "offset", offset, "itemCount", itemCount);
+    if (!awaitOrderChange && (order.length - offset < itemCount
         || order.length < currentIx - offset + itemCount)) {
       console.log("addLine");
       dispatch(addLine({
         lineName: getChildLine(order[order.length - 1]),
         isBack: true,
       }));
+      this.setState({
+        awaitOrderChange: true,
+      });
+    }
+    if (awaitOrderChange && prevProps.order !== order) {
+      console.log("order change confirmed");
+      this.setState({
+        awaitOrderChange: false,
+      });
     }
     const needViewsNew = this.updateViews(prevProps, prevState);
     if (needViews !== needViewsNew) {
@@ -98,24 +91,19 @@ class Vertical extends PureComponent {
   }
 
   updateViews(prevProps, prevState) {
-    const { offset } = this.props;
+    const { offset, order } = this.props;
     const { itemCount, needViews } = this.state;
     let needViewsNew = needViews;
-    if (prevProps.offset !== offset || prevState.itemCount !== itemCount) {
-      Object.keys(this.activeViewTop).forEach(realIx => {
+    if (prevProps.offset !== offset || prevState.itemCount !== itemCount
+        || prevProps.order !== order) {
+      Object.keys(this.activeView).forEach(realIx => {
         if (realIx < offset || realIx >= offset + itemCount) {
-          if (this.activeViewTop[realIx]) {
-            this.activeViewTop[realIx].disconnect();
+          if (this.activeView[realIx]) {
+            this.activeView[realIx].disconnect();
           }
-          delete this.activeViewTop[realIx];
-        }
-      });
-      Object.keys(this.activeViewBottom).forEach(realIx => {
-        if (realIx < offset || realIx >= offset + itemCount) {
-          if (this.activeViewBottom[realIx]) {
-            this.activeViewBottom[realIx].disconnect();
-          }
-          delete this.activeViewBottom[realIx];
+          delete this.activeView[realIx];
+          console.log(`delete current index ${realIx}`);
+          this.currentVisible.delete(realIx);
         }
       });
       Object.keys(this.activeRefs).forEach(realIx => {
@@ -134,28 +122,38 @@ class Vertical extends PureComponent {
 
     const that = this;
 
-    function createObserver(ref, index, top) {
+    function createObserver(ref, index) {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
-          if (!entry.isIntersecting) {
-            return;
-          }
-          if (top) {
-            const { dispatch } = that.props;
-            dispatch(setVCurrentIx({
-              vIndex: index,
-              hIndex: that.getHIndex(index),
-              isParent: that.isParent(index),
-              lineName: that.lineName(index),
-            }));
+          const { currentIx, dispatch } = that.props;
+          if (entry.isIntersecting) {
+            that.currentVisible.add(index);
+            console.log(`set current index ${index}`);
           } else {
-            console.log(`nothing so far... bottom ${index}`);
+            console.log(`remove current index ${index}`);
+            that.currentVisible.delete(index);
+          }
+          const computedIx = [...that.currentVisible.values()].reduce(
+            (cur, val) => {
+              if (cur === null) {
+                return val;
+              }
+              return Math.min(cur, val);
+            },
+            null);
+          if (computedIx !== currentIx) {
+            dispatch(setVCurrentIx({
+              vIndex: computedIx,
+              hIndex: that.getHIndex(computedIx),
+              isParent: that.isParent(computedIx),
+              lineName: that.lineName(computedIx),
+            }));
           }
         });
       }, {
-        root: top ? that.topBox.current : that.bottomBox.current,
+        root: that.rootBox.current,
         rootMargin: "0px",
-        threshold: top ? 1.0 : 0.1,
+        threshold: 0.8,
       });
       observer.observe(ref.current);
       return observer;
@@ -166,12 +164,8 @@ class Vertical extends PureComponent {
         const realIx = this.getRealIndex(ix);
         const curRef = this.activeRefs[realIx];
         if (curRef.current) {
-          if (this.topBox.current && !this.activeViewTop[realIx]) {
-            this.activeViewTop[realIx] = createObserver(curRef, realIx, true);
-          }
-          if (this.bottomBox.current && !this.activeViewBottom[realIx]) {
-            this.activeViewBottom[realIx] = createObserver(
-              curRef, realIx, false);
+          if (this.rootBox.current && !this.activeView[realIx]) {
+            this.activeView[realIx] = createObserver(curRef, realIx);
           }
         }
       });
@@ -192,17 +186,19 @@ class Vertical extends PureComponent {
   }
 
   getHIndex(index) {
-    const key =constructKey(this.isParent(index), this.lineName(index));
-    return this.props.currentLineIxs[key];
+    const key = constructKey(this.isParent(index), this.lineName(index));
+    const res = this.props.currentLineIxs[key];
+    if (res === undefined) {
+      return 0;
+    }
+    return res;
   }
 
   render() {
-    const { padSize, height, getItem, order } = this.props;
+    const { padSize, height, getItem, order, currentIx } = this.props;
     const { itemCount } = this.state;
     return (
-      <Outer>
-        <IntersectBoxTop ref={this.topBox} />
-        <IntersectBoxBottom res={this.bottomBox} />
+      <Outer ref={this.rootBox}>
         <Band>
           <Pad padSize={padSize} />
           {
@@ -212,13 +208,13 @@ class Vertical extends PureComponent {
                 return null;
               }
               return (
-                <Item key={realIx}>
-                  {
-                    getItem(
-                      this.isParent(realIx),
-                      this.lineName(realIx),
-                      height)
-                  }
+                <Item
+                  key={realIx}
+                  ref={this.activeRefs[realIx]}
+                  isCurrent={currentIx === realIx}>
+                {
+                  getItem(this.isParent(realIx), this.lineName(realIx), height)
+                }
                 </Item>
               );
             })

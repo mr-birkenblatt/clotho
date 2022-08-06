@@ -4,8 +4,12 @@ export function constructKey(isParent, lineName) {
   return `${isParent}-${lineName}`;
 }
 
+export function constructLockKey(lineName) {
+  return `${lineName}`;
+}
+
 function lockLine(state, isParent, lineName, adjustedIndex, skipItem) {
-  const key = constructKey(isParent, lineName);
+  const key = constructLockKey(lineName);
   const { currentLineIxs, currentLineFocus, locks } = state;
   if (currentLineIxs[key] < 0) {
     return;

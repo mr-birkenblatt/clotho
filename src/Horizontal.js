@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import ReactMarkdown from 'react-markdown';
 import { connect } from "react-redux";
 import styled from "styled-components";
-import { constructKey, focusAt, setHCurrentIx } from "./lineStateSlice";
+import { constructKey, constructLockKey, focusAt, setHCurrentIx } from "./lineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -10,7 +10,7 @@ const Outer = styled.div`
   left: 0;
   width: 100%;
   height: ${props => props.itemHeight}px;
-  background-color: red;
+  // background-color: red;
 `;
 
 const Overlay = styled.div`
@@ -37,7 +37,7 @@ const Band = styled.div`
   display: inline-block;
   height: 100%;
   width: ${props => props.itemWidth}px;
-  background-color: green;
+  // background-color: green;
   white-space: nowrap;
   overflow-x: scroll;
   overflow-y: hidden;
@@ -56,7 +56,7 @@ const Item = styled.span`
   width: ${props => props.itemWidth}px;
   height: 100%;
   scroll-snap-align: center;
-  background-color: cornflowerblue;
+  // background-color: cornflowerblue;
 `;
 
 const ItemContent = styled.div`
@@ -70,7 +70,7 @@ const ItemContent = styled.div`
   margin: ${props => props.itemPadding}px auto;
   border-radius: ${props => props.itemRadius}px;
   padding: ${props => -props.itemPadding}px;
-  background-color: pink;
+  // background-color: pink;
 `;
 
 const Pad = styled.div`
@@ -230,7 +230,7 @@ class Horizontal extends PureComponent {
 
   getContent(isParent, lineName, index) {
     const { getItem, locks } = this.props;
-    const locked = locks[constructKey(isParent, lineName)];
+    const locked = locks[constructLockKey(lineName)];
     if (locked && index < 0) {
       return this.getContent(locked.isParent, locked.lineName, locked.index);
     }
@@ -243,9 +243,9 @@ class Horizontal extends PureComponent {
   }
 
   adjustIndex(index) {
-    const { isParent, lineName, locks } = this.props;
+    const { lineName, locks } = this.props;
     const { offset, itemCount } = this.state;
-    const locked = locks[constructKey(isParent, lineName)];
+    const locked = locks[constructLockKey(lineName)];
     const lockedIx = locked && locked.skipItem
       ? locked.index : offset + itemCount;
     return index + (lockedIx > index ? 0 : 1);
@@ -284,7 +284,7 @@ class Horizontal extends PureComponent {
       locks,
     } = this.props;
     const { offset, itemCount, padSize } = this.state;
-    const locked = locks[constructKey(isParent, lineName)];
+    const locked = locks[constructLockKey(lineName)];
     const offShift = offset < 0 ? -offset : 0;
     return (
       <Outer itemHeight={itemHeight} ref={this.rootView}>
