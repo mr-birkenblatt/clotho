@@ -223,8 +223,11 @@ class Horizontal extends PureComponent {
   focus(focusIx, smooth) {
     const item = focusIx < 0 ? this.lockedRef : this.activeRefs[focusIx];
     if (item && item.current) {
-      item.current.scrollIntoView(
-        smooth ? { behavior: "smooth", block: "center" } : {});
+      item.current.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "nearest",
+        inline: "center",
+      });
     }
   }
 
