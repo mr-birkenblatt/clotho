@@ -72,18 +72,22 @@ export default class App extends PureComponent {
       name, index, contentCb, readyCb);
   }
 
-  getVItem = (index) => {
+  getVItem = (isParent, lineName, height) => {
     return (
       <Horizontal
         itemWidth={450}
-        itemHeight={450}
+        itemHeight={height}
         itemRadius={10}
         itemPadding={50}
         buttonSize={50}
-        isParent={true}
-        lineName={`row-${index}`}
+        isParent={isParent}
+        lineName={lineName}
         getItem={this.getItem} />
     );
+  }
+
+  getChildLine = (lineName) => {
+    return `L${+lineName.slice(1) + 1}`;
   }
 
   render() {
@@ -93,25 +97,7 @@ export default class App extends PureComponent {
           <RequireLogin />
         </MainHeader> */}
         <MainColumn>
-          <Vertical getItem={this.getVItem} />
-          {/* <Horizontal
-            itemWidth={450}
-            itemHeight={450}
-            itemRadius={10}
-            itemPadding={50}
-            buttonSize={50}
-            isParent={true}
-            lineName={this.state.parentName}
-            getItem={this.getItem} />
-          <Horizontal
-            itemWidth={450}
-            itemHeight={450}
-            itemRadius={10}
-            itemPadding={50}
-            buttonSize={50}
-            isParent={false}
-            lineName={this.state.childName}
-            getItem={this.getItem} /> */}
+          <Vertical getItem={this.getVItem} getChildLine={this.getChildLine} />
         </MainColumn>
       </Main>
     );

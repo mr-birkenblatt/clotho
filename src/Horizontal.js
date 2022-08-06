@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import ReactMarkdown from 'react-markdown';
 import { connect } from "react-redux";
 import styled from "styled-components";
-import { constructKey, focusAt, setCurrentIx } from "./lineStateSlice";
+import { constructKey, focusAt, setHCurrentIx } from "./lineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -158,7 +158,6 @@ class Horizontal extends PureComponent {
   }
 
   updateViews(prevState) {
-    const { isParent, lineName, dispatch } = this.props;
     const { offset, itemCount, needViews } = this.state;
     let needViewsNew = needViews;
     if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
@@ -192,7 +191,8 @@ class Horizontal extends PureComponent {
           if (!entry.isIntersecting) {
             return;
           }
-          dispatch(setCurrentIx({isParent, lineName, index}));
+          const { isParent, lineName, dispatch } = that.props;
+          dispatch(setHCurrentIx({isParent, lineName, index}));
         });
       }, {
         root: that.rootView.current,

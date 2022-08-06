@@ -1,5 +1,7 @@
 import React, { PureComponent } from "react";
+import { connect } from "react-redux";
 import styled from "styled-components";
+import { constructKey, setVCurrentIx, addLine } from "./lineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -56,21 +58,147 @@ const Item = styled.div`
   background-color: cornflowerblue;
 `;
 
-export default class Vertical extends PureComponent {
+class Vertical extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {
-      offset: 0,
       itemCount: 4,
-      padSize: 0,
+      needViews: true,
+      redraw: false,
     };
     this.topBox = React.createRef();
     this.bottomBox = React.createRef();
+    this.activeRefs = {};
+    this.activeViewTop = {};
+    this.activeViewBottom = {};
+  }
+
+  componentDidMount() {
+    this.componentDidUpdate({}, {});
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    const { offset, order, getChildLine, currentIx, dispatch } = this.props;
+    const { itemCount, needViews } = this.state;
+    console.log(order.length, offset, itemCount);
+    if (prevProps.order === order && (order.length - offset < itemCount
+        || order.length < currentIx - offset + itemCount)) {
+      console.log("addLine");
+      dispatch(addLine({
+        lineName: getChildLine(order[order.length - 1]),
+        isBack: true,
+      }));
+    }
+    const needViewsNew = this.updateViews(prevProps, prevState);
+    if (needViews !== needViewsNew) {
+      this.setState({
+        needViews: needViewsNew,
+      });
+    }
+  }
+
+  updateViews(prevProps, prevState) {
+    const { offset } = this.props;
+    const { itemCount, needViews } = this.state;
+    let needViewsNew = needViews;
+    if (prevProps.offset !== offset || prevState.itemCount !== itemCount) {
+      Object.keys(this.activeViewTop).forEach(realIx => {
+        if (realIx < offset || realIx >= offset + itemCount) {
+          if (this.activeViewTop[realIx]) {
+            this.activeViewTop[realIx].disconnect();
+          }
+          delete this.activeViewTop[realIx];
+        }
+      });
+      Object.keys(this.activeViewBottom).forEach(realIx => {
+        if (realIx < offset || realIx >= offset + itemCount) {
+          if (this.activeViewBottom[realIx]) {
+            this.activeViewBottom[realIx].disconnect();
+          }
+          delete this.activeViewBottom[realIx];
+        }
+      });
+      Object.keys(this.activeRefs).forEach(realIx => {
+        if (realIx < offset || realIx >= offset + itemCount) {
+          delete this.activeRefs[realIx];
+        }
+      });
+      [...Array(itemCount).keys()].forEach(ix => {
+        const realIx = this.getRealIndex(ix);
+        if (!this.activeRefs[realIx]) {
+          this.activeRefs[realIx] = React.createRef();
+          needViewsNew = true;
+        }
+      });
+    }
+
+    const that = this;
+
+    function createObserver(ref, index, top) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+          if (top) {
+            const { dispatch } = that.props;
+            dispatch(setVCurrentIx({
+              vIndex: index,
+              hIndex: that.getHIndex(index),
+              isParent: that.isParent(index),
+              lineName: that.lineName(index),
+            }));
+          } else {
+            console.log(`nothing so far... bottom ${index}`);
+          }
+        });
+      }, {
+        root: top ? that.topBox.current : that.bottomBox.current,
+        rootMargin: "0px",
+        threshold: top ? 1.0 : 0.1,
+      });
+      observer.observe(ref.current);
+      return observer;
+    }
+
+    if (needViews) {
+      [...Array(itemCount).keys()].forEach(ix => {
+        const realIx = this.getRealIndex(ix);
+        const curRef = this.activeRefs[realIx];
+        if (curRef.current) {
+          if (this.topBox.current && !this.activeViewTop[realIx]) {
+            this.activeViewTop[realIx] = createObserver(curRef, realIx, true);
+          }
+          if (this.bottomBox.current && !this.activeViewBottom[realIx]) {
+            this.activeViewBottom[realIx] = createObserver(
+              curRef, realIx, false);
+          }
+        }
+      });
+    }
+    return needViewsNew;
+  }
+
+  getRealIndex(index) {
+    return this.props.offset + index;
+  }
+
+  isParent(index) {
+    return index <= this.props.currentIx;
+  }
+
+  lineName(index) {
+    return this.props.order[index];
+  }
+
+  getHIndex(index) {
+    const key =constructKey(this.isParent(index), this.lineName(index));
+    return this.props.currentLineIxs[key];
   }
 
   render() {
-    const { getItem } = this.props;
-    const { padSize, itemCount, offset } = this.state;
+    const { padSize, height, getItem, order } = this.props;
+    const { itemCount } = this.state;
     return (
       <Outer>
         <IntersectBoxTop ref={this.topBox} />
@@ -79,10 +207,18 @@ export default class Vertical extends PureComponent {
           <Pad padSize={padSize} />
           {
             [...Array(itemCount).keys()].map(ix => {
-              const realIx = offset + ix;
+              const realIx = this.getRealIndex(ix);
+              if (realIx >= order.length) {
+                return null;
+              }
               return (
                 <Item key={realIx}>
-                  {getItem(realIx)}
+                  {
+                    getItem(
+                      this.isParent(realIx),
+                      this.lineName(realIx),
+                      height)
+                  }
                 </Item>
               );
             })
@@ -92,3 +228,12 @@ export default class Vertical extends PureComponent {
     );
   }
 } // Vertical
+
+export default connect((state) => ({
+  currentIx: state.lineState.vCurrentIx,
+  currentLineIxs: state.lineState.currentLineIxs,
+  height: state.lineState.vSize,
+  offset: state.lineState.vOffset,
+  order: state.lineState.vOrder,
+  padSize: state.lineState.vPadSize,
+}))(Vertical);
