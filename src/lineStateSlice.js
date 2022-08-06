@@ -59,8 +59,19 @@ export const lineStateSlice = createSlice({
         console.log(`added line ${lineName}`);
         state.vOrder.push(lineName);
       } else {
+        console.log(`addLine isBack=false`);
         state.vOrder = [lineName, ...state.vOrder];
         state.vOffset += 1;
+      }
+    },
+    changeVOffset: (state, action) => {
+      const { isIncrease } = action.payload;
+      if (isIncrease) {
+        state.vOffset += 1;
+        state.vPadSize += state.vSize;
+      } else {
+        state.vOffset = Math.max(state.vOffset - 1, 0);
+        state.vPadSize = Math.max(state.vPadSize - state.vSize, 0);
       }
     },
   },
@@ -68,6 +79,7 @@ export const lineStateSlice = createSlice({
 
 export const {
   addLine,
+  changeVOffset,
   focusAt,
   lockCurrent,
   setHCurrentIx,

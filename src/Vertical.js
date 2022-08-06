@@ -1,7 +1,12 @@
 import React, { PureComponent } from "react";
 import { connect } from "react-redux";
 import styled from "styled-components";
-import { constructKey, setVCurrentIx, addLine } from "./lineStateSlice";
+import {
+  constructKey,
+  setVCurrentIx,
+  addLine,
+  changeVOffset,
+} from "./lineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -29,7 +34,7 @@ const Band = styled.div`
 `;
 
 const Pad = styled.div`
-  height: ${props => props.padSize};
+  height: ${props => props.padSize}px;
   width: 100%;
 `;
 
@@ -48,6 +53,7 @@ class Vertical extends PureComponent {
       needViews: true,
       redraw: false,
       awaitOrderChange: true,
+      awaitOffsetChange: true,
     };
     this.rootBox = React.createRef();
     this.activeRefs = {};
@@ -61,10 +67,16 @@ class Vertical extends PureComponent {
 
   componentDidUpdate(prevProps, prevState) {
     const { offset, order, getChildLine, currentIx, dispatch } = this.props;
-    const { itemCount, needViews, awaitOrderChange } = this.state;
+    const {
+      itemCount,
+      needViews,
+      awaitOrderChange,
+      awaitOffsetChange,
+    } = this.state;
     console.log(
       "cix", currentIx, "order", order.length,
-      "offset", offset, "itemCount", itemCount);
+      "offset", offset, "itemCount", itemCount,
+      "sum", currentIx - offset + itemCount);
     if (!awaitOrderChange && (order.length - offset < itemCount
         || order.length < currentIx - offset + itemCount)) {
       console.log("addLine");
@@ -82,6 +94,29 @@ class Vertical extends PureComponent {
         awaitOrderChange: false,
       });
     }
+
+    if (!awaitOffsetChange) {
+      if (currentIx - offset >= itemCount - 2) {
+        console.log(`offset inc change ${currentIx} ${offset}`);
+        dispatch(changeVOffset({ isIncrease: true }));
+        this.setState({
+          awaitOffsetChange: true,
+        });
+      // } else if (currentIx - offset < 1 && offset > 0) {
+      //   console.log(`offset dec change ${currentIx} ${offset}`);
+      //   dispatch(changeVOffset({ isIncrease: false }));
+      //   this.setState({
+      //     awaitOffsetChange: true,
+      //   });
+      }
+    }
+    if (awaitOffsetChange && prevProps.offset !== offset) {
+      console.log("offset change confirmed");
+      this.setState({
+        awaitOffsetChange: false,
+      })
+    }
+
     const needViewsNew = this.updateViews(prevProps, prevState);
     if (needViews !== needViewsNew) {
       this.setState({
