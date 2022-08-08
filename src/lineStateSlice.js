@@ -27,9 +27,9 @@ export const lineStateSlice = createSlice({
     currentLineIxs: {},
     currentLineFocus: {},
     locks: {},
-    vOrder: ["L0", "L1"],
-    vCurrentIx: 1,
-    vCorrection: -1,
+    vOrder: ["L0"],
+    vCurrentIx: 0,
+    vCorrection: 0,
     vOffset: 0,
     vFocus: 0,
     vFocusSmooth: false,
@@ -55,29 +55,29 @@ export const lineStateSlice = createSlice({
       lockLine(state, isParent, lineName, hIndex, false);
       state.vCurrentIx = vIndex;
       state.vOffset = vIndex - 1;
-      state.vFocus = vIndex + state.vCorrection;
+      state.vFocus = vIndex;
       state.vFocusSmooth = false;
       console.log(`vIndex ${vIndex}`);
     },
     addLine: (state, action) => {
       const { lineName, isBack } = action.payload;
-      console.log(`addLine ${lineName} ${isBack}`);
+      // console.log(`addLine ${lineName} ${isBack}`);
       if (isBack) {
-        console.log(`added line ${lineName}`);
+        // console.log(`added line ${lineName}`);
         state.vOrder.push(lineName);
-        state.vFocus = state.vCurrentIx + state.vCorrection;
+        state.vFocus = state.vCurrentIx;
         state.vFocusSmooth = false;
       } else {
-        console.log(`addLine isBack=false`);
+        // console.log(`addLine isBack=false`);
         state.vOrder = [lineName, ...state.vOrder];
         state.vCorrection += 1;
-        state.vFocus = state.vCurrentIx + state.vCorrection;
+        state.vFocus = state.vCurrentIx;
         state.vFocusSmooth = false;
       }
     },
     focusV: (state, action) => {
       const { focus } = action.payload;
-      state.vFocus = focus + state.vCorrection;
+      state.vFocus = focus;
       state.vFocusSmooth = true;
     },
   },

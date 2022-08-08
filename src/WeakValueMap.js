@@ -25,7 +25,7 @@ export default class WeakValueMap {
       }).slice(0, excess).forEach((key) => {
         delete this.obj[key];
         delete this.times[key];
-        console.log(`remove ${key}`);
+        // console.log(`remove ${key}`);
       });
     }
     this.obj[key] = value;

@@ -51,8 +51,6 @@ class Vertical extends PureComponent {
     this.state = {
       itemCount: 4,
       needViews: true,
-      awaitOrderChange: null,
-      awaitCurrentChange: null,
       redraw: false,
       scrollInit: false,
       isScrolling: false,
@@ -63,6 +61,8 @@ class Vertical extends PureComponent {
     this.activeRefs = {};
     this.activeView = {};
     this.currentVisible = new Set();
+    this.awaitOrderChange = null;
+    this.awaitCurrentChange = null;
   }
 
   componentDidMount() {
@@ -154,16 +154,12 @@ class Vertical extends PureComponent {
       order,
     } = this.props;
     const {
-      awaitCurrentChange,
-      awaitOrderChange,
       focusIx,
       isScrolling,
       itemCount,
       needViews,
       scrollInit,
     } = this.state;
-    let isOrderChange = awaitOrderChange !== null;
-    let isCurrentChange = awaitCurrentChange !== null;
 
     if (prevProps.currentIx !== currentIx
         || prevProps.offset !== offset
@@ -181,44 +177,41 @@ class Vertical extends PureComponent {
       });
     }
 
-    if (!isOrderChange && focus === focusIx) {
+    if (this.awaitOrderChange === null && focus === focusIx) {
       if (currentIx + correction >= order.length - 2) {
-        console.log(`addLine ${order.length} back`);
+        // console.log(`addLine ${order.length} back ${this.awaitOrderChange}`);
         dispatch(addLine({
           lineName: getChildLine(order[order.length - 1]),
           isBack: true,
         }));
+        this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
-        console.log(`addLine ${order.length} front`);
+        // console.log(`addLine ${order.length} front ${this.awaitOrderChange}`);
         dispatch(addLine({
           lineName: getParentLine(order[0]),
           isBack: false,
         }));
+        this.awaitOrderChange = order;
       }
-      this.setState({
-        awaitOrderChange: order,
-      });
-      isOrderChange = true;
     }
-    if (isOrderChange
-        && awaitOrderChange !== null
-        && awaitOrderChange !== order) {
-      console.log(
-        `order change confirmed ${awaitOrderChange.length} ${order.length}`);
-      this.setState({
-        awaitOrderChange: null,
-      });
+    if (this.awaitOrderChange !== null && this.awaitOrderChange !== order) {
+      // console.log(
+      //   `order change confirmed ${this.awaitOrderChange.length} `
+      //   +`${order.length}`);
+      this.awaitOrderChange = null;
     }
 
     console.log(
       "curup",
       "isNotScrolling", !isScrolling,
-      "awaitCurrentChange", !isCurrentChange,
-      "awaitOrderChange", !isOrderChange,
-      "focus", focus === focusIx);
+      "isNotCurrentChange", this.awaitCurrentChange === null,
+      "isNotOrderChange", this.awaitOrderChange === null,
+      "focus", focus === focusIx,
+      "awaitOrderChange", this.awaitOrderChange,
+      "awaitCurrentChange", this.awaitCurrentChange);
     if (!isScrolling
-        && !isCurrentChange
-        && !isOrderChange
+        && this.awaitCurrentChange === null
+        && this.awaitOrderChange === null
         && focus === focusIx) {
       const computedIx = this.computeIx();
       if (computedIx !== null && computedIx !== currentIx) {
@@ -228,21 +221,14 @@ class Vertical extends PureComponent {
           isParent: this.isParent(computedIx),
           lineName: this.lineName(computedIx),
         }));
-        this.setState({
-          updateCurrentIx: false,
-          awaitCurrentChange: currentIx,
-        });
-        isCurrentChange = true;
+        this.awaitCurrentChange = currentIx;
       }
     }
-    if (isCurrentChange
-        && awaitCurrentChange !== null
-        && awaitCurrentChange !== currentIx) {
-      console.log(
-        `currentIx change confirmed ${awaitCurrentChange} ${currentIx}`);
-      this.setState({
-        awaitCurrentChange: null,
-      });
+    if (this.awaitCurrentChange !== null
+        && this.awaitCurrentChange !== currentIx) {
+      // console.log(
+      //   `currentIx change confirmed ${this.awaitCurrentChange} ${currentIx}`);
+      this.awaitCurrentChange = null;
     }
 
     const needViewsNew = this.updateViews(prevProps, prevState);
@@ -252,8 +238,10 @@ class Vertical extends PureComponent {
       });
     }
 
-    if (!isCurrentChange && !isOrderChange && focus !== focusIx) {
-      this.focus(focus - correction, focusSmooth);
+    if (this.awaitCurrentChange === null
+        && this.awaitOrderChange === null
+        && focus !== focusIx) {
+      this.focus(focus, focusSmooth);
     }
   }
 
@@ -261,6 +249,7 @@ class Vertical extends PureComponent {
     const { offset, order } = this.props;
     const { itemCount, needViews } = this.state;
     let needViewsNew = needViews;
+
     if (prevProps.offset !== offset || prevState.itemCount !== itemCount
         || prevProps.order !== order) {
       Object.keys(this.activeView).forEach(realIx => {
@@ -269,8 +258,11 @@ class Vertical extends PureComponent {
             this.activeView[realIx].disconnect();
           }
           delete this.activeView[realIx];
-          console.log(`delete current index ${realIx} ${this.computeIx()}`);
+          console.log(
+            `delete current index ${realIx} cix ${this.computeIx()} ` +
+            `[${[...this.currentVisible]}]`);
           this.currentVisible.delete(realIx);
+          this.requestRedraw();
         }
       });
       Object.keys(this.activeRefs).forEach(realIx => {
@@ -292,16 +284,20 @@ class Vertical extends PureComponent {
     function createObserver(ref, index) {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
+          console.log(entry);
           if (entry.isIntersecting) {
             that.currentVisible.add(index);
-            console.log(`set current index ${index} ${that.computeIx()}`);
+            console.log(
+              `set current index ${index} cix ${that.computeIx()} ` +
+              `[${[...that.currentVisible]}]`, ref.current);
           } else {
             that.currentVisible.delete(index);
-            console.log(`remove current index ${index} ${that.computeIx()}`);
+            console.log(
+              `remove current index ${index} cix ${that.computeIx()} ` +
+              `[${[...that.currentVisible]}]`, ref.current);
           }
-          that.setState({
-            updateCurrentIx: true,
-          });
+          that.requestRedraw();
+          console.log("ref?", that.activeRefs[index].current, ref.current, that.activeRefs[index].current === ref.current);
         });
       }, {
         root: that.rootBox.current,
@@ -327,19 +323,22 @@ class Vertical extends PureComponent {
   }
 
   focus(focusIx, smooth) {
-    const { correction } = this.props;
-    console.log(this.activeRefs, focusIx);
+    console.log("focus", this.activeRefs, focusIx);
     const item = this.activeRefs[focusIx];
     console.log(
-      `scroll to ${focusIx} smooth:${smooth} ` +
-      `success:${!!(item && item.current)}`);
+      `scroll to ${focusIx} smooth: ${smooth} ` +
+      `success: ${!!(item && item.current)}`);
     if (item && item.current) {
-      item.current.scrollIntoView({
+      const curItem = item.current;
+      console.log("doFocus", curItem, focusIx, `[${[...this.currentVisible]}]`);
+      curItem.scrollIntoView({
         behavior: smooth ? "smooth" : "auto",
-        block: "center",
+        block: "start",
         inline: "nearest",
       });
-      this.setState({ focusIx: focusIx + correction });
+      this.setState({
+        focusIx: focusIx,
+      });
     }
   }
 
@@ -407,6 +406,7 @@ class Vertical extends PureComponent {
               return (
                 <Item
                   key={realIx}
+                  id={`id${realIx}`}
                   ref={this.activeRefs[realIx]}
                   isCurrent={currentIx === realIx}>
                 {
