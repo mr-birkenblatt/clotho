@@ -27,11 +27,12 @@ export const lineStateSlice = createSlice({
     currentLineIxs: {},
     currentLineFocus: {},
     locks: {},
-    vOrder: ["L0"],
-    vCurrentIx: 0,
+    vOrder: ["L0", "L1"],
+    vCurrentIx: 1,
+    vCorrection: -1,
     vOffset: 0,
-    vPadSize: 0,
-    vSize: 450,
+    vFocus: 0,
+    vFocusSmooth: false,
   },
   reducers: {
     setHCurrentIx: (state, action) => {
@@ -48,8 +49,14 @@ export const lineStateSlice = createSlice({
     },
     setVCurrentIx: (state, action) => {
       const { vIndex, hIndex, isParent, lineName } = action.payload;
+      if (vIndex === state.vCurrentIx) {
+        return;
+      }
       lockLine(state, isParent, lineName, hIndex, false);
       state.vCurrentIx = vIndex;
+      state.vOffset = vIndex - 1;
+      state.vFocus = vIndex + state.vCorrection;
+      state.vFocusSmooth = false;
       console.log(`vIndex ${vIndex}`);
     },
     addLine: (state, action) => {
@@ -58,29 +65,28 @@ export const lineStateSlice = createSlice({
       if (isBack) {
         console.log(`added line ${lineName}`);
         state.vOrder.push(lineName);
+        state.vFocus = state.vCurrentIx + state.vCorrection;
+        state.vFocusSmooth = false;
       } else {
         console.log(`addLine isBack=false`);
         state.vOrder = [lineName, ...state.vOrder];
-        state.vOffset += 1;
+        state.vCorrection += 1;
+        state.vFocus = state.vCurrentIx + state.vCorrection;
+        state.vFocusSmooth = false;
       }
     },
-    changeVOffset: (state, action) => {
-      const { isIncrease } = action.payload;
-      if (isIncrease) {
-        state.vOffset += 1;
-        state.vPadSize += state.vSize;
-      } else {
-        state.vOffset = Math.max(state.vOffset - 1, 0);
-        state.vPadSize = Math.max(state.vPadSize - state.vSize, 0);
-      }
+    focusV: (state, action) => {
+      const { focus } = action.payload;
+      state.vFocus = focus + state.vCorrection;
+      state.vFocusSmooth = true;
     },
   },
 });
 
 export const {
   addLine,
-  changeVOffset,
   focusAt,
+  focusV,
   lockCurrent,
   setHCurrentIx,
   setVCurrentIx,

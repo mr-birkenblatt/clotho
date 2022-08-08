@@ -5,7 +5,7 @@ import {
   constructKey,
   setVCurrentIx,
   addLine,
-  changeVOffset,
+  focusV,
 } from "./lineStateSlice";
 
 const Outer = styled.div`
@@ -51,13 +51,12 @@ class Vertical extends PureComponent {
     this.state = {
       itemCount: 4,
       needViews: true,
-      awaitOrderChange: true,
-      awaitOffsetChange: false,
+      awaitOrderChange: null,
+      awaitCurrentChange: null,
       redraw: false,
       scrollInit: false,
-      pendingPad: false,
       isScrolling: false,
-      updateCurrentIx: false,
+      focusIx: 0,
     };
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
@@ -104,18 +103,75 @@ class Vertical extends PureComponent {
     requestAnimationFrame(checkScroll);
   }
 
+  debugString() {
+    const { offset, order, currentIx, correction } = this.props;
+    const { itemCount } = this.state;
+    const rangeOrder = [0, order.length];
+    const rangeArray = [correction + offset, correction + offset + itemCount];
+    const adjIndex = correction + currentIx;
+    const minIx = Math.min(rangeOrder[0], rangeArray[0], adjIndex);
+    const maxIx = Math.max(rangeOrder[1], rangeArray[1], adjIndex);
+    const ord = [...Array(maxIx - minIx).keys()].reduce((cur, val) => {
+      const isOrd = val + minIx >= rangeOrder[0] && val + minIx < rangeOrder[1];
+      return `${cur}${isOrd ? '#' : '_'}`;
+    }, '');
+    const arr = [...Array(maxIx - minIx).keys()].reduce((cur, val) => {
+      const isArr = val + minIx >= rangeArray[0] && val + minIx < rangeArray[1];
+      return `${cur}${isArr ? '#' : '_'}`;
+    }, '');
+    const cur = [...Array(maxIx - minIx).keys()].reduce((cur, val) => {
+      const isCur = val + minIx === adjIndex;
+      return `${cur}${isCur ? 'X' : '_'}`;
+    }, '');
+    console.group("VState");
+    console.log(`ORD ${ord}`);
+    console.log(`ARR ${arr}`);
+    console.log(`CUR ${cur}`);
+    console.groupEnd();
+  }
+
+  computeIx() {
+    return [...this.currentVisible.values()].reduce(
+      (cur, val) => {
+        if (cur === null) {
+          return val;
+        }
+        return Math.min(cur, val);
+      },
+      null);
+  }
+
   componentDidUpdate(prevProps, prevState) {
-    const { offset, order, getChildLine, currentIx, dispatch } = this.props;
     const {
+      correction,
+      currentIx,
+      dispatch,
+      focus,
+      focusSmooth,
+      getChildLine,
+      getParentLine,
+      offset,
+      order,
+    } = this.props;
+    const {
+      awaitCurrentChange,
+      awaitOrderChange,
+      focusIx,
+      isScrolling,
       itemCount,
       needViews,
-      awaitOrderChange,
-      awaitOffsetChange,
       scrollInit,
-      pendingPad,
-      isScrolling,
-      updateCurrentIx,
     } = this.state;
+    let isOrderChange = awaitOrderChange !== null;
+    let isCurrentChange = awaitCurrentChange !== null;
+
+    if (prevProps.currentIx !== currentIx
+        || prevProps.offset !== offset
+        || prevProps.order !== order
+        || prevProps.correction !== correction
+        || prevState.itemCount !== itemCount) {
+      this.debugString();
+    }
 
     if (!scrollInit && this.bandRef.current) {
       this.bandRef.current.addEventListener(
@@ -125,72 +181,68 @@ class Vertical extends PureComponent {
       });
     }
 
-    if (!isScrolling && updateCurrentIx) {
-      const computedIx = [...this.currentVisible.values()].reduce(
-        (cur, val) => {
-          if (cur === null) {
-            return val;
-          }
-          return Math.min(cur, val);
-        },
-        null);
-      if (computedIx !== currentIx) {
+    if (!isOrderChange && focus === focusIx) {
+      if (currentIx + correction >= order.length - 2) {
+        console.log(`addLine ${order.length} back`);
+        dispatch(addLine({
+          lineName: getChildLine(order[order.length - 1]),
+          isBack: true,
+        }));
+      } else if (currentIx + correction <= 0) {
+        console.log(`addLine ${order.length} front`);
+        dispatch(addLine({
+          lineName: getParentLine(order[0]),
+          isBack: false,
+        }));
+      }
+      this.setState({
+        awaitOrderChange: order,
+      });
+      isOrderChange = true;
+    }
+    if (isOrderChange
+        && awaitOrderChange !== null
+        && awaitOrderChange !== order) {
+      console.log(
+        `order change confirmed ${awaitOrderChange.length} ${order.length}`);
+      this.setState({
+        awaitOrderChange: null,
+      });
+    }
+
+    console.log(
+      "curup",
+      "isNotScrolling", !isScrolling,
+      "awaitCurrentChange", !isCurrentChange,
+      "awaitOrderChange", !isOrderChange,
+      "focus", focus === focusIx);
+    if (!isScrolling
+        && !isCurrentChange
+        && !isOrderChange
+        && focus === focusIx) {
+      const computedIx = this.computeIx();
+      if (computedIx !== null && computedIx !== currentIx) {
         dispatch(setVCurrentIx({
           vIndex: computedIx,
           hIndex: this.getHIndex(computedIx),
           isParent: this.isParent(computedIx),
           lineName: this.lineName(computedIx),
         }));
-      }
-      this.setState({
-        updateCurrentIx: false,
-      });
-    }
-
-    if (!awaitOrderChange && (order.length - offset < itemCount
-        || order.length < currentIx - offset + itemCount)) {
-      console.log("addLine");
-      dispatch(addLine({
-        lineName: getChildLine(order[order.length - 1]),
-        isBack: true,
-      }));
-      this.setState({
-        awaitOrderChange: true,
-      });
-    }
-    if (awaitOrderChange && prevProps.order !== order) {
-      console.log("order change confirmed");
-      this.setState({
-        awaitOrderChange: false,
-      });
-    }
-
-    if (pendingPad || !awaitOffsetChange) {
-      if (isScrolling) {
-        if (!pendingPad) {
-          this.setState({
-            pendingPad: true,
-          });
-        }
-      } else {
-        if (currentIx - offset >= itemCount - 2) {
-          console.log(`offset inc change ${currentIx} ${offset}`);
-          dispatch(changeVOffset({ isIncrease: true }));
-          this.setState({
-            awaitOffsetChange: true,
-            pendingPad: false,
-          });
-        // } else if (currentIx - offset < 1 && offset > 0) {
-        //   console.log(`offset dec change ${currentIx} ${offset}`);
-        //   dispatch(changeVOffset({ isIncrease: false }));
-        }
+        this.setState({
+          updateCurrentIx: false,
+          awaitCurrentChange: currentIx,
+        });
+        isCurrentChange = true;
       }
     }
-    if (awaitOffsetChange && prevProps.offset !== offset) {
-      console.log("offset change confirmed");
+    if (isCurrentChange
+        && awaitCurrentChange !== null
+        && awaitCurrentChange !== currentIx) {
+      console.log(
+        `currentIx change confirmed ${awaitCurrentChange} ${currentIx}`);
       this.setState({
-        awaitOffsetChange: false,
-      })
+        awaitCurrentChange: null,
+      });
     }
 
     const needViewsNew = this.updateViews(prevProps, prevState);
@@ -198,6 +250,10 @@ class Vertical extends PureComponent {
       this.setState({
         needViews: needViewsNew,
       });
+    }
+
+    if (!isCurrentChange && !isOrderChange && focus !== focusIx) {
+      this.focus(focus - correction, focusSmooth);
     }
   }
 
@@ -213,7 +269,7 @@ class Vertical extends PureComponent {
             this.activeView[realIx].disconnect();
           }
           delete this.activeView[realIx];
-          console.log(`delete current index ${realIx}`);
+          console.log(`delete current index ${realIx} ${this.computeIx()}`);
           this.currentVisible.delete(realIx);
         }
       });
@@ -238,10 +294,10 @@ class Vertical extends PureComponent {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             that.currentVisible.add(index);
-            console.log(`set current index ${index}`);
+            console.log(`set current index ${index} ${that.computeIx()}`);
           } else {
-            console.log(`remove current index ${index}`);
             that.currentVisible.delete(index);
+            console.log(`remove current index ${index} ${that.computeIx()}`);
           }
           that.setState({
             updateCurrentIx: true,
@@ -270,6 +326,23 @@ class Vertical extends PureComponent {
     return needViewsNew;
   }
 
+  focus(focusIx, smooth) {
+    const { correction } = this.props;
+    console.log(this.activeRefs, focusIx);
+    const item = this.activeRefs[focusIx];
+    console.log(
+      `scroll to ${focusIx} smooth:${smooth} ` +
+      `success:${!!(item && item.current)}`);
+    if (item && item.current) {
+      item.current.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "center",
+        inline: "nearest",
+      });
+      this.setState({ focusIx: focusIx + correction });
+    }
+  }
+
   getRealIndex(index) {
     return this.props.offset + index;
   }
@@ -279,7 +352,7 @@ class Vertical extends PureComponent {
   }
 
   lineName(index) {
-    return this.props.order[index];
+    return this.props.order[index + this.props.correction];
   }
 
   getHIndex(index) {
@@ -291,6 +364,18 @@ class Vertical extends PureComponent {
     return res;
   }
 
+  handleUp = (event) => {
+    const { currentIx, dispatch } = this.props;
+    dispatch(focusV({ index: currentIx - 1 }));
+    event.preventDefault();
+  }
+
+  handleDown = (event) => {
+    const { currentIx, dispatch } = this.props;
+    dispatch(focusV({ index: currentIx + 1 }));
+    event.preventDefault();
+  }
+
   requestRedraw = () => {
     const { redraw } = this.state;
     this.setState({
@@ -299,7 +384,14 @@ class Vertical extends PureComponent {
   }
 
   render() {
-    const { padSize, height, getItem, order, currentIx } = this.props;
+    const {
+      correction,
+      currentIx,
+      getItem,
+      height,
+      order,
+      padSize,
+    } = this.props;
     const { itemCount } = this.state;
     return (
       <Outer ref={this.rootBox}>
@@ -308,7 +400,8 @@ class Vertical extends PureComponent {
           {
             [...Array(itemCount).keys()].map(ix => {
               const realIx = this.getRealIndex(ix);
-              if (realIx >= order.length) {
+              if (realIx + correction >= order.length
+                  || realIx + correction < 0) {
                 return null;
               }
               return (
@@ -330,10 +423,11 @@ class Vertical extends PureComponent {
 } // Vertical
 
 export default connect((state) => ({
+  correction: state.lineState.vCorrection,
   currentIx: state.lineState.vCurrentIx,
   currentLineIxs: state.lineState.currentLineIxs,
-  height: state.lineState.vSize,
+  focus: state.lineState.vFocus,
+  focusSmooth: state.lineState.vFocusSmooth,
   offset: state.lineState.vOffset,
   order: state.lineState.vOrder,
-  padSize: state.lineState.vPadSize,
 }))(Vertical);

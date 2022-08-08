@@ -87,7 +87,13 @@ export default class App extends PureComponent {
   }
 
   getChildLine = (lineName) => {
+    console.log(`${lineName} => L${+lineName.slice(1) + 1}`);
     return `L${+lineName.slice(1) + 1}`;
+  }
+
+  getParentLine = (lineName) => {
+    console.log(`${lineName} => L${+lineName.slice(1) - 1}`);
+    return `L${+lineName.slice(1) - 1}`;
   }
 
   render() {
@@ -97,7 +103,11 @@ export default class App extends PureComponent {
           <RequireLogin />
         </MainHeader> */}
         <MainColumn>
-          <Vertical getItem={this.getVItem} getChildLine={this.getChildLine} />
+          <Vertical
+            getItem={this.getVItem}
+            getChildLine={this.getChildLine}
+            getParentLine={this.getParentLine}
+            height={450} />
         </MainColumn>
       </Main>
     );
