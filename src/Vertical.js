@@ -131,6 +131,9 @@ class Vertical extends PureComponent {
   }
 
   computeIx() {
+    // if (this.currentVisible.values().length < 2) {
+    //   return null;
+    // }
     return [...this.currentVisible.values()].reduce(
       (cur, val) => {
         if (cur === null) {
@@ -389,13 +392,13 @@ class Vertical extends PureComponent {
       getItem,
       height,
       order,
-      padSize,
+      // padSize,
     } = this.props;
     const { itemCount } = this.state;
     return (
       <Outer ref={this.rootBox}>
         <Band ref={this.bandRef}>
-          <Pad padSize={padSize} />
+          {/* <Pad padSize={padSize} /> */}
           {
             [...Array(itemCount).keys()].map(ix => {
               const realIx = this.getRealIndex(ix);
