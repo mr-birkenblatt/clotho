@@ -33,11 +33,6 @@ const Band = styled.div`
   scroll-snap-type: y mandatory;
 `;
 
-const Pad = styled.div`
-  height: ${props => props.padSize}px;
-  width: 100%;
-`;
-
 const Item = styled.div`
   width: 100%;
   height: auto;
@@ -50,7 +45,6 @@ class Vertical extends PureComponent {
     super(props);
     this.state = {
       itemCount: 4,
-      needViews: true,
       redraw: false,
       scrollInit: false,
       isScrolling: false,
@@ -59,8 +53,6 @@ class Vertical extends PureComponent {
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
     this.activeRefs = {};
-    this.activeView = {};
-    this.currentVisible = new Set();
     this.awaitOrderChange = null;
     this.awaitCurrentChange = null;
   }
@@ -131,17 +123,29 @@ class Vertical extends PureComponent {
   }
 
   computeIx() {
-    // if (this.currentVisible.values().length < 2) {
-    //   return null;
-    // }
-    return [...this.currentVisible.values()].reduce(
-      (cur, val) => {
-        if (cur === null) {
-          return val;
-        }
-        return Math.min(cur, val);
-      },
-      null);
+    const { itemCount } = this.state;
+    const out = [...Array(itemCount).keys()].reduce((res, ix) => {
+      const realIx = this.getRealIndex(ix);
+      const curRef = this.activeRefs[realIx];
+      if (curRef === null) {
+        return res;
+      }
+      const cur = curRef.current;
+      if (cur === null) {
+        return res;
+      }
+      const bounds = cur.getBoundingClientRect();
+      console.log(realIx, bounds);
+      if (bounds.top <= -50) {
+        return res;
+      }
+      const top = bounds.top;
+      if (res[0] === null || res[0] >= top) {
+        return [top, realIx];
+      }
+      return res;
+    }, [null, null]);
+    return out[1];
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -160,7 +164,6 @@ class Vertical extends PureComponent {
       focusIx,
       isScrolling,
       itemCount,
-      needViews,
       scrollInit,
     } = this.state;
 
@@ -234,12 +237,7 @@ class Vertical extends PureComponent {
       this.awaitCurrentChange = null;
     }
 
-    const needViewsNew = this.updateViews(prevProps, prevState);
-    if (needViews !== needViewsNew) {
-      this.setState({
-        needViews: needViewsNew,
-      });
-    }
+    this.updateViews(prevProps, prevState);
 
     if (this.awaitCurrentChange === null
         && this.awaitOrderChange === null
@@ -249,25 +247,11 @@ class Vertical extends PureComponent {
   }
 
   updateViews(prevProps, prevState) {
-    const { offset, order } = this.props;
-    const { itemCount, needViews } = this.state;
-    let needViewsNew = needViews;
+    const { offset, order, current } = this.props;
+    const { itemCount } = this.state;
 
     if (prevProps.offset !== offset || prevState.itemCount !== itemCount
-        || prevProps.order !== order) {
-      Object.keys(this.activeView).forEach(realIx => {
-        if (realIx < offset || realIx >= offset + itemCount) {
-          if (this.activeView[realIx]) {
-            this.activeView[realIx].disconnect();
-          }
-          delete this.activeView[realIx];
-          console.log(
-            `delete current index ${realIx} cix ${this.computeIx()} ` +
-            `[${[...this.currentVisible]}]`);
-          this.currentVisible.delete(realIx);
-          this.requestRedraw();
-        }
-      });
+        || prevProps.order !== order || prevProps.current !== current) {
       Object.keys(this.activeRefs).forEach(realIx => {
         if (realIx < offset || realIx >= offset + itemCount) {
           delete this.activeRefs[realIx];
@@ -277,52 +261,9 @@ class Vertical extends PureComponent {
         const realIx = this.getRealIndex(ix);
         if (!this.activeRefs[realIx]) {
           this.activeRefs[realIx] = React.createRef();
-          needViewsNew = true;
         }
       });
     }
-
-    const that = this;
-
-    function createObserver(ref, index) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          console.log(entry);
-          if (entry.isIntersecting) {
-            that.currentVisible.add(index);
-            console.log(
-              `set current index ${index} cix ${that.computeIx()} ` +
-              `[${[...that.currentVisible]}]`, ref.current);
-          } else {
-            that.currentVisible.delete(index);
-            console.log(
-              `remove current index ${index} cix ${that.computeIx()} ` +
-              `[${[...that.currentVisible]}]`, ref.current);
-          }
-          that.requestRedraw();
-          console.log("ref?", that.activeRefs[index].current, ref.current, that.activeRefs[index].current === ref.current);
-        });
-      }, {
-        root: that.rootBox.current,
-        rootMargin: "0px",
-        threshold: 0.9,
-      });
-      observer.observe(ref.current);
-      return observer;
-    }
-
-    if (needViews) {
-      [...Array(itemCount).keys()].forEach(ix => {
-        const realIx = this.getRealIndex(ix);
-        const curRef = this.activeRefs[realIx];
-        if (curRef.current) {
-          if (this.rootBox.current && !this.activeView[realIx]) {
-            this.activeView[realIx] = createObserver(curRef, realIx);
-          }
-        }
-      });
-    }
-    return needViewsNew;
   }
 
   focus(focusIx, smooth) {
@@ -333,7 +274,7 @@ class Vertical extends PureComponent {
       `success: ${!!(item && item.current)}`);
     if (item && item.current) {
       const curItem = item.current;
-      console.log("doFocus", curItem, focusIx, `[${[...this.currentVisible]}]`);
+      console.log("doFocus", curItem, focusIx);
       curItem.scrollIntoView({
         behavior: smooth ? "smooth" : "auto",
         block: "start",
@@ -392,13 +333,11 @@ class Vertical extends PureComponent {
       getItem,
       height,
       order,
-      // padSize,
     } = this.props;
     const { itemCount } = this.state;
     return (
       <Outer ref={this.rootBox}>
         <Band ref={this.bandRef}>
-          {/* <Pad padSize={padSize} /> */}
           {
             [...Array(itemCount).keys()].map(ix => {
               const realIx = this.getRealIndex(ix);

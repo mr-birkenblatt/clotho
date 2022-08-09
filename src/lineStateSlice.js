@@ -55,8 +55,8 @@ export const lineStateSlice = createSlice({
       lockLine(state, isParent, lineName, hIndex, false);
       state.vCurrentIx = vIndex;
       state.vOffset = vIndex - 1;
-      state.vFocus = vIndex;
-      state.vFocusSmooth = false;
+      // state.vFocus = vIndex;
+      // state.vFocusSmooth = false;
       console.log(`vIndex ${vIndex}`);
     },
     addLine: (state, action) => {
