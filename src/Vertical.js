@@ -156,13 +156,11 @@ class Vertical extends PureComponent {
       focusSmooth,
       getChildLine,
       getParentLine,
-      offset,
       order,
     } = this.props;
     const {
       focusIx,
       isScrolling,
-      itemCount,
       scrollInit,
     } = this.state;
     let viewUpdate = this.state.viewUpdate;
