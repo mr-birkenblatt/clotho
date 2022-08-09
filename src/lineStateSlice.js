@@ -57,22 +57,14 @@ export const lineStateSlice = createSlice({
       state.vOffset = vIndex - 1;
       state.vFocus = vIndex;
       state.vFocusSmooth = false;
-      console.log(`vIndex ${vIndex}`);
     },
     addLine: (state, action) => {
       const { lineName, isBack } = action.payload;
-      // console.log(`addLine ${lineName} ${isBack}`);
       if (isBack) {
-        // console.log(`added line ${lineName}`);
         state.vOrder.push(lineName);
-        // state.vFocus = state.vCurrentIx;
-        // state.vFocusSmooth = false;
       } else {
-        // console.log(`addLine isBack=false`);
         state.vOrder = [lineName, ...state.vOrder];
         state.vCorrection += 1;
-        // state.vFocus = state.vCurrentIx;
-        // state.vFocusSmooth = false;
       }
     },
     focusV: (state, action) => {

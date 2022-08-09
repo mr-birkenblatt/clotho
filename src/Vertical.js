@@ -85,7 +85,6 @@ class Vertical extends PureComponent {
       const update = time - startTime >= 100 || isScrolling;
       if (update) {
         if (that.state.isScrolling !== isScrolling) {
-          console.log(`isScrollV ${isScrolling}`);
           that.setState({ isScrolling });
         }
       } else {
@@ -168,13 +167,13 @@ class Vertical extends PureComponent {
     } = this.state;
     let viewUpdate = this.state.viewUpdate;
 
-    if (prevProps.currentIx !== currentIx
-        || prevProps.offset !== offset
-        || prevProps.order !== order
-        || prevProps.correction !== correction
-        || prevState.itemCount !== itemCount) {
-      this.debugString();
-    }
+    // if (prevProps.currentIx !== currentIx
+    //     || prevProps.offset !== offset
+    //     || prevProps.order !== order
+    //     || prevProps.correction !== correction
+    //     || prevState.itemCount !== itemCount) {
+    //   this.debugString();
+    // }
 
     if (!scrollInit && this.bandRef.current) {
       this.bandRef.current.addEventListener(
@@ -186,14 +185,12 @@ class Vertical extends PureComponent {
 
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
-        // console.log(`addLine ${order.length} back ${this.awaitOrderChange}`);
         dispatch(addLine({
           lineName: getChildLine(order[order.length - 1]),
           isBack: true,
         }));
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
-        // console.log(`addLine ${order.length} front ${this.awaitOrderChange}`);
         dispatch(addLine({
           lineName: getParentLine(order[0]),
           isBack: false,
@@ -202,21 +199,9 @@ class Vertical extends PureComponent {
       }
     }
     if (this.awaitOrderChange !== null && this.awaitOrderChange !== order) {
-      // console.log(
-      //   `order change confirmed ${this.awaitOrderChange.length} `
-      //   +`${order.length}`);
       this.awaitOrderChange = null;
     }
 
-    console.log(
-      "curup",
-      "isNotScrolling", !isScrolling,
-      "isNotCurrentChange", this.awaitCurrentChange === null,
-      "isNotOrderChange", this.awaitOrderChange === null,
-      "focus", focus === focusIx,
-      "awaitOrderChange", this.awaitOrderChange,
-      "awaitCurrentChange", this.awaitCurrentChange,
-      "notViewUpdate", !viewUpdate);
     if (!isScrolling
         && !viewUpdate
         && this.awaitCurrentChange === null
@@ -239,8 +224,6 @@ class Vertical extends PureComponent {
     }
     if (this.awaitCurrentChange !== null
         && this.awaitCurrentChange !== currentIx) {
-      // console.log(
-      //   `currentIx change confirmed ${this.awaitCurrentChange} ${currentIx}`);
       this.awaitCurrentChange = null;
     }
 
@@ -284,40 +267,30 @@ class Vertical extends PureComponent {
         return cur && val.current !== null;
       }, true);
       if (allReady) {
-        console.log(Object.values(this.activeRefs).map((val) => val.current));
+        // NOTE: for debugging
+        // console.log(
+        //   Object.values(this.activeRefs).map((val) => val.current));
         this.setState({
           viewUpdate: false,
         });
       } else {
-        setTimeout(() => { this.requestRedraw(); }, 10);
+        // NOTE: careful! can end in an infinite loop if elements are not
+        // filled up correctly.
+        this.requestRedraw();
       }
     }
   }
 
   focus(focusIx, smooth) {
-    console.log("focus", this.activeRefs, focusIx);
     const item = this.activeRefs[focusIx];
-    console.log(
-      `scroll to ${focusIx} smooth: ${smooth} ` +
-      `success: ${!!(item && item.current)}`);
     if (item && item.current) {
       const curItem = item.current;
-      console.log("doFocus", curItem, focusIx);
-      const band = this.bandRef.current;
-      // if (!smooth && band !== null) {
-      //   setTimeout(() => {
-      //     band.scrollTop = (focusIx - this.getRealIndex(0)) * this.props.height;
-      //   }, 0);
-      // } else {
       curItem.scrollIntoView({
         behavior: smooth ? "smooth" : "auto",
         block: "start",
         inline: "nearest",
       });
-      // }
-      setTimeout(() => {
-        this.setState({ focusIx });
-      }, 10);
+      this.setState({ focusIx });
     }
   }
 
