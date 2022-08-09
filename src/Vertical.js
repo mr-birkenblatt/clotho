@@ -49,6 +49,7 @@ class Vertical extends PureComponent {
       scrollInit: false,
       isScrolling: false,
       focusIx: 0,
+      viewUpdate: false,
     };
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
@@ -135,7 +136,6 @@ class Vertical extends PureComponent {
         return res;
       }
       const bounds = cur.getBoundingClientRect();
-      console.log(realIx, bounds);
       if (bounds.top <= -50) {
         return res;
       }
@@ -166,6 +166,7 @@ class Vertical extends PureComponent {
       itemCount,
       scrollInit,
     } = this.state;
+    let viewUpdate = this.state.viewUpdate;
 
     if (prevProps.currentIx !== currentIx
         || prevProps.offset !== offset
@@ -183,7 +184,7 @@ class Vertical extends PureComponent {
       });
     }
 
-    if (this.awaitOrderChange === null && focus === focusIx) {
+    if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
         // console.log(`addLine ${order.length} back ${this.awaitOrderChange}`);
         dispatch(addLine({
@@ -214,8 +215,10 @@ class Vertical extends PureComponent {
       "isNotOrderChange", this.awaitOrderChange === null,
       "focus", focus === focusIx,
       "awaitOrderChange", this.awaitOrderChange,
-      "awaitCurrentChange", this.awaitCurrentChange);
+      "awaitCurrentChange", this.awaitCurrentChange,
+      "notViewUpdate", !viewUpdate);
     if (!isScrolling
+        && !viewUpdate
         && this.awaitCurrentChange === null
         && this.awaitOrderChange === null
         && focus === focusIx) {
@@ -228,6 +231,10 @@ class Vertical extends PureComponent {
           lineName: this.lineName(computedIx),
         }));
         this.awaitCurrentChange = currentIx;
+        this.setState({
+          viewUpdate: true,
+        });
+        viewUpdate = true;
       }
     }
     if (this.awaitCurrentChange !== null
@@ -241,28 +248,49 @@ class Vertical extends PureComponent {
 
     if (this.awaitCurrentChange === null
         && this.awaitOrderChange === null
-        && focus !== focusIx) {
+        && focus !== focusIx
+        && !viewUpdate) {
       this.focus(focus, focusSmooth);
     }
   }
 
   updateViews(prevProps, prevState) {
     const { offset, order, current } = this.props;
-    const { itemCount } = this.state;
+    const { itemCount, viewUpdate } = this.state;
 
+    let newViewUpdate = false;
     if (prevProps.offset !== offset || prevState.itemCount !== itemCount
         || prevProps.order !== order || prevProps.current !== current) {
       Object.keys(this.activeRefs).forEach(realIx => {
         if (realIx < offset || realIx >= offset + itemCount) {
           delete this.activeRefs[realIx];
+          newViewUpdate = true;
         }
       });
       [...Array(itemCount).keys()].forEach(ix => {
         const realIx = this.getRealIndex(ix);
         if (!this.activeRefs[realIx]) {
           this.activeRefs[realIx] = React.createRef();
+          newViewUpdate = true;
         }
       });
+    }
+    if (newViewUpdate && !viewUpdate) {
+      this.setState({
+        viewUpdate: true,
+      });
+    } else if (viewUpdate) {
+      const allReady = Object.values(this.activeRefs).reduce((cur, val) => {
+        return cur && val.current !== null;
+      }, true);
+      if (allReady) {
+        console.log(Object.values(this.activeRefs).map((val) => val.current));
+        this.setState({
+          viewUpdate: false,
+        });
+      } else {
+        setTimeout(() => { this.requestRedraw(); }, 10);
+      }
     }
   }
 
@@ -275,14 +303,21 @@ class Vertical extends PureComponent {
     if (item && item.current) {
       const curItem = item.current;
       console.log("doFocus", curItem, focusIx);
+      const band = this.bandRef.current;
+      // if (!smooth && band !== null) {
+      //   setTimeout(() => {
+      //     band.scrollTop = (focusIx - this.getRealIndex(0)) * this.props.height;
+      //   }, 0);
+      // } else {
       curItem.scrollIntoView({
         behavior: smooth ? "smooth" : "auto",
         block: "start",
         inline: "nearest",
       });
-      this.setState({
-        focusIx: focusIx,
-      });
+      // }
+      setTimeout(() => {
+        this.setState({ focusIx });
+      }, 10);
     }
   }
 
