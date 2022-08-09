@@ -16,6 +16,26 @@ const Outer = styled.div`
   height: 100%;
 `;
 
+const NavButtonUp = styled.button`
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: ${props => props.buttonSize}px;
+  height: ${props => props.buttonSize}px;
+  pointer-events: auto;
+  opacity: 0.8;
+`;
+
+const NavButtonDown = styled.button`
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: ${props => props.buttonSize}px;
+  height: ${props => props.buttonSize}px;
+  pointer-events: auto;
+  opacity: 0.8;
+`;
+
 const Band = styled.div`
   width: 100%;
   height: 100%;
@@ -38,6 +58,30 @@ const Item = styled.div`
   height: auto;
   scroll-snap-align: start;
   background-color: ${props => props.isCurrent ? "blue" : "cornflowerblue"};
+`;
+
+const ItemMid = styled.div`
+  display: flex;
+  width: 100%;
+  height: 0;
+  position: relative;
+  top: 0;
+  left: 0;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.8;
+`;
+
+const ItemMidContent = styled.div`
+  display: flex;
+  height: ${props => props.buttonSize}px;
+  background-color: green;
+  padding: ${props => props.radius}px;
+  border-radius: ${props => props.radius}px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
 `;
 
 class Vertical extends PureComponent {
@@ -315,13 +359,13 @@ class Vertical extends PureComponent {
 
   handleUp = (event) => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ index: currentIx - 1 }));
+    dispatch(focusV({ focus: currentIx - 1 }));
     event.preventDefault();
   }
 
   handleDown = (event) => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ index: currentIx + 1 }));
+    dispatch(focusV({ focus: currentIx + 1 }));
     event.preventDefault();
   }
 
@@ -334,11 +378,13 @@ class Vertical extends PureComponent {
 
   render() {
     const {
+      buttonSize,
       correction,
       currentIx,
       getItem,
       height,
       order,
+      radius,
     } = this.props;
     const { itemCount } = this.state;
     return (
@@ -353,18 +399,30 @@ class Vertical extends PureComponent {
               }
               return (
                 <Item
-                  key={realIx}
-                  id={`id${realIx}`}
-                  ref={this.activeRefs[realIx]}
-                  isCurrent={currentIx === realIx}>
-                {
-                  getItem(this.isParent(realIx), this.lineName(realIx), height)
-                }
+                    key={realIx}
+                    id={`id${realIx}`}
+                    ref={this.activeRefs[realIx]}
+                    isCurrent={currentIx === realIx}>
+                  <ItemMid buttonSize={buttonSize}>
+                    <ItemMidContent buttonSize={buttonSize} radius={radius}>
+                      [L{ realIx } - H{ this.getHIndex(realIx) }]
+                    </ItemMidContent>
+                  </ItemMid>
+                  {
+                    getItem(
+                      this.isParent(realIx), this.lineName(realIx), height)
+                  }
                 </Item>
               );
             })
           }
         </Band>
+        <NavButtonUp buttonSize={buttonSize} onClick={this.handleUp}>
+          ^
+        </NavButtonUp>
+        <NavButtonDown buttonSize={buttonSize} onClick={this.handleDown}>
+          v
+        </NavButtonDown>
       </Outer>
     );
   }

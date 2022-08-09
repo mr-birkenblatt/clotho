@@ -107,7 +107,9 @@ export default class App extends PureComponent {
             getItem={this.getVItem}
             getChildLine={this.getChildLine}
             getParentLine={this.getParentLine}
-            height={450} />
+            height={450}
+            radius={10}
+            buttonSize={50} />
         </MainColumn>
       </Main>
     );
