@@ -253,7 +253,7 @@ class Vertical extends PureComponent {
       if (computedIx !== null && computedIx !== currentIx) {
         dispatch(setVCurrentIx({
           vIndex: computedIx,
-          hIndex: this.getHIndex(computedIx),
+          hIndex: this.getHIndex(computedIx, false),
           isParent: this.isParent(computedIx),
           lineName: this.lineName(computedIx),
         }));
@@ -348,13 +348,22 @@ class Vertical extends PureComponent {
     return this.props.order[index + this.props.correction];
   }
 
-  getHIndex(index) {
+  getHIndex(index, adjust) {
+    const { locks, currentLineIxs } = this.props;
     const key = constructKey(this.lineName(index));
-    const res = this.props.currentLineIxs[key];
+    const res = currentLineIxs[key];
     if (res === undefined) {
       return 0;
     }
-    return res;
+    if (!adjust) {
+      return res;
+    }
+    const locked = locks[key];
+    if (locked && res < 0) {
+      return locked.index;
+    }
+    const lockedIx = locked && locked.skipItem ? locked.index : res + 1;
+    return res + (lockedIx > res ? 0 : 1);
   }
 
   handleUp = (event) => {
@@ -382,9 +391,11 @@ class Vertical extends PureComponent {
       correction,
       currentIx,
       getItem,
+      getLinkItems,
       height,
       order,
       radius,
+      renderLinkItem,
     } = this.props;
     const { itemCount } = this.state;
     return (
@@ -400,14 +411,30 @@ class Vertical extends PureComponent {
               return (
                 <Item
                     key={realIx}
-                    id={`id${realIx}`}
                     ref={this.activeRefs[realIx]}
                     isCurrent={currentIx === realIx}>
-                  <ItemMid buttonSize={buttonSize}>
-                    <ItemMidContent buttonSize={buttonSize} radius={radius}>
-                      [L{ realIx } - H{ this.getHIndex(realIx) }]
-                    </ItemMidContent>
-                  </ItemMid>
+                  {
+                    ix > 0 ? (
+                      <ItemMid buttonSize={buttonSize}>
+                        {
+                          getLinkItems(
+                              this.lineName(realIx - 1),
+                              this.lineName(realIx),
+                              this.getHIndex(realIx - 1, true),
+                              this.getHIndex(realIx, true)).map((val) => {
+                            return (
+                              <ItemMidContent
+                                  key={val[0]}
+                                  buttonSize={buttonSize}
+                                  radius={radius}>
+                                { renderLinkItem(val) }
+                              </ItemMidContent>
+                            );
+                          })
+                        }
+                      </ItemMid>
+                    ) : null
+                  }
                   {
                     getItem(
                       this.isParent(realIx), this.lineName(realIx), height)
@@ -436,4 +463,5 @@ export default connect((state) => ({
   focusSmooth: state.lineState.vFocusSmooth,
   offset: state.lineState.vOffset,
   order: state.lineState.vOrder,
+  locks: state.lineState.locks,
 }))(Vertical);

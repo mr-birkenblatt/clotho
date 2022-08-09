@@ -96,6 +96,17 @@ export default class App extends PureComponent {
     return `L${+lineName.slice(1) - 1}`;
   }
 
+  getLinkItems = (parentLineName, childLineName, parentIndex, childIndex) => {
+    return [
+      [parentLineName, parentIndex],
+      [childLineName, childIndex],
+    ];
+  }
+
+  renderLinkItem = (val) => {
+    return (<span>[L({val[0]}) H({val[1]})]</span>);
+  }
+
   render() {
     return (
       <Main>
@@ -107,6 +118,8 @@ export default class App extends PureComponent {
             getItem={this.getVItem}
             getChildLine={this.getChildLine}
             getParentLine={this.getParentLine}
+            getLinkItems={this.getLinkItems}
+            renderLinkItem={this.renderLinkItem}
             height={450}
             radius={10}
             buttonSize={50} />
