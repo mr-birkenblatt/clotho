@@ -1,6 +1,6 @@
-mypy
-numpy
-pandas
-python-redis-lock
-quick_server
-redis
+mypy==0.971
+numpy==1.23.1
+pandas==1.4.3
+python-redis-lock==3.7.0
+quick-server==0.7.15
+redis==4.3.4
