@@ -33,10 +33,11 @@ def is_gcs_url(url: Any) -> Any:
     ...
 
 
-def get_filepath_or_buffer(filepath_or_buffer: Any,
-                           encoding: Optional[Any] = ...,
-                           compression: Optional[Any] = ...,
-                           mode: Optional[Any] = ...) -> Any:
+def get_filepath_or_buffer(
+        filepath_or_buffer: Any,
+        encoding: Optional[Any] = ...,
+        compression: Optional[Any] = ...,
+        mode: Optional[Any] = ...) -> Any:
     ...
 
 
@@ -45,11 +46,9 @@ def file_path_to_url(path: Any) -> Any:
 
 
 class BytesZipFile(zipfile.ZipFile, BytesIO):  # type: ignore
-    def __init__(self, file: Any, mode: Any, compression: Any = ...,
-                 **kwargs: Any) -> None:
-        ...
-
-    def write(self, data: Any) -> None:  # type: ignore
+    def __init__(
+            self, file: Any, mode: Any, compression: Any = ...,
+            **kwargs: Any) -> None:
         ...
 
 
@@ -85,11 +84,13 @@ class UTF8Recoder(BaseIterator):
         ...
 
 
-def UnicodeReader(f: Any, dialect: Any = ..., encoding: str = ...,
-                  **kwds: Any) -> Any:
+def UnicodeReader(
+        f: Any, dialect: Any = ..., encoding: str = ...,
+        **kwds: Any) -> Any:
     ...
 
 
-def UnicodeWriter(f: Any, dialect: Any = ..., encoding: str = ...,
-                  **kwds: Any) -> Any:
+def UnicodeWriter(
+        f: Any, dialect: Any = ..., encoding: str = ...,
+        **kwds: Any) -> Any:
     ...

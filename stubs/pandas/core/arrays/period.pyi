@@ -15,15 +15,12 @@ from pandas.tseries.offsets import Tick
 class PeriodArray(dtl.DatetimeLikeArrayMixin, dtl.DatelikeOps):
     __array_priority__: int = ...
 
-    def __init__(self, values: Any, freq: Optional[Any] = ...,
-                 dtype: Optional[Any] = ..., copy: bool = ...) -> None:
+    def __init__(
+            self, values: Any, freq: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...) -> None:
         ...
 
     def dtype(self) -> Any:
-        ...
-
-    @property  # type: ignore
-    def freq(self) -> Any:
         ...
 
     def __array__(self, dtype: Optional[Any] = ...) -> Any:
@@ -72,8 +69,9 @@ class PeriodArray(dtl.DatetimeLikeArrayMixin, dtl.DatelikeOps):
         ...
 
 
-def period_array(data: Sequence[Optional[Period]], freq: Optional[Tick] = ...,
-                 copy: bool = ...) -> PeriodArray:
+def period_array(
+        data: Sequence[Optional[Period]], freq: Optional[Tick] = ...,
+        copy: bool = ...) -> PeriodArray:
     ...
 
 

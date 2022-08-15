@@ -12,12 +12,6 @@
 from typing import Any, Optional
 from pandas.io.common import BaseIterator
 
-class _subheader_pointer:
-    ...
-
-class _column:
-    ...
-
 
 class SAS7BDATReader(BaseIterator):
     index: Any = ...
@@ -35,11 +29,12 @@ class SAS7BDATReader(BaseIterator):
     columns: Any = ...
     handle: Any = ...
 
-    def __init__(self, path_or_buf: Any, index: Optional[Any] = ...,
-                 convert_dates: bool = ..., blank_missing: bool = ...,
-                 chunksize: Optional[Any] = ..., encoding: Optional[Any] = ...,
-                 convert_text: bool = ...,
-                 convert_header_text: bool = ...) -> None:
+    def __init__(
+            self, path_or_buf: Any, index: Optional[Any] = ...,
+            convert_dates: bool = ..., blank_missing: bool = ...,
+            chunksize: Optional[Any] = ..., encoding: Optional[Any] = ...,
+            convert_text: bool = ...,
+            convert_header_text: bool = ...) -> None:
         ...
 
     def column_data_lengths(self) -> Any:

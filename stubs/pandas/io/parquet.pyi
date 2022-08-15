@@ -23,12 +23,14 @@ class BaseImpl:
     def validate_dataframe(df: Any) -> None:
         ...
 
-    def write(self, df: Any, path: Any, compression: Any,
-              **kwargs: Any) -> None:
+    def write(
+            self, df: Any, path: Any, compression: Any,
+            **kwargs: Any) -> None:
         ...
 
-    def read(self, path: Any, columns: Optional[Any] = ...,
-             **kwargs: Any) -> None:
+    def read(
+            self, path: Any, columns: Optional[Any] = ...,
+            **kwargs: Any) -> None:
         ...
 
 
@@ -38,15 +40,6 @@ class PyArrowImpl(BaseImpl):
     def __init__(self) -> None:
         ...
 
-    def write(self, df: Any, path: Any, compression: str = ...,
-              coerce_timestamps: str = ..., index: Optional[Any] = ...,
-              partition_cols: Optional[Any] = ..., **kwargs: Any) -> None:
-        ...
-
-    def read(self, path: Any, columns: Optional[Any] = ...,
-             **kwargs: Any) -> Any:
-        ...
-
 
 class FastParquetImpl(BaseImpl):
     api: Any = ...
@@ -54,22 +47,15 @@ class FastParquetImpl(BaseImpl):
     def __init__(self) -> None:
         ...
 
-    def write(self, df: Any, path: Any, compression: str = ...,
-              index: Optional[Any] = ..., partition_cols: Optional[Any] = ...,
-              **kwargs: Any) -> Any:
-        ...
 
-    def read(self, path: Any, columns: Optional[Any] = ...,
-             **kwargs: Any) -> Any:
-        ...
-
-
-def to_parquet(df: Any, path: Any, engine: str = ..., compression: str = ...,
-               index: Optional[Any] = ..., partition_cols: Optional[Any] = ...,
-               **kwargs: Any) -> Any:
+def to_parquet(
+        df: Any, path: Any, engine: str = ..., compression: str = ...,
+        index: Optional[Any] = ..., partition_cols: Optional[Any] = ...,
+        **kwargs: Any) -> Any:
     ...
 
 
-def read_parquet(path: Any, engine: str = ..., columns: Optional[Any] = ...,
-                 **kwargs: Any) -> Any:
+def read_parquet(
+        path: Any, engine: str = ..., columns: Optional[Any] = ...,
+        **kwargs: Any) -> Any:
     ...

@@ -14,9 +14,10 @@ class Scope(StringMixin):
     resolvers: Any = ...
     temps: Any = ...
 
-    def __init__(self, level: Any, global_dict: Optional[Any] = ...,
-                 local_dict: Optional[Any] = ..., resolvers: Any = ...,
-                 target: Optional[Any] = ...) -> None:
+    def __init__(
+            self, level: Any, global_dict: Optional[Any] = ...,
+            local_dict: Optional[Any] = ..., resolvers: Any = ...,
+            target: Optional[Any] = ...) -> None:
         ...
 
     @property
@@ -26,8 +27,9 @@ class Scope(StringMixin):
     def resolve(self, key: Any, is_local: Any) -> Any:
         ...
 
-    def swapkey(self, old_key: Any, new_key: Any,
-                new_value: Optional[Any] = ...) -> None:
+    def swapkey(
+            self, old_key: Any, new_key: Any,
+            new_value: Optional[Any] = ...) -> None:
         ...
 
     def update(self, level: Any) -> None:

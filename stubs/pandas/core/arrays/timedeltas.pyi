@@ -8,13 +8,14 @@
 from typing import Any, Optional
 from pandas.core.arrays import datetimelike as dtl
 
+
 class TimedeltaArray(dtl.DatetimeLikeArrayMixin, dtl.TimelikeOps):
     __array_priority__: int = ...
     ndim: int = ...
 
-
-    def __init__(self, values: Any, dtype: Any = ..., freq: Optional[Any] = ...,
-                 copy: bool = ...) -> None:
+    def __init__(
+            self, values: Any, dtype: Any = ..., freq: Optional[Any] = ...,
+            copy: bool = ...) -> None:
         ...
 
     @property
@@ -28,6 +29,7 @@ class TimedeltaArray(dtl.DatetimeLikeArrayMixin, dtl.TimelikeOps):
         ...
 
     __rmul__: Any = ...
+
     def __truediv__(self, other: Any) -> Any:
         ...
 
@@ -74,8 +76,9 @@ class TimedeltaArray(dtl.DatetimeLikeArrayMixin, dtl.TimelikeOps):
         ...
 
 
-def sequence_to_td64ns(data: Any, copy: bool = ..., unit: str = ...,
-                       errors: str = ...) -> Any:
+def sequence_to_td64ns(
+        data: Any, copy: bool = ..., unit: str = ...,
+        errors: str = ...) -> Any:
     ...
 
 

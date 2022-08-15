@@ -6,7 +6,7 @@
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional
 from pandas._libs.tslibs import NaTType
 import numpy as np
 from .base import ExtensionArray, ExtensionOpsMixin
@@ -22,16 +22,19 @@ class DatelikeOps:
 
 
 class TimelikeOps:
-    def round(self, freq: Any, ambiguous: str = ...,
-              nonexistent: str = ...) -> Any:
+    def round(
+            self, freq: Any, ambiguous: str = ...,
+            nonexistent: str = ...) -> Any:
         ...
 
-    def floor(self, freq: Any, ambiguous: str = ...,
-              nonexistent: str = ...) -> Any:
+    def floor(
+            self, freq: Any, ambiguous: str = ...,
+            nonexistent: str = ...) -> Any:
         ...
 
-    def ceil(self, freq: Any, ambiguous: str = ...,
-             nonexistent: str = ...) -> Any:
+    def ceil(
+            self, freq: Any, ambiguous: str = ...,
+            nonexistent: str = ...) -> Any:
         ...
 
 
@@ -63,9 +66,6 @@ class DatetimeLikeArrayMixin(
     def __getitem__(self, key: Any) -> Any:
         ...
 
-    def __setitem__(self, key: Union[int, Sequence[int], Sequence[bool], slice], value: Union[NaTType, Any, Sequence[Any]]) -> None:  # type: ignore
-        ...
-
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
@@ -75,13 +75,17 @@ class DatetimeLikeArrayMixin(
     def unique(self) -> Any:
         ...
 
-    def take(self, indices: Any, allow_fill: bool = ..., fill_value: Optional[Any] = ...) -> Any:
+    def take(
+            self, indices: Any, allow_fill: bool = ...,
+            fill_value: Optional[Any] = ...) -> Any:
         ...
 
     def copy(self) -> Any:
         ...
 
-    def searchsorted(self, value: Any, side: str = ..., sorter: Optional[Any] = ...) -> Any:
+    def searchsorted(
+            self, value: Any, side: str = ...,
+            sorter: Optional[Any] = ...) -> Any:
         ...
 
     def repeat(self, repeats: Any, *args: Any, **kwargs: Any) -> Any:
@@ -96,8 +100,9 @@ class DatetimeLikeArrayMixin(
     def isna(self) -> Any:
         ...
 
-    def fillna(self, value: Optional[Any] = ..., method: Optional[Any] = ...,
-               limit: Optional[Any] = ...) -> Any:
+    def fillna(
+            self, value: Optional[Any] = ..., method: Optional[Any] = ...,
+            limit: Optional[Any] = ...) -> Any:
         ...
 
     @property
@@ -138,11 +143,13 @@ class DatetimeLikeArrayMixin(
     def __isub__(self, other: Any) -> Any:
         ...
 
-    def min(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+    def min(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
             **kwargs: Any) -> Any:
         ...
 
-    def max(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+    def max(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
             **kwargs: Any) -> Any:
         ...
 
@@ -158,8 +165,9 @@ def validate_endpoints(closed: Any) -> Any:
     ...
 
 
-def validate_inferred_freq(freq: Any, inferred_freq: Any,
-                           freq_infer: Any) -> Any:
+def validate_inferred_freq(
+        freq: Any, inferred_freq: Any,
+        freq_infer: Any) -> Any:
     ...
 
 

@@ -17,10 +17,11 @@ class BoxPlot(LinePlot):
     BP = namedtuple('BP', ['ax', 'lines'])
     return_type: Any = ...
 
-    def __init__(self,
-                 data: Any,
-                 return_type: str = ...,
-                 **kwargs: Any) -> None:
+    def __init__(
+            self,
+            data: Any,
+            return_type: str = ...,
+            **kwargs: Any) -> None:
         ...
 
     def maybe_color_bp(self, bp: Any) -> None:

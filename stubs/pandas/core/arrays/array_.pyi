@@ -12,7 +12,8 @@ from pandas.core.dtypes.generic import ABCExtensionArray
 import numpy as np
 
 
-def array(data: Sequence[object],
-          dtype: Optional[Union[str, np.dtype, ExtensionDtype]] = ...,
-          copy: bool = ...) -> ABCExtensionArray:
+def array(
+        data: Sequence[object],
+        dtype: Optional[Union[str, np.dtype, ExtensionDtype]] = ...,
+        copy: bool = ...) -> ABCExtensionArray:
     ...

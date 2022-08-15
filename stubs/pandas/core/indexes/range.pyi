@@ -14,15 +14,17 @@ import numpy as np
 
 
 class RangeIndex(Int64Index):
-    def __new__(cls, start: Optional[Any] = ..., stop: Optional[Any] = ...,
-                step: Optional[Any] = ..., dtype: Optional[Any] = ...,
-                copy: bool = ..., name: Optional[Any] = ...,
-                fastpath: Optional[Any] = ...) -> Any:
+    def __new__(
+            cls, start: Optional[Any] = ..., stop: Optional[Any] = ...,
+            step: Optional[Any] = ..., dtype: Optional[Any] = ...,
+            copy: bool = ..., name: Optional[Any] = ...,
+            fastpath: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_range(cls, data: Any, name: Optional[Any] = ...,
-                   dtype: Optional[Any] = ...) -> Any:
+    def from_range(
+            cls, data: Any, name: Optional[Any] = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     def __reduce__(self) -> Any:
@@ -65,27 +67,32 @@ class RangeIndex(Int64Index):
     def __contains__(self, key: Union[int, np.integer]) -> bool:
         ...
 
-    def get_loc(self, key: Any, method: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def get_loc(
+            self, key: Any, method: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def get_indexer(self, target: Any, method: Optional[Any] = ...,
-                    limit: Optional[Any] = ...,
-                    tolerance: Optional[Any] = ...) -> Any:
+    def get_indexer(
+            self, target: Any, method: Optional[Any] = ...,
+            limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def tolist(self) -> Any:
         ...
 
-    def copy(self, name: Optional[Any] = ..., deep: bool = ...,
-             dtype: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def copy(
+            self, name: Optional[Any] = ..., deep: bool = ...,
+            dtype: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
-    def min(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+    def min(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
             **kwargs: Any) -> Any:
         ...
 
-    def max(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+    def max(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
             **kwargs: Any) -> Any:
         ...
 
@@ -98,8 +105,9 @@ class RangeIndex(Int64Index):
     def intersection(self, other: Any, sort: bool = ...) -> Any:
         ...
 
-    def join(self, other: Any, how: str = ..., level: Optional[Any] = ...,
-             return_indexers: bool = ..., sort: bool = ...) -> Any:
+    def join(
+            self, other: Any, how: str = ..., level: Optional[Any] = ...,
+            return_indexers: bool = ..., sort: bool = ...) -> Any:
         ...
 
     def __len__(self) -> Any:

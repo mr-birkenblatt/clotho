@@ -10,6 +10,7 @@ def read_clipboard(sep: str = ..., **kwargs: Any) -> Any:
     ...
 
 
-def to_clipboard(obj: Any, excel: bool = ..., sep: Optional[Any] = ...,
-                 **kwargs: Any) -> None:
+def to_clipboard(
+        obj: Any, excel: bool = ..., sep: Optional[Any] = ...,
+        **kwargs: Any) -> None:
     ...

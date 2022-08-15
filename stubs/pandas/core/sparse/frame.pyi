@@ -42,8 +42,9 @@ class SparseDataFrame(DataFrame):
     def get_value(self, index: Any, col: Any, takeable: bool = ...) -> Any:
         ...
 
-    def set_value(self, index: Any, col: Any, value: Any,
-                  takeable: bool = ...) -> Any:
+    def set_value(
+            self, index: Any, col: Any, value: Any,
+            takeable: bool = ...) -> Any:
         ...
 
     def transpose(self, *args: Any, **kwargs: Any) -> Any:

@@ -13,13 +13,14 @@ TDistance = Union['Timedelta', 'BusinessMixin', datetime.timedelta]
 
 
 class Timestamp:
-    def __init__(self, ts_input: Any, freq: Any = ..., tz: Any = ...,
-                 unit: Optional[str] = ..., year: Optional[int] = ...,
-                 month: Optional[int] = ..., day: Optional[int] = ...,
-                 hour: Optional[int] = ..., minute: Optional[int] = ...,
-                 second: Optional[int] = ..., microsecond: Optional[int] = ...,
-                 nanosecond: Optional[int] = ...,
-                 tzinfo: Optional[datetime.tzinfo] = ...):
+    def __init__(
+            self, ts_input: Any, freq: Any = ..., tz: Any = ...,
+            unit: Optional[str] = ..., year: Optional[int] = ...,
+            month: Optional[int] = ..., day: Optional[int] = ...,
+            hour: Optional[int] = ..., minute: Optional[int] = ...,
+            second: Optional[int] = ..., microsecond: Optional[int] = ...,
+            nanosecond: Optional[int] = ...,
+            tzinfo: Optional[datetime.tzinfo] = ...):
         ...
 
     def date(self) -> datetime.date:
@@ -59,11 +60,12 @@ class Timestamp:
     def __ge__(self, other: 'Timestamp') -> bool:
         ...
 
-    def replace(self, year: Optional[int] = None,
-                month: Optional[int] = None, day: Optional[int] = None,
-                hour: Optional[int] = None, minute: Optional[int] = None,
-                second: Optional[int] = None,
-                microsecond: Optional[int] = None,
-                nanosecond: Optional[int] = None,
-                tzinfo: Any = ..., fold: Optional[int] = 0) -> 'Timestamp':
+    def replace(
+            self, year: Optional[int] = None,
+            month: Optional[int] = None, day: Optional[int] = None,
+            hour: Optional[int] = None, minute: Optional[int] = None,
+            second: Optional[int] = None,
+            microsecond: Optional[int] = None,
+            nanosecond: Optional[int] = None,
+            tzinfo: Any = ..., fold: Optional[int] = 0) -> 'Timestamp':
         ...

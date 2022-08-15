@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 def get_mgr_concatenation_plan(mgr: Any, indexers: Any) -> Any:
     ...
 
@@ -17,8 +18,9 @@ class JoinUnit:
     indexers: Any = ...
     shape: Any = ...
 
-    def __init__(self, block: Any, shape: Any, indexers:
-                 Optional[Any] = ...) -> None:
+    def __init__(
+            self, block: Any, shape: Any, indexers:
+            Optional[Any] = ...) -> None:
         ...
 
     def needs_filling(self) -> Any:
@@ -34,7 +36,8 @@ class JoinUnit:
         ...
 
 
-def concatenate_join_units(join_units: Any, concat_axis: Any, copy: Any) -> Any:
+def concatenate_join_units(
+        join_units: Any, concat_axis: Any, copy: Any) -> Any:
     ...
 
 

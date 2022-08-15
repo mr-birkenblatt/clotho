@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 def match(to_match: Any, values: Any, na_sentinel: int = ...) -> Any:
     ...
 
@@ -23,14 +24,16 @@ def isin(comps: Any, values: Any) -> Any:
     ...
 
 
-def factorize(values: Any, sort: bool = ..., order: Optional[Any] = ...,
-              na_sentinel: int = ..., size_hint: Optional[Any] = ...) -> Any:
+def factorize(
+        values: Any, sort: bool = ..., order: Optional[Any] = ...,
+        na_sentinel: int = ..., size_hint: Optional[Any] = ...) -> Any:
     ...
 
 
-def value_counts(values: Any, sort: bool = ..., ascending: bool = ...,
-                 normalize: bool = ..., bins: Optional[Any] = ...,
-                 dropna: bool = ...) -> Any:
+def value_counts(
+        values: Any, sort: bool = ..., ascending: bool = ...,
+        normalize: bool = ..., bins: Optional[Any] = ...,
+        dropna: bool = ...) -> Any:
     ...
 
 
@@ -42,13 +45,15 @@ def mode(values: Any, dropna: bool = ...) -> Any:
     ...
 
 
-def rank(values: Any, axis: int = ..., method: str = ..., na_option: str = ...,
-         ascending: bool = ..., pct: bool = ...) -> Any:
+def rank(
+        values: Any, axis: int = ..., method: str = ..., na_option: str = ...,
+        ascending: bool = ..., pct: bool = ...) -> Any:
     ...
 
 
-def checked_add_with_arr(arr: Any, b: Any, arr_mask: Optional[Any] = ...,
-                         b_mask: Optional[Any] = ...) -> Any:
+def checked_add_with_arr(
+        arr: Any, b: Any, arr_mask: Optional[Any] = ...,
+        b_mask: Optional[Any] = ...) -> Any:
     ...
 
 
@@ -90,25 +95,32 @@ class SelectNFrame(SelectN):
         ...
 
 
-def take(arr: Any, indices: Any, axis: int = ..., allow_fill: bool = ...,
-         fill_value: Optional[Any] = ...) -> Any:
+def take(
+        arr: Any, indices: Any, axis: int = ..., allow_fill: bool = ...,
+        fill_value: Optional[Any] = ...) -> Any:
     ...
 
-def take_nd(arr: Any, indexer: Any, axis: int = ..., out: Optional[Any] = ...,
-            fill_value: Any = ..., mask_info: Optional[Any] = ...,
-            allow_fill: bool = ...) -> Any:
+
+def take_nd(
+        arr: Any, indexer: Any, axis: int = ..., out: Optional[Any] = ...,
+        fill_value: Any = ..., mask_info: Optional[Any] = ...,
+        allow_fill: bool = ...) -> Any:
     ...
+
 
 take_1d = take_nd
 
-def take_2d_multi(arr: Any, indexer: Any, out: Optional[Any] = ...,
-                  fill_value: Any = ..., mask_info: Optional[Any] = ...,
-                  allow_fill: bool = ...) -> Any:
+
+def take_2d_multi(
+        arr: Any, indexer: Any, out: Optional[Any] = ...,
+        fill_value: Any = ..., mask_info: Optional[Any] = ...,
+        allow_fill: bool = ...) -> Any:
     ...
 
 
-def searchsorted(arr: Any, value: Any, side: str = ...,
-                 sorter: Optional[Any] = ...) -> Any:
+def searchsorted(
+        arr: Any, value: Any, side: str = ...,
+        sorter: Optional[Any] = ...) -> Any:
     ...
 
 

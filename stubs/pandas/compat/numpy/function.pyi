@@ -6,21 +6,23 @@
 from collections import OrderedDict
 from typing import Any, Dict, Optional, Union
 
+
 class CompatValidator:
     fname: Any = ...
     method: Any = ...
     defaults: Any = ...
     max_fname_arg_count: Any = ...
 
-    def __init__(self, defaults: Any, fname: Optional[Any] = ...,
-                 method: Optional[Any] = ...,
-                 max_fname_arg_count: Optional[Any] = ...) -> None:
+    def __init__(
+            self, defaults: Any, fname: Optional[Any] = ...,
+            method: Optional[Any] = ...,
+            max_fname_arg_count: Optional[Any] = ...) -> None:
         ...
 
-
-    def __call__(self, args: Any, kwargs: Any, fname: Optional[Any] = ...,
-                 max_fname_arg_count: Optional[Any] = ...,
-                 method: Optional[Any] = ...) -> None:
+    def __call__(
+            self, args: Any, kwargs: Any, fname: Optional[Any] = ...,
+            max_fname_arg_count: Optional[Any] = ...,
+            method: Optional[Any] = ...) -> None:
         ...
 
 
@@ -46,8 +48,9 @@ validate_argsort: Any
 ARGSORT_DEFAULTS_KIND: OrderedDict[str, Optional[int]]
 validate_argsort_kind: Any
 
-def validate_argsort_with_ascending(ascending: Any, args: Any,
-                                    kwargs: Any) -> Any:
+
+def validate_argsort_with_ascending(
+        ascending: Any, args: Any, kwargs: Any) -> Any:
     ...
 
 
@@ -66,8 +69,8 @@ validate_cum_func: Any
 validate_cumsum: Any
 
 
-def validate_cum_func_with_skipna(skipna: Any, args: Any, kwargs: Any,
-                                  name: Any) -> Any:
+def validate_cum_func_with_skipna(
+        skipna: Any, args: Any, kwargs: Any, name: Any) -> Any:
     ...
 
 
@@ -101,9 +104,9 @@ validate_stat_ddof_func: Any
 TAKE_DEFAULTS: OrderedDict[str, Optional[str]]
 validate_take: Any
 
+
 def validate_take_with_convert(convert: Any, args: Any, kwargs: Any) -> Any:
     ...
-
 
 
 TRANSPOSE_DEFAULTS: Any
@@ -122,8 +125,9 @@ def validate_expanding_func(name: Any, args: Any, kwargs: Any) -> None:
     ...
 
 
-def validate_groupby_func(name: Any, args: Any, kwargs: Any,
-                          allowed: Optional[Any] = ...) -> None:
+def validate_groupby_func(
+        name: Any, args: Any, kwargs: Any,
+        allowed: Optional[Any] = ...) -> None:
     ...
 
 

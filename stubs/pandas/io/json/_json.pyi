@@ -14,11 +14,13 @@ loads: Any
 dumps: Any
 TABLE_SCHEMA_VERSION: str
 
-def to_json(path_or_buf: Any, obj: Any, orient: Optional[Any] = ...,
-            date_format: str = ..., double_precision: int = ...,
-            force_ascii: bool = ..., date_unit: str = ...,
-            default_handler: Optional[Any] = ..., lines: bool = ...,
-            compression: str = ..., index: bool = ...) -> Any:
+
+def to_json(
+        path_or_buf: Any, obj: Any, orient: Optional[Any] = ...,
+        date_format: str = ..., double_precision: int = ...,
+        force_ascii: bool = ..., date_unit: str = ...,
+        default_handler: Optional[Any] = ..., lines: bool = ...,
+        compression: str = ..., index: bool = ...) -> Any:
     ...
 
 
@@ -33,9 +35,10 @@ class Writer:
     index: Any = ...
     is_copy: Any = ...
 
-    def __init__(self, obj: Any, orient: Any, date_format: Any,
-                 double_precision: Any, ensure_ascii: Any, date_unit: Any,
-                 index: Any, default_handler: Optional[Any] = ...) -> None:
+    def __init__(
+            self, obj: Any, orient: Any, date_format: Any,
+            double_precision: Any, ensure_ascii: Any, date_unit: Any,
+            index: Any, default_handler: Optional[Any] = ...) -> None:
         ...
 
     def write(self) -> Any:
@@ -57,19 +60,21 @@ class JSONTableWriter(FrameWriter):
     orient: str = ...
     index: Any = ...
 
-    def __init__(self, obj: Any, orient: Any, date_format: Any,
-                 double_precision: Any, ensure_ascii: Any, date_unit: Any,
-                 index: Any, default_handler: Optional[Any] = ...) -> None:
+    def __init__(
+            self, obj: Any, orient: Any, date_format: Any,
+            double_precision: Any, ensure_ascii: Any, date_unit: Any,
+            index: Any, default_handler: Optional[Any] = ...) -> None:
         ...
 
 
-def read_json(path_or_buf: Optional[Any] = ..., orient: Optional[Any] = ...,
-              typ: str = ..., dtype: Optional[Any] = ...,
-              convert_axes: Optional[Any] = ..., convert_dates: bool = ...,
-              keep_default_dates: bool = ..., numpy: bool = ...,
-              precise_float: bool = ..., date_unit: Optional[Any] = ...,
-              encoding: Optional[Any] = ..., lines: bool = ...,
-              chunksize: Optional[Any] = ..., compression: str = ...) -> Any:
+def read_json(
+        path_or_buf: Optional[Any] = ..., orient: Optional[Any] = ...,
+        typ: str = ..., dtype: Optional[Any] = ...,
+        convert_axes: Optional[Any] = ..., convert_dates: bool = ...,
+        keep_default_dates: bool = ..., numpy: bool = ...,
+        precise_float: bool = ..., date_unit: Optional[Any] = ...,
+        encoding: Optional[Any] = ..., lines: bool = ...,
+        chunksize: Optional[Any] = ..., compression: str = ...) -> Any:
     ...
 
 
@@ -92,11 +97,12 @@ class JsonReader(BaseIterator):
     should_close: bool = ...
     data: Any = ...
 
-    def __init__(self, filepath_or_buffer: Any, orient: Any, typ: Any,
-                 dtype: Any, convert_axes: Any, convert_dates: Any,
-                 keep_default_dates: Any, numpy: Any, precise_float: Any,
-                 date_unit: Any, encoding: Any, lines: Any, chunksize: Any,
-                 compression: Any) -> None:
+    def __init__(
+            self, filepath_or_buffer: Any, orient: Any, typ: Any,
+            dtype: Any, convert_axes: Any, convert_dates: Any,
+            keep_default_dates: Any, numpy: Any, precise_float: Any,
+            date_unit: Any, encoding: Any, lines: Any, chunksize: Any,
+            compression: Any) -> None:
         ...
 
     def read(self) -> Any:
@@ -122,11 +128,12 @@ class Parser:
     keep_default_dates: Any = ...
     obj: Any = ...
 
-    def __init__(self, json: Any, orient: Any, dtype: Optional[Any] = ...,
-                 convert_axes: bool = ..., convert_dates: bool = ...,
-                 keep_default_dates: bool = ..., numpy: bool = ...,
-                 precise_float: bool = ...,
-                 date_unit: Optional[Any] = ...) -> None:
+    def __init__(
+            self, json: Any, orient: Any, dtype: Optional[Any] = ...,
+            convert_axes: bool = ..., convert_dates: bool = ...,
+            keep_default_dates: bool = ..., numpy: bool = ...,
+            precise_float: bool = ...,
+            date_unit: Optional[Any] = ...) -> None:
         ...
 
     def check_keys_split(self, decoded: Any) -> None:
@@ -138,6 +145,7 @@ class Parser:
 
 class SeriesParser(Parser):
     ...
+
 
 class FrameParser(Parser):
     ...

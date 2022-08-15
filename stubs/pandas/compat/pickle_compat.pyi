@@ -17,6 +17,7 @@ class Unpickler(pkl._Unpickler):
     def find_class(self, module: Any, name: Any) -> Any:
         ...
 
+
 def load_newobj(self: Any) -> None:
     ...
 
@@ -25,6 +26,7 @@ def load_newobj_ex(self: Any) -> None:
     ...
 
 
-def load(fh: Any, encoding: Optional[Any] = ...,
-         is_verbose: bool = ...) -> Any:
+def load(
+        fh: Any, encoding: Optional[Any] = ...,
+        is_verbose: bool = ...) -> Any:
     ...

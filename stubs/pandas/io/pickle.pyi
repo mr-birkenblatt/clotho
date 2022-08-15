@@ -6,8 +6,9 @@
 from typing import Any
 
 
-def to_pickle(obj: Any, path: Any, compression: str = ...,
-              protocol: Any = ...) -> None:
+def to_pickle(
+        obj: Any, path: Any, compression: str = ...,
+        protocol: Any = ...) -> None:
     ...
 
 

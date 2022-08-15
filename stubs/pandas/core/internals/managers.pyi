@@ -29,12 +29,14 @@ from .concat import (
     is_uniform_join_units,
 )
 
+
 class BlockManager(PandasObject):
     axes: Any = ...
     blocks: Any = ...
 
-    def __init__(self, blocks: Sequence[Block], axes: Sequence[Index],
-                 do_integrity_check: bool = ...) -> None:
+    def __init__(
+            self, blocks: Sequence[Block], axes: Sequence[Index],
+            do_integrity_check: bool = ...) -> None:
         ...
 
     def make_empty(self, axes: Optional[Any] = ...) -> Any:
@@ -56,8 +58,9 @@ class BlockManager(PandasObject):
     def set_axis(self, axis: Any, new_labels: Any) -> None:
         ...
 
-    def rename_axis(self, mapper: Any, axis: Any, copy: bool = ...,
-                    level: Optional[Any] = ...) -> Any:
+    def rename_axis(
+            self, mapper: Any, axis: Any, copy: bool = ...,
+            level: Optional[Any] = ...) -> Any:
         ...
 
     @property
@@ -79,15 +82,17 @@ class BlockManager(PandasObject):
     def __len__(self) -> Any:
         ...
 
-    def apply(self, f: Any, axes: Optional[Any] = ...,
-              filter: Optional[Any] = ..., do_integrity_check: bool = ...,
-              consolidate: bool = ..., **kwargs: Any) -> Any:
+    def apply(
+            self, f: Any, axes: Optional[Any] = ...,
+            filter: Optional[Any] = ..., do_integrity_check: bool = ...,
+            consolidate: bool = ..., **kwargs: Any) -> Any:
         ...
 
-    def quantile(self, axis: int = ..., consolidate: bool = ...,
-                 transposed: bool = ..., interpolation: str = ...,
-                 qs: Optional[Any] = ...,
-                 numeric_only: Optional[Any] = ...) -> Any:
+    def quantile(
+            self, axis: int = ..., consolidate: bool = ...,
+            transposed: bool = ..., interpolation: str = ...,
+            qs: Optional[Any] = ...,
+            numeric_only: Optional[Any] = ...) -> Any:
         ...
 
     def isna(self, func: Any, **kwargs: Any) -> Any:
@@ -126,8 +131,9 @@ class BlockManager(PandasObject):
     def replace(self, value: Any, **kwargs: Any) -> Any:
         ...
 
-    def replace_list(self, src_list: Any, dest_list: Any, inplace: bool = ...,
-                     regex: bool = ...) -> Any:
+    def replace_list(
+            self, src_list: Any, dest_list: Any, inplace: bool = ...,
+            regex: bool = ...) -> Any:
         ...
 
     def is_consolidated(self) -> Any:
@@ -175,8 +181,9 @@ class BlockManager(PandasObject):
     def copy(self, deep: bool = ...) -> Any:
         ...
 
-    def as_array(self, transpose: bool = ...,
-                 items: Optional[Any] = ...) -> Any:
+    def as_array(
+            self, transpose: bool = ...,
+            items: Optional[Any] = ...) -> Any:
         ...
 
     def to_dict(self, copy: bool = ...) -> Any:
@@ -200,22 +207,26 @@ class BlockManager(PandasObject):
     def set(self, item: Any, value: Any) -> Any:
         ...
 
-    def insert(self, loc: int, item: Any, value: Any,
-               allow_duplicates: bool = ...) -> Any:
+    def insert(
+            self, loc: int, item: Any, value: Any,
+            allow_duplicates: bool = ...) -> Any:
         ...
 
-    def reindex_axis(self, new_index: Any, axis: Any,
-                     method: Optional[Any] = ..., limit: Optional[Any] = ...,
-                     fill_value: Optional[Any] = ..., copy: bool = ...) -> Any:
+    def reindex_axis(
+            self, new_index: Any, axis: Any,
+            method: Optional[Any] = ..., limit: Optional[Any] = ...,
+            fill_value: Optional[Any] = ..., copy: bool = ...) -> Any:
         ...
 
-    def reindex_indexer(self, new_axis: Any, indexer: Any, axis: Any,
-                        fill_value: Optional[Any] = ...,
-                        allow_dups: bool = ..., copy: bool = ...) -> Any:
+    def reindex_indexer(
+            self, new_axis: Any, indexer: Any, axis: Any,
+            fill_value: Optional[Any] = ...,
+            allow_dups: bool = ..., copy: bool = ...) -> Any:
         ...
 
-    def take(self, indexer: Any, axis: int = ..., verify: bool = ...,
-             convert: bool = ...) -> Any:
+    def take(
+            self, indexer: Any, axis: int = ..., verify: bool = ...,
+            convert: bool = ...) -> Any:
         ...
 
     def equals(self, other: Any) -> Any:
@@ -230,8 +241,9 @@ class SingleBlockManager(BlockManager):
     axes: Any = ...
     blocks: Any = ...
 
-    def __init__(self, block: Block, axis: Union[Index, List[Index]],
-                 do_integrity_check: bool = ..., fastpath: bool = ...) -> None:
+    def __init__(
+            self, block: Block, axis: Union[Index, List[Index]],
+            do_integrity_check: bool = ..., fastpath: bool = ...) -> None:
         ...
 
     def get_slice(self, slobj: Any, axis: int = ...) -> Any:
@@ -296,19 +308,24 @@ class SingleBlockManager(BlockManager):
 def create_block_manager_from_blocks(blocks: Any, axes: Any) -> Any:
     ...
 
+
 def create_block_manager_from_arrays(
         arrays: Any, names: Any, axes: Any) -> Any:
     ...
 
-def construction_error(tot_items: Any, block_shape: Any, axes: Any,
-                       e: Optional[Any] = ...) -> None:
+
+def construction_error(
+        tot_items: Any, block_shape: Any, axes: Any,
+        e: Optional[Any] = ...) -> None:
     ...
+
 
 def form_blocks(arrays: Any, names: Any, axes: Any) -> Any:
     ...
 
 
-def _transform_index(index: Any, func: Any, level: Optional[Any] = None) -> Any:
+def _transform_index(
+        index: Any, func: Any, level: Optional[Any] = None) -> Any:
     ...
 
 

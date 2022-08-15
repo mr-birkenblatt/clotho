@@ -13,6 +13,7 @@ from pandas.core.arrays import ExtensionArray, ExtensionOpsMixin
 from pandas.core.base import PandasObject
 from pandas.core.dtypes.base import ExtensionDtype
 
+
 class SparseDtype(ExtensionDtype):
     def __init__(self, dtype: Dtype = ..., fill_value: Any = ...) -> None:
         ...
@@ -60,10 +61,11 @@ class SparseDtype(ExtensionDtype):
 
 
 class SparseArray(PandasObject, ExtensionArray, ExtensionOpsMixin):
-    def __init__(self, data: Any, sparse_index: Optional[Any] = ...,
-                 index: Optional[Any] = ..., fill_value: Optional[Any] = ...,
-                 kind: str = ..., dtype: Optional[Any] = ...,
-                 copy: bool = ...) -> None:
+    def __init__(
+            self, data: Any, sparse_index: Optional[Any] = ...,
+            index: Optional[Any] = ..., fill_value: Optional[Any] = ...,
+            kind: str = ..., dtype: Optional[Any] = ...,
+            copy: bool = ...) -> None:
         ...
 
     @classmethod
@@ -122,12 +124,14 @@ class SparseArray(PandasObject, ExtensionArray, ExtensionOpsMixin):
     def isna(self) -> Any:
         ...
 
-    def fillna(self, value: Optional[Any] = ..., method: Optional[Any] = ...,
-               limit: Optional[Any] = ...) -> Any:
+    def fillna(
+            self, value: Optional[Any] = ..., method: Optional[Any] = ...,
+            limit: Optional[Any] = ...) -> Any:
         ...
 
-    def shift(self, periods: int = ...,
-              fill_value: Optional[Any] = ...) -> Any:
+    def shift(
+            self, periods: int = ...,
+            fill_value: Optional[Any] = ...) -> Any:
         ...
 
     def unique(self) -> Any:
@@ -142,12 +146,14 @@ class SparseArray(PandasObject, ExtensionArray, ExtensionOpsMixin):
     def __getitem__(self, key: Any) -> Any:
         ...
 
-    def take(self, indices: Any, allow_fill: bool = ...,
-             fill_value: Optional[Any] = ...) -> Any:
+    def take(
+            self, indices: Any, allow_fill: bool = ...,
+            fill_value: Optional[Any] = ...) -> Any:
         ...
 
-    def searchsorted(self, v: Any, side: str = ...,
-                     sorter: Optional[Any] = ...) -> Any:
+    def searchsorted(
+            self, v: Any, side: str = ...,
+            sorter: Optional[Any] = ...) -> Any:
         ...
 
     def copy(self) -> Any:
@@ -190,16 +196,18 @@ class SparseArray(PandasObject, ExtensionArray, ExtensionOpsMixin):
     def T(self) -> Any:
         ...
 
-    def __array_ufunc__(self, ufunc: Any, method: Any, *inputs: Any,
-                        **kwargs: Any) -> Any:
+    def __array_ufunc__(
+            self, ufunc: Any, method: Any, *inputs: Any,
+            **kwargs: Any) -> Any:
         ...
 
     def __abs__(self) -> Any:
         ...
 
 
-def make_sparse(arr: Any, kind: str = ..., fill_value: Optional[Any] = ...,
-                dtype: Optional[Any] = ..., copy: bool = ...) -> Any:
+def make_sparse(
+        arr: Any, kind: str = ..., fill_value: Optional[Any] = ...,
+        dtype: Optional[Any] = ..., copy: bool = ...) -> Any:
     ...
 
 
@@ -213,8 +221,9 @@ class SparseAccessor(BaseAccessor, PandasDelegate):
     def from_coo(cls, A: Any, dense_index: bool = ...) -> Any:
         ...
 
-    def to_coo(self, row_levels: Any = ..., column_levels: Any = ...,
-               sort_labels: bool = ...) -> Any:
+    def to_coo(
+            self, row_levels: Any = ..., column_levels: Any = ...,
+            sort_labels: bool = ...) -> Any:
         ...
 
     def to_dense(self) -> Any:
@@ -223,8 +232,9 @@ class SparseAccessor(BaseAccessor, PandasDelegate):
 
 class SparseFrameAccessor(BaseAccessor, PandasDelegate):
     @classmethod
-    def from_spmatrix(cls, data: Any, index: Optional[Any] = ...,
-                      columns: Optional[Any] = ...) -> Any:
+    def from_spmatrix(
+            cls, data: Any, index: Optional[Any] = ...,
+            columns: Optional[Any] = ...) -> Any:
         ...
 
     def to_dense(self) -> Any:

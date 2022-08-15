@@ -10,15 +10,17 @@ depr_msg: str
 
 
 class SparseSeries(Series):
-    def __init__(self, data: Optional[Any] = ..., index: Optional[Any] = ...,
-                 sparse_index: Optional[Any] = ..., kind: str = ...,
-                 fill_value: Optional[Any] = ..., name: Optional[Any] = ...,
-                 dtype: Optional[Any] = ..., copy: bool = ...,
-                 fastpath: bool = ...) -> None:
+    def __init__(
+            self, data: Optional[Any] = ..., index: Optional[Any] = ...,
+            sparse_index: Optional[Any] = ..., kind: str = ...,
+            fill_value: Optional[Any] = ..., name: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...,
+            fastpath: bool = ...) -> None:
         ...
 
-    def __array_ufunc__(self, ufunc: Any, method: Any, *inputs: Any,
-                        **kwargs: Any) -> Any:
+    def __array_ufunc__(
+            self, ufunc: Any, method: Any, *inputs: Any,
+            **kwargs: Any) -> Any:
         ...
 
     def __pos__(self) -> Any:
@@ -58,9 +60,10 @@ class SparseSeries(Series):
     def kind(self) -> Any:
         ...
 
-    def as_sparse_array(self, kind: Optional[Any] = ...,
-                        fill_value: Optional[Any] = ...,
-                        copy: bool = ...) -> Any:
+    def as_sparse_array(
+            self, kind: Optional[Any] = ...,
+            fill_value: Optional[Any] = ...,
+            copy: bool = ...) -> Any:
         ...
 
     def __getitem__(self, key: Any) -> Any:
@@ -104,15 +107,17 @@ class SparseSeries(Series):
 
     notnull: Any = ...
 
-    def dropna(self, axis: int = ..., inplace: bool = ...,
-               **kwargs: Any) -> Any:
+    def dropna(
+            self, axis: int = ..., inplace: bool = ...,
+            **kwargs: Any) -> Any:
         ...
 
     def combine_first(self, other: Any) -> Any:
         ...
 
-    def to_coo(self, row_levels: Any = ..., column_levels: Any = ...,
-               sort_labels: bool = ...) -> Any:
+    def to_coo(
+            self, row_levels: Any = ..., column_levels: Any = ...,
+            sort_labels: bool = ...) -> Any:
         ...
 
     @classmethod

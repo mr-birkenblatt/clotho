@@ -25,12 +25,13 @@ class _Window(PandasObject, SelectionMixin):
     win_freq: Any = ...
     axis: Any = ...
 
-    def __init__(self, obj: Any, window: Any = None,
-                 min_periods: Optional[int] = None,
-                 center: Optional[bool] = False,
-                 win_type: Optional[str] = None,
-                 axis: Axis = 0, on: Optional[str] = None,
-                 closed: Optional[str] = None, **kwargs: Any) -> None:
+    def __init__(
+            self, obj: Any, window: Any = None,
+            min_periods: Optional[int] = None,
+            center: Optional[bool] = False,
+            win_type: Optional[str] = None,
+            axis: Axis = 0, on: Optional[str] = None,
+            closed: Optional[str] = None, **kwargs: Any) -> None:
         ...
 
     @property
@@ -84,8 +85,9 @@ class _Rolling_and_Expanding(_Rolling):
     def count(self) -> Any:
         ...
 
-    def apply(self, func: Any, raw: Optional[Any] = None,
-              args: Any = (), kwargs: Any = {}) -> Any:
+    def apply(
+            self, func: Any, raw: Optional[Any] = None,
+            args: Any = (), kwargs: Any = {}) -> Any:
         ...
 
     def sum(self, *args: Any, **kwargs: Any) -> Any:
@@ -115,16 +117,19 @@ class _Rolling_and_Expanding(_Rolling):
     def kurt(self, **kwargs: Any) -> Any:
         ...
 
-    def quantile(self, quantile: Any, interpolation: str = "linear",
-                 **kwargs: Any) -> Any:
+    def quantile(
+            self, quantile: Any, interpolation: str = "linear",
+            **kwargs: Any) -> Any:
         ...
 
-    def cov(self, other: Optional[Any] = None, pairwise: Optional[Any] = None,
+    def cov(
+            self, other: Optional[Any] = None, pairwise: Optional[Any] = None,
             ddof: int = 1, **kwargs: Any) -> Any:
         ...
 
-    def corr(self, other: Optional[Any] = None, pairwise: Optional[Any] = None,
-             **kwargs: Any) -> Any:
+    def corr(
+            self, other: Optional[Any] = None, pairwise: Optional[Any] = None,
+            **kwargs: Any) -> Any:
         ...
 
 
@@ -145,8 +150,9 @@ class Rolling(_Rolling_and_Expanding):
     def count(self) -> Any:
         ...
 
-    def apply(self, func: Any, raw: Optional[Any] = ..., args: Any = ...,
-              kwargs: Any = ...) -> Any:
+    def apply(
+            self, func: Any, raw: Optional[Any] = ..., args: Any = ...,
+            kwargs: Any = ...) -> Any:
         ...
 
     def sum(self, *args: Any, **kwargs: Any) -> Any:
@@ -176,16 +182,19 @@ class Rolling(_Rolling_and_Expanding):
     def kurt(self, **kwargs: Any) -> Any:
         ...
 
-    def quantile(self, quantile: Any, interpolation: str = ...,
-                 **kwargs: Any) -> Any:
+    def quantile(
+            self, quantile: Any, interpolation: str = ...,
+            **kwargs: Any) -> Any:
         ...
 
-    def cov(self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
+    def cov(
+            self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
             ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
-    def corr(self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
-             **kwargs: Any) -> Any:
+    def corr(
+            self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
 
@@ -194,15 +203,17 @@ class RollingGroupby(_GroupByMixin, Rolling):
 
 
 class Expanding(_Rolling_and_Expanding):
-    def __init__(self, obj: Any, min_periods: int = 1, center: bool = False,
-                 axis: int = 0, **kwargs: Any) -> None:
+    def __init__(
+            self, obj: Any, min_periods: int = 1, center: bool = False,
+            axis: int = 0, **kwargs: Any) -> None:
         ...
 
     def count(self, **kwargs: Any) -> Any:
         ...
 
-    def apply(self, func: Any, raw: Optional[Any] = None, args: Any = (),
-              kwargs: Any = {}) -> Any:
+    def apply(
+            self, func: Any, raw: Optional[Any] = None, args: Any = (),
+            kwargs: Any = {}) -> Any:
         ...
 
     def sum(self, *args: Any, **kwargs: Any) -> Any:
@@ -232,16 +243,19 @@ class Expanding(_Rolling_and_Expanding):
     def kurt(self, **kwargs: Any) -> Any:
         ...
 
-    def quantile(self, quantile: Any, interpolation: str = "linear",
-                 **kwargs: Any) -> Any:
+    def quantile(
+            self, quantile: Any, interpolation: str = "linear",
+            **kwargs: Any) -> Any:
         ...
 
-    def cov(self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
+    def cov(
+            self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
             ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
-    def corr(self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
-             **kwargs: Any) -> Any:
+    def corr(
+            self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
 
@@ -258,11 +272,12 @@ class EWM(_Rolling):
     axis: Any = ...
     on: Any = ...
 
-    def __init__(self, obj: Any, com: Optional[Any] = None,
-                 span: Optional[Any] = None, halflife: Optional[Any] = None,
-                 alpha: Optional[Any] = None, min_periods: int = 0,
-                 adjust: bool = True, ignore_na: bool = False, axis: int = 0,
-                 ) -> None:
+    def __init__(
+            self, obj: Any, com: Optional[Any] = None,
+            span: Optional[Any] = None, halflife: Optional[Any] = None,
+            alpha: Optional[Any] = None, min_periods: int = 0,
+            adjust: bool = True, ignore_na: bool = False, axis: int = 0,
+            ) -> None:
         ...
 
     def mean(self, *args: Any, **kwargs: Any) -> Any:
@@ -276,12 +291,14 @@ class EWM(_Rolling):
     def var(self, bias: bool = ..., *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def cov(self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
+    def cov(
+            self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
             bias: bool = ..., **kwargs: Any) -> Any:
         ...
 
-    def corr(self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
-             **kwargs: Any) -> Any:
+    def corr(
+            self, other: Optional[Any] = ..., pairwise: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
 

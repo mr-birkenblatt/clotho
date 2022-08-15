@@ -19,8 +19,9 @@ class _HtmlFrameParser:
     encoding: Any = ...
     displayed_only: Any = ...
 
-    def __init__(self, io: Any, match: Any, attrs: Any, encoding: Any,
-                 displayed_only: Any) -> None:
+    def __init__(
+            self, io: Any, match: Any, attrs: Any, encoding: Any,
+            displayed_only: Any) -> None:
         ...
 
     def parse_tables(self) -> Any:
@@ -37,11 +38,12 @@ class _LxmlFrameParser(_HtmlFrameParser):
         ...
 
 
-def read_html(io: Any, match: str = ..., flavor: Optional[Any] = ...,
-              header: Optional[Any] = ..., index_col: Optional[Any] = ...,
-              skiprows: Optional[Any] = ..., attrs: Optional[Any] = ...,
-              parse_dates: bool = ..., thousands: str = ...,
-              encoding: Optional[Any] = ..., decimal: str = ...,
-              converters: Optional[Any] = ..., na_values: Optional[Any] = ...,
-              keep_default_na: bool = ..., displayed_only: bool = ...) -> Any:
+def read_html(
+        io: Any, match: str = ..., flavor: Optional[Any] = ...,
+        header: Optional[Any] = ..., index_col: Optional[Any] = ...,
+        skiprows: Optional[Any] = ..., attrs: Optional[Any] = ...,
+        parse_dates: bool = ..., thousands: str = ...,
+        encoding: Optional[Any] = ..., decimal: str = ...,
+        converters: Optional[Any] = ..., na_values: Optional[Any] = ...,
+        keep_default_na: bool = ..., displayed_only: bool = ...) -> Any:
     ...

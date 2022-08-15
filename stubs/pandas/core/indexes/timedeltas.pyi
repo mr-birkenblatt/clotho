@@ -15,17 +15,23 @@ from pandas.core.indexes.datetimelike import (
 from pandas.core.indexes.numeric import Int64Index
 from typing import Any, Optional
 
+
 class TimedeltaDelegateMixin(DatetimelikeDelegateMixin):
     ...
 
 
-class TimedeltaIndex(DatetimeIndexOpsMixin, dtl.TimelikeOps, Int64Index, TimedeltaDelegateMixin):  # type: ignore
-    def __new__(cls, data: Optional[Any] = ..., unit: Optional[Any] = ...,
-                freq: Optional[Any] = ..., start: Optional[Any] = ...,
-                end: Optional[Any] = ..., periods: Optional[Any] = ...,
-                closed: Optional[Any] = ..., dtype: Any = ...,
-                copy: bool = ..., name: Optional[Any] = ...,
-                verify_integrity: Optional[Any] = ...) -> Any:
+class TimedeltaIndex(  # type: ignore
+        DatetimeIndexOpsMixin,
+        dtl.TimelikeOps,
+        Int64Index,
+        TimedeltaDelegateMixin):
+    def __new__(
+            cls, data: Optional[Any] = ..., unit: Optional[Any] = ...,
+            freq: Optional[Any] = ..., start: Optional[Any] = ...,
+            end: Optional[Any] = ..., periods: Optional[Any] = ...,
+            closed: Optional[Any] = ..., dtype: Any = ...,
+            copy: bool = ..., name: Optional[Any] = ...,
+            verify_integrity: Optional[Any] = ...) -> Any:
         ...
 
     __mul__: Any = ...
@@ -45,9 +51,10 @@ class TimedeltaIndex(DatetimeIndexOpsMixin, dtl.TimelikeOps, Int64Index, Timedel
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
-    def join(self, other: Any, how: str = ...,
-             level: Optional[Any] = ..., return_indexers: bool = ...,
-             sort: bool = ...) -> Any:
+    def join(
+            self, other: Any, how: str = ...,
+            level: Optional[Any] = ..., return_indexers: bool = ...,
+            sort: bool = ...) -> Any:
         ...
 
     def intersection(self, other: Any, sort: bool = ...) -> Any:
@@ -59,12 +66,14 @@ class TimedeltaIndex(DatetimeIndexOpsMixin, dtl.TimelikeOps, Int64Index, Timedel
     def get_value_maybe_box(self, series: Any, key: Any) -> Any:
         ...
 
-    def get_loc(self, key: Any, method: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def get_loc(
+            self, key: Any, method: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def searchsorted(self, value: Any, side: str = ...,
-                     sorter: Optional[Any] = ...) -> Any:
+    def searchsorted(
+            self, value: Any, side: str = ...,
+            sorter: Optional[Any] = ...) -> Any:
         ...
 
     def is_type_compatible(self, typ: Any) -> Any:
@@ -85,8 +94,9 @@ class TimedeltaIndex(DatetimeIndexOpsMixin, dtl.TimelikeOps, Int64Index, Timedel
         ...
 
 
-def timedelta_range(start: Optional[Any] = ..., end: Optional[Any] = ...,
-                    periods: Optional[Any] = ..., freq: Optional[Any] = ...,
-                    name: Optional[Any] = ...,
-                    closed: Optional[Any] = ...) -> Any:
+def timedelta_range(
+        start: Optional[Any] = ..., end: Optional[Any] = ...,
+        periods: Optional[Any] = ..., freq: Optional[Any] = ...,
+        name: Optional[Any] = ...,
+        closed: Optional[Any] = ...) -> Any:
     ...

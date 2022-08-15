@@ -6,12 +6,14 @@
 from typing import Any, Optional
 
 
-def cut(x: Any, bins: Any, right: bool = ..., labels: Optional[Any] = ...,
+def cut(
+        x: Any, bins: Any, right: bool = ..., labels: Optional[Any] = ...,
         retbins: bool = ..., precision: int = ..., include_lowest: bool = ...,
         duplicates: str = ..., ordered: bool = ...) -> Any:
     ...
 
 
-def qcut(x: Any, q: Any, labels: Optional[Any] = ..., retbins: bool = ...,
-         precision: int = ..., duplicates: str = ...) -> Any:
+def qcut(
+        x: Any, q: Any, labels: Optional[Any] = ..., retbins: bool = ...,
+        precision: int = ..., duplicates: str = ...) -> Any:
     ...

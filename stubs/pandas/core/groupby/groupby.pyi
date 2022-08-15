@@ -7,6 +7,7 @@ from pandas.core.base import PandasObject, SelectionMixin
 from pandas.core.frame import DataFrame
 from typing import Any, List, Optional, Union
 
+
 class GroupByPlot(PandasObject):
     def __init__(self, groupby: Any) -> None:
         ...
@@ -32,12 +33,13 @@ class _GroupBy(PandasObject, SelectionMixin):
     grouper: Any = ...
     exclusions: Any = ...
 
-    def __init__(self, obj: Any, keys: Optional[Any] = ..., axis: int = ...,
-                 level: Optional[Any] = ..., grouper: Optional[Any] = ...,
-                 exclusions: Optional[Any] = ...,
-                 selection: Optional[Any] = ..., as_index: bool = ...,
-                 sort: bool = ..., group_keys: bool = ..., squeeze: bool = ...,
-                 observed: bool = ..., **kwargs: Any) -> None:
+    def __init__(
+            self, obj: Any, keys: Optional[Any] = ..., axis: int = ...,
+            level: Optional[Any] = ..., grouper: Optional[Any] = ...,
+            exclusions: Optional[Any] = ...,
+            selection: Optional[Any] = ..., as_index: bool = ...,
+            sort: bool = ..., group_keys: bool = ..., squeeze: bool = ...,
+            observed: bool = ..., **kwargs: Any) -> None:
         ...
 
     def __len__(self) -> Any:
@@ -62,6 +64,7 @@ class _GroupBy(PandasObject, SelectionMixin):
         ...
 
     plot: Any = ...
+
     def get_group(self, name: Any, obj: Optional[Any] = ...) -> Any:
         ...
 
@@ -128,8 +131,9 @@ class GroupBy(_GroupBy):
 
     bfill: Any = ...
 
-    def nth(self, n: Union[int, List[int]],
-            dropna: Optional[str]=...) -> DataFrame:
+    def nth(
+            self, n: Union[int, List[int]],
+            dropna: Optional[str] = ...) -> DataFrame:
         ...
 
     def quantile(self, q: float = ..., interpolation: str = ...) -> Any:
@@ -141,8 +145,9 @@ class GroupBy(_GroupBy):
     def cumcount(self, ascending: bool = ...) -> Any:
         ...
 
-    def rank(self, method: str = ..., ascending: bool = ...,
-             na_option: str = ..., pct: bool = ..., axis: int = ...) -> Any:
+    def rank(
+            self, method: str = ..., ascending: bool = ...,
+            na_option: str = ..., pct: bool = ..., axis: int = ...) -> Any:
         ...
 
     def cumprod(self, axis: int = ..., *args: Any, **kwargs: Any) -> Any:
@@ -157,13 +162,15 @@ class GroupBy(_GroupBy):
     def cummax(self, axis: int = ..., **kwargs: Any) -> Any:
         ...
 
-    def shift(self, periods: int = ..., freq: Optional[Any] = ...,
-              axis: int = ..., fill_value: Optional[Any] = ...) -> Any:
+    def shift(
+            self, periods: int = ..., freq: Optional[Any] = ...,
+            axis: int = ..., fill_value: Optional[Any] = ...) -> Any:
         ...
 
-    def pct_change(self, periods: int = ..., fill_method: str = ...,
-                   limit: Optional[Any] = ..., freq: Optional[Any] = ...,
-                   axis: int = ...) -> Any:
+    def pct_change(
+            self, periods: int = ..., fill_method: str = ...,
+            limit: Optional[Any] = ..., freq: Optional[Any] = ...,
+            axis: int = ...) -> Any:
         ...
 
     def head(self, n: int = ...) -> Any:
@@ -174,4 +181,4 @@ class GroupBy(_GroupBy):
 
 
 def groupby(obj: Any, by: Any, **kwds: Any) -> Any:
-        ...
+    ...

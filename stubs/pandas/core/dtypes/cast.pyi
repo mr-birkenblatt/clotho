@@ -90,8 +90,9 @@ def maybe_infer_dtype_type(element: Any) -> Any:
     ...
 
 
-def maybe_upcast(values: Any, fill_value: Any = ...,
-                 dtype: Optional[Any] = ..., copy: bool = ...) -> Any:
+def maybe_upcast(
+        values: Any, fill_value: Any = ...,
+        dtype: Optional[Any] = ..., copy: bool = ...) -> Any:
     ...
 
 
@@ -107,21 +108,24 @@ def coerce_to_dtypes(result: Any, dtypes: Any) -> Any:
     ...
 
 
-def astype_nansafe(arr: Any, dtype: Any, copy: bool = ...,
-                   skipna: bool = ...) -> Any:
+def astype_nansafe(
+        arr: Any, dtype: Any, copy: bool = ...,
+        skipna: bool = ...) -> Any:
     ...
 
 
-def maybe_convert_objects(values: Any, convert_dates: bool = ...,
-                          convert_numeric: bool = ...,
-                          convert_timedeltas: bool = ...,
-                          copy: bool = ...) -> Any:
+def maybe_convert_objects(
+        values: Any, convert_dates: bool = ...,
+        convert_numeric: bool = ...,
+        convert_timedeltas: bool = ...,
+        copy: bool = ...) -> Any:
     ...
 
 
-def soft_convert_objects(values: Any, datetime: bool = ...,
-                         numeric: bool = ..., timedelta: bool = ...,
-                         coerce: bool = ..., copy: bool = ...) -> Any:
+def soft_convert_objects(
+        values: Any, datetime: bool = ...,
+        numeric: bool = ..., timedelta: bool = ...,
+        coerce: bool = ..., copy: bool = ...) -> Any:
     ...
 
 
@@ -141,13 +145,14 @@ def find_common_type(types: Any) -> Any:
     ...
 
 
-def cast_scalar_to_array(shape: Any, value: Any,
-                         dtype: Optional[Any] = ...) -> Any:
+def cast_scalar_to_array(
+        shape: Any, value: Any,
+        dtype: Optional[Any] = ...) -> Any:
     ...
 
 
-def construct_1d_arraylike_from_scalar(value: Any, length: Any,
-                                       dtype: Any) -> Any:
+def construct_1d_arraylike_from_scalar(
+        value: Any, length: Any, dtype: Any) -> Any:
     ...
 
 
@@ -155,8 +160,9 @@ def construct_1d_object_array_from_listlike(values: Any) -> Any:
     ...
 
 
-def construct_1d_ndarray_preserving_na(values: Any, dtype: Optional[Any] = ...,
-                                       copy: bool = ...) -> Any:
+def construct_1d_ndarray_preserving_na(
+        values: Any, dtype: Optional[Any] = ...,
+        copy: bool = ...) -> Any:
     ...
 
 

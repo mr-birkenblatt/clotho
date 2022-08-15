@@ -15,15 +15,17 @@ class TablePlotter:
     cell_height: Any = ...
     font_size: Any = ...
 
-    def __init__(self,
-                 cell_width: float = ...,
-                 cell_height: float = ...,
-                 font_size: float = ...) -> None:
+    def __init__(
+            self,
+            cell_width: float = ...,
+            cell_height: float = ...,
+            font_size: float = ...) -> None:
         ...
 
-    def plot(self,
-             left: Any,
-             right: Any,
-             labels: Optional[Any] = ...,
-             vertical: bool = ...) -> Any:
+    def plot(
+            self,
+            left: Any,
+            right: Any,
+            labels: Optional[Any] = ...,
+            vertical: bool = ...) -> Any:
         ...

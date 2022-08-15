@@ -5,29 +5,33 @@
 
 from typing import Any, Optional
 
-def merge(left: Any, right: Any, how: str = ..., on: Optional[Any] = ...,
-          left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
-          left_index: bool = ..., right_index: bool = ..., sort: bool = ...,
-          suffixes: Any = ..., copy: bool = ..., indicator: bool = ...,
-          validate: Optional[Any] = ...) -> Any:
+
+def merge(
+        left: Any, right: Any, how: str = ..., on: Optional[Any] = ...,
+        left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
+        left_index: bool = ..., right_index: bool = ..., sort: bool = ...,
+        suffixes: Any = ..., copy: bool = ..., indicator: bool = ...,
+        validate: Optional[Any] = ...) -> Any:
     ...
 
 
-def merge_ordered(left: Any, right: Any, on: Optional[Any] = ...,
-                  left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
-                  left_by: Optional[Any] = ..., right_by: Optional[Any] = ...,
-                  fill_method: Optional[Any] = ..., suffixes: Any = ...,
-                  how: str = ...) -> Any:
+def merge_ordered(
+        left: Any, right: Any, on: Optional[Any] = ...,
+        left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
+        left_by: Optional[Any] = ..., right_by: Optional[Any] = ...,
+        fill_method: Optional[Any] = ..., suffixes: Any = ...,
+        how: str = ...) -> Any:
     ...
 
 
-def merge_asof(left: Any, right: Any, on: Optional[Any] = ...,
-               left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
-               left_index: bool = ..., right_index: bool = ...,
-               by: Optional[Any] = ..., left_by: Optional[Any] = ...,
-               right_by: Optional[Any] = ..., suffixes: Any = ...,
-               tolerance: Optional[Any] = ..., allow_exact_matches: bool = ...,
-               direction: str = ...) -> Any:
+def merge_asof(
+        left: Any, right: Any, on: Optional[Any] = ...,
+        left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
+        left_index: bool = ..., right_index: bool = ...,
+        by: Optional[Any] = ..., left_by: Optional[Any] = ...,
+        right_by: Optional[Any] = ..., suffixes: Any = ...,
+        tolerance: Optional[Any] = ..., allow_exact_matches: bool = ...,
+        direction: str = ...) -> Any:
     ...
 
 
@@ -47,14 +51,14 @@ class _MergeOperation:
     indicator: Any = ...
     indicator_name: Any = ...
 
-    def __init__(self, left: Any, right: Any, how: str = ...,
-                 on: Optional[Any] = ..., left_on: Optional[Any] = ...,
-                 right_on: Optional[Any] = ..., axis: int = ...,
-                 left_index: bool = ..., right_index: bool = ...,
-                 sort: bool = ..., suffixes: Any = ..., copy: bool = ...,
-                 indicator: bool = ..., validate: Optional[Any] = ...) -> None:
+    def __init__(
+            self, left: Any, right: Any, how: str = ...,
+            on: Optional[Any] = ..., left_on: Optional[Any] = ...,
+            right_on: Optional[Any] = ..., axis: int = ...,
+            left_index: bool = ..., right_index: bool = ...,
+            sort: bool = ..., suffixes: Any = ..., copy: bool = ...,
+            indicator: bool = ..., validate: Optional[Any] = ...) -> None:
         ...
-
 
     def get_result(self) -> Any:
         ...
@@ -63,17 +67,16 @@ class _MergeOperation:
 class _OrderedMerge(_MergeOperation):
     fill_method: Any = ...
 
-    def __init__(self, left: Any, right: Any, on: Optional[Any] = ...,
-                 left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
-                 left_index: bool = ..., right_index: bool = ...,
-                 axis: int = ..., suffixes: Any = ..., copy: bool = ...,
-                 fill_method: Optional[Any] = ..., how: str = ...) -> None:
+    def __init__(
+            self, left: Any, right: Any, on: Optional[Any] = ...,
+            left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
+            left_index: bool = ..., right_index: bool = ...,
+            axis: int = ..., suffixes: Any = ..., copy: bool = ...,
+            fill_method: Optional[Any] = ..., how: str = ...) -> None:
         ...
-
 
     def get_result(self) -> Any:
         ...
-
 
 
 class _AsOfMerge(_OrderedMerge):
@@ -84,18 +87,18 @@ class _AsOfMerge(_OrderedMerge):
     allow_exact_matches: Any = ...
     direction: Any = ...
 
-    def __init__(self, left: Any, right: Any, on: Optional[Any] = ...,
-                 left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
-                 left_index: bool = ..., right_index: bool = ...,
-                 by: Optional[Any] = ..., left_by: Optional[Any] = ...,
-                 right_by: Optional[Any] = ..., axis: int = ...,
-                 suffixes: Any = ..., copy: bool = ...,
-                 fill_method: Optional[Any] = ..., how: str = ...,
-                 tolerance: Optional[Any] = ...,
-                 allow_exact_matches: bool = ...,
-                 direction: str = ...) -> None:
+    def __init__(
+            self, left: Any, right: Any, on: Optional[Any] = ...,
+            left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,
+            left_index: bool = ..., right_index: bool = ...,
+            by: Optional[Any] = ..., left_by: Optional[Any] = ...,
+            right_by: Optional[Any] = ..., axis: int = ...,
+            suffixes: Any = ..., copy: bool = ...,
+            fill_method: Optional[Any] = ..., how: str = ...,
+            tolerance: Optional[Any] = ...,
+            allow_exact_matches: bool = ...,
+            direction: str = ...) -> None:
         ...
-
 
 
 def validate_operand(obj: Any) -> Any:

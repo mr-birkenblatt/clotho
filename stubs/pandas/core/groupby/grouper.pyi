@@ -5,6 +5,7 @@
 
 from typing import Any, Optional
 
+
 class Grouper:
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         ...
@@ -19,9 +20,10 @@ class Grouper:
     indexer: Any = ...
     binner: Any = ...
 
-    def __init__(self, key: Optional[Any] = ..., level: Optional[Any] = ...,
-                 freq: Optional[Any] = ..., axis: int = ...,
-                 sort: bool = ...) -> None:
+    def __init__(
+            self, key: Optional[Any] = ..., level: Optional[Any] = ...,
+            freq: Optional[Any] = ..., axis: int = ...,
+            sort: bool = ...) -> None:
         ...
 
     @property
@@ -44,10 +46,11 @@ class Grouping:
     observed: Any = ...
     in_axis: Any = ...
 
-    def __init__(self, index: Any, grouper: Optional[Any] = ...,
-                 obj: Optional[Any] = ..., name: Optional[Any] = ...,
-                 level: Optional[Any] = ..., sort: bool = ...,
-                 observed: bool = ..., in_axis: bool = ...) -> None:
+    def __init__(
+            self, index: Any, grouper: Optional[Any] = ...,
+            obj: Optional[Any] = ..., name: Optional[Any] = ...,
+            level: Optional[Any] = ..., sort: bool = ...,
+            observed: bool = ..., in_axis: bool = ...) -> None:
         ...
 
     def __iter__(self) -> Any:

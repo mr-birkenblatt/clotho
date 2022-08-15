@@ -22,10 +22,11 @@ class Index(IndexOpsMixin, PandasObject):
     name: Any = ...
     str: Any = ...
 
-    def __new__(cls, data: Optional[Any] = ..., dtype: Optional[Any] = ...,
-                copy: bool = ..., name: Optional[Any] = ...,
-                fastpath: Optional[Any] = ..., tupleize_cols: bool = ...,
-                **kwargs: Any) -> Any:
+    def __new__(
+            cls, data: Optional[Any] = ..., dtype: Optional[Any] = ...,
+            copy: bool = ..., name: Optional[Any] = ...,
+            fastpath: Optional[Any] = ..., tupleize_cols: bool = ...,
+            **kwargs: Any) -> Any:
         ...
 
     @property
@@ -60,15 +61,17 @@ class Index(IndexOpsMixin, PandasObject):
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
-    def take(self, indices: Any, axis: int = ..., allow_fill: bool = ...,
-             fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def take(
+            self, indices: Any, axis: int = ..., allow_fill: bool = ...,
+            fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def repeat(self, repeats: Any, axis: Optional[Any] = ...) -> Any:
         ...
 
-    def copy(self, name: Optional[Any] = ..., deep: bool = ...,
-             dtype: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def copy(
+            self, name: Optional[Any] = ..., deep: bool = ...,
+            dtype: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def __copy__(self, **kwargs: Any) -> Any:
@@ -77,12 +80,14 @@ class Index(IndexOpsMixin, PandasObject):
     def __deepcopy__(self, memo: Optional[Any] = ...) -> Any:
         ...
 
-    def format(self, name: bool = ..., formatter: Optional[Any] = ...,
-               **kwargs: Any) -> Any:
+    def format(
+            self, name: bool = ..., formatter: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
-    def to_native_types(self, slicer: Optional[Any] = ...,
-                        **kwargs: Any) -> Any:
+    def to_native_types(
+            self, slicer: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
     def summary(self, name: Optional[Any] = ...) -> Any:
@@ -91,19 +96,22 @@ class Index(IndexOpsMixin, PandasObject):
     def to_flat_index(self) -> Any:
         ...
 
-    def to_series(self, index: Optional[Any] = ...,
-                  name: Optional[Any] = ...) -> 'pd.Series':
+    def to_series(
+            self, index: Optional[Any] = ...,
+            name: Optional[Any] = ...) -> 'pd.Series':
         ...
 
-    def to_frame(self,
-                 index: bool = ...,
-                 name: Optional[Any] = ...) -> 'pd.DataFrame':
+    def to_frame(
+            self,
+            index: bool = ...,
+            name: Optional[Any] = ...) -> 'pd.DataFrame':
         ...
 
     names: Any = ...
 
-    def set_names(self, names: Any, level: Optional[Any] = ...,
-                  inplace: bool = ...) -> Any:
+    def set_names(
+            self, names: Any, level: Optional[Any] = ...,
+            inplace: bool = ...) -> Any:
         ...
 
     def rename(self, name: Any, inplace: bool = ...) -> Any:
@@ -113,8 +121,9 @@ class Index(IndexOpsMixin, PandasObject):
     def nlevels(self) -> Any:
         ...
 
-    def sortlevel(self, level: Optional[Any] = ..., ascending: bool = ...,
-                  sort_remaining: Optional[Any] = ...) -> Any:
+    def sortlevel(
+            self, level: Optional[Any] = ..., ascending: bool = ...,
+            sort_remaining: Optional[Any] = ...) -> Any:
         ...
 
     get_level_values: Any = ...
@@ -123,50 +132,50 @@ class Index(IndexOpsMixin, PandasObject):
         ...
 
     @property
-    def is_monotonic(self) -> Any:
+    def is_monotonic(self) -> bool:
         ...
 
     @property
-    def is_monotonic_increasing(self) -> Any:
+    def is_monotonic_increasing(self) -> bool:
         ...
 
     @property
-    def is_monotonic_decreasing(self) -> Any:
+    def is_monotonic_decreasing(self) -> bool:
         ...
 
     def is_lexsorted_for_tuple(self, tup: Any) -> Any:
         ...
 
     @property
-    def is_unique(self) -> Any:
+    def is_unique(self) -> bool:
         ...
 
     @property
-    def has_duplicates(self) -> Any:
+    def has_duplicates(self) -> bool:
         ...
 
-    def is_boolean(self) -> Any:
+    def is_boolean(self) -> bool:
         ...
 
-    def is_integer(self) -> Any:
+    def is_integer(self) -> bool:
         ...
 
-    def is_floating(self) -> Any:
+    def is_floating(self) -> bool:
         ...
 
-    def is_numeric(self) -> Any:
+    def is_numeric(self) -> bool:
         ...
 
-    def is_object(self) -> Any:
+    def is_object(self) -> bool:
         ...
 
-    def is_categorical(self) -> Any:
+    def is_categorical(self) -> bool:
         ...
 
-    def is_interval(self) -> Any:
+    def is_interval(self) -> bool:
         ...
 
-    def is_mixed(self) -> Any:
+    def is_mixed(self) -> bool:
         ...
 
     def holds_integer(self) -> Any:
@@ -175,7 +184,7 @@ class Index(IndexOpsMixin, PandasObject):
     def inferred_type(self) -> Any:
         ...
 
-    def is_all_dates(self) -> Any:
+    def is_all_dates(self) -> bool:
         ...
 
     def __reduce__(self) -> Any:
@@ -194,17 +203,15 @@ class Index(IndexOpsMixin, PandasObject):
 
     notnull: Any = ...
 
-    def fillna(self, value: Optional[Any] = ...,
-               downcast: Optional[Any] = ...) -> Any:
+    def fillna(
+            self, value: Optional[Any] = ...,
+            downcast: Optional[Any] = ...) -> Any:
         ...
 
     def dropna(self, how: str = ...) -> Any:
         ...
 
     def unique(self, level: Optional[Any] = ...) -> Any:
-        ...
-
-    def drop_duplicates(self, keep: str = ...) -> Any:  # type: ignore
         ...
 
     def duplicated(self, keep: str = ...) -> Any:
@@ -251,27 +258,32 @@ class Index(IndexOpsMixin, PandasObject):
     def difference(self, other: Any, sort: Optional[Any] = ...) -> Any:
         ...
 
-    def symmetric_difference(self, other: Any,
-                             result_name: Optional[Any] = ...,
-                             sort: Optional[Any] = ...) -> Any:
+    def symmetric_difference(
+            self, other: Any,
+            result_name: Optional[Any] = ...,
+            sort: Optional[Any] = ...) -> Any:
         ...
 
-    def get_loc(self, key: Any, method: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def get_loc(
+            self, key: Any, method: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def get_indexer(self, target: Any, method: Optional[Any] = ...,
-                    limit: Optional[Any] = ...,
-                    tolerance: Optional[Any] = ...) -> Any:
+    def get_indexer(
+            self, target: Any, method: Optional[Any] = ...,
+            limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def reindex(self, target: Any, method: Optional[Any] = ...,
-                level: Optional[Any] = ..., limit: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def reindex(
+            self, target: Any, method: Optional[Any] = ...,
+            level: Optional[Any] = ..., limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def join(self, other: Any, how: str = ..., level: Optional[Any] = ...,
-             return_indexers: bool = ..., sort: bool = ...) -> Any:
+    def join(
+            self, other: Any, how: str = ..., level: Optional[Any] = ...,
+            return_indexers: bool = ..., sort: bool = ...) -> Any:
         ...
 
     @property
@@ -323,8 +335,9 @@ class Index(IndexOpsMixin, PandasObject):
     def asof_locs(self, where: Any, mask: Any) -> Any:
         ...
 
-    def sort_values(self, return_indexer: bool = ...,
-                    ascending: bool = ...) -> Any:
+    def sort_values(
+            self, return_indexer: bool = ...,
+            ascending: bool = ...) -> Any:
         ...
 
     def sort(self, *args: Any, **kwargs: Any) -> None:
@@ -357,17 +370,19 @@ class Index(IndexOpsMixin, PandasObject):
     def isin(self, values: Any, level: Optional[Any] = ...) -> Any:
         ...
 
-    def slice_indexer(self, start: Optional[Any] = ...,
-                      end: Optional[Any] = ..., step: Optional[Any] = ...,
-                      kind: Optional[Any] = ...) -> Any:
+    def slice_indexer(
+            self, start: Optional[Any] = ...,
+            end: Optional[Any] = ..., step: Optional[Any] = ...,
+            kind: Optional[Any] = ...) -> Any:
         ...
 
     def get_slice_bound(self, label: Any, side: Any, kind: Any) -> Any:
         ...
 
-    def slice_locs(self, start: Optional[Any] = ..., end: Optional[Any] = ...,
-                   step: Optional[Any] = ...,
-                   kind: Optional[Any] = ...) -> Any:
+    def slice_locs(
+            self, start: Optional[Any] = ..., end: Optional[Any] = ...,
+            step: Optional[Any] = ...,
+            kind: Optional[Any] = ...) -> Any:
         ...
 
     def delete(self, loc: Any) -> Any:

@@ -11,8 +11,9 @@ from typing import Any, Optional
 class DateOffset(BaseOffset):
     normalize: bool = ...
 
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 **kwds: Any) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            **kwds: Any) -> None:
         ...
 
     def apply(self, other: Any) -> Any:
@@ -50,7 +51,7 @@ class DateOffset(BaseOffset):
 
 
 class SingleConstructorOffset(DateOffset):
-        ...
+    ...
 
 
 class _CustomMixin:
@@ -65,8 +66,9 @@ class BusinessMixin:
 
 
 class BusinessDay(BusinessMixin, SingleConstructorOffset):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 offset: Any = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            offset: Any = ...) -> None:
         ...
 
     def apply(self, other: Any) -> Any:
@@ -80,8 +82,9 @@ class BusinessDay(BusinessMixin, SingleConstructorOffset):
 
 
 class BusinessHourMixin(BusinessMixin):
-    def __init__(self, start: str = ..., end: str = ...,
-                 offset: Any = ...) -> None:
+    def __init__(
+            self, start: str = ..., end: str = ...,
+            offset: Any = ...) -> None:
         ...
 
     def next_bday(self) -> Any:
@@ -101,15 +104,17 @@ class BusinessHourMixin(BusinessMixin):
 
 
 class BusinessHour(BusinessHourMixin, SingleConstructorOffset):
-    def __init__(self, n: int = ..., normalize: bool = ..., start: str = ...,
-                 end: str = ..., offset: Any = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ..., start: str = ...,
+            end: str = ..., offset: Any = ...) -> None:
         ...
 
 
 class CustomBusinessDay(_CustomMixin, BusinessDay):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 weekmask: str = ..., holidays: Optional[Any] = ...,
-                 calendar: Optional[Any] = ..., offset: Any = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            weekmask: str = ..., holidays: Optional[Any] = ...,
+            calendar: Optional[Any] = ..., offset: Any = ...) -> None:
         ...
 
     def apply(self, other: Any) -> Any:
@@ -126,10 +131,11 @@ class CustomBusinessHour(
         _CustomMixin,
         BusinessHourMixin,
         SingleConstructorOffset):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 weekmask: str = ..., holidays: Optional[Any] = ...,
-                 calendar: Optional[Any] = ..., start: str = ...,
-                 end: str = ..., offset: Any = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            weekmask: str = ..., holidays: Optional[Any] = ...,
+            calendar: Optional[Any] = ..., start: str = ...,
+            end: str = ..., offset: Any = ...) -> None:
         ...
 
 
@@ -151,28 +157,29 @@ class MonthOffset(SingleConstructorOffset):
 
 
 class MonthEnd(MonthOffset):
-        ...
+    ...
 
 
 class MonthBegin(MonthOffset):
-        ...
+    ...
 
 
 class BusinessMonthEnd(MonthOffset):
-        ...
+    ...
 
 
 class BusinessMonthBegin(MonthOffset):
-        ...
+    ...
 
 
 class _CustomBusinessMonth(_CustomMixin, BusinessMixin, MonthOffset):
     onOffset: Any = ...
     apply_index: Any = ...
 
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 weekmask: str = ..., holidays: Optional[Any] = ...,
-                 calendar: Optional[Any] = ..., offset: Any = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            weekmask: str = ..., holidays: Optional[Any] = ...,
+            calendar: Optional[Any] = ..., offset: Any = ...) -> None:
         ...
 
     def cbday_roll(self) -> Any:
@@ -189,16 +196,17 @@ class _CustomBusinessMonth(_CustomMixin, BusinessMixin, MonthOffset):
 
 
 class CustomBusinessMonthEnd(_CustomBusinessMonth):
-        ...
+    ...
 
 
 class CustomBusinessMonthBegin(_CustomBusinessMonth):
-        ...
+    ...
 
 
 class SemiMonthOffset(DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 day_of_month: Optional[Any] = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            day_of_month: Optional[Any] = ...) -> None:
         ...
 
     @property
@@ -223,8 +231,9 @@ class SemiMonthBegin(SemiMonthOffset):
 
 
 class Week(DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 weekday: Optional[Any] = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            weekday: Optional[Any] = ...) -> None:
         ...
 
     def isAnchored(self) -> bool:
@@ -253,8 +262,9 @@ class _WeekOfMonthMixin:
 
 
 class WeekOfMonth(_WeekOfMonthMixin, DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ..., week: int = ...,
-                 weekday: int = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ..., week: int = ...,
+            weekday: int = ...) -> None:
         ...
 
     @property
@@ -263,8 +273,9 @@ class WeekOfMonth(_WeekOfMonthMixin, DateOffset):
 
 
 class LastWeekOfMonth(_WeekOfMonthMixin, DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 weekday: int = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            weekday: int = ...) -> None:
         ...
 
     @property
@@ -273,8 +284,9 @@ class LastWeekOfMonth(_WeekOfMonthMixin, DateOffset):
 
 
 class QuarterOffset(DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 startingMonth: Optional[Any] = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            startingMonth: Optional[Any] = ...) -> None:
         ...
 
     def isAnchored(self) -> bool:
@@ -295,19 +307,19 @@ class QuarterOffset(DateOffset):
 
 
 class BQuarterEnd(QuarterOffset):
-        ...
+    ...
 
 
 class BQuarterBegin(QuarterOffset):
-        ...
+    ...
 
 
 class QuarterEnd(QuarterOffset):
-        ...
+    ...
 
 
 class QuarterBegin(QuarterOffset):
-        ...
+    ...
 
 
 class YearOffset(DateOffset):
@@ -320,8 +332,9 @@ class YearOffset(DateOffset):
     def onOffset(self, dt: Any) -> Any:
         ...
 
-    def __init__(self, n: int = ..., normalize: bool = ...,
-                 month: Optional[Any] = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ...,
+            month: Optional[Any] = ...) -> None:
         ...
 
     @property
@@ -330,24 +343,25 @@ class YearOffset(DateOffset):
 
 
 class BYearEnd(YearOffset):
-        ...
+    ...
 
 
 class BYearBegin(YearOffset):
-        ...
+    ...
 
 
 class YearEnd(YearOffset):
-        ...
+    ...
 
 
 class YearBegin(YearOffset):
-        ...
+    ...
 
 
 class FY5253(DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ..., weekday: int = ...,
-                 startingMonth: int = ..., variation: str = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ..., weekday: int = ...,
+            startingMonth: int = ..., variation: str = ...) -> None:
         ...
 
     def isAnchored(self) -> bool:
@@ -371,9 +385,10 @@ class FY5253(DateOffset):
 
 
 class FY5253Quarter(DateOffset):
-    def __init__(self, n: int = ..., normalize: bool = ..., weekday: int = ...,
-                 startingMonth: int = ..., qtr_with_extra_week: int = ...,
-                 variation: str = ...) -> None:
+    def __init__(
+            self, n: int = ..., normalize: bool = ..., weekday: int = ...,
+            startingMonth: int = ..., qtr_with_extra_week: int = ...,
+            variation: str = ...) -> None:
         ...
 
     def isAnchored(self) -> bool:
@@ -398,6 +413,7 @@ class FY5253Quarter(DateOffset):
 
 class Easter(DateOffset):
     __init__: Any = ...
+
     def apply(self, other: Any) -> Any:
         ...
 
@@ -413,6 +429,7 @@ class Tick(liboffsets._Tick, SingleConstructorOffset):
     __ge__: Any = ...
     __lt__: Any = ...
     __le__: Any = ...
+
     def __add__(self, other: Any) -> Any:
         ...
 

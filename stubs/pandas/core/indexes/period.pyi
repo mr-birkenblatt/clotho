@@ -13,17 +13,21 @@ from pandas.core.indexes.datetimelike import (
 from pandas.core.indexes.datetimes import Int64Index
 from typing import Any, Optional
 
+
 class PeriodDelegateMixin(DatetimelikeDelegateMixin):
     ...
 
 
-class PeriodIndex(DatetimeIndexOpsMixin, Int64Index, PeriodDelegateMixin):  # type: ignore
-    def __new__(cls, data: Optional[Any] = ...,
-                ordinal: Optional[Any] = ..., freq: Optional[Any] = ...,
-                start: Optional[Any] = ..., end: Optional[Any] = ...,
-                periods: Optional[Any] = ..., tz: Optional[Any] = ...,
-                dtype: Optional[Any] = ..., copy: bool = ...,
-                name: Optional[Any] = ..., **fields: Any) -> Any:
+class PeriodIndex(  # type: ignore
+        DatetimeIndexOpsMixin,
+        Int64Index, PeriodDelegateMixin):
+    def __new__(
+            cls, data: Optional[Any] = ...,
+            ordinal: Optional[Any] = ..., freq: Optional[Any] = ...,
+            start: Optional[Any] = ..., end: Optional[Any] = ...,
+            periods: Optional[Any] = ..., tz: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...,
+            name: Optional[Any] = ..., **fields: Any) -> Any:
         ...
 
     @property
@@ -53,8 +57,9 @@ class PeriodIndex(DatetimeIndexOpsMixin, Int64Index, PeriodDelegateMixin):  # ty
     def astype(self, dtype: Any, copy: bool = ..., how: str = ...) -> Any:
         ...
 
-    def searchsorted(self, value: Any, side: str = ...,
-                     sorter: Optional[Any] = ...) -> Any:
+    def searchsorted(
+            self, value: Any, side: str = ...,
+            sorter: Optional[Any] = ...) -> Any:
         ...
 
     @property
@@ -72,9 +77,10 @@ class PeriodIndex(DatetimeIndexOpsMixin, Int64Index, PeriodDelegateMixin):  # ty
     def get_value(self, series: Any, key: Any) -> Any:
         ...
 
-    def get_indexer(self, target: Any, method: Optional[Any] = ...,
-                    limit: Optional[Any] = ...,
-                    tolerance: Optional[Any] = ...) -> Any:
+    def get_indexer(
+            self, target: Any, method: Optional[Any] = ...,
+            limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def get_indexer_non_unique(self, target: Any) -> Any:
@@ -83,15 +89,17 @@ class PeriodIndex(DatetimeIndexOpsMixin, Int64Index, PeriodDelegateMixin):  # ty
     def unique(self, level: Optional[Any] = ...) -> Any:
         ...
 
-    def get_loc(self, key: Any, method: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def get_loc(
+            self, key: Any, method: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def insert(self, loc: Any, item: Any) -> Any:
         ...
 
-    def join(self, other: Any, how: str = ..., level: Optional[Any] = ...,
-             return_indexers: bool = ..., sort: bool = ...) -> Any:
+    def join(
+            self, other: Any, how: str = ..., level: Optional[Any] = ...,
+            return_indexers: bool = ..., sort: bool = ...) -> Any:
         ...
 
     def intersection(self, other: Any, sort: bool = ...) -> Any:
@@ -116,7 +124,8 @@ class PeriodIndex(DatetimeIndexOpsMixin, Int64Index, PeriodDelegateMixin):  # ty
         ...
 
 
-def period_range(start: Optional[Any] = ..., end: Optional[Any] = ...,
-                 periods: Optional[Any] = ..., freq: Optional[Any] = ...,
-                 name: Optional[Any] = ...) -> Any:
-        ...
+def period_range(
+        start: Optional[Any] = ..., end: Optional[Any] = ...,
+        periods: Optional[Any] = ..., freq: Optional[Any] = ...,
+        name: Optional[Any] = ...) -> Any:
+    ...

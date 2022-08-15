@@ -15,21 +15,26 @@ from pandas.core.indexes.datetimelike import (
 from pandas.core.indexes.numeric import Int64Index as Int64Index
 from typing import Any, Optional
 
+
 class DatetimeDelegateMixin(DatetimelikeDelegateMixin):
-        ...
+    ...
 
 
-class DatetimeIndex(DatetimeIndexOpsMixin, Int64Index, DatetimeDelegateMixin):  # type: ignore
+class DatetimeIndex(  # type: ignore
+        DatetimeIndexOpsMixin,
+        Int64Index,
+        DatetimeDelegateMixin):
     __iter__: Any = ...
 
-    def __new__(cls, data: Optional[Any] = ..., freq: Optional[Any] = ...,
-                start: Optional[Any] = ..., end: Optional[Any] = ...,
-                periods: Optional[Any] = ..., tz: Optional[Any] = ...,
-                normalize: bool = ..., closed: Optional[Any] = ...,
-                ambiguous: str = ..., dayfirst: bool = ...,
-                yearfirst: bool = ..., dtype: Optional[Any] = ...,
-                copy: bool = ..., name: Optional[Any] = ...,
-                verify_integrity: Optional[Any] = ...) -> Any:
+    def __new__(
+            cls, data: Optional[Any] = ..., freq: Optional[Any] = ...,
+            start: Optional[Any] = ..., end: Optional[Any] = ...,
+            periods: Optional[Any] = ..., tz: Optional[Any] = ...,
+            normalize: bool = ..., closed: Optional[Any] = ...,
+            ambiguous: str = ..., dayfirst: bool = ...,
+            yearfirst: bool = ..., dtype: Optional[Any] = ...,
+            copy: bool = ..., name: Optional[Any] = ...,
+            verify_integrity: Optional[Any] = ...) -> Any:
         ...
 
     def __array__(self, dtype: Optional[Any] = ...) -> Any:
@@ -48,6 +53,7 @@ class DatetimeIndex(DatetimeIndexOpsMixin, Int64Index, DatetimeDelegateMixin):  
         ...
 
     tzinfo: Any = ...
+
     def __reduce__(self) -> Any:
         ...
 
@@ -57,14 +63,12 @@ class DatetimeIndex(DatetimeIndexOpsMixin, Int64Index, DatetimeDelegateMixin):  
     def intersection(self, other: Any, sort: bool = ...) -> Any:
         ...
 
-    def to_series(self, keep_tz: Optional[Any] = ..., index: Optional[Any] = ..., name: Optional[Any] = ...) -> Any:  # type: ignore
-        ...
-
     def snap(self, freq: str = ...) -> Any:
         ...
 
-    def join(self, other: Any, how: str = ..., level: Optional[Any] = ...,
-             return_indexers: bool = ..., sort: bool = ...) -> Any:
+    def join(
+            self, other: Any, how: str = ..., level: Optional[Any] = ...,
+            return_indexers: bool = ..., sort: bool = ...) -> Any:
         ...
 
     def get_value(self, series: Any, key: Any) -> Any:
@@ -77,9 +81,10 @@ class DatetimeIndex(DatetimeIndexOpsMixin, Int64Index, DatetimeDelegateMixin):  
                 tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def slice_indexer(self, start: Optional[Any] = ...,
-                      end: Optional[Any] = ..., step: Optional[Any] = ...,
-                      kind: Optional[Any] = ...) -> Any:
+    def slice_indexer(
+            self, start: Optional[Any] = ...,
+            end: Optional[Any] = ..., step: Optional[Any] = ...,
+            kind: Optional[Any] = ...) -> Any:
         ...
 
     is_normalized: Any = ...
@@ -96,8 +101,9 @@ class DatetimeIndex(DatetimeIndexOpsMixin, Int64Index, DatetimeDelegateMixin):  
     def __getitem__(self, key: Any) -> Any:
         ...
 
-    def searchsorted(self, value: Any, side: str = ...,
-                     sorter: Optional[Any] = ...) -> Any:
+    def searchsorted(
+            self, value: Any, side: str = ...,
+            sorter: Optional[Any] = ...) -> Any:
         ...
 
     def is_type_compatible(self, typ: Any) -> Any:
@@ -120,9 +126,10 @@ class DatetimeIndex(DatetimeIndexOpsMixin, Int64Index, DatetimeDelegateMixin):  
     def indexer_at_time(self, time: Any, asof: bool = ...) -> Any:
         ...
 
-    def indexer_between_time(self, start_time: Any, end_time: Any,
-                             include_start: bool = ...,
-                             include_end: bool = ...) -> Any:
+    def indexer_between_time(
+            self, start_time: Any, end_time: Any,
+            include_start: bool = ...,
+            include_end: bool = ...) -> Any:
         ...
 
 

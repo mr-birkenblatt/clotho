@@ -12,7 +12,8 @@ from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.core.dtypes.generic import ABCExtensionArray
 import numpy as np
 
-_extension_array_shared_docs = dict()  # type: Dict[str, str]
+
+_extension_array_shared_docs: Dict[str, str] = dict()
 
 
 class ExtensionArray:
@@ -50,26 +51,30 @@ class ExtensionArray:
     def isna(self) -> ArrayLike:
         ...
 
-    def argsort(self, ascending: bool = ..., kind: str = ..., *args: Any,
-                **kwargs: Any) -> Any:
+    def argsort(
+            self, ascending: bool = ..., kind: str = ..., *args: Any,
+            **kwargs: Any) -> Any:
         ...
 
-    def fillna(self, value: Optional[Any] = ..., method: Optional[Any] = ...,
-               limit: Optional[Any] = ...) -> Any:
+    def fillna(
+            self, value: Optional[Any] = ..., method: Optional[Any] = ...,
+            limit: Optional[Any] = ...) -> Any:
         ...
 
     def dropna(self) -> Any:
         ...
 
-    def shift(self, periods: int = ...,
-              fill_value: object = ...) -> ABCExtensionArray:
+    def shift(
+            self, periods: int = ...,
+            fill_value: object = ...) -> ABCExtensionArray:
         ...
 
     def unique(self) -> Any:
         ...
 
-    def searchsorted(self, value: Any, side: str = ...,
-                     sorter: Optional[Any] = ...) -> Any:
+    def searchsorted(
+            self, value: Any, side: str = ...,
+            sorter: Optional[Any] = ...) -> Any:
         ...
 
     def factorize(
@@ -80,8 +85,9 @@ class ExtensionArray:
     def repeat(self, repeats: Any, axis: Optional[Any] = ...) -> Any:
         ...
 
-    def take(self, indices: Sequence[int], allow_fill: bool = ...,
-             fill_value: Any = ...) -> ABCExtensionArray:
+    def take(
+            self, indices: Sequence[int], allow_fill: bool = ...,
+            fill_value: Any = ...) -> ABCExtensionArray:
         ...
 
     def copy(self) -> ABCExtensionArray:

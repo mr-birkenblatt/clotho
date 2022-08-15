@@ -22,8 +22,9 @@ class Resampler(_GroupBy):
     binner: Any = ...
     grouper: Any = ...
 
-    def __init__(self, obj: Any, groupby: Optional[Any] = ..., axis: int = ...,
-                 kind: Optional[Any] = ..., **kwargs: Any) -> None:
+    def __init__(
+            self, obj: Any, groupby: Optional[Any] = ..., axis: int = ...,
+            kind: Optional[Any] = ..., **kwargs: Any) -> None:
         ...
 
     def __getattr__(self, attr: Any) -> Any:
@@ -65,11 +66,12 @@ class Resampler(_GroupBy):
     def fillna(self, method: Any, limit: Optional[Any] = ...) -> Any:
         ...
 
-    def interpolate(self, method: str = ..., axis: int = ...,
-                    limit: Optional[Any] = ..., inplace: bool = ...,
-                    limit_direction: str = ...,
-                    limit_area: Optional[Any] = ...,
-                    downcast: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def interpolate(
+            self, method: str = ..., axis: int = ...,
+            limit: Optional[Any] = ..., inplace: bool = ...,
+            limit_direction: str = ...,
+            limit_area: Optional[Any] = ...,
+            downcast: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def asfreq(self, fill_value: Optional[Any] = ...) -> Any:
@@ -141,16 +143,18 @@ class TimeGrouper(Grouper):
     limit: Any = ...
     base: Any = ...
 
-    def __init__(self, freq: str = ..., closed: Optional[Any] = ...,
-                 label: Optional[Any] = ..., how: str = ..., axis: int = ...,
-                 fill_method: Optional[Any] = ..., limit: Optional[Any] = ...,
-                 loffset: Optional[Any] = ..., kind: Optional[Any] = ...,
-                 convention: Optional[Any] = ..., base: int = ...,
-                 **kwargs: Any) -> None:
+    def __init__(
+            self, freq: str = ..., closed: Optional[Any] = ...,
+            label: Optional[Any] = ..., how: str = ..., axis: int = ...,
+            fill_method: Optional[Any] = ..., limit: Optional[Any] = ...,
+            loffset: Optional[Any] = ..., kind: Optional[Any] = ...,
+            convention: Optional[Any] = ..., base: int = ...,
+            **kwargs: Any) -> None:
         ...
 
 
-def asfreq(obj: Any, freq: Any, method: Optional[Any] = ...,
-           how: Optional[Any] = ..., normalize: bool = ...,
-           fill_value: Optional[Any] = ...) -> Any:
+def asfreq(
+        obj: Any, freq: Any, method: Optional[Any] = ...,
+        how: Optional[Any] = ..., normalize: bool = ...,
+        fill_value: Optional[Any] = ...) -> Any:
     ...

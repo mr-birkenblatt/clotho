@@ -1,6 +1,7 @@
 mypy
 numpy
 pandas
+praw
 python-redis-lock
 quick-server
 redis

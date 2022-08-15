@@ -16,7 +16,9 @@ str_type = str
 ordered_sentinel: object
 OrderedType = Union[None, bool, object]
 
-def register_extension_dtype(cls: Type[ExtensionDtype]) -> Type[ExtensionDtype]:
+
+def register_extension_dtype(
+        cls: Type[ExtensionDtype]) -> Type[ExtensionDtype]:
     ...
 
 
@@ -29,9 +31,10 @@ class Registry:
     def register(self, dtype: Type[ExtensionDtype]) -> None:
         ...
 
-    def find(self,
-             dtype: Union[Type[ExtensionDtype], str],
-             ) -> Optional[Type[ExtensionDtype]]:
+    def find(
+            self,
+            dtype: Union[Type[ExtensionDtype], str],
+            ) -> Optional[Type[ExtensionDtype]]:
         ...
 
 
@@ -69,8 +72,9 @@ class CategoricalDtype(PandasExtensionDtype, ExtensionDtype):
     str: str = ...
     base: Any = ...
 
-    def __init__(self, categories: Any = ...,
-                 ordered: OrderedType = ...) -> None:
+    def __init__(
+            self, categories: Any = ...,
+            ordered: OrderedType = ...) -> None:
         ...
 
     def __hash__(self) -> int:

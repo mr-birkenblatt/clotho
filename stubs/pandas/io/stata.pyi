@@ -106,12 +106,13 @@ class StataReader(StataParser, BaseIterator):
     col_sizes: Any = ...
     path_or_buf: Any = ...
 
-    def __init__(self, path_or_buf: Any, convert_dates: bool = ...,
-                 convert_categoricals: bool = ...,
-                 index_col: Optional[Any] = ..., convert_missing: bool = ...,
-                 preserve_dtypes: bool = ..., columns: Optional[Any] = ...,
-                 order_categoricals: bool = ..., encoding: Optional[Any] = ...,
-                 chunksize: Optional[Any] = ...) -> None:
+    def __init__(
+            self, path_or_buf: Any, convert_dates: bool = ...,
+            convert_categoricals: bool = ...,
+            index_col: Optional[Any] = ..., convert_missing: bool = ...,
+            preserve_dtypes: bool = ..., columns: Optional[Any] = ...,
+            order_categoricals: bool = ..., encoding: Optional[Any] = ...,
+            chunksize: Optional[Any] = ...) -> None:
         ...
 
     def __enter__(self) -> Any:
@@ -132,14 +133,15 @@ class StataReader(StataParser, BaseIterator):
     def get_chunk(self, size: Optional[Any] = ...) -> Any:
         ...
 
-    def read(self, nrows: Optional[Any] = ...,
-             convert_dates: Optional[Any] = ...,
-             convert_categoricals: Optional[Any] = ...,
-             index_col: Optional[Any] = ...,
-             convert_missing: Optional[Any] = ...,
-             preserve_dtypes: Optional[Any] = ...,
-             columns: Optional[Any] = ...,
-             order_categoricals: Optional[Any] = ...) -> Any:
+    def read(
+            self, nrows: Optional[Any] = ...,
+            convert_dates: Optional[Any] = ...,
+            convert_categoricals: Optional[Any] = ...,
+            index_col: Optional[Any] = ...,
+            convert_missing: Optional[Any] = ...,
+            preserve_dtypes: Optional[Any] = ...,
+            columns: Optional[Any] = ...,
+            order_categoricals: Optional[Any] = ...) -> Any:
         ...
 
     @property
@@ -156,12 +158,13 @@ class StataReader(StataParser, BaseIterator):
 class StataWriter(StataParser):
     type_converters: Any = ...
 
-    def __init__(self, fname: Any, data: Any,
-                 convert_dates: Optional[Any] = ..., write_index: bool = ...,
-                 encoding: str = ..., byteorder: Optional[Any] = ...,
-                 time_stamp: Optional[Any] = ...,
-                 data_label: Optional[Any] = ...,
-                 variable_labels: Optional[Any] = ...) -> None:
+    def __init__(
+            self, fname: Any, data: Any,
+            convert_dates: Optional[Any] = ..., write_index: bool = ...,
+            encoding: str = ..., byteorder: Optional[Any] = ...,
+            time_stamp: Optional[Any] = ...,
+            data_label: Optional[Any] = ...,
+            variable_labels: Optional[Any] = ...) -> None:
         ...
 
     def write_file(self) -> None:
@@ -172,8 +175,9 @@ class StataStrLWriter:
     df: Any = ...
     columns: Any = ...
 
-    def __init__(self, df: Any, columns: Any, version: int = ...,
-                 byteorder: Optional[Any] = ...) -> None:
+    def __init__(
+            self, df: Any, columns: Any, version: int = ...,
+            byteorder: Optional[Any] = ...) -> None:
         ...
 
     def generate_table(self) -> Any:
@@ -184,11 +188,12 @@ class StataStrLWriter:
 
 
 class StataWriter117(StataWriter):
-    def __init__(self, fname: Any, data: Any,
-                 convert_dates: Optional[Any] = ..., write_index: bool = ...,
-                 encoding: str = ..., byteorder: Optional[Any] = ...,
-                 time_stamp: Optional[Any] = ...,
-                 data_label: Optional[Any] = ...,
-                 variable_labels: Optional[Any] = ...,
-                 convert_strl: Optional[Any] = ...) -> None:
+    def __init__(
+            self, fname: Any, data: Any,
+            convert_dates: Optional[Any] = ..., write_index: bool = ...,
+            encoding: str = ..., byteorder: Optional[Any] = ...,
+            time_stamp: Optional[Any] = ...,
+            data_label: Optional[Any] = ...,
+            variable_labels: Optional[Any] = ...,
+            convert_strl: Optional[Any] = ...) -> None:
         ...

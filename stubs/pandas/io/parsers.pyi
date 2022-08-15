@@ -17,8 +17,9 @@ read_csv: Any
 read_table: Any
 
 
-def read_fwf(filepath_or_buffer: FilePathOrBuffer, colspecs: Any = ...,
-             widths: Any = ..., infer_nrows: Any = ..., **kwds: Any) -> Any:
+def read_fwf(
+        filepath_or_buffer: FilePathOrBuffer, colspecs: Any = ...,
+        widths: Any = ..., infer_nrows: Any = ..., **kwds: Any) -> Any:
     ...
 
 
@@ -30,8 +31,9 @@ class TextFileReader(BaseIterator):
     nrows: Any = ...
     squeeze: Any = ...
 
-    def __init__(self, f: Any, engine: Optional[Any] = ...,
-                 **kwds: Any) -> None:
+    def __init__(
+            self, f: Any, engine: Optional[Any] = ...,
+            **kwds: Any) -> None:
         ...
 
     def close(self) -> None:
@@ -101,6 +103,7 @@ class CParserWrapper(ParserBase):
 def TextParser(*args: Any, **kwds: Any) -> Any:
     ...
 
+
 def count_empty_vals(vals: Any) -> Any:
     ...
 
@@ -157,16 +160,18 @@ class FixedWidthReader(BaseIterator):
     comment: Any = ...
     colspecs: Any = ...
 
-    def __init__(self, f: Any, colspecs: Any, delimiter: Any, comment: Any,
-                 skiprows: Optional[Any] = ...,
-                 infer_nrows: int = ...) -> None:
+    def __init__(
+            self, f: Any, colspecs: Any, delimiter: Any, comment: Any,
+            skiprows: Optional[Any] = ...,
+            infer_nrows: int = ...) -> None:
         ...
 
     def get_rows(self, infer_nrows: Any, skiprows: Optional[Any] = ...) -> Any:
         ...
 
-    def detect_colspecs(self, infer_nrows: int = ...,
-                        skiprows: Optional[Any] = ...) -> Any:
+    def detect_colspecs(
+            self, infer_nrows: int = ...,
+            skiprows: Optional[Any] = ...) -> Any:
         ...
 
     def __next__(self) -> Any:

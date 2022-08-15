@@ -57,16 +57,18 @@ class Holiday:
     observance: Any = ...
     days_of_week: Any = ...
 
-    def __init__(self, name: Any, year: Optional[Any] = ...,
-                 month: Optional[Any] = ..., day: Optional[Any] = ...,
-                 offset: Optional[Any] = ..., observance: Optional[Any] = ...,
-                 start_date: Optional[Any] = ...,
-                 end_date: Optional[Any] = ...,
-                 days_of_week: Optional[Any] = ...) -> None:
+    def __init__(
+            self, name: Any, year: Optional[Any] = ...,
+            month: Optional[Any] = ..., day: Optional[Any] = ...,
+            offset: Optional[Any] = ..., observance: Optional[Any] = ...,
+            start_date: Optional[Any] = ...,
+            end_date: Optional[Any] = ...,
+            days_of_week: Optional[Any] = ...) -> None:
         ...
 
-    def dates(self, start_date: Any, end_date: Any,
-              return_name: bool = ...) -> Any:
+    def dates(
+            self, start_date: Any, end_date: Any,
+            return_name: bool = ...) -> Any:
         ...
 
 
@@ -92,15 +94,17 @@ class AbstractHolidayCalendar(metaclass=HolidayCalendarMetaClass):
     end_date: Any = ...
     name: Any = ...
 
-    def __init__(self, name: Optional[Any] = ...,
-                 rules: Optional[Any] = ...) -> None:
+    def __init__(
+            self, name: Optional[Any] = ...,
+            rules: Optional[Any] = ...) -> None:
         ...
 
     def rule_from_name(self, name: Any) -> Any:
         ...
 
-    def holidays(self, start: Optional[Any] = ..., end: Optional[Any] = ...,
-                 return_name: bool = ...) -> Any:
+    def holidays(
+            self, start: Optional[Any] = ..., end: Optional[Any] = ...,
+            return_name: bool = ...) -> Any:
         ...
 
     @staticmethod

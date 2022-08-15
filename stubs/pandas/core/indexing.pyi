@@ -10,6 +10,7 @@ from pandas._libs.indexing import _NDFrameIndexerBase
 from pandas.core.index import Index
 from typing import Any, Optional
 
+
 def get_indexers_list() -> Any:
     ...
 
@@ -20,6 +21,7 @@ class _IndexSlice:
 
 
 IndexSlice: Any
+
 
 class IndexingError(Exception):
     ...
@@ -52,11 +54,11 @@ class _LocationIndexer(_NDFrameIndexer):
 
 
 class _LocIndexer(_LocationIndexer):
-        ...
+    ...
 
 
 class _iLocIndexer(_LocationIndexer):
-        ...
+    ...
 
 
 class _ScalarAccessIndexer(_NDFrameIndexer):
@@ -68,7 +70,7 @@ class _ScalarAccessIndexer(_NDFrameIndexer):
 
 
 class _AtIndexer(_ScalarAccessIndexer):
-        ...
+    ...
 
 
 class _iAtIndexer(_ScalarAccessIndexer):

@@ -10,11 +10,12 @@
 from typing import Any, Optional
 
 
-def frame_apply(obj: Any, func: Any, axis: int = ...,
-                broadcast: Optional[Any] = ..., raw: bool = ...,
-                reduce: Optional[Any] = ..., result_type: Optional[Any] = ...,
-                ignore_failures: bool = ..., args: Optional[Any] = ...,
-                kwds: Optional[Any] = ...) -> Any:
+def frame_apply(
+        obj: Any, func: Any, axis: int = ...,
+        broadcast: Optional[Any] = ..., raw: bool = ...,
+        reduce: Optional[Any] = ..., result_type: Optional[Any] = ...,
+        ignore_failures: bool = ..., args: Optional[Any] = ...,
+        kwds: Optional[Any] = ...) -> Any:
     ...
 
 
@@ -30,9 +31,10 @@ class FrameApply:
     res_index: Any = ...
     res_columns: Any = ...
 
-    def __init__(self, obj: Any, func: Any, broadcast: Any, raw: Any,
-                 reduce: Any, result_type: Any, ignore_failures: Any,
-                 args: Any, kwds: Any) -> None:
+    def __init__(
+            self, obj: Any, func: Any, broadcast: Any, raw: Any,
+            reduce: Any, result_type: Any, ignore_failures: Any,
+            args: Any, kwds: Any) -> None:
         ...
 
     @property
@@ -79,8 +81,6 @@ class FrameApply:
 
 class FrameRowApply(FrameApply):
     axis: int = ...
-    def apply_broadcast(self) -> Any:  # type: ignore
-        ...
 
     @property
     def series_generator(self) -> Any:
@@ -100,9 +100,6 @@ class FrameRowApply(FrameApply):
 
 class FrameColumnApply(FrameApply):
     axis: int = ...
-
-    def apply_broadcast(self) -> Any:  # type: ignore
-        ...
 
     @property
     def series_generator(self) -> Any:

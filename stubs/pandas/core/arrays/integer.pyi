@@ -11,6 +11,7 @@ from typing import Any, Optional, Type
 from pandas.core.arrays import ExtensionArray, ExtensionOpsMixin
 from pandas.core.dtypes.base import ExtensionDtype
 
+
 class _IntegerDtype(ExtensionDtype):
     name: str = ...
     base: Any = ...
@@ -76,8 +77,9 @@ class IntegerArray(ExtensionArray, ExtensionOpsMixin):
     def __iter__(self) -> None:
         ...
 
-    def take(self, indexer: Any, allow_fill: bool = ...,
-             fill_value: Optional[Any] = ...) -> Any:
+    def take(
+            self, indexer: Any, allow_fill: bool = ...,
+            fill_value: Optional[Any] = ...) -> Any:
         ...
 
     def copy(self) -> Any:

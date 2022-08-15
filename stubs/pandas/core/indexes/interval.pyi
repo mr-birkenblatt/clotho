@@ -25,34 +25,39 @@ class SetopCheck:
 
 
 class IntervalIndex(IntervalMixin, Index):
-    def __new__(cls, data: Any, closed: Optional[Any] = ...,
-                dtype: Optional[Any] = ..., copy: bool = ...,
-                name: Optional[Any] = ...,
-                verify_integrity: bool = ...) -> Any:
+    def __new__(
+            cls, data: Any, closed: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...,
+            name: Optional[Any] = ...,
+            verify_integrity: bool = ...) -> Any:
         ...
 
     @classmethod
-    def from_breaks(cls, breaks: Any, closed: str = ...,
-                    name: Optional[Any] = ..., copy: bool = ...,
-                    dtype: Optional[Any] = ...) -> Any:
+    def from_breaks(
+            cls, breaks: Any, closed: str = ...,
+            name: Optional[Any] = ..., copy: bool = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_arrays(cls, left: Any, right: Any, closed: str = ...,
-                    name: Optional[Any] = ..., copy: bool = ...,
-                    dtype: Optional[Any] = ...) -> Any:
+    def from_arrays(
+            cls, left: Any, right: Any, closed: str = ...,
+            name: Optional[Any] = ..., copy: bool = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_intervals(cls, data: Any, closed: Optional[Any] = ...,
-                       name: Optional[Any] = ..., copy: bool = ...,
-                       dtype: Optional[Any] = ...) -> Any:
+    def from_intervals(
+            cls, data: Any, closed: Optional[Any] = ...,
+            name: Optional[Any] = ..., copy: bool = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_tuples(cls, data: Any, closed: str = ...,
-                    name: Optional[Any] = ..., copy: bool = ...,
-                    dtype: Optional[Any] = ...) -> Any:
+    def from_tuples(
+            cls, data: Any, closed: str = ...,
+            name: Optional[Any] = ..., copy: bool = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     def __contains__(self, key: Any) -> Any:
@@ -103,9 +108,6 @@ class IntervalIndex(IntervalMixin, Index):
     def __reduce__(self) -> Any:
         ...
 
-    def copy(self, deep: bool = ..., name: Optional[Any] = ...) -> Any:  # type: ignore
-        ...
-
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
@@ -141,12 +143,10 @@ class IntervalIndex(IntervalMixin, Index):
     def is_overlapping(self) -> Any:
         ...
 
-    def get_loc(self, key: Any, method: Optional[str]=...) -> Union[int, slice, np.ndarray]:  # type: ignore
-        ...
-
-    def get_indexer(self, target: AnyArrayLike, method: Optional[str]=...,
-                    limit: Optional[int]=...,
-                    tolerance: Optional[Any]=...) -> np.ndarray:
+    def get_indexer(
+            self, target: AnyArrayLike, method: Optional[str] = ...,
+            limit: Optional[int] = ...,
+            tolerance: Optional[Any] = ...) -> np.ndarray:
         ...
 
     def get_indexer_non_unique(
@@ -169,8 +169,9 @@ class IntervalIndex(IntervalMixin, Index):
     def insert(self, loc: Any, item: Any) -> Any:
         ...
 
-    def take(self, indices: Any, axis: int = ..., allow_fill: bool = ...,
-             fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def take(
+            self, indices: Any, axis: int = ..., allow_fill: bool = ...,
+            fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def __getitem__(self, value: Any) -> Any:
@@ -189,7 +190,7 @@ class IntervalIndex(IntervalMixin, Index):
         ...
 
     def intersection(
-            self, other: IntervalIndex, sort: bool=...) -> IntervalIndex:
+            self, other: IntervalIndex, sort: bool = ...) -> IntervalIndex:
         ...
 
     @property
@@ -201,7 +202,8 @@ class IntervalIndex(IntervalMixin, Index):
     symmetric_difference: Any = ...
 
 
-def interval_range(start: Optional[Any] = ..., end: Optional[Any] = ...,
-                   periods: Optional[Any] = ..., freq: Optional[Any] = ...,
-                   name: Optional[Any] = ..., closed: str = ...) -> Any:
-        ...
+def interval_range(
+        start: Optional[Any] = ..., end: Optional[Any] = ...,
+        periods: Optional[Any] = ..., freq: Optional[Any] = ...,
+        name: Optional[Any] = ..., closed: str = ...) -> Any:
+    ...

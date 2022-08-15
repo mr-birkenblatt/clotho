@@ -10,10 +10,11 @@
 from typing import Any
 
 
-def get_dtype_kinds(l: Any) -> Any:
+def get_dtype_kinds(v: Any) -> Any:
     ...
 
 
-def union_categoricals(to_union: Any, sort_categories: bool = ...,
-                       ignore_order: bool = ...) -> Any:
+def union_categoricals(
+        to_union: Any, sort_categories: bool = ...,
+        ignore_order: bool = ...) -> Any:
     ...

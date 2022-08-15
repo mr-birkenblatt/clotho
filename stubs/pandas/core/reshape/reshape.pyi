@@ -23,10 +23,11 @@ class _Unstacker:
     removed_level: Any = ...
     removed_level_full: Any = ...
 
-    def __init__(self, values: Any, index: Any, level: int = ...,
-                 value_columns: Optional[Any] = ...,
-                 fill_value: Optional[Any] = ...,
-                 constructor: Optional[Any] = ...) -> None:
+    def __init__(
+            self, values: Any, index: Any, level: int = ...,
+            value_columns: Optional[Any] = ...,
+            fill_value: Optional[Any] = ...,
+            constructor: Optional[Any] = ...) -> None:
         ...
 
     def get_result(self) -> Any:
@@ -54,12 +55,14 @@ def stack_multiple(frame: Any, level: Any, dropna: bool = ...) -> Any:
     ...
 
 
-def get_dummies(data: Any, prefix: Optional[Any] = ..., prefix_sep: str = ...,
-                dummy_na: bool = ..., columns: Optional[Any] = ...,
-                sparse: bool = ..., drop_first: bool = ...,
-                dtype: Optional[Any] = ...) -> Any:
+def get_dummies(
+        data: Any, prefix: Optional[Any] = ..., prefix_sep: str = ...,
+        dummy_na: bool = ..., columns: Optional[Any] = ...,
+        sparse: bool = ..., drop_first: bool = ...,
+        dtype: Optional[Any] = ...) -> Any:
     ...
 
 
-def make_axis_dummies(frame: Any, axis: str = ..., transform: Optional[Any] = ...) -> Any:
+def make_axis_dummies(
+        frame: Any, axis: str = ..., transform: Optional[Any] = ...) -> Any:
     ...

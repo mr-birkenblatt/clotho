@@ -10,28 +10,33 @@ from typing import Any, Optional
 from pandas._libs.interval import IntervalMixin
 from pandas.core.arrays.base import ExtensionArray
 
+
 class IntervalArray(IntervalMixin, ExtensionArray):
     ndim: int = ...
     can_hold_na: bool = ...
 
-    def __new__(cls, data: Any, closed: Optional[Any] = ...,
-                dtype: Optional[Any] = ..., copy: bool = ...,
-                verify_integrity: bool = ...) -> Any:
+    def __new__(
+            cls, data: Any, closed: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...,
+            verify_integrity: bool = ...) -> Any:
         ...
 
     @classmethod
-    def from_breaks(cls, breaks: Any, closed: str = ..., copy: bool = ...,
-                    dtype: Optional[Any] = ...) -> Any:
+    def from_breaks(
+            cls, breaks: Any, closed: str = ..., copy: bool = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_arrays(cls, left: Any, right: Any, closed: str = ...,
-                    copy: bool = ..., dtype: Optional[Any] = ...) -> Any:
+    def from_arrays(
+            cls, left: Any, right: Any, closed: str = ...,
+            copy: bool = ..., dtype: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_tuples(cls, data: Any, closed: str = ..., copy: bool = ...,
-                    dtype: Optional[Any] = ...) -> Any:
+    def from_tuples(
+            cls, data: Any, closed: str = ..., copy: bool = ...,
+            dtype: Optional[Any] = ...) -> Any:
         ...
 
     def __iter__(self) -> Any:
@@ -46,8 +51,9 @@ class IntervalArray(IntervalMixin, ExtensionArray):
     def __setitem__(self, key: Any, value: Any) -> None:
         ...
 
-    def fillna(self, value: Optional[Any] = ..., method: Optional[Any] = ...,
-               limit: Optional[Any] = ...) -> Any:
+    def fillna(
+            self, value: Optional[Any] = ..., method: Optional[Any] = ...,
+            limit: Optional[Any] = ...) -> Any:
         ...
 
     @property
@@ -75,9 +81,10 @@ class IntervalArray(IntervalMixin, ExtensionArray):
     def shape(self) -> Any:
         ...
 
-    def take(self, indices: Any, allow_fill: bool = ...,
-             fill_value: Optional[Any] = ..., axis: Optional[Any] = ...,
-             **kwargs: Any) -> Any:
+    def take(
+            self, indices: Any, allow_fill: bool = ...,
+            fill_value: Optional[Any] = ..., axis: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
     def value_counts(self, dropna: bool = ...) -> Any:

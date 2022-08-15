@@ -8,6 +8,7 @@
 
 from typing import Any
 
+
 class DirNamesMixin:
     def __dir__(self) -> Any:
         ...
@@ -17,8 +18,9 @@ class PandasDelegate:
     ...
 
 
-def delegate_names(delegate: Any, accessors: Any, typ: Any,
-                   overwrite: bool = ...) -> Any:
+def delegate_names(
+        delegate: Any, accessors: Any, typ: Any,
+        overwrite: bool = ...) -> Any:
     ...
 
 

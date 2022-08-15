@@ -11,6 +11,7 @@ from typing import Any, Optional
 from pandas.core.accessor import PandasDelegate
 from pandas.core.arrays import ExtensionOpsMixin
 
+
 def ea_passthrough(array_method: Any) -> Any:
     ...
 
@@ -54,12 +55,14 @@ class DatetimeIndexOpsMixin(ExtensionOpsMixin):
     def map(self, mapper: Any, na_action: Optional[Any] = ...) -> Any:
         ...
 
-    def sort_values(self, return_indexer: bool = ...,
-                    ascending: bool = ...) -> Any:
+    def sort_values(
+            self, return_indexer: bool = ...,
+            ascending: bool = ...) -> Any:
         ...
 
-    def take(self, indices: Any, axis: int = ..., allow_fill: bool = ...,
-             fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def take(
+            self, indices: Any, axis: int = ..., allow_fill: bool = ...,
+            fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     @property
@@ -69,20 +72,24 @@ class DatetimeIndexOpsMixin(ExtensionOpsMixin):
     def tolist(self) -> Any:
         ...
 
-    def min(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+    def min(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
             **kwargs: Any) -> Any:
         ...
 
-    def argmin(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
-               **kwargs: Any) -> Any:
-        ...
-
-    def max(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+    def argmin(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
             **kwargs: Any) -> Any:
         ...
 
-    def argmax(self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
-               **kwargs: Any) -> Any:
+    def max(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+            **kwargs: Any) -> Any:
+        ...
+
+    def argmax(
+            self, axis: Optional[Any] = ..., skipna: bool = ..., *args: Any,
+            **kwargs: Any) -> Any:
         ...
 
     def isin(self, values: Any, level: Optional[Any] = ...) -> Any:
@@ -106,6 +113,7 @@ class DatetimeIndexOpsMixin(ExtensionOpsMixin):
 
 def wrap_arithmetic_op(self: Any, other: Any, result: Any) -> Any:
     ...
+
 
 def maybe_unwrap_index(obj: Any) -> Any:
     ...

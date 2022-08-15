@@ -41,43 +41,51 @@ class bottleneck_switch:
         ...
 
 
-def nanany(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-           mask: Optional[Any] = ...) -> Any:
+def nanany(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanall(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-           mask: Optional[Any] = ...) -> Any:
+def nanall(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nansum(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-           min_count: int = ..., mask: Optional[Any] = ...) -> Any:
+def nansum(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        min_count: int = ..., mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanmean(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-            mask: Optional[Any] = ...) -> Any:
+def nanmean(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanmedian(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-              mask: Optional[Any] = ...) -> Any:
+def nanmedian(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanstd(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-           ddof: int = ..., mask: Optional[Any] = ...) -> Any:
+def nanstd(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        ddof: int = ..., mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanvar(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-           ddof: int = ..., mask: Optional[Any] = ...) -> Any:
+def nanvar(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        ddof: int = ..., mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nansem(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-           ddof: int = ..., mask: Optional[Any] = ...) -> Any:
+def nansem(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        ddof: int = ..., mask: Optional[Any] = ...) -> Any:
     ...
 
 
@@ -85,33 +93,39 @@ nanmin: Any
 nanmax: Any
 
 
-def nanargmax(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-              mask: Optional[Any] = ...) -> Any:
+def nanargmax(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanargmin(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-              mask: Optional[Any] = ...) -> Any:
+def nanargmin(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanskew(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-            mask: Optional[Any] = ...) -> Any:
+def nanskew(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nankurt(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-            mask: Optional[Any] = ...) -> Any:
+def nankurt(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nanprod(values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
-            min_count: int = ..., mask: Optional[Any] = ...) -> Any:
+def nanprod(
+        values: Any, axis: Optional[Any] = ..., skipna: bool = ...,
+        min_count: int = ..., mask: Optional[Any] = ...) -> Any:
     ...
 
 
-def nancorr(a: Any, b: Any, method: str = ...,
-            min_periods: Optional[Any] = ...) -> Any:
+def nancorr(
+        a: Any, b: Any, method: str = ...,
+        min_periods: Optional[Any] = ...) -> Any:
     ...
 
 
@@ -135,6 +149,7 @@ naneq: Any
 nanne: Any
 
 
-def nanpercentile(values: Any, q: Any, axis: Any, na_value: Any, mask: Any,
-                  ndim: Any, interpolation: Any) -> Any:
+def nanpercentile(
+        values: Any, q: Any, axis: Any, na_value: Any, mask: Any,
+        ndim: Any, interpolation: Any) -> Any:
     ...

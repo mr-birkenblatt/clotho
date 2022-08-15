@@ -6,7 +6,7 @@
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
 # pylint: disable=too-many-arguments
 
-from pandas._libs import index as libindex  # type: ignore
+from pandas._libs import index as libindex
 from pandas.core.indexes.base import Index
 from typing import Any, Optional
 
@@ -26,31 +26,36 @@ class MultiIndexPyIntEngine(
 class MultiIndex(Index):
     rename: Any = ...
 
-    def __new__(cls, levels: Optional[Any] = ..., codes: Optional[Any] = ...,
-                sortorder: Optional[Any] = ..., names: Optional[Any] = ...,
-                dtype: Optional[Any] = ..., copy: bool = ...,
-                name: Optional[Any] = ..., verify_integrity: bool = ...,
-                _set_identity: bool = ...) -> Any:
+    def __new__(
+            cls, levels: Optional[Any] = ..., codes: Optional[Any] = ...,
+            sortorder: Optional[Any] = ..., names: Optional[Any] = ...,
+            dtype: Optional[Any] = ..., copy: bool = ...,
+            name: Optional[Any] = ..., verify_integrity: bool = ...,
+            _set_identity: bool = ...) -> Any:
         ...
 
     @classmethod
-    def from_arrays(cls, arrays: Any, sortorder: Optional[Any] = ...,
-                    names: Optional[Any] = ...) -> Any:
+    def from_arrays(
+            cls, arrays: Any, sortorder: Optional[Any] = ...,
+            names: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_tuples(cls, tuples: Any, sortorder: Optional[Any] = ...,
-                    names: Optional[Any] = ...) -> Any:
+    def from_tuples(
+            cls, tuples: Any, sortorder: Optional[Any] = ...,
+            names: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_product(cls, iterables: Any, sortorder: Optional[Any] = ...,
-                     names: Optional[Any] = ...) -> Any:
+    def from_product(
+            cls, iterables: Any, sortorder: Optional[Any] = ...,
+            names: Optional[Any] = ...) -> Any:
         ...
 
     @classmethod
-    def from_frame(cls, df: Any, sortorder: Optional[Any] = ...,
-                   names: Optional[Any] = ...) -> Any:
+    def from_frame(
+            cls, df: Any, sortorder: Optional[Any] = ...,
+            names: Optional[Any] = ...) -> Any:
         ...
 
     @property
@@ -61,8 +66,9 @@ class MultiIndex(Index):
     def array(self) -> Any:
         ...
 
-    def set_levels(self, levels: Any, level: Optional[Any] = ...,
-                   inplace: bool = ..., verify_integrity: bool = ...) -> Any:
+    def set_levels(
+            self, levels: Any, level: Optional[Any] = ...,
+            inplace: bool = ..., verify_integrity: bool = ...) -> Any:
         ...
 
     @property
@@ -73,15 +79,14 @@ class MultiIndex(Index):
     def labels(self) -> Any:
         ...
 
-    def set_labels(self, labels: Any, level: Optional[Any] = ...,
-                   inplace: bool = ..., verify_integrity: bool = ...) -> Any:
+    def set_labels(
+            self, labels: Any, level: Optional[Any] = ...,
+            inplace: bool = ..., verify_integrity: bool = ...) -> Any:
         ...
 
-    def set_codes(self, codes: Any, level: Optional[Any] = ...,
-                  inplace: bool = ..., verify_integrity: bool = ...) -> Any:
-        ...
-
-    def copy(self, names: Optional[Any] = ..., dtype: Optional[Any] = ..., levels: Optional[Any] = ..., codes: Optional[Any] = ..., deep: bool = ..., _set_identity: bool = ..., **kwargs: Any) -> Any:  # type: ignore
+    def set_codes(
+            self, codes: Any, level: Optional[Any] = ...,
+            inplace: bool = ..., verify_integrity: bool = ...) -> Any:
         ...
 
     def __array__(self, dtype: Optional[Any] = ...) -> Any:
@@ -100,9 +105,6 @@ class MultiIndex(Index):
         ...
 
     def nbytes(self) -> Any:
-        ...
-
-    def format(self, space: int = ..., sparsify: Optional[Any] = ..., adjoin: bool = ..., names: bool = ..., na_rep: Optional[Any] = ..., formatter: Optional[Any] = ...) -> Any:  # type: ignore
         ...
 
     def __len__(self) -> Any:
@@ -126,8 +128,9 @@ class MultiIndex(Index):
     def duplicated(self, keep: str = ...) -> Any:
         ...
 
-    def fillna(self, value: Optional[Any] = ...,
-               downcast: Optional[Any] = ...) -> None:
+    def fillna(
+            self, value: Optional[Any] = ...,
+            downcast: Optional[Any] = ...) -> None:
         ...
 
     def dropna(self, how: str = ...) -> Any:
@@ -178,8 +181,9 @@ class MultiIndex(Index):
     def __getitem__(self, key: Any) -> Any:
         ...
 
-    def take(self, indices: Any, axis: int = ..., allow_fill: bool = ...,
-             fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def take(
+            self, indices: Any, axis: int = ..., allow_fill: bool = ...,
+            fill_value: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def append(self, other: Any) -> Any:
@@ -194,9 +198,6 @@ class MultiIndex(Index):
     def where(self, cond: Any, other: Optional[Any] = ...) -> None:
         ...
 
-    def drop(self, codes: Any, level: Optional[Any] = ..., errors: str = ...) -> Any:  # type: ignore
-        ...
-
     def swaplevel(self, i: int = ..., j: int = ...) -> Any:
         ...
 
@@ -206,43 +207,41 @@ class MultiIndex(Index):
     def __getslice__(self, i: Any, j: Any) -> Any:
         ...
 
-    def sortlevel(self, level: int = ..., ascending: bool = ...,  # type: ignore
-                  sort_remaining: bool = ...) -> Any:
-        ...
-
-    def get_indexer(self, target: Any, method: Optional[Any] = ...,
-                    limit: Optional[Any] = ...,
-                    tolerance: Optional[Any] = ...) -> Any:
+    def get_indexer(
+            self, target: Any, method: Optional[Any] = ...,
+            limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def get_indexer_non_unique(self, target: Any) -> Any:
         ...
 
-    def reindex(self, target: Any, method: Optional[Any] = ...,
-                level: Optional[Any] = ..., limit: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def reindex(
+            self, target: Any, method: Optional[Any] = ...,
+            level: Optional[Any] = ..., limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def get_slice_bound(self, label: Any, side: Any, kind: Any) -> Any:
         ...
 
-    def slice_locs(self, start: Optional[Any] = ..., end: Optional[Any] = ...,
-                   step: Optional[Any] = ...,
-                   kind: Optional[Any] = ...) -> Any:
+    def slice_locs(
+            self, start: Optional[Any] = ..., end: Optional[Any] = ...,
+            step: Optional[Any] = ...,
+            kind: Optional[Any] = ...) -> Any:
         ...
 
-    def get_loc(self, key: Any, method: Optional[Any] = ...) -> Any:  # type: ignore
-        ...
-
-    def get_loc_level(self, key: Any, level: int = ...,
-                      drop_level: bool = ...) -> Any:
+    def get_loc_level(
+            self, key: Any, level: int = ...,
+            drop_level: bool = ...) -> Any:
         ...
 
     def get_locs(self, seq: Any) -> Any:
         ...
 
-    def truncate(self, before: Optional[Any] = ...,
-                 after: Optional[Any] = ...) -> Any:
+    def truncate(
+            self, before: Optional[Any] = ...,
+            after: Optional[Any] = ...) -> Any:
         ...
 
     def equals(self, other: Any) -> Any:

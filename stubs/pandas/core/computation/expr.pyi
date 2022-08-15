@@ -14,11 +14,14 @@ from pandas.core.base import StringMixin
 from pandas.core.computation.ops import Term
 from pandas.core.computation.scope import Scope as Scope
 
+
 def tokenize_string(source: Any) -> Any:
     ...
 
+
 def disallow(nodes: Any) -> Any:
     ...
+
 
 def add_ops(op_classes: Any) -> Any:
     ...
@@ -40,8 +43,9 @@ class BaseExprVisitor(ast.NodeVisitor):
     preparser: Any = ...
     assigner: Any = ...
 
-    def __init__(self, env: Any, engine: Any, parser: Any,
-                 preparser: Any = ...) -> None:
+    def __init__(
+            self, env: Any, engine: Any, parser: Any,
+            preparser: Any = ...) -> None:
         ...
 
     def visit(self, node: Any, **kwargs: Any) -> Any:
@@ -94,7 +98,8 @@ class BaseExprVisitor(ast.NodeVisitor):
     def visit_Attribute(self, node: Any, **kwargs: Any) -> Any:
         ...
 
-    def visit_Call(self, node: Any, side: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def visit_Call(
+            self, node: Any, side: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def translate_In(self, op: Any) -> Any:
@@ -108,14 +113,16 @@ class BaseExprVisitor(ast.NodeVisitor):
 
 
 class PandasExprVisitor(BaseExprVisitor):
-    def __init__(self, env: Any, engine: Any, parser: Any,
-                 preparser: Any = ...) -> None:
+    def __init__(
+            self, env: Any, engine: Any, parser: Any,
+            preparser: Any = ...) -> None:
         ...
 
 
 class PythonExprVisitor(BaseExprVisitor):
-    def __init__(self, env: Any, engine: Any, parser: Any,
-                 preparser: Any = ...) -> None:
+    def __init__(
+            self, env: Any, engine: Any, parser: Any,
+            preparser: Any = ...) -> None:
         ...
 
 
@@ -126,9 +133,10 @@ class Expr(StringMixin):
     parser: Any = ...
     terms: Any = ...
 
-    def __init__(self, expr: Any, engine: str = ..., parser: str = ...,
-                 env: Optional[Any] = ..., truediv: bool = ...,
-                 level: int = ...) -> None:
+    def __init__(
+            self, expr: Any, engine: str = ..., parser: str = ...,
+            env: Optional[Any] = ..., truediv: bool = ...,
+            level: int = ...) -> None:
         ...
 
     @property

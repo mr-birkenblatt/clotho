@@ -18,9 +18,10 @@ sentinel: Any
 
 
 class NDFrame(PandasObject, SelectionMixin):
-    def __init__(self, data: BlockManager, axes: Optional[List[Index]] = ...,
-                 copy: bool = ..., dtype: Optional[Dtype] = ...,
-                 fastpath: bool = ...):
+    def __init__(
+            self, data: BlockManager, axes: Optional[List[Index]] = ...,
+            copy: bool = ..., dtype: Optional[Dtype] = ...,
+            fastpath: bool = ...):
         ...
 
     @property
@@ -47,8 +48,9 @@ class NDFrame(PandasObject, SelectionMixin):
     def size(self) -> Any:
         ...
 
-    def set_axis(self, labels: Any, axis: int = ...,
-                 inplace: Optional[Any] = ...) -> Any:
+    def set_axis(
+            self, labels: Any, axis: int = ...,
+            inplace: Optional[Any] = ...) -> Any:
         ...
 
     def transpose(self, *args: Any, **kwargs: Any) -> Any:
@@ -134,75 +136,83 @@ class NDFrame(PandasObject, SelectionMixin):
     def to_dense(self) -> Any:
         ...
 
-    def to_excel(self, excel_writer: Any, sheet_name: str = ...,
-                 na_rep: str = ..., float_format: Optional[Any] = ...,
-                 columns: Optional[Any] = ..., header: bool = ...,
-                 index: bool = ..., index_label: Optional[Any] = ...,
-                 startrow: int = ..., startcol: int = ...,
-                 engine: Optional[Any] = ..., merge_cells: bool = ...,
-                 encoding: Optional[Any] = ..., inf_rep: str = ...,
-                 verbose: bool = ..., freeze_panes: Optional[Any] = ...,
-                 ) -> None:
+    def to_excel(
+            self, excel_writer: Any, sheet_name: str = ...,
+            na_rep: str = ..., float_format: Optional[Any] = ...,
+            columns: Optional[Any] = ..., header: bool = ...,
+            index: bool = ..., index_label: Optional[Any] = ...,
+            startrow: int = ..., startcol: int = ...,
+            engine: Optional[Any] = ..., merge_cells: bool = ...,
+            encoding: Optional[Any] = ..., inf_rep: str = ...,
+            verbose: bool = ..., freeze_panes: Optional[Any] = ...,
+            ) -> None:
         ...
 
-    def to_json(self, path_or_buf: Optional[Any] = ...,
-                orient: Optional[Any] = ..., date_format: Optional[Any] = ...,
-                double_precision: int = ..., force_ascii: bool = ...,
-                date_unit: str = ..., default_handler: Optional[Any] = ...,
-                lines: bool = ..., compression: str = ..., index: bool = ...,
-                ) -> Any:
+    def to_json(
+            self, path_or_buf: Optional[Any] = ...,
+            orient: Optional[Any] = ..., date_format: Optional[Any] = ...,
+            double_precision: int = ..., force_ascii: bool = ...,
+            date_unit: str = ..., default_handler: Optional[Any] = ...,
+            lines: bool = ..., compression: str = ..., index: bool = ...,
+            ) -> Any:
         ...
 
     def to_hdf(self, path_or_buf: Any, key: Any, **kwargs: Any) -> None:
         ...
 
-    def to_msgpack(self, path_or_buf: Optional[Any] = ..., encoding: str = ...,
-                   **kwargs: Any) -> Any:
+    def to_msgpack(
+            self, path_or_buf: Optional[Any] = ..., encoding: str = ...,
+            **kwargs: Any) -> Any:
         ...
 
-    def to_sql(self, name: Any, con: Any, schema: Optional[Any] = ...,
-               if_exists: str = ..., index: bool = ...,
-               index_label: Optional[Any] = ...,
-               chunksize: Optional[Any] = ..., dtype: Optional[Any] = ...,
-               method: Optional[Any] = ...) -> None:
+    def to_sql(
+            self, name: Any, con: Any, schema: Optional[Any] = ...,
+            if_exists: str = ..., index: bool = ...,
+            index_label: Optional[Any] = ...,
+            chunksize: Optional[Any] = ..., dtype: Optional[Any] = ...,
+            method: Optional[Any] = ...) -> None:
         ...
 
-    def to_pickle(self, path: Any, compression: str = ...,
-                  protocol: Any = ...) -> None:
+    def to_pickle(
+            self, path: Any, compression: str = ...,
+            protocol: Any = ...) -> None:
         ...
 
-    def to_clipboard(self, excel: bool = ..., sep: Optional[Any] = ...,
-                     **kwargs: Any) -> None:
+    def to_clipboard(
+            self, excel: bool = ..., sep: Optional[Any] = ...,
+            **kwargs: Any) -> None:
         ...
 
     def to_xarray(self) -> Any:
         ...
 
-    def to_latex(self, buf: Optional[Any] = ..., columns: Optional[Any] = ...,
-                 col_space: Optional[Any] = ..., header: bool = ...,
-                 index: bool = ..., na_rep: str = ...,
-                 formatters: Optional[Any] = ...,
-                 float_format: Optional[Any] = ...,
-                 sparsify: Optional[Any] = ...,
-                 index_names: bool = ..., bold_rows: bool = ...,
-                 column_format: Optional[Any] = ...,
-                 longtable: Optional[Any] = ..., escape: Optional[Any] = ...,
-                 encoding: Optional[Any] = ..., decimal: str = ...,
-                 multicolumn: Optional[Any] = ...,
-                 multicolumn_format: Optional[Any] = ...,
-                 multirow: Optional[Any] = ...) -> Any:
+    def to_latex(
+            self, buf: Optional[Any] = ..., columns: Optional[Any] = ...,
+            col_space: Optional[Any] = ..., header: bool = ...,
+            index: bool = ..., na_rep: str = ...,
+            formatters: Optional[Any] = ...,
+            float_format: Optional[Any] = ...,
+            sparsify: Optional[Any] = ...,
+            index_names: bool = ..., bold_rows: bool = ...,
+            column_format: Optional[Any] = ...,
+            longtable: Optional[Any] = ..., escape: Optional[Any] = ...,
+            encoding: Optional[Any] = ..., decimal: str = ...,
+            multicolumn: Optional[Any] = ...,
+            multicolumn_format: Optional[Any] = ...,
+            multirow: Optional[Any] = ...) -> Any:
         ...
 
-    def to_csv(self, path_or_buf: Optional[Any] = ..., sep: str = ...,
-               na_rep: str = ..., float_format: Optional[Any] = ...,
-               columns: Optional[Any] = ..., header: bool = ...,
-               index: bool = ..., index_label: Optional[Any] = ...,
-               mode: str = ..., encoding: Optional[Any] = ...,
-               compression: str = ..., quoting: Optional[Any] = ...,
-               quotechar: str = ..., line_terminator: Optional[Any] = ...,
-               chunksize: Optional[Any] = ...,
-               date_format: Optional[Any] = ..., doublequote: bool = ...,
-               escapechar: Optional[Any] = ..., decimal: str = ...) -> Any:
+    def to_csv(
+            self, path_or_buf: Optional[Any] = ..., sep: str = ...,
+            na_rep: str = ..., float_format: Optional[Any] = ...,
+            columns: Optional[Any] = ..., header: bool = ...,
+            index: bool = ..., index_label: Optional[Any] = ...,
+            mode: str = ..., encoding: Optional[Any] = ...,
+            compression: str = ..., quoting: Optional[Any] = ...,
+            quotechar: str = ..., line_terminator: Optional[Any] = ...,
+            chunksize: Optional[Any] = ...,
+            date_format: Optional[Any] = ..., doublequote: bool = ...,
+            escapechar: Optional[Any] = ..., decimal: str = ...) -> Any:
         ...
 
     def get(self, key: Any, default: Optional[Any] = ...) -> Any:
@@ -214,23 +224,27 @@ class NDFrame(PandasObject, SelectionMixin):
     def __delitem__(self, key: Any) -> None:
         ...
 
-    def take(self, indices: Any, axis: int = ..., is_copy: bool = ...,
-             **kwargs: Any) -> Any:
+    def take(
+            self, indices: Any, axis: int = ..., is_copy: bool = ...,
+            **kwargs: Any) -> Any:
         ...
 
-    def xs(self, key: Any, axis: int = ..., level: Optional[Any] = ...,
-           drop_level: bool = ...) -> Any:
+    def xs(
+            self, key: Any, axis: int = ..., level: Optional[Any] = ...,
+            drop_level: bool = ...) -> Any:
         ...
 
-    def reindex_like(self, other: Any, method: Optional[Any] = ...,
-                     copy: bool = ..., limit: Optional[Any] = ...,
-                     tolerance: Optional[Any] = ...) -> Any:
+    def reindex_like(
+            self, other: Any, method: Optional[Any] = ...,
+            copy: bool = ..., limit: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
-    def drop(self, labels: Optional[Any] = ..., axis: int = ...,
-             index: Optional[Any] = ..., columns: Optional[Any] = ...,
-             level: Optional[Any] = ..., inplace: bool = ...,
-             errors: str = ...) -> Any:
+    def drop(
+            self, labels: Optional[Any] = ..., axis: int = ...,
+            index: Optional[Any] = ..., columns: Optional[Any] = ...,
+            level: Optional[Any] = ..., inplace: bool = ...,
+            errors: str = ...) -> Any:
         ...
 
     def add_prefix(self, prefix: Any) -> Any:
@@ -239,21 +253,24 @@ class NDFrame(PandasObject, SelectionMixin):
     def add_suffix(self, suffix: Any) -> Any:
         ...
 
-    def sort_values(self, by: Optional[Any] = ..., axis: int = ...,
-                    ascending: bool = ..., inplace: bool = ...,
-                    kind: str = ..., na_position: str = ...) -> None:
+    def sort_values(
+            self, by: Optional[Any] = ..., axis: int = ...,
+            ascending: bool = ..., inplace: bool = ...,
+            kind: str = ..., na_position: str = ...) -> None:
         ...
 
-    def sort_index(self, axis: int = ..., level: Optional[Any] = ...,
-                   ascending: bool = ..., inplace: bool = ..., kind: str = ...,
-                   na_position: str = ..., sort_remaining: bool = ...) -> Any:
+    def sort_index(
+            self, axis: int = ..., level: Optional[Any] = ...,
+            ascending: bool = ..., inplace: bool = ..., kind: str = ...,
+            na_position: str = ..., sort_remaining: bool = ...) -> Any:
         ...
 
     def reindex(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def filter(self, items: Optional[Any] = ..., like: Optional[Any] = ...,
-               regex: Optional[Any] = ..., axis: Optional[Any] = ...) -> Any:
+    def filter(
+            self, items: Optional[Any] = ..., like: Optional[Any] = ...,
+            regex: Optional[Any] = ..., axis: Optional[Any] = ...) -> Any:
         ...
 
     def head(self, n: int = ...) -> Any:
@@ -262,17 +279,19 @@ class NDFrame(PandasObject, SelectionMixin):
     def tail(self, n: int = ...) -> Any:
         ...
 
-    def sample(self, n: Optional[Any] = ..., frac: Optional[Any] = ...,
-               replace: bool = ..., weights: Optional[Any] = ...,
-               random_state: Optional[Any] = ...,
-               axis: Optional[Any] = ...) -> Any:
+    def sample(
+            self, n: Optional[Any] = ..., frac: Optional[Any] = ...,
+            replace: bool = ..., weights: Optional[Any] = ...,
+            random_state: Optional[Any] = ...,
+            axis: Optional[Any] = ...) -> Any:
         ...
 
     def pipe(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def __finalize__(self, other: Any, method: Optional[Any] = ...,
-                     **kwargs: Any) -> Any:
+    def __finalize__(
+            self, other: Any, method: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
     def __getattr__(self, name: Any) -> Any:
@@ -312,8 +331,9 @@ class NDFrame(PandasObject, SelectionMixin):
     def blocks(self) -> Any:
         ...
 
-    def astype(self, dtype: Any, copy: bool = ..., errors: str = ...,
-               **kwargs: Any) -> Any:
+    def astype(
+            self, dtype: Any, copy: bool = ..., errors: str = ...,
+            **kwargs: Any) -> Any:
         ...
 
     def copy(self, deep: bool = ...) -> Any:
@@ -328,33 +348,38 @@ class NDFrame(PandasObject, SelectionMixin):
     def infer_objects(self) -> Any:
         ...
 
-    def fillna(self, value: Optional[Any] = ..., method: Optional[Any] = ...,
-               axis: Optional[Any] = ..., inplace: bool = ...,
-               limit: Optional[Any] = ...,
-               downcast: Optional[Any] = ...) -> Any:
+    def fillna(
+            self, value: Optional[Any] = ..., method: Optional[Any] = ...,
+            axis: Optional[Any] = ..., inplace: bool = ...,
+            limit: Optional[Any] = ...,
+            downcast: Optional[Any] = ...) -> Any:
         ...
 
-    def ffill(self, axis: Optional[Any] = ..., inplace: bool = ...,
-              limit: Optional[Any] = ...,
-              downcast: Optional[Any] = ...) -> Any:
+    def ffill(
+            self, axis: Optional[Any] = ..., inplace: bool = ...,
+            limit: Optional[Any] = ...,
+            downcast: Optional[Any] = ...) -> Any:
         ...
 
-    def bfill(self, axis: Optional[Any] = ..., inplace: bool = ...,
-              limit: Optional[Any] = ...,
-              downcast: Optional[Any] = ...) -> Any:
+    def bfill(
+            self, axis: Optional[Any] = ..., inplace: bool = ...,
+            limit: Optional[Any] = ...,
+            downcast: Optional[Any] = ...) -> Any:
         ...
 
-    def replace(self, to_replace: Optional[Any] = ...,
-                value: Optional[Any] = ..., inplace: bool = ...,
-                limit: Optional[Any] = ..., regex: bool = ...,
-                method: str = ...) -> Any:
+    def replace(
+            self, to_replace: Optional[Any] = ...,
+            value: Optional[Any] = ..., inplace: bool = ...,
+            limit: Optional[Any] = ..., regex: bool = ...,
+            method: str = ...) -> Any:
         ...
 
-    def interpolate(self, method: str = ..., axis: int = ...,
-                    limit: Optional[Any] = ..., inplace: bool = ...,
-                    limit_direction: str = ...,
-                    limit_area: Optional[Any] = ...,
-                    downcast: Optional[Any] = ..., **kwargs: Any) -> Any:
+    def interpolate(
+            self, method: str = ..., axis: int = ...,
+            limit: Optional[Any] = ..., inplace: bool = ...,
+            limit_direction: str = ...,
+            limit_area: Optional[Any] = ...,
+            downcast: Optional[Any] = ..., **kwargs: Any) -> Any:
         ...
 
     def asof(self, where: Any, subset: Optional[Any] = ...) -> Any:
@@ -372,46 +397,54 @@ class NDFrame(PandasObject, SelectionMixin):
     def notnull(self) -> Any:
         ...
 
-    def clip(self, *args: Any, lower: Optional[Any] = ...,
-             upper: Optional[Any] = ...,
-             axis: Optional[Any] = ..., inplace: bool = ...,
-             **kwargs: Any) -> Any:
+    def clip(
+            self, *args: Any, lower: Optional[Any] = ...,
+            upper: Optional[Any] = ...,
+            axis: Optional[Any] = ..., inplace: bool = ...,
+            **kwargs: Any) -> Any:
         ...
 
-    def clip_upper(self, threshold: Any, axis: Optional[Any] = ...,
-                   inplace: bool = ...) -> Any:
+    def clip_upper(
+            self, threshold: Any, axis: Optional[Any] = ...,
+            inplace: bool = ...) -> Any:
         ...
 
-    def clip_lower(self, threshold: Any, axis: Optional[Any] = ...,
-                   inplace: bool = ...) -> Any:
+    def clip_lower(
+            self, threshold: Any, axis: Optional[Any] = ...,
+            inplace: bool = ...) -> Any:
         ...
 
-    def groupby(self, by: Optional[Any] = ..., axis: int = ...,
-                level: Optional[Any] = ..., as_index: bool = ...,
-                sort: bool = ..., group_keys: bool = ..., squeeze: bool = ...,
-                observed: bool = ..., **kwargs: Any) -> Any:
+    def groupby(
+            self, by: Optional[Any] = ..., axis: int = ...,
+            level: Optional[Any] = ..., as_index: bool = ...,
+            sort: bool = ..., group_keys: bool = ..., squeeze: bool = ...,
+            observed: bool = ..., **kwargs: Any) -> Any:
         ...
 
-    def asfreq(self, freq: Any, method: Optional[Any] = ...,
-               how: Optional[Any] = ..., normalize: bool = ...,
-               fill_value: Optional[Any] = ...) -> Any:
+    def asfreq(
+            self, freq: Any, method: Optional[Any] = ...,
+            how: Optional[Any] = ..., normalize: bool = ...,
+            fill_value: Optional[Any] = ...) -> Any:
         ...
 
-    def at_time(self, time: Any, asof: bool = ...,
-                axis: Optional[Any] = ...) -> Any:
+    def at_time(
+            self, time: Any, asof: bool = ...,
+            axis: Optional[Any] = ...) -> Any:
         ...
 
-    def between_time(self, start_time: Any, end_time: Any,
-                     include_start: bool = ..., include_end: bool = ...,
-                     axis: Optional[Any] = ...) -> Any:
+    def between_time(
+            self, start_time: Any, end_time: Any,
+            include_start: bool = ..., include_end: bool = ...,
+            axis: Optional[Any] = ...) -> Any:
         ...
 
-    def resample(self, rule: Any, how: Optional[Any] = ..., axis: int = ...,
-                 fill_method: Optional[Any] = ..., closed: Optional[Any] = ...,
-                 label: Optional[Any] = ..., convention: str = ...,
-                 kind: Optional[Any] = ..., loffset: Optional[Any] = ...,
-                 limit: Optional[Any] = ..., base: int = ...,
-                 on: Optional[Any] = ..., level: Optional[Any] = ...) -> Any:
+    def resample(
+            self, rule: Any, how: Optional[Any] = ..., axis: int = ...,
+            fill_method: Optional[Any] = ..., closed: Optional[Any] = ...,
+            label: Optional[Any] = ..., convention: str = ...,
+            kind: Optional[Any] = ..., loffset: Optional[Any] = ...,
+            limit: Optional[Any] = ..., base: int = ...,
+            on: Optional[Any] = ..., level: Optional[Any] = ...) -> Any:
         ...
 
     def first(self, offset: Any) -> Any:
@@ -420,63 +453,74 @@ class NDFrame(PandasObject, SelectionMixin):
     def last(self, offset: Any) -> Any:
         ...
 
-    def rank(self, axis: int = ..., method: str = ...,
-             numeric_only: Optional[Any] = ..., na_option: str = ...,
-             ascending: bool = ..., pct: bool = ...) -> Any:
+    def rank(
+            self, axis: int = ..., method: str = ...,
+            numeric_only: Optional[Any] = ..., na_option: str = ...,
+            ascending: bool = ..., pct: bool = ...) -> Any:
         ...
 
-    def align(self, other: Any, join: str = ..., axis: Optional[Any] = ...,
-              level: Optional[Any] = ..., copy: bool = ...,
-              fill_value: Optional[Any] = ..., method: Optional[Any] = ...,
-              limit: Optional[Any] = ..., fill_axis: int = ...,
-              broadcast_axis: Optional[Any] = ...) -> Any:
+    def align(
+            self, other: Any, join: str = ..., axis: Optional[Any] = ...,
+            level: Optional[Any] = ..., copy: bool = ...,
+            fill_value: Optional[Any] = ..., method: Optional[Any] = ...,
+            limit: Optional[Any] = ..., fill_axis: int = ...,
+            broadcast_axis: Optional[Any] = ...) -> Any:
         ...
 
-    def where(self, cond: Any, other: Any = ..., inplace: bool = ...,
-              axis: Optional[Any] = ..., level: Optional[Any] = ...,
-              errors: str = ..., try_cast: bool = ...) -> Any:
+    def where(
+            self, cond: Any, other: Any = ..., inplace: bool = ...,
+            axis: Optional[Any] = ..., level: Optional[Any] = ...,
+            errors: str = ..., try_cast: bool = ...) -> Any:
         ...
 
-    def mask(self, cond: Any, other: Any = ..., inplace: bool = ...,
-             axis: Optional[Any] = ..., level: Optional[Any] = ...,
-             errors: str = ..., try_cast: bool = ...) -> Any:
+    def mask(
+            self, cond: Any, other: Any = ..., inplace: bool = ...,
+            axis: Optional[Any] = ..., level: Optional[Any] = ...,
+            errors: str = ..., try_cast: bool = ...) -> Any:
         ...
 
-    def shift(self, periods: int = ..., freq: Optional[Any] = ...,
-              axis: int = ..., fill_value: Optional[Any] = ...) -> Any:
+    def shift(
+            self, periods: int = ..., freq: Optional[Any] = ...,
+            axis: int = ..., fill_value: Optional[Any] = ...) -> Any:
         ...
 
     def slice_shift(self, periods: int = ..., axis: int = ...) -> Any:
         ...
 
-    def tshift(self, periods: int = ..., freq: Optional[Any] = ...,
-               axis: int = ...) -> Any:
+    def tshift(
+            self, periods: int = ..., freq: Optional[Any] = ...,
+            axis: int = ...) -> Any:
         ...
 
-    def truncate(self, before: Optional[Any] = ..., after: Optional[Any] = ...,
-                 axis: Optional[Any] = ..., copy: bool = ...) -> Any:
+    def truncate(
+            self, before: Optional[Any] = ..., after: Optional[Any] = ...,
+            axis: Optional[Any] = ..., copy: bool = ...) -> Any:
         ...
 
-    def tz_convert(self, tz: Any, axis: int = ..., level: Optional[Any] = ...,
-                   copy: bool = ...) -> Any:
+    def tz_convert(
+            self, tz: Any, axis: int = ..., level: Optional[Any] = ...,
+            copy: bool = ...) -> Any:
         ...
 
-    def tz_localize(self, tz: Any, axis: int = ..., level: Optional[Any] = ...,
-                    copy: bool = ..., ambiguous: str = ...,
-                    nonexistent: str = ...) -> Any:
+    def tz_localize(
+            self, tz: Any, axis: int = ..., level: Optional[Any] = ...,
+            copy: bool = ..., ambiguous: str = ...,
+            nonexistent: str = ...) -> Any:
         ...
 
     def abs(self) -> Any:
         ...
 
-    def describe(self, percentiles: Optional[Any] = ...,
-                 include: Optional[Any] = ...,
-                 exclude: Optional[Any] = ...) -> Any:
+    def describe(
+            self, percentiles: Optional[Any] = ...,
+            include: Optional[Any] = ...,
+            exclude: Optional[Any] = ...) -> Any:
         ...
 
-    def pct_change(self, periods: int = ..., fill_method: str = ...,
-                   limit: Optional[Any] = ..., freq: Optional[Any] = ...,
-                   **kwargs: Any) -> Any:
+    def pct_change(
+            self, periods: int = ..., fill_method: str = ...,
+            limit: Optional[Any] = ..., freq: Optional[Any] = ...,
+            **kwargs: Any) -> Any:
         ...
 
     def transform(self, func: Any, *args: Any, **kwargs: Any) -> Any:

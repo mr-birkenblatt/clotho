@@ -11,6 +11,7 @@
 
 from typing import Any, Optional
 
+
 def get_group_index(labels: Any, shape: Any, sort: Any, xnull: Any) -> Any:
     ...
 
@@ -27,23 +28,27 @@ def decons_group_index(comp_labels: Any, shape: Any) -> Any:
     ...
 
 
-def decons_obs_group_ids(comp_ids: Any, obs_ids: Any, shape: Any,
-                         labels: Any, xnull: Any) -> Any:
+def decons_obs_group_ids(
+        comp_ids: Any, obs_ids: Any, shape: Any,
+        labels: Any, xnull: Any) -> Any:
     ...
 
 
-def indexer_from_factorized(labels: Any, shape: Any,
-                            compress: bool = ...) -> Any:
+def indexer_from_factorized(
+        labels: Any, shape: Any,
+        compress: bool = ...) -> Any:
     ...
 
 
-def lexsort_indexer(keys: Any, orders: Optional[Any] = ...,
-                    na_position: str = ...) -> Any:
+def lexsort_indexer(
+        keys: Any, orders: Optional[Any] = ...,
+        na_position: str = ...) -> Any:
     ...
 
 
-def nargsort(items: Any, kind: str = ..., ascending: bool = ...,
-             na_position: str = ...) -> Any:
+def nargsort(
+        items: Any, kind: str = ..., ascending: bool = ...,
+        na_position: str = ...) -> Any:
     ...
 
 
@@ -54,10 +59,10 @@ class _KeyMapper:
     k: Any = ...
     tables: Any = ...
 
-    def __init__(self, comp_ids: Any, ngroups: Any, levels: Any,
-                 labels: Any) -> None:
+    def __init__(
+            self, comp_ids: Any, ngroups: Any, levels: Any,
+            labels: Any) -> None:
         ...
-
 
     def get_key(self, comp_id: Any) -> Any:
         ...

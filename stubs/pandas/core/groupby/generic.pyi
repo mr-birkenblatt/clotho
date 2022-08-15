@@ -14,9 +14,10 @@ AggScalar = Union[str, Callable[..., Any]]
 ScalarResult: Any
 
 
-def whitelist_method_generator(base_class: Type[GroupBy],
-                               klass: Type[FrameOrSeries],
-                               whitelist: FrozenSet[str]) -> Iterator[str]:
+def whitelist_method_generator(
+        base_class: Type[GroupBy],
+        klass: Type[FrameOrSeries],
+        whitelist: FrozenSet[str]) -> Iterator[str]:
     ...
 
 
@@ -29,8 +30,9 @@ class NDFrameGroupBy(GroupBy):
     def transform(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def filter(self, func: Any, dropna: bool = ..., *args: Any,
-               **kwargs: Any) -> Any:
+    def filter(
+            self, func: Any, dropna: bool = ..., *args: Any,
+            **kwargs: Any) -> Any:
         ...
 
 
@@ -38,16 +40,14 @@ class SeriesGroupBy(GroupBy):
     def apply(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def aggregate(self, func_or_funcs: Optional[Any] = ..., *args: Any, **kwargs: Any) -> Any:  # type: ignore
-        ...
-
     agg: Any = ...
 
     def transform(self, func: Any, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def filter(self, func: Any, dropna: bool = ..., *args: Any,
-               **kwargs: Any) -> Any:
+    def filter(
+            self, func: Any, dropna: bool = ..., *args: Any,
+            **kwargs: Any) -> Any:
         ...
 
     def nunique(self, dropna: bool = ...) -> Any:
@@ -56,22 +56,17 @@ class SeriesGroupBy(GroupBy):
     def describe(self, **kwargs: Any) -> Any:
         ...
 
-    def value_counts(self, normalize: bool = ..., sort: bool = ...,
-                     ascending: bool = ..., bins: Optional[Any] = ...,
-                     dropna: bool = ...) -> Any:
+    def value_counts(
+            self, normalize: bool = ..., sort: bool = ...,
+            ascending: bool = ..., bins: Optional[Any] = ...,
+            dropna: bool = ...) -> Any:
         ...
 
     def count(self) -> Any:
         ...
 
-    def pct_change(self, periods: int = ..., fill_method: str = ..., limit: Optional[Any] = ..., freq: Optional[Any] = ...) -> Any:  # type: ignore
-        ...
-
 
 class DataFrameGroupBy(NDFrameGroupBy):
-    def aggregate(self, arg: Optional[Any] = ..., *args: Any, **kwargs: Any) -> Any:  # type: ignore
-        ...
-
     agg: Any = ...
 
     def count(self) -> Any:

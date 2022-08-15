@@ -16,8 +16,9 @@ class UndefinedVariableError(NameError):
 
 
 class Term(StringMixin):
-    def __new__(cls, name: Any, env: Any, side: Optional[Any] = ...,
-                encoding: Optional[Any] = ...) -> Any:
+    def __new__(
+            cls, name: Any, env: Any, side: Optional[Any] = ...,
+            encoding: Optional[Any] = ...) -> Any:
         ...
 
     env: Any = ...
@@ -25,8 +26,9 @@ class Term(StringMixin):
     is_local: Any = ...
     encoding: Any = ...
 
-    def __init__(self, name: Any, env: Any, side: Optional[Any] = ...,
-                 encoding: Optional[Any] = ...) -> None:
+    def __init__(
+            self, name: Any, env: Any, side: Optional[Any] = ...,
+            encoding: Optional[Any] = ...) -> None:
         ...
 
     @property
@@ -53,20 +55,13 @@ class Term(StringMixin):
         ...
 
     return_type: Any = ...
+
     @property
     def raw(self) -> Any:
         ...
 
     @property
     def is_datetime(self) -> Any:
-        ...
-
-    @property  # type: ignore
-    def value(self) -> Any:
-        ...
-
-    @value.setter
-    def value(self, new_value: Any) -> None:
         ...
 
     @property
@@ -79,8 +74,9 @@ class Term(StringMixin):
 
 
 class Constant(Term):
-    def __init__(self, value: Any, env: Any, side: Optional[Any] = ...,
-                 encoding: Optional[Any] = ...) -> None:
+    def __init__(
+            self, value: Any, env: Any, side: Optional[Any] = ...,
+            encoding: Optional[Any] = ...) -> None:
         ...
 
     @property
@@ -93,8 +89,9 @@ class Op(StringMixin):
     operands: Any = ...
     encoding: Any = ...
 
-    def __init__(self, op: Any, operands: Any, *args: Any,
-                 **kwargs: Any) -> None:
+    def __init__(
+            self, op: Any, operands: Any, *args: Any,
+            **kwargs: Any) -> None:
         ...
 
     def __iter__(self) -> Any:
@@ -122,7 +119,7 @@ class Op(StringMixin):
 
 
 def is_term(obj: Any) -> Any:
-        ...
+    ...
 
 
 class BinOp(Op):
@@ -136,21 +133,23 @@ class BinOp(Op):
     def __call__(self, env: Any) -> Any:
         ...
 
-    def evaluate(self, env: Any, engine: Any, parser: Any, term_type: Any,
-                 eval_in_python: Any) -> Any:
+    def evaluate(
+            self, env: Any, engine: Any, parser: Any, term_type: Any,
+            eval_in_python: Any) -> Any:
         ...
 
     def convert_values(self) -> Any:
         ...
 
 
-def isnumeric(dtype: Any) -> Any:
-        ...
+def isnumeric(dtype: Any) -> bool:
+    ...
 
 
 class Div(BinOp):
-    def __init__(self, lhs: Any, rhs: Any, truediv: Any, *args: Any,
-                 **kwargs: Any) -> None:
+    def __init__(
+            self, lhs: Any, rhs: Any, truediv: Any, *args: Any,
+            **kwargs: Any) -> None:
         ...
 
 

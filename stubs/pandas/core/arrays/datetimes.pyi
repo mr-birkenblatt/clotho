@@ -12,6 +12,7 @@ import numpy as np
 from pandas.core.arrays import datetimelike as dtl
 from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
+
 def tz_to_dtype(tz: Any) -> Any:
     ...
 
@@ -22,13 +23,10 @@ class DatetimeArray(
         dtl.DatelikeOps):
     __array_priority__: int = ...
 
-    def __init__(self, values: Any, dtype: Any = ...,
-                 freq: Optional[Any] = ...,
-                 copy: bool = ...) -> None:
-        ...
-
-    @property
-    def dtype(self) -> Union[np.dtype, DatetimeTZDtype]:  # type: ignore
+    def __init__(
+            self, values: Any, dtype: Any = ...,
+            freq: Optional[Any] = ...,
+            copy: bool = ...) -> None:
         ...
 
     @property
@@ -59,9 +57,10 @@ class DatetimeArray(
     def tz_convert(self, tz: Any) -> Any:
         ...
 
-    def tz_localize(self, tz: Any, ambiguous: str = ...,
-                    nonexistent: str = ...,
-                    errors: Optional[Any] = ...) -> Any:
+    def tz_localize(
+            self, tz: Any, ambiguous: str = ...,
+            nonexistent: str = ...,
+            errors: Optional[Any] = ...) -> Any:
         ...
 
     def to_pydatetime(self) -> Any:
@@ -118,6 +117,7 @@ class DatetimeArray(
     is_year_start: Any = ...
     is_year_end: Any = ...
     is_leap_year: Any = ...
+
     def to_julian_date(self) -> Any:
         ...
 
