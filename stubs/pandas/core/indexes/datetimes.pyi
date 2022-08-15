@@ -4,17 +4,15 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,no-name-in-module,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
-# pylint: disable=too-many-arguments,abstract-method
+# pylint: disable=too-many-arguments,abstract-method,useless-import-alias
 from typing import Any, Optional
 
-from pandas._libs.tslibs import Timestamp
-
+from pandas._libs.tslibs import Timestamp as Timestamp
 from pandas.core.indexes.datetimelike import (
     DatetimeIndexOpsMixin,
     DatetimelikeDelegateMixin,
 )
 from pandas.core.indexes.numeric import Int64Index
-
 
 class DatetimeDelegateMixin(DatetimelikeDelegateMixin):
     ...

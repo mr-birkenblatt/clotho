@@ -4,18 +4,16 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,no-name-in-module,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
-# pylint: disable=abstract-method
+# pylint: disable=abstract-method,useless-import-alias
 from typing import Any, Optional
 
-from pandas._libs.tslibs import Timedelta
-
+from pandas._libs.tslibs import Timedelta as Timedelta
 from pandas.core.arrays import datetimelike as dtl
 from pandas.core.indexes.datetimelike import (
     DatetimeIndexOpsMixin,
     DatetimelikeDelegateMixin,
 )
 from pandas.core.indexes.numeric import Int64Index
-
 
 class TimedeltaDelegateMixin(DatetimelikeDelegateMixin):
     ...

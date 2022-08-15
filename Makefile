@@ -55,10 +55,8 @@ lint-pycodestyle-debug:
 
 lint-pylint:
 	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	-and -not -path './stubs/*' \
 	| sort
 	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	-and -not -path './stubs/*' \
 	| sort | xargs pylint -j 6
 
 lint-type-check:
