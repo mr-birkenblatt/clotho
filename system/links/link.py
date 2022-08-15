@@ -1,12 +1,11 @@
-from typing import Dict, Literal, Optional, Set, TypedDict, get_args, cast
+from typing import cast, Dict, get_args, Literal, Optional, Set, TypedDict
 
 import numpy as np
 import pandas as pd
-from misc.util import to_timestamp
 
+from misc.util import to_timestamp
 from system.links.user import User
 from system.msgs.message import MHash
-
 
 # view == it showed up
 # up == active click on up

@@ -1,9 +1,7 @@
+import re
 from typing import Optional
 
-import re
-
-from misc.util import is_hex, get_text_hash
-
+from misc.util import get_text_hash, is_hex
 
 TOPIC_START = "t/"
 VALID_TOPIC = re.compile(r"^t\/[a-z0-9_]+$")

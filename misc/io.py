@@ -1,3 +1,11 @@
+import errno
+import io
+import os
+import shutil
+import tempfile
+import threading
+import time
+from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -10,16 +18,6 @@ from typing import (
     overload,
     Tuple,
 )
-
-import io
-import os
-import time
-import errno
-import shutil
-import tempfile
-import threading
-from contextlib import contextmanager
-
 
 MAIN_LOCK = threading.RLock()
 STALE_FILE_RETRIES: List[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]

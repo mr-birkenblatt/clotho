@@ -1,10 +1,10 @@
-from typing import Optional, Tuple, TypedDict
 import sys
 import threading
+from typing import Optional, Tuple, TypedDict
 from unittest import skip
+
 import pandas as pd
 from quick_server import (
-    WorkerArgs,
     create_server,
     get_time,
     get_worker_check,
@@ -12,10 +12,8 @@ from quick_server import (
     QuickServer,
 )
 from quick_server import QuickServerRequestHandler as QSRH
-from quick_server import ReqArgs, Response
+from quick_server import ReqArgs, Response, WorkerArgs
 
-from misc.env import envload_int, envload_str
-from app.token import RedisTokenHandler
 from app.response_types import (
     LinkListResponse,
     LoginResponse,
@@ -23,14 +21,15 @@ from app.response_types import (
     TopicListResponse,
     TopicResponse,
 )
+from app.token import RedisTokenHandler
+from misc.env import envload_int, envload_str
 from misc.util import to_list
-from system.links.link import VT_UP, Link, LinkResponse, parse_vote_type
-from system.links.scorer import Scorer, get_scorer
+from system.links.link import Link, LinkResponse, parse_vote_type, VT_UP
+from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
 from system.links.user import User
-from system.msgs.message import MHash, Message
+from system.msgs.message import Message, MHash
 from system.msgs.store import get_default_message_store
-
 
 LinkQuery = TypedDict('LinkQuery', {
     "scorer": Scorer,

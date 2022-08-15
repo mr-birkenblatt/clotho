@@ -68,6 +68,20 @@ lint-flake8:
 	flake8 --verbose --select C812,C815,I001,I002,I003,I004,I005 --exclude \
 	venv --show-source ./
 
+lint-all: \
+	lint-comment \
+	lint-emptyinit \
+	lint-pyi \
+	lint-stringformat \
+	lint-indent \
+	lint-forgottenformat \
+	lint-requirements \
+	requirements-complete \
+	lint-pycodestyle \
+	lint-pylint \
+	lint-type-check \
+	lint-flake8
+
 install:
 	./install.sh $(PYTHON)
 

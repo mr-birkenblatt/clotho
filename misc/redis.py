@@ -25,8 +25,8 @@ from redis.exceptions import ResponseError
 from redis_lock import Lock
 
 from misc.env import envload_int, envload_str
-from misc.util import json_compact, json_read
 from misc.io import open_read
+from misc.util import json_compact, json_read
 
 
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods

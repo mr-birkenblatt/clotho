@@ -1,9 +1,9 @@
-from typing import Dict, Literal, cast, get_args
+from typing import cast, Dict, get_args, Literal
+
 import pandas as pd
+
 from misc.util import to_timestamp
-
-from system.links.link import VT_ACK, VT_DOWN, VT_SKIP, Link, VT_UP
-
+from system.links.link import Link, VT_ACK, VT_DOWN, VT_SKIP, VT_UP
 
 ScorerName = Literal[
     "new",

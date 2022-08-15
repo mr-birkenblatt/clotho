@@ -1,12 +1,11 @@
-from typing import TYPE_CHECKING, Iterable
 import os
 import weakref
+from typing import Iterable, TYPE_CHECKING
 
 from misc.env import envload_path
 from misc.io import open_append, open_read
-from system.msgs.message import MHash, Message
+from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
-
 
 if TYPE_CHECKING:
     WVD = weakref.WeakValueDictionary[MHash, Message]
