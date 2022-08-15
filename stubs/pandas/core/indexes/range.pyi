@@ -60,21 +60,11 @@ class RangeIndex(Int64Index):
     def is_monotonic_decreasing(self) -> Any:
         ...
 
-    @property
-    def has_duplicates(self) -> Any:
-        ...
-
     def __contains__(self, key: Union[int, np.integer]) -> bool:
         ...
 
     def get_loc(
             self, key: Any, method: Optional[Any] = ...,
-            tolerance: Optional[Any] = ...) -> Any:
-        ...
-
-    def get_indexer(
-            self, target: Any, method: Optional[Any] = ...,
-            limit: Optional[Any] = ...,
             tolerance: Optional[Any] = ...) -> Any:
         ...
 
@@ -100,14 +90,6 @@ class RangeIndex(Int64Index):
         ...
 
     def equals(self, other: Any) -> Any:
-        ...
-
-    def intersection(self, other: Any, sort: bool = ...) -> Any:
-        ...
-
-    def join(
-            self, other: Any, how: str = ..., level: Optional[Any] = ...,
-            return_indexers: bool = ..., sort: bool = ...) -> Any:
         ...
 
     def __len__(self) -> Any:

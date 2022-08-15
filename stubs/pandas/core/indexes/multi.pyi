@@ -4,7 +4,7 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
-# pylint: disable=too-many-arguments,abstract-method
+# pylint: disable=too-many-arguments,abstract-method,disallowed-name
 # pylint: disable=arguments-differ,c-extension-no-member
 from typing import Any, Optional
 
@@ -63,10 +63,6 @@ class MultiIndex(Index):
     def levels(self) -> Any:
         ...
 
-    @property
-    def array(self) -> Any:
-        ...
-
     def set_levels(
             self, levels: Any, level: Optional[Any] = ...,
             inplace: bool = ..., verify_integrity: bool = ...) -> Any:
@@ -105,9 +101,6 @@ class MultiIndex(Index):
     def memory_usage(self, deep: bool = ...) -> Any:
         ...
 
-    def nbytes(self) -> Any:
-        ...
-
     def __len__(self) -> Any:
         ...
 
@@ -120,12 +113,6 @@ class MultiIndex(Index):
     def values(self) -> Any:
         ...
 
-    def is_monotonic_increasing(self) -> Any:
-        ...
-
-    def is_monotonic_decreasing(self) -> Any:
-        ...
-
     def duplicated(self, keep: str = ...) -> Any:
         ...
 
@@ -135,9 +122,6 @@ class MultiIndex(Index):
         ...
 
     def dropna(self, how: str = ...) -> Any:
-        ...
-
-    def get_value(self, series: Any, key: Any) -> Any:
         ...
 
     def get_level_values(self, level: Any) -> Any:
@@ -153,10 +137,6 @@ class MultiIndex(Index):
         ...
 
     def to_flat_index(self) -> Any:
-        ...
-
-    @property
-    def is_all_dates(self) -> Any:
         ...
 
     def is_lexsorted(self) -> Any:
@@ -196,9 +176,6 @@ class MultiIndex(Index):
     def repeat(self, repeats: Any, axis: Optional[Any] = ...) -> Any:
         ...
 
-    def where(self, cond: Any, other: Optional[Any] = ...) -> None:
-        ...
-
     def swaplevel(self, i: int = ..., j: int = ...) -> Any:
         ...
 
@@ -208,12 +185,6 @@ class MultiIndex(Index):
     def __getslice__(self, i: Any, j: Any) -> Any:
         ...
 
-    def get_indexer(
-            self, target: Any, method: Optional[Any] = ...,
-            limit: Optional[Any] = ...,
-            tolerance: Optional[Any] = ...) -> Any:
-        ...
-
     def get_indexer_non_unique(self, target: Any) -> Any:
         ...
 
@@ -221,9 +192,6 @@ class MultiIndex(Index):
             self, target: Any, method: Optional[Any] = ...,
             level: Optional[Any] = ..., limit: Optional[Any] = ...,
             tolerance: Optional[Any] = ...) -> Any:
-        ...
-
-    def get_slice_bound(self, label: Any, side: Any, kind: Any) -> Any:
         ...
 
     def slice_locs(
@@ -249,15 +217,6 @@ class MultiIndex(Index):
         ...
 
     def equal_levels(self, other: Any) -> Any:
-        ...
-
-    def union(self, other: Any, sort: Optional[Any] = ...) -> Any:
-        ...
-
-    def intersection(self, other: Any, sort: bool = ...) -> Any:
-        ...
-
-    def difference(self, other: Any, sort: Optional[Any] = ...) -> Any:
         ...
 
     def astype(self, dtype: Any, copy: bool = ...) -> Any:

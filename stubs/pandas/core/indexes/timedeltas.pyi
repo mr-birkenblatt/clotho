@@ -4,8 +4,10 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,no-name-in-module,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
+# pylint: disable=abstract-method
+from typing import Any, Optional
 
-from pandas._libs.tslibs import Timedelta as Timedelta
+from pandas._libs.tslibs import Timedelta
 
 from pandas.core.arrays import datetimelike as dtl
 from pandas.core.indexes.datetimelike import (
@@ -13,7 +15,6 @@ from pandas.core.indexes.datetimelike import (
     DatetimelikeDelegateMixin,
 )
 from pandas.core.indexes.numeric import Int64Index
-from typing import Any, Optional
 
 
 class TimedeltaDelegateMixin(DatetimelikeDelegateMixin):
@@ -51,18 +52,6 @@ class TimedeltaIndex(  # type: ignore
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
-    def join(
-            self, other: Any, how: str = ...,
-            level: Optional[Any] = ..., return_indexers: bool = ...,
-            sort: bool = ...) -> Any:
-        ...
-
-    def intersection(self, other: Any, sort: bool = ...) -> Any:
-        ...
-
-    def get_value(self, series: Any, key: Any) -> Any:
-        ...
-
     def get_value_maybe_box(self, series: Any, key: Any) -> Any:
         ...
 
@@ -74,17 +63,6 @@ class TimedeltaIndex(  # type: ignore
     def searchsorted(
             self, value: Any, side: str = ...,
             sorter: Optional[Any] = ...) -> Any:
-        ...
-
-    def is_type_compatible(self, typ: Any) -> Any:
-        ...
-
-    @property
-    def inferred_type(self) -> Any:
-        ...
-
-    @property
-    def is_all_dates(self) -> Any:
         ...
 
     def insert(self, loc: Any, item: Any) -> Any:

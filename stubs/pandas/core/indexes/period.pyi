@@ -7,7 +7,7 @@
 # pylint: disable=abstract-method
 from typing import Any, Optional
 
-from pandas._libs.tslibs.period import Period as Period
+from pandas._libs.tslibs.period import Period
 from pandas.core.indexes.datetimelike import (
     DatetimeIndexOpsMixin,
     DatetimelikeDelegateMixin,
@@ -64,24 +64,7 @@ class PeriodIndex(  # type: ignore
         ...
 
     @property
-    def is_all_dates(self) -> Any:
-        ...
-
-    @property
     def is_full(self) -> Any:
-        ...
-
-    @property
-    def inferred_type(self) -> Any:
-        ...
-
-    def get_value(self, series: Any, key: Any) -> Any:
-        ...
-
-    def get_indexer(
-            self, target: Any, method: Optional[Any] = ...,
-            limit: Optional[Any] = ...,
-            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def get_indexer_non_unique(self, target: Any) -> Any:
@@ -96,14 +79,6 @@ class PeriodIndex(  # type: ignore
         ...
 
     def insert(self, loc: Any, item: Any) -> Any:
-        ...
-
-    def join(
-            self, other: Any, how: str = ..., level: Optional[Any] = ...,
-            return_indexers: bool = ..., sort: bool = ...) -> Any:
-        ...
-
-    def intersection(self, other: Any, sort: bool = ...) -> Any:
         ...
 
     @property
