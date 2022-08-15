@@ -5,6 +5,7 @@
 # pylint: disable=too-few-public-methods,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
 # pylint: disable=too-many-arguments,arguments-differ
+# pylint: disable=consider-using-from-import
 
 from typing import Any, Optional
 

@@ -10,7 +10,7 @@
 
 from typing import Any
 
-from .exceptions import PyperclipException
+from .exceptions import PyperclipException as PyperclipException
 
 EXCEPT_MSG: str
 

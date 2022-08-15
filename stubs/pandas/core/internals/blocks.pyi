@@ -8,7 +8,7 @@
 # pylint: disable=unused-import,useless-import-alias,signature-differs
 # pylint: disable=blacklisted-name,c-extension-no-member,too-many-ancestors
 
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import pandas._libs.internals as libinternals
 from pandas.core.base import PandasObject

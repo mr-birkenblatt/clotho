@@ -7,8 +7,6 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,signature-differs
 # pylint: disable=blacklisted-name
-
-
 from typing import Any, Optional
 
 import numpy as np
@@ -76,9 +74,4 @@ class FrozenNDArray(PandasObject, np.ndarray):
     fill: Any = ...
 
     def values(self) -> Any:
-        ...
-
-    def searchsorted(
-            self,
-            value: Any, side: str = ..., sorter: Optional[Any] = ...) -> Any:
         ...

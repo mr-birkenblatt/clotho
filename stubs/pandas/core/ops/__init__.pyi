@@ -6,7 +6,7 @@
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,signature-differs
-# pylint: disable=blacklisted-name,c-extension-no-member
+# pylint: disable=blacklisted-name,c-extension-no-member,no-name-in-module
 
 from typing import Any, Callable, Optional
 
@@ -17,7 +17,7 @@ from pandas.core.ops.docstrings import (
     _make_flex_doc,
     _op_descriptions,
 )
-from pandas.core.ops.roperator import (
+from pandas.core.ops.roperator import (  # pylint: disable=import-error
     radd,
     rand_,
     rdiv,
@@ -64,11 +64,14 @@ def should_series_dispatch(left: Any, right: Any, op: Any) -> Any:
     ...
 
 
-def dispatch_to_series(left: Any, right: Any, func: Any, str_rep: Optional[Any] = ..., axis: Optional[Any] = ...) -> Any:
+def dispatch_to_series(
+        left: Any, right: Any, func: Any,
+        str_rep: Optional[Any] = ..., axis: Optional[Any] = ...) -> Any:
     ...
 
 
-def dispatch_to_index_op(op: Any, left: Any, right: Any, index_class: Any) -> Any:
+def dispatch_to_index_op(
+        op: Any, left: Any, right: Any, index_class: Any) -> Any:
     ...
 
 
@@ -88,5 +91,7 @@ def add_flex_arithmetic_methods(cls: Any) -> None:
     ...
 
 
-def maybe_dispatch_ufunc_to_dunder_op(self: Any, ufunc: Callable, method: str, *inputs: ArrayLike, **kwargs: Any) -> Any:
+def maybe_dispatch_ufunc_to_dunder_op(
+        self: Any, ufunc: Callable, method: str,
+        *inputs: ArrayLike, **kwargs: Any) -> Any:
     ...

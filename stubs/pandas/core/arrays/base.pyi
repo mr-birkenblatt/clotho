@@ -13,7 +13,7 @@ from pandas._typing import ArrayLike
 from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.core.dtypes.generic import ABCExtensionArray
 
-_extension_array_shared_docs: Dict[str, str] = dict()
+_extension_array_shared_docs: Dict[str, str] = ...
 
 
 class ExtensionArray:

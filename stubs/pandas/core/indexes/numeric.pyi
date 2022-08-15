@@ -13,12 +13,10 @@ from typing import Any, Optional
 from pandas.core.indexes.base import Index
 
 class NumericIndex(Index):
-    def __new__(cls, data: Optional[Any] = ..., dtype: Optional[Any] = ...,
-                copy: bool = ..., name: Optional[Any] = ...,
-                fastpath: Optional[Any] = ...) -> Any:
-        ...
-
-    def is_all_dates(self) -> Any:
+    def __new__(
+            cls, data: Optional[Any] = ..., dtype: Optional[Any] = ...,
+            copy: bool = ..., name: Optional[Any] = ...,
+            fastpath: Optional[Any] = ...) -> Any:
         ...
 
     def insert(self, loc: Any, item: Any) -> Any:
@@ -61,17 +59,15 @@ class Float64Index(NumericIndex):
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
-    def get_value(self, series: Any, key: Any) -> Any:
-        ...
-
     def equals(self, other: Any) -> Any:
         ...
 
     def __contains__(self, other: Any) -> Any:
         ...
 
-    def get_loc(self, key: Any, method: Optional[Any] = ...,
-                tolerance: Optional[Any] = ...) -> Any:
+    def get_loc(
+            self, key: Any, method: Optional[Any] = ...,
+            tolerance: Optional[Any] = ...) -> Any:
         ...
 
     def is_unique(self) -> Any:

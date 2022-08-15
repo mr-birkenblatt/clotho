@@ -4,15 +4,13 @@
 # pylint: disable=unused-argument,super-init-not-called,redefined-outer-name
 # pylint: disable=no-name-in-module,arguments-differ,too-many-arguments
 # pylint: disable=dangerous-default-value,too-many-ancestors,unused-import
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,too-few-public-methods
 from typing import Any, Optional, Set
 
 from pandas._typing import Axis
 from pandas.core.base import PandasObject, SelectionMixin
 from pandas.core.groupby.base import GroupByMixin
-
 from pandas.util._decorators import Appender
-
 
 class _Window(PandasObject, SelectionMixin):
     exclusions: Set[str] = ...

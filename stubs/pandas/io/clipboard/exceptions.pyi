@@ -11,6 +11,7 @@ from typing import Any
 class PyperclipException(RuntimeError):
     ...
 
+
 class PyperclipWindowsException(PyperclipException):
     def __init__(self, message: Any) -> None:
         ...

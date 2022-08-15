@@ -10,6 +10,7 @@ from typing import Any
 def create_pandas_abc_type(name: Any, attr: Any, comp: Any) -> Any:
     ...
 
+
 ABCIndex: Any
 ABCInt64Index: Any
 ABCUInt64Index: Any

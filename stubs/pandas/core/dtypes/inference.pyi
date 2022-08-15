@@ -14,49 +14,50 @@ is_decimal: Any
 is_interval: Any
 is_list_like: Any
 
-def is_number(obj: Any)-> Any:
+
+def is_number(obj: Any) -> Any:
     ...
 
 
-def is_string_like(obj: Any)-> Any:
+def is_string_like(obj: Any) -> Any:
     ...
 
 
-def is_iterator(obj: Any)-> Any:
+def is_iterator(obj: Any) -> Any:
     ...
 
 
-def is_file_like(obj: Any)-> Any:
+def is_file_like(obj: Any) -> Any:
     ...
 
 
-def is_re(obj: Any)-> Any:
+def is_re(obj: Any) -> Any:
     ...
 
 
-def is_re_compilable(obj: Any)-> Any:
+def is_re_compilable(obj: Any) -> Any:
     ...
 
 
-def is_array_like(obj: Any)-> Any:
+def is_array_like(obj: Any) -> Any:
     ...
 
 
-def is_nested_list_like(obj: Any)-> Any:
+def is_nested_list_like(obj: Any) -> Any:
     ...
 
 
-def is_dict_like(obj: Any)-> Any:
+def is_dict_like(obj: Any) -> Any:
     ...
 
 
-def is_named_tuple(obj: Any)-> Any:
+def is_named_tuple(obj: Any) -> Any:
     ...
 
 
-def is_hashable(obj: Any)-> Any:
+def is_hashable(obj: Any) -> Any:
     ...
 
 
-def is_sequence(obj: Any)-> Any:
+def is_sequence(obj: Any) -> Any:
     ...

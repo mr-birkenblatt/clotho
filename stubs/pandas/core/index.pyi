@@ -6,6 +6,7 @@
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,signature-differs
+# pylint: disable=no-name-in-module
 from pandas.core.indexes.api import _all_indexes_same as _all_indexes_same
 from pandas.core.indexes.api import _get_combined_index as _get_combined_index
 from pandas.core.indexes.api import (

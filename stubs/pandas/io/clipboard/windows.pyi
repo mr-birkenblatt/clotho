@@ -15,5 +15,6 @@ class CheckedCall:
     def __setattr__(self, key: Any, value: Any) -> None:
         ...
 
+
 def init_windows_clipboard() -> Any:
     ...
