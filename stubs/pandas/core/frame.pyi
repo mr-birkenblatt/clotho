@@ -4,7 +4,7 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
-# pylint: disable=too-many-arguments,line-too-long,keyword-arg-before-vararg
+# pylint: disable=too-many-arguments,keyword-arg-before-vararg
 # pylint: disable=arguments-differ,signature-differs,disallowed-name
 from typing import (
     Any,
@@ -18,8 +18,10 @@ from typing import (
     TYPE_CHECKING,
     Union,
 )
+
 import numpy as np
 from pandas.core.generic import NDFrame
+
 if TYPE_CHECKING:
     import pandas as pd
 

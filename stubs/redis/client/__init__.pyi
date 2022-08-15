@@ -1,7 +1,9 @@
+# pylint: disable=too-few-public-methods,unused-argument
+
+
 from typing import List, Optional, Union
 
 from redis import StrictRedis
-
 
 class Script:
     def __init__(
