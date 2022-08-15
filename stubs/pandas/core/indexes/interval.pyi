@@ -112,23 +112,10 @@ class IntervalIndex(IntervalMixin, Index):
     def dtype(self) -> Any:
         ...
 
-    @property
-    def inferred_type(self) -> Any:
-        ...
-
     def memory_usage(self, deep: bool = ...) -> Any:
         ...
 
     def mid(self) -> Any:
-        ...
-
-    def is_monotonic(self) -> Any:
-        ...
-
-    def is_monotonic_increasing(self) -> Any:
-        ...
-
-    def is_monotonic_decreasing(self) -> Any:
         ...
 
     def is_unique(self) -> Any:
@@ -141,24 +128,8 @@ class IntervalIndex(IntervalMixin, Index):
     def is_overlapping(self) -> Any:
         ...
 
-    def get_indexer(
-            self, target: AnyArrayLike, method: Optional[str] = ...,
-            limit: Optional[int] = ...,
-            tolerance: Optional[Any] = ...) -> np.ndarray:
-        ...
-
     def get_indexer_non_unique(
             self, target: AnyArrayLike) -> Tuple[np.ndarray, np.ndarray]:
-        ...
-
-    def get_indexer_for(
-            self, target: AnyArrayLike, **kwargs: Any) -> np.ndarray:
-        ...
-
-    def get_value(self, series: ABCSeries, key: Any) -> Any:
-        ...
-
-    def where(self, cond: Any, other: Optional[Any] = ...) -> Any:
         ...
 
     def delete(self, loc: Any) -> Any:
@@ -185,14 +156,6 @@ class IntervalIndex(IntervalMixin, Index):
         ...
 
     def overlaps(self, other: Any) -> Any:
-        ...
-
-    def intersection(
-            self, other: 'IntervalIndex', sort: bool = ...) -> 'IntervalIndex':
-        ...
-
-    @property
-    def is_all_dates(self) -> Any:
         ...
 
     union: Any = ...

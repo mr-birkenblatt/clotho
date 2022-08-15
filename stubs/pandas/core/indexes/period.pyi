@@ -4,14 +4,15 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,no-name-in-module,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
+# pylint: disable=abstract-method
+from typing import Any, Optional
 
 from pandas._libs.tslibs.period import Period as Period
 from pandas.core.indexes.datetimelike import (
     DatetimeIndexOpsMixin,
     DatetimelikeDelegateMixin,
 )
-from pandas.core.indexes.datetimes import Int64Index
-from typing import Any, Optional
+from pandas.core.indexes.numeric import Int64Index
 
 
 class PeriodDelegateMixin(DatetimelikeDelegateMixin):

@@ -5,6 +5,7 @@
 # pylint: disable=too-few-public-methods,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
 # pylint: disable=too-many-arguments,abstract-method
+# pylint: disable=arguments-differ,c-extension-no-member
 from typing import Any, Optional
 
 from pandas._libs import index as libindex

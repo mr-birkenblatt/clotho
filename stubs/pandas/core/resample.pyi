@@ -77,10 +77,10 @@ class Resampler(_GroupBy):
     def asfreq(self, fill_value: Optional[Any] = ...) -> Any:
         ...
 
-    def std(self, ddof: int = ..., *args: Any, **kwargs: Any) -> Any:
+    def std(self, ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
-    def var(self, ddof: int = ..., *args: Any, **kwargs: Any) -> Any:
+    def var(self, ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
     def size(self) -> Any:

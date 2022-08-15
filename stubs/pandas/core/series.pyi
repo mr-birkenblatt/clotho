@@ -78,11 +78,6 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
     def view(self, dtype: Optional[Any] = ...) -> Any:
         ...
 
-    def __array_ufunc__(
-            self, ufunc: Callable, method: str, *inputs: Any,
-            **kwargs: Any) -> Any:
-        ...
-
     def __array__(self, dtype: Optional[Any] = ...) -> Any:
         ...
 
@@ -349,9 +344,6 @@ class Series(base.IndexOpsMixin, generic.NDFrame):
         ...
 
     def between(self, left: Any, right: Any, inclusive: bool = ...) -> Any:
-        ...
-
-    def to_csv(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
     def isna(self) -> Any:

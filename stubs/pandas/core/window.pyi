@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument,super-init-not-called,redefined-outer-name
 # pylint: disable=no-name-in-module,arguments-differ,too-many-arguments
 # pylint: disable=dangerous-default-value,too-many-ancestors,unused-import
+# pylint: disable=invalid-name
 from typing import Any, Optional, Set
 
 from pandas._typing import Axis
@@ -134,9 +135,6 @@ class _Rolling_and_Expanding(_Rolling):
 
 
 class Rolling(_Rolling_and_Expanding):
-    def is_datetimelike(self) -> bool:
-        ...
-
     win_freq: Any = ...
     window: Any = ...
     win_type: str = ...
@@ -170,10 +168,10 @@ class Rolling(_Rolling_and_Expanding):
     def median(self, **kwargs: Any) -> Any:
         ...
 
-    def std(self, ddof: int = ..., *args: Any, **kwargs: Any) -> Any:
+    def std(self, ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
-    def var(self, ddof: int = ..., *args: Any, **kwargs: Any) -> Any:
+    def var(self, ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
     def skew(self, **kwargs: Any) -> Any:
@@ -231,10 +229,10 @@ class Expanding(_Rolling_and_Expanding):
     def median(self, **kwargs: Any) -> Any:
         ...
 
-    def std(self, ddof: int = ..., *args: Any, **kwargs: Any) -> Any:
+    def std(self, ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
-    def var(self, ddof: int = ..., *args: Any, **kwargs: Any) -> Any:
+    def var(self, ddof: int = ..., **kwargs: Any) -> Any:
         ...
 
     def skew(self, **kwargs: Any) -> Any:
