@@ -17,9 +17,9 @@ def skip_if_installed(package: str) -> MarkDecorator:
     ...
 
 
-def skip_if_no(package: str, min_version: Optional[str] = ...) -> MarkDecorator:
+def skip_if_no(
+        package: str, min_version: Optional[str] = ...) -> MarkDecorator:
     ...
-
 
 
 skip_if_no_mpl: Any
@@ -33,7 +33,9 @@ skip_if_no_scipy: Any
 skip_if_no_ne: Any
 
 
-def skip_if_np_lt(ver_str: Any, reason: Optional[Any] = ..., *args: Any, **kwds: Any) -> Any:
+def skip_if_np_lt(
+        ver_str: Any, reason: Optional[Any] = ...,
+        *args: Any, **kwds: Any) -> Any:
     ...
 
 

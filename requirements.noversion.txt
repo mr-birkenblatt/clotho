@@ -8,3 +8,5 @@ praw
 python-redis-lock
 quick-server
 redis
+pytest
+pytest-cov

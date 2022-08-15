@@ -5,6 +5,8 @@ mypy==0.971
 numpy==1.23.1
 pandas==1.4.3
 praw==7.6.0
+pytest-cov==3.0.0
+pytest==6.2.1
 python-redis-lock==3.7.0
 quick-server==0.7.15
 redis==4.3.4
