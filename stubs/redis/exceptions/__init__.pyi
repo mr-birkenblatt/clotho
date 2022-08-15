@@ -65,17 +65,14 @@ class LockError(RedisError, ValueError):
     "Errors acquiring or releasing a lock"
     # NOTE: For backwards compatibility, this class derives from ValueError.
     # This was originally chosen to behave like threading.Lock.
-    pass
 
 
 class LockNotOwnedError(LockError):
     "Error trying to extend or release a lock that is (no longer) owned"
-    pass
 
 
 class ChildDeadlockedError(Exception):
     "Error indicating that a child process is deadlocked after a fork()"
-    pass
 
 
 class AuthenticationWrongNumberOfArgsError(ResponseError):
@@ -83,4 +80,3 @@ class AuthenticationWrongNumberOfArgsError(ResponseError):
     An error to indicate that the wrong number of args
     were sent to the AUTH command
     """
-    pass

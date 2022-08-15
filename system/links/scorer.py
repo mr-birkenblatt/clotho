@@ -1,9 +1,9 @@
-from typing import Dict, Literal, cast, get_args
+from typing import cast, Dict, get_args, Literal
+
 import pandas as pd
+
 from misc.util import to_timestamp
-
-from system.links.link import VT_ACK, VT_DOWN, VT_SKIP, Link, VT_UP
-
+from system.links.link import Link, VT_ACK, VT_DOWN, VT_SKIP, VT_UP
 
 ScorerName = Literal[
     "new",
@@ -13,22 +13,22 @@ ScorerName = Literal[
 VALID_SCORER_NAMES = set(get_args(ScorerName))
 
 
-class Scorer:
+class Scorer:  # pylint: disable=too-few-public-methods
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         raise NotImplementedError()
 
 
-class NewScorer(Scorer):
+class NewScorer(Scorer):  # pylint: disable=too-few-public-methods
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         return to_timestamp(link.get_votes(VT_UP).get_first_vote_time(now))
 
 
-class TopScorer(Scorer):
+class TopScorer(Scorer):  # pylint: disable=too-few-public-methods
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         return link.get_votes(VT_UP).get_total_votes()
 
 
-class BestScorer(Scorer):
+class BestScorer(Scorer):  # pylint: disable=too-few-public-methods
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         ups = link.get_votes(VT_UP)
         downs = link.get_votes(VT_DOWN)

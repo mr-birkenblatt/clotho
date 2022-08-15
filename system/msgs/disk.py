@@ -1,12 +1,11 @@
-from typing import TYPE_CHECKING, Iterable
 import os
 import weakref
+from typing import Iterable, TYPE_CHECKING
 
 from misc.env import envload_path
 from misc.io import open_append, open_read
-from system.msgs.message import MHash, Message
+from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
-
 
 if TYPE_CHECKING:
     WVD = weakref.WeakValueDictionary[MHash, Message]
@@ -30,12 +29,12 @@ class DiskStore(MessageStore):
 
     def _compute_path(self, message_hash: MHash) -> str:
 
-        def split_hash(hash: str) -> Iterable[str]:
-            yield hash[:2]
-            yield hash[2:4]
-            yield hash[4:6]
-            yield hash[6:56]
-            yield hash[56:]
+        def split_hash(hash_str: str) -> Iterable[str]:
+            yield hash_str[:2]
+            yield hash_str[2:4]
+            yield hash_str[4:6]
+            yield hash_str[6:56]
+            yield hash_str[56:]
 
         all_segs = list(split_hash(message_hash.to_parseable()))
         segs = all_segs[:-1]

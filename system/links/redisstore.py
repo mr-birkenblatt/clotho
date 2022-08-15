@@ -1,9 +1,10 @@
 from typing import Iterable, Optional, Tuple
+
 import pandas as pd
 
 from misc.redis import ObjectRedis
 from misc.util import from_timestamp, to_timestamp
-from system.links.link import VT_UP, Link, VoteType, Votes, parse_vote_type
+from system.links.link import Link, parse_vote_type, Votes, VoteType, VT_UP
 from system.links.store import LinkStore
 from system.links.user import User
 from system.msgs.message import MHash

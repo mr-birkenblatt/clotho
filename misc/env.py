@@ -1,6 +1,5 @@
-from typing import Optional, Literal
 import os
-
+from typing import Literal, Optional
 
 EnvPath = Literal[
     "MSG_PATH",

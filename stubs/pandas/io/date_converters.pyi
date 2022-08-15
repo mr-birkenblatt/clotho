@@ -14,8 +14,9 @@ def parse_date_fields(year_col: Any, month_col: Any, day_col: Any) -> Any:
     ...
 
 
-def parse_all_fields(year_col: Any, month_col: Any, day_col: Any,
-                     hour_col: Any, minute_col: Any, second_col: Any) -> Any:
+def parse_all_fields(
+        year_col: Any, month_col: Any, day_col: Any,
+        hour_col: Any, minute_col: Any, second_col: Any) -> Any:
     ...
 
 

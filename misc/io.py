@@ -1,3 +1,11 @@
+import errno
+import io
+import os
+import shutil
+import tempfile
+import threading
+import time
+from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -8,18 +16,7 @@ from typing import (
     Literal,
     Optional,
     overload,
-    Tuple,
 )
-
-import io
-import os
-import time
-import errno
-import shutil
-import tempfile
-import threading
-from contextlib import contextmanager
-
 
 MAIN_LOCK = threading.RLock()
 STALE_FILE_RETRIES: List[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]
@@ -84,13 +81,6 @@ def get_mode(base: str, text: bool) -> str:
     return f"{base}{'' if text else 'b'}"
 
 
-def get_ext(filename: str) -> Tuple[str, str]:
-    ix = filename.find(".")
-    if ix < 0:
-        return filename, ""
-    return filename[:ix], filename[ix + 1:]
-
-
 def is_empty_file(fin: IO[Any]) -> bool:
     pos = fin.seek(0, io.SEEK_CUR)
     size = fin.seek(0, io.SEEK_END) - pos
@@ -137,11 +127,12 @@ def open_read(filename: str, text: bool) -> IO[Any]:
 
 def open_read(filename: str, text: bool) -> IO[Any]:
     # FIXME: for now we are lock-free
-    _, ext = get_ext(filename)
 
     def actual_read() -> IO[Any]:
         return cast(IO[Any], open(  # pylint: disable=consider-using-with
-            filename, get_mode("r", text)))
+            filename,
+            get_mode("r", text),
+            encoding=("utf-8" if text else None)))
 
     ix = 0
     res = None
@@ -170,7 +161,6 @@ def open_read(filename: str, text: bool) -> IO[Any]:
 def open_append(
         filename: str,
         text: Literal[True],
-        nolog: bool = False,
         **kwargs: Any) -> IO[str]:
     ...
 
@@ -179,7 +169,6 @@ def open_append(
 def open_append(
         filename: str,
         text: Literal[False],
-        nolog: bool = False,
         **kwargs: Any) -> IO[bytes]:
     ...
 
@@ -189,7 +178,6 @@ def open_append(
 def open_append(
         filename: str,
         text: bool,
-        nolog: bool = False,
         **kwargs: Any) -> IO[Any]:
     ...
 
@@ -197,18 +185,17 @@ def open_append(
 def open_append(
         filename: str,
         text: bool,
-        nolog: bool = False,
         **kwargs: Any) -> IO[Any]:
     # FIXME: for now we are lock-free
-    if not nolog:
-        _, ext = get_ext(filename)
     return cast(IO[Any], open(  # pylint: disable=consider-using-with
-        filename, get_mode("a", text), **kwargs))
+        filename,
+        get_mode("a", text),
+        encoding=("utf-8" if text else None),
+        **kwargs))
 
 
 @contextmanager
 def open_write(filename: str, text: bool) -> Iterator[IO[Any]]:
-    _, ext = get_ext(filename)
     filename = normalize_file(filename)
 
     mode = get_mode("w", text)

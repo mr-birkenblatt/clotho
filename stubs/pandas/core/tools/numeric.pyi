@@ -6,6 +6,6 @@
 from typing import Any, Optional
 
 
-def to_numeric(arg: Any, errors: str = ...,
-               downcast: Optional[Any] = ...) -> Any:
+def to_numeric(
+        arg: Any, errors: str = ..., downcast: Optional[Any] = ...) -> Any:
     ...

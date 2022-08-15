@@ -1,6 +1,6 @@
 from typing import Iterable, Optional
-from misc.env import envload_str
 
+from misc.env import envload_str
 from system.msgs.message import Message, MHash
 
 
