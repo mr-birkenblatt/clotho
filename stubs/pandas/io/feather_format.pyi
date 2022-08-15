@@ -10,6 +10,7 @@ def to_feather(df: Any, path: Any) -> None:
     ...
 
 
-def read_feather(path: Any, columns: Optional[Any] = ...,
-                 use_threads: bool = ...) -> Any:
+def read_feather(
+        path: Any, columns: Optional[Any] = ...,
+        use_threads: bool = ...) -> Any:
     ...

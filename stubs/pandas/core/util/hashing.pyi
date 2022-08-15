@@ -6,22 +6,25 @@
 from typing import Any, Optional
 
 
-def hash_pandas_object(obj: Any, index: bool = ..., encoding: str = ...,
-                       hash_key: Optional[Any] = ...,
-                       categorize: bool = ...) -> Any:
+def hash_pandas_object(
+        obj: Any, index: bool = ..., encoding: str = ...,
+        hash_key: Optional[Any] = ...,
+        categorize: bool = ...) -> Any:
     ...
 
 
-def hash_tuples(vals: Any, encoding: str = ...,
-                hash_key: Optional[Any] = ...) -> Any:
+def hash_tuples(
+        vals: Any, encoding: str = ...,
+        hash_key: Optional[Any] = ...) -> Any:
     ...
 
 
-def hash_tuple(val: Any, encoding: str = ..., hash_key:
-               Optional[Any] = ...) -> Any:
+def hash_tuple(
+        val: Any, encoding: str = ..., hash_key: Optional[Any] = ...) -> Any:
     ...
 
 
-def hash_array(vals: Any, encoding: str = ..., hash_key: Optional[Any] = ...,
-               categorize: bool = ...) -> Any:
+def hash_array(
+        vals: Any, encoding: str = ..., hash_key: Optional[Any] = ...,
+        categorize: bool = ...) -> Any:
     ...

@@ -1,10 +1,11 @@
 from typing import Iterable, List, Optional
-import pandas as pd
-from misc.env import envload_str
 
+import pandas as pd
+
+from misc.env import envload_str
 from system.links.link import Link
-from system.links.user import User
 from system.links.scorer import Scorer
+from system.links.user import User
 from system.msgs.message import MHash
 
 

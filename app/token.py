@@ -1,6 +1,8 @@
 from typing import Any, ContextManager, Dict, List, Optional
-from misc.redis import ObjectRedis, RedisWrapper
+
 from quick_server import TokenHandler
+
+from misc.redis import ObjectRedis, RedisWrapper
 
 
 class RedisTokenHandler(TokenHandler):

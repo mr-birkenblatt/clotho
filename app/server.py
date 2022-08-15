@@ -1,21 +1,13 @@
-from typing import Optional, Tuple, TypedDict
+# pylint: disable=unused-argument
 import sys
 import threading
-from unittest import skip
-import pandas as pd
-from quick_server import (
-    WorkerArgs,
-    create_server,
-    get_time,
-    get_worker_check,
-    PreventDefaultResponse,
-    QuickServer,
-)
-from quick_server import QuickServerRequestHandler as QSRH
-from quick_server import ReqArgs, Response
+from typing import Optional, TypedDict
 
-from misc.env import envload_int, envload_str
-from app.token import RedisTokenHandler
+import pandas as pd
+from quick_server import create_server, QuickServer
+from quick_server import QuickServerRequestHandler as QSRH
+from quick_server import ReqArgs, WorkerArgs
+
 from app.response_types import (
     LinkListResponse,
     LoginResponse,
@@ -23,14 +15,15 @@ from app.response_types import (
     TopicListResponse,
     TopicResponse,
 )
+from app.token import RedisTokenHandler
+from misc.env import envload_int, envload_str
 from misc.util import to_list
-from system.links.link import VT_UP, Link, LinkResponse, parse_vote_type
-from system.links.scorer import Scorer, get_scorer
+from system.links.link import LinkResponse, parse_vote_type, VT_UP
+from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
 from system.links.user import User
-from system.msgs.message import MHash, Message
+from system.msgs.message import Message, MHash
 from system.msgs.store import get_default_message_store
-
 
 LinkQuery = TypedDict('LinkQuery', {
     "scorer": Scorer,
@@ -96,7 +89,16 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
             obj["user"] = user
         return {
             "token": token,
-            "user": user
+            "user": user,
+        }
+
+    @server.json_post(f"{prefix}/user")
+    def _post_user(_req: QSRH, rargs: ReqArgs) -> LoginResponse:
+        args = rargs["post"]
+        user = get_user(args)
+        return {
+            "token": args["token"],
+            "user": user.get_name(),
         }
 
     # *** interactions ***

@@ -1,0 +1,13 @@
+flake8
+flake8-commas
+flake8-isort
+mypy
+numpy
+pandas
+praw
+pylint
+pytest
+pytest-cov
+python-redis-lock
+quick-server
+redis

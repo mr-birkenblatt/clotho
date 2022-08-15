@@ -5,7 +5,7 @@
 
 from typing import Any
 
-copy: Any
-paste: Any
+copy: Any = ...
+paste: Any = ...
 clipboard_get = paste
 clipboard_set = copy

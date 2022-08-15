@@ -4,5 +4,5 @@
 # pylint: disable=unused-import,useless-import-alias
 
 
+from pandas.tseries import offsets
 from pandas.tseries.frequencies import infer_freq as infer_freq
-import pandas.tseries.offsets as offsets

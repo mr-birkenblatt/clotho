@@ -2,7 +2,6 @@ from typing import Dict, List, TypedDict
 
 from system.links.link import LinkResponse
 
-
 LoginResponse = TypedDict('LoginResponse', {
     "token": str,
     "user": str,
