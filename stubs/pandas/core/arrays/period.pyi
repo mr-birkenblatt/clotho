@@ -4,7 +4,7 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,no-self-use,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
-# pylint: disable=too-many-arguments,no-name-in-module
+# pylint: disable=too-many-arguments,no-name-in-module,inconsistent-mro
 
 from typing import Any, Optional, Sequence
 from pandas._libs.tslibs.period import Period
@@ -20,6 +20,7 @@ class PeriodArray(dtl.DatetimeLikeArrayMixin, dtl.DatelikeOps):
             dtype: Optional[Any] = ..., copy: bool = ...) -> None:
         ...
 
+    @property
     def dtype(self) -> Any:
         ...
 

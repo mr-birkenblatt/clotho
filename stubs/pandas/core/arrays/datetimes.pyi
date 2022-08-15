@@ -4,7 +4,7 @@
 # pylint: disable=unused-import,unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods,no-self-use,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
-# pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments,inconsistent-mro
 
 
 from typing import Any, Optional, Union

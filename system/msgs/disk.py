@@ -29,12 +29,12 @@ class DiskStore(MessageStore):
 
     def _compute_path(self, message_hash: MHash) -> str:
 
-        def split_hash(hash: str) -> Iterable[str]:
-            yield hash[:2]
-            yield hash[2:4]
-            yield hash[4:6]
-            yield hash[6:56]
-            yield hash[56:]
+        def split_hash(hash_str: str) -> Iterable[str]:
+            yield hash_str[:2]
+            yield hash_str[2:4]
+            yield hash_str[4:6]
+            yield hash_str[6:56]
+            yield hash_str[56:]
 
         all_segs = list(split_hash(message_hash.to_parseable()))
         segs = all_segs[:-1]

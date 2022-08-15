@@ -48,9 +48,11 @@ class Categorical(ExtensionArray, PandasObject):
     def astype(self, dtype: Any, copy: bool = ...) -> Any:
         ...
 
+    @property
     def ndim(self) -> Any:
         ...
 
+    @property
     def size(self) -> Any:
         ...
 

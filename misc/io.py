@@ -16,7 +16,6 @@ from typing import (
     Literal,
     Optional,
     overload,
-    Tuple,
 )
 
 MAIN_LOCK = threading.RLock()
@@ -82,13 +81,6 @@ def get_mode(base: str, text: bool) -> str:
     return f"{base}{'' if text else 'b'}"
 
 
-def get_ext(filename: str) -> Tuple[str, str]:
-    ix = filename.find(".")
-    if ix < 0:
-        return filename, ""
-    return filename[:ix], filename[ix + 1:]
-
-
 def is_empty_file(fin: IO[Any]) -> bool:
     pos = fin.seek(0, io.SEEK_CUR)
     size = fin.seek(0, io.SEEK_END) - pos
@@ -135,11 +127,12 @@ def open_read(filename: str, text: bool) -> IO[Any]:
 
 def open_read(filename: str, text: bool) -> IO[Any]:
     # FIXME: for now we are lock-free
-    _, ext = get_ext(filename)
 
     def actual_read() -> IO[Any]:
         return cast(IO[Any], open(  # pylint: disable=consider-using-with
-            filename, get_mode("r", text)))
+            filename,
+            get_mode("r", text),
+            encoding=("utf-8" if text else None)))
 
     ix = 0
     res = None
@@ -168,7 +161,6 @@ def open_read(filename: str, text: bool) -> IO[Any]:
 def open_append(
         filename: str,
         text: Literal[True],
-        nolog: bool = False,
         **kwargs: Any) -> IO[str]:
     ...
 
@@ -177,7 +169,6 @@ def open_append(
 def open_append(
         filename: str,
         text: Literal[False],
-        nolog: bool = False,
         **kwargs: Any) -> IO[bytes]:
     ...
 
@@ -187,7 +178,6 @@ def open_append(
 def open_append(
         filename: str,
         text: bool,
-        nolog: bool = False,
         **kwargs: Any) -> IO[Any]:
     ...
 
@@ -195,18 +185,17 @@ def open_append(
 def open_append(
         filename: str,
         text: bool,
-        nolog: bool = False,
         **kwargs: Any) -> IO[Any]:
     # FIXME: for now we are lock-free
-    if not nolog:
-        _, ext = get_ext(filename)
     return cast(IO[Any], open(  # pylint: disable=consider-using-with
-        filename, get_mode("a", text), **kwargs))
+        filename,
+        get_mode("a", text),
+        encoding=("utf-8" if text else None),
+        **kwargs))
 
 
 @contextmanager
 def open_write(filename: str, text: bool) -> Iterator[IO[Any]]:
-    _, ext = get_ext(filename)
     filename = normalize_file(filename)
 
     mode = get_mode("w", text)

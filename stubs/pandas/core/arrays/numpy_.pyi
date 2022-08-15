@@ -84,11 +84,6 @@ class PandasArray(ExtensionArray, ExtensionOpsMixin, NDArrayOperatorsMixin):
             limit: Optional[Any] = ...) -> Any:
         ...
 
-    def take(
-            self, indices: Any, allow_fill: bool = ...,
-            fill_value: Optional[Any] = ...) -> Any:
-        ...
-
     def copy(self) -> Any:
         ...
 
@@ -169,9 +164,6 @@ class PandasArray(ExtensionArray, ExtensionOpsMixin, NDArrayOperatorsMixin):
             self, axis: Optional[Any] = ..., dtype: Optional[Any] = ...,
             out: Optional[Any] = ..., keepdims: bool = ...,
             skipna: bool = ...) -> Any:
-        ...
-
-    def to_numpy(self, dtype: Optional[Any] = ..., copy: bool = ...) -> Any:
         ...
 
     def searchsorted(

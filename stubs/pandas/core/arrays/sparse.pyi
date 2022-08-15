@@ -152,7 +152,7 @@ class SparseArray(PandasObject, ExtensionArray, ExtensionOpsMixin):
         ...
 
     def searchsorted(
-            self, v: Any, side: str = ...,
+            self, value: Any, side: str = ...,
             sorter: Optional[Any] = ...) -> Any:
         ...
 

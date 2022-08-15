@@ -5,8 +5,9 @@ mypy
 numpy
 pandas
 praw
+pylint
+pytest
+pytest-cov
 python-redis-lock
 quick-server
 redis
-pytest
-pytest-cov

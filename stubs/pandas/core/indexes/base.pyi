@@ -45,6 +45,7 @@ class Index(IndexOpsMixin, PandasObject):
     def __array_wrap__(self, result: Any, context: Optional[Any] = ...) -> Any:
         ...
 
+    @property
     def dtype(self) -> Any:
         ...
 

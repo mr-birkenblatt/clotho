@@ -5,6 +5,7 @@ mypy==0.971
 numpy==1.23.1
 pandas==1.4.3
 praw==7.6.0
+pylint==2.14.5
 pytest-cov==3.0.0
 pytest==6.2.1
 python-redis-lock==3.7.0

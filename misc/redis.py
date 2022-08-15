@@ -20,7 +20,7 @@ from typing import (
 )
 
 from redis import StrictRedis
-from redis.client import Script
+from redis.client import Script  # pylint: disable=no-name-in-module
 from redis.exceptions import ResponseError
 from redis_lock import Lock
 

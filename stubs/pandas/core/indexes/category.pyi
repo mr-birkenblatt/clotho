@@ -80,21 +80,9 @@ class CategoricalIndex(Index, accessor.PandasDelegate):
     def duplicated(self, keep: str = ...) -> Any:
         ...
 
-    def get_value(self, series: AnyArrayLike, key: Any) -> Any:
-        ...
-
-    def where(self, cond: Any, other: Optional[Any] = ...) -> Any:
-        ...
-
     def reindex(
             self, target: Any, method: Optional[Any] = ...,
             level: Optional[Any] = ..., limit: Optional[Any] = ...,
-            tolerance: Optional[Any] = ...) -> Any:
-        ...
-
-    def get_indexer(
-            self, target: Any, method: Optional[Any] = ...,
-            limit: Optional[Any] = ...,
             tolerance: Optional[Any] = ...) -> Any:
         ...
 

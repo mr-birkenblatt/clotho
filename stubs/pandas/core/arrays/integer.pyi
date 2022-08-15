@@ -78,7 +78,7 @@ class IntegerArray(ExtensionArray, ExtensionOpsMixin):
         ...
 
     def take(
-            self, indexer: Any, allow_fill: bool = ...,
+            self, indices: Any, allow_fill: bool = ...,
             fill_value: Optional[Any] = ...) -> Any:
         ...
 

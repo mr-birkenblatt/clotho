@@ -95,7 +95,7 @@ class CategoricalDtype(PandasExtensionDtype, ExtensionDtype):
     def validate_categories(categories: Any, fastpath: bool = ...) -> Any:
         ...
 
-    def update_dtype(self, dtype: CategoricalDtype) -> CategoricalDtype:
+    def update_dtype(self, dtype: 'CategoricalDtype') -> 'CategoricalDtype':
         ...
 
     @property

@@ -41,10 +41,6 @@ class NDFrame(PandasObject, SelectionMixin):
         ...
 
     @property
-    def ndim(self) -> Any:
-        ...
-
-    @property
     def size(self) -> Any:
         ...
 

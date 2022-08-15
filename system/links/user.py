@@ -25,11 +25,15 @@ class User:
         # FIXME implement ELO
         return 1000.0
 
-    def get_encounters(self, other: 'User') -> int:
+    def get_encounters(
+            self, other: 'User') -> int:  # pylint: disable=unused-argument
         # FIXME: implement encounters
         return 0
 
-    def get_weighted_vote(self, owner: Optional['User']) -> float:
+    def get_weighted_vote(
+            self,
+            owner: Optional['User'],  # pylint: disable=unused-argument
+            ) -> float:
         # FIXME: implement ELO
         return 1.0
 
