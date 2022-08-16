@@ -11,6 +11,7 @@
 # production
 /build
 /.mypy_cache
+/example/creds.json
 
 # misc
 .DS_Store
