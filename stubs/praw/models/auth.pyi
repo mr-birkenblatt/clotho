@@ -1,5 +1,5 @@
 # pylint: disable=import-error,relative-beyond-top-level,unused-import
-# pylint: disable=useless-import-alias,multiple-statements
+# pylint: disable=useless-import-alias,multiple-statements,unused-argument
 from typing import Dict, List, Optional, Set, Union
 
 from ..exceptions import InvalidImplicitAuth as InvalidImplicitAuth

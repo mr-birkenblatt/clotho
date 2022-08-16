@@ -1,5 +1,6 @@
 # pylint: disable=import-error,relative-beyond-top-level,unused-import
 # pylint: disable=useless-import-alias,multiple-statements
+# pylint: disable=too-few-public-methods,unused-argument
 
 from typing import Optional
 
@@ -26,4 +27,7 @@ class Config:
     reddit_url: Incomplete
     password: Incomplete
 
-    def __init__(self, site_name: str, config_interpolation: Optional[str] = ..., **settings: str) -> None: ...
+    def __init__(
+        self, site_name: str,
+        config_interpolation: Optional[str] = ...,
+        **settings: str) -> None: ...

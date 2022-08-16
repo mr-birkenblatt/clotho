@@ -1,5 +1,6 @@
 # pylint: disable=import-error,relative-beyond-top-level,unused-import
-# pylint: disable=useless-import-alias,multiple-statements
+# pylint: disable=useless-import-alias,multiple-statements,unused-argument
+# pylint: disable=no-name-in-module
 from typing import Any, Dict, List, Optional, Union
 
 import praw
@@ -12,9 +13,20 @@ from .util import snake_case_keys as snake_case_keys
 
 class Objector:
     @classmethod
-    def parse_error(cls, data: Union[List[Any], Dict[str, Dict[str, str]]]) -> Optional[RedditAPIException]: ...
+    def parse_error(
+        cls, data: Union[List[Any], Dict[str, Dict[str, str]]],
+        ) -> Optional[RedditAPIException]: ...
+
     @classmethod
-    def check_error(cls, data: Union[List[Any], Dict[str, Dict[str, str]]]) -> None: ...
+    def check_error(
+        cls, data: Union[List[Any], Dict[str, Dict[str, str]]]) -> None: ...
+
     parsers: Incomplete
-    def __init__(self, reddit: praw.Reddit, parsers: Optional[Dict[str, Any]] = ...) -> None: ...
-    def objectify(self, data: Optional[Union[Dict[str, Any], List[Any], bool]]) -> Optional[Union[RedditBase, Dict[str, Any], List[Any], bool]]: ...
+
+    def __init__(
+        self, reddit: praw.Reddit,
+        parsers: Optional[Dict[str, Any]] = ...) -> None: ...
+
+    def objectify(
+        self, data: Optional[Union[Dict[str, Any], List[Any], bool]],
+        ) -> Optional[Union[RedditBase, Dict[str, Any], List[Any], bool]]: ...

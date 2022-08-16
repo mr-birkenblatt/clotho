@@ -1,6 +1,6 @@
 # pylint: disable=import-error,relative-beyond-top-level,unused-import
 # pylint: disable=useless-import-alias,multiple-statements
-# pylint: disable=super-init-not-called
+# pylint: disable=super-init-not-called,unused-argument
 from typing import List, Optional, Union
 
 from _typeshed import Incomplete
