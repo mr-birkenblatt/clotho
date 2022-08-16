@@ -1,3 +1,5 @@
+# pylint: disable=import-error,relative-beyond-top-level,unused-import
+# pylint: disable=useless-import-alias,multiple-statements
 from typing import Any, Callable, Optional
 
 from _typeshed import Incomplete

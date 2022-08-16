@@ -1,3 +1,5 @@
+# pylint: disable=import-error,relative-beyond-top-level,unused-import
+# pylint: disable=useless-import-alias,multiple-statements
 from .auth import Auth as Auth
 from .front import Front as Front
 from .helpers import DraftHelper as DraftHelper
