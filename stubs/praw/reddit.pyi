@@ -1,6 +1,6 @@
 # pylint: disable=useless-import-alias,unused-import,multiple-statements
 # pylint: disable=import-error,relative-beyond-top-level,no-name-in-module
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,redefined-builtin,invalid-name
 
 from typing import Any, Dict, Generator, IO, Iterable, Optional, Type, Union
 

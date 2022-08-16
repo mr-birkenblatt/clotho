@@ -19,12 +19,10 @@ class RedditAccess:
         reddit = praw.Reddit(
             client_id=creds["client_id"],
             client_secret=creds["client_secret"],
-            redirect_uri="http://localhost:8080",
-            user_agent=f"testscript by u/{creds['user']}",
-        )
-        print(
-            reddit.auth.url(
-                scopes=["identity"], state="...", duration="permanent"))
+            user_agent=f"testscript by u/{creds['user']}")
+        print(reddit.read_only)
+        for submission in reddit.subreddit("worldnews").hot(limit=10):
+            print(submission.title)
         self._reddit = reddit
 
     def get_posts(self) -> None:
