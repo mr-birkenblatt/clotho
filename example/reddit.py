@@ -25,3 +25,10 @@ class RedditAccess:
         print(
             reddit.auth.url(
                 scopes=["identity"], state="...", duration="permanent"))
+        self._reddit = reddit
+
+    def get_posts(self) -> None:
+        pass
+
+    def get_comments(self) -> None:
+        pass
