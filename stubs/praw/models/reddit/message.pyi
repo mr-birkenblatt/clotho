@@ -1,3 +1,6 @@
+# pylint: disable=import-error,relative-beyond-top-level,unused-import
+# pylint: disable=useless-import-alias,multiple-statements,no-name-in-module
+# pylint: disable=unused-argument,invalid-name
 from typing import Any, Dict, Optional
 
 import praw
@@ -20,6 +23,7 @@ class Message(InboxableMixin, ReplyableMixin, FullnameMixin, RedditBase):
     def parent(self, value) -> None: ...
     def __init__(self, reddit: praw.Reddit, _data: Dict[str, Any]) -> None: ...
     def delete(self) -> None: ...
+
 
 class SubredditMessage(Message):
     def mute(self) -> None: ...

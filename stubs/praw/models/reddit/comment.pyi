@@ -1,3 +1,6 @@
+# pylint: disable=import-error,relative-beyond-top-level,unused-import
+# pylint: disable=useless-import-alias,multiple-statements,no-name-in-module
+# pylint: disable=unused-argument,invalid-name,redefined-builtin
 from typing import Any, Dict, Optional, Union
 
 import praw
@@ -30,10 +33,21 @@ class Comment(InboxableMixin, UserContentMixin, FullnameMixin, RedditBase):
     @submission.setter
     def submission(self, submission: praw.models.Submission) -> None: ...
     id: Incomplete
-    def __init__(self, reddit: praw.Reddit, id: Optional[str] = ..., url: Optional[str] = ..., _data: Optional[Dict[str, Any]] = ...) -> None: ...
-    def __setattr__(self, attribute: str, value: Union[str, Redditor, CommentForest, 'praw.models.Subreddit']) -> None: ...
+
+    def __init__(
+        self, reddit: praw.Reddit, id: Optional[str] = ...,
+        url: Optional[str] = ..., _data: Optional[Dict[str, Any]] = ...,
+        ) -> None: ...
+
+    def __setattr__(
+        self, attribute: str, value: Union[
+            str, Redditor, CommentForest, 'praw.models.Subreddit'],
+        ) -> None: ...
+
     def parent(self) -> Union['Comment', 'praw.models.Submission']: ...
+
     def refresh(self) -> None: ...
+
 
 class CommentModeration(ThingModerationMixin):
     REMOVAL_MESSAGE_API: str
