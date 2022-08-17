@@ -1,6 +1,7 @@
 # pylint: disable=import-error,relative-beyond-top-level,unused-import
 # pylint: disable=useless-import-alias,multiple-statements,unused-argument
 # pylint: disable=redefined-builtin,invalid-name
+# pylint: disable=too-few-public-methods
 from typing import Any, Dict, List, Optional
 
 import praw

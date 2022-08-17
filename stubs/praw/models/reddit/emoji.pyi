@@ -13,7 +13,8 @@ from .base import RedditBase as RedditBase
 class Emoji(RedditBase):
     STR_FIELD: str
 
-    def __eq__(self, other: Union[str, 'Emoji']) -> bool: ...
+    def __eq__(self, other: Union[str, 'Emoji', object]) -> bool: ...
+
     def __hash__(self) -> int: ...
 
     name: Incomplete

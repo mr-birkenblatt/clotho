@@ -217,9 +217,6 @@ class SubredditFlairTemplates:
 
 
 class SubredditRedditorFlairTemplates(SubredditFlairTemplates):
-    def __iter__(self) -> Generator[Dict[str, Union[
-        str, int, bool, List[Dict[str, str]]]], None, None]: ...
-
     def add(
         self, text: str, *, allowable_content: Optional[str] = ...,
         background_color: Optional[str] = ..., css_class: str = ...,
@@ -231,10 +228,6 @@ class SubredditRedditorFlairTemplates(SubredditFlairTemplates):
 
 
 class SubredditLinkFlairTemplates(SubredditFlairTemplates):
-    def __iter__(
-        self) -> Generator[Dict[str, Union[
-            str, int, bool, List[Dict[str, str]]]], None, None]: ...
-
     def add(
         self, text: str, *, allowable_content: Optional[str] = ...,
         background_color: Optional[str] = ..., css_class: str = ...,
@@ -361,7 +354,7 @@ class SubredditQuarantine:
 class SubredditRelationship:
     def __call__(
         self, redditor: Optional[Union[str, 'praw.models.Redditor']] = ...,
-        **generator_kwargs) -> Iterator['praw.models.Redditor']: ...
+        **generator_kwargs: Any) -> Iterator['praw.models.Redditor']: ...
 
     relationship: Incomplete
     subreddit: Incomplete
@@ -382,10 +375,6 @@ class ContributorRelationship(SubredditRelationship):
 
 class ModeratorRelationship(SubredditRelationship):
     PERMISSIONS: Incomplete
-
-    def __call__(
-        self, redditor: Optional[Union[str, 'praw.models.Redditor']] = ...,
-        ) -> List['praw.models.Redditor']: ...
 
     def add(
         self, redditor: Union[str, 'praw.models.Redditor'], *,
@@ -432,7 +421,7 @@ class Modmail:
         self, *, after: Optional[str] = ...,
         other_subreddits: Optional[List['praw.models.Subreddit']] = ...,
         sort: Optional[str] = ..., state: Optional[str] = ...,
-        **generator_kwargs) -> Iterator[ModmailConversation]: ...
+        **generator_kwargs: Any) -> Iterator[ModmailConversation]: ...
 
     def create(
         self, *, author_hidden: bool = ..., body: str,

@@ -1,6 +1,6 @@
 # pylint: disable=import-error,relative-beyond-top-level,unused-import
 # pylint: disable=useless-import-alias,multiple-statements,no-name-in-module
-# pylint: disable=unused-argument
+# pylint: disable=unused-argument,too-few-public-methods
 from typing import Iterator, Union
 
 import praw
