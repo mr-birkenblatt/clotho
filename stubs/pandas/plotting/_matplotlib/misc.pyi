@@ -15,6 +15,7 @@ def scatter_matrix(
         range_padding: float = ..., **kwds: Any) -> Any:
     ...
 
+
 def radviz(
         frame: Any, class_column: Any, ax: Optional[Any] = ...,
         color: Optional[Any] = ..., colormap: Optional[Any] = ...,
@@ -34,6 +35,7 @@ def bootstrap_plot(
         samples: int = ..., **kwds: Any) -> Any:
     ...
 
+
 def parallel_coordinates(
         frame: Any, class_column: Any, cols: Optional[Any] = ...,
         ax: Optional[Any] = ..., color: Optional[Any] = ...,
@@ -43,10 +45,13 @@ def parallel_coordinates(
         **kwds: Any) -> Any:
     ...
 
+
 def lag_plot(
         series: Any, lag: int = ..., ax: Optional[Any] = ...,
         **kwds: Any) -> Any:
     ...
 
-def autocorrelation_plot(series: Any, ax: Optional[Any] = ..., **kwds: Any) -> Any:
+
+def autocorrelation_plot(
+        series: Any, ax: Optional[Any] = ..., **kwds: Any) -> Any:
     ...

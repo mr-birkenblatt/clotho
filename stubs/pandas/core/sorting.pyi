@@ -7,8 +7,6 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,signature-differs
 # pylint: disable=blacklisted-name,c-extension-no-member
-
-
 from typing import Any, Optional
 
 def get_group_index(labels: Any, shape: Any, sort: Any, xnull: Any) -> Any:

@@ -48,10 +48,16 @@ lint-requirements:
 	sort -ufc requirements.txt
 
 lint-pycodestyle:
-	pycodestyle --exclude=venv --show-source .
+	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	| sort
+	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	| sort | xargs pycodestyle --exclude=venv --show-source
 
 lint-pycodestyle-debug:
-	pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source .
+	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	| sort
+	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	| sort | xargs pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source
 
 lint-pylint:
 	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \

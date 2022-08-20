@@ -22,6 +22,8 @@ class RedditAccess:
             user_agent=f"testscript by u/{creds['user']}")
         print(reddit.read_only)
         for submission in reddit.subreddit("worldnews").hot(limit=10):
+            print(type(submission))
+            print(dir(submission))
             print(submission.title)
         self._reddit = reddit
 

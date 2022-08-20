@@ -6,8 +6,6 @@
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,no-name-in-module
-
-
 import ast
 from typing import Any, Optional, Type
 

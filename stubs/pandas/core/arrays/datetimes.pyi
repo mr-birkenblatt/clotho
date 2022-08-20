@@ -5,9 +5,7 @@
 # pylint: disable=too-few-public-methods,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
 # pylint: disable=too-many-arguments,inconsistent-mro
-
-
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import numpy as np
 from pandas.core.arrays import datetimelike as dtl

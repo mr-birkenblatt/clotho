@@ -6,8 +6,6 @@
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=too-many-ancestors
-
-
 from collections import ChainMap
 from typing import Any, Optional
 
