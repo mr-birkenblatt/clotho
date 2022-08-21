@@ -16,16 +16,18 @@ def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
             for doc in reddit.get_posts(sub):
                 print(
                     f"processing {doc.subreddit_name_prefixed} "
-                    f"\"{doc.title}\" ({doc.num_comments})")
-                if doc.is_meta or doc.is_created_from_ads_ui:
+                    f"\"{doc.title}\" (est. comments {doc.num_comments})")
+                if doc.is_meta or doc.is_created_from_ads_ui or doc.pinned:
                     print(
                         f"skipping is_meta={doc.is_meta} "
-                        f"is_created_from_ads_ui={doc.is_created_from_ads_ui}")
+                        f"is_created_from_ads_ui={doc.is_created_from_ads_ui} "
+                        f"pinned={doc.pinned}")
                     continue
                 for action in reddit.get_comments(doc):
                     a_str = json_compact(action).decode("utf-8")
                     a_str = a_str.replace("\\", "\\\\").replace("\n", "\\n")
                     if a_str in dups:
+                        print(f"skip duplicate action {a_str}")
                         continue
                     print(a_str, file=fout)
                     dups.add(a_str)

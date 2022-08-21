@@ -134,6 +134,8 @@ class Submission(
     downs: int
     ups: int
 
+    pinned: bool
+
     created_utc: float
     all_awardings: List[Award]
 
