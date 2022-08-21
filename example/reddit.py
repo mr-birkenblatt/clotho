@@ -216,12 +216,13 @@ class RedditAccess:
                 if cur_ref in already:
                     print(f"redundant comment: {cur_ref}")
                     continue
-                try:
-                    comment.refresh()
-                except praw.exceptions.ClientException:
-                    print(f"comment doesn't exist: {comment.fullname}")
-                if comment.replies:
-                    queue.append(comment.replies)
+                # NOTE: not worth it
+                # try:
+                #     comment.refresh()
+                # except praw.exceptions.ClientException:
+                #     print(f"comment doesn't exist: {comment.fullname}")
+                # if comment.replies:
+                #     queue.append(comment.replies)
                 yield self.create_message_action(comment)
                 yield self.create_link_action(
                     comment.parent_id, comment.depth, comment)
