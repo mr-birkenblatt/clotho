@@ -40,6 +40,7 @@ LinkAction = TypedDict('LinkAction', {
     "user_name": Optional[str],
     "created_utc": float,
     "votes": Dict[str, int],
+    "depth": int,
 })
 Action = TypedDict('Action', {
     "kind": Literal["message", "link"],
@@ -62,6 +63,7 @@ def create_message_action(ref_id: str, text: str) -> Action:
 def create_link_action(
         ref_id: str,
         parent_ref: str,
+        depth: int,
         user_ref: Optional[str],
         user_name: Optional[str],
         created_utc: float,
@@ -75,6 +77,7 @@ def create_link_action(
             "user_name": user_name,
             "created_utc": created_utc,
             "votes": votes,
+            "depth": depth,
         },
     }
 
@@ -118,7 +121,10 @@ class RedditAccess:
         return res
 
     def create_link_action(
-            self, parent_id: str, value: Union[Submission, Comment]) -> Action:
+            self,
+            parent_id: str,
+            depth: int,
+            value: Union[Submission, Comment]) -> Action:
         user_ref = getattr(value, "author_fullname", None)
         if user_ref is not None:
             user = value.author
@@ -140,6 +146,7 @@ class RedditAccess:
         return create_link_action(
             value.fullname,
             parent_id,
+            depth,
             user_ref,
             user_name,
             value.created_utc,
@@ -172,25 +179,23 @@ class RedditAccess:
         sub = doc.subreddit
         yield self.create_message_action(sub)
         yield self.create_message_action(doc)
-        yield self.create_link_action(sub.fullname, doc)
+        yield self.create_link_action(sub.fullname, -1, doc)
 
         timing_start = time.monotonic()
 
-        queue: Deque[Tuple[str, CommentsOrForest]] = collections.deque()
-        queue.append((doc.fullname, doc.comments))
+        queue: Deque[CommentsOrForest] = collections.deque()
+        queue.append(doc.comments)
 
-        def process(
-                parent_id: str, curs: CommentsOrForest) -> Iterable[Action]:
+        def process(curs: CommentsOrForest) -> Iterable[Action]:
             print(
                 f"batch ({len(curs)}) {time.monotonic() - timing_start:.2f}s")
             for comment in curs:
                 if isinstance(comment, MoreComments):
-                    queue.append((parent_id, comment.comments()))
+                    queue.append(comment.comments())
                     continue
-                if comment.replies:
-                    queue.append((comment.fullname, comment.replies))
                 yield self.create_message_action(comment)
-                yield self.create_link_action(parent_id, comment)
+                yield self.create_link_action(
+                    comment.parent_id, comment.depth, comment)
 
         while queue:
-            yield from process(*queue.popleft())
+            yield from process(queue.popleft())
