@@ -5,6 +5,7 @@
 # pylint: disable=too-few-public-methods,no-name-in-module,function-redefined
 # pylint: disable=redefined-outer-name,too-many-ancestors,super-init-not-called
 # pylint: disable=too-many-arguments,abstract-method,arguments-differ
+# pylint: disable=useless-import-alias
 from typing import Any, Optional, Tuple
 
 import numpy as np

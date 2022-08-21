@@ -17,6 +17,11 @@ def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
                 print(
                     f"processing {doc.subreddit_name_prefixed} "
                     f"\"{doc.title}\" ({doc.num_comments})")
+                if doc.is_meta or doc.is_created_from_ads_ui:
+                    print(
+                        f"skipping is_meta={doc.is_meta} "
+                        f"is_created_from_ads_ui={doc.is_created_from_ads_ui}")
+                    continue
                 for action in reddit.get_comments(doc):
                     a_str = json_compact(action).decode("utf-8")
                     a_str = a_str.replace("\\", "\\\\").replace("\n", "\\n")

@@ -110,7 +110,7 @@ class RedditAccess:
             **{
                 award["name"]: award["count"]
                 for award in value.all_awardings
-            }
+            },
         }
         return create_link_action(
             value.fullname,
