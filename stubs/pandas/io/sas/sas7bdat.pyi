@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from pandas.io.common import BaseIterator
 
+
 class SAS7BDATReader(BaseIterator):
     index: Any = ...
     convert_dates: Any = ...

@@ -12,6 +12,7 @@ from pandas._libs.tslibs.period import Period
 from pandas.core.arrays import datetimelike as dtl
 from pandas.tseries.offsets import Tick
 
+
 class PeriodArray(dtl.DatetimeLikeArrayMixin, dtl.DatelikeOps):
     __array_priority__: int = ...
 

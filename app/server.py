@@ -25,6 +25,7 @@ from system.links.user import User
 from system.msgs.message import Message, MHash
 from system.msgs.store import get_default_message_store
 
+
 LinkQuery = TypedDict('LinkQuery', {
     "scorer": Scorer,
     "now": pd.Timestamp,

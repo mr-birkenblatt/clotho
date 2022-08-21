@@ -13,6 +13,7 @@ from .mixins import ReplyableMixin as ReplyableMixin
 from .redditor import Redditor as Redditor
 from .subreddit import Subreddit as Subreddit
 
+
 class Message(InboxableMixin, ReplyableMixin, FullnameMixin, RedditBase):
     STR_FIELD: str
     @classmethod

@@ -5,6 +5,7 @@
 import datetime
 from typing import Any, Optional, overload, TYPE_CHECKING, Union
 
+
 if TYPE_CHECKING:
     from pandas import Timedelta
     from pandas.tseries.offsets import BusinessMixin

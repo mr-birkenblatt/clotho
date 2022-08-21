@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member,import-error
 from typing import Any
 
+
 magic: Any
 align_1_checker_value: bytes
 align_1_offset: int

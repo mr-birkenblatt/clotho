@@ -10,6 +10,7 @@ from typing import Any, Optional, Type
 from pandas.core.arrays import ExtensionArray, ExtensionOpsMixin
 from pandas.core.dtypes.base import ExtensionDtype
 
+
 class _IntegerDtype(ExtensionDtype):
     name: str = ...
     base: Any = ...

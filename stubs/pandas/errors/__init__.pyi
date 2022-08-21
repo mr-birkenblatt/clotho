@@ -5,6 +5,7 @@
 
 from typing import Any
 
+
 class PerformanceWarning(Warning):
     ...
 

@@ -9,6 +9,7 @@ from ...base import PRAWBase as PRAWBase
 from ...reddit.submission import Submission
 from ..generator import ListingGenerator as ListingGenerator
 
+
 class BaseListingMixin(PRAWBase):
     VALID_TIME_FILTERS: Incomplete
 

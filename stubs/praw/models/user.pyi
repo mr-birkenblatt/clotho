@@ -14,6 +14,7 @@ from .listing.generator import ListingGenerator as ListingGenerator
 from .reddit.redditor import Redditor as Redditor
 from .reddit.subreddit import Subreddit as Subreddit
 
+
 class User(PRAWBase):
     def preferences(self) -> praw.models.Preferences: ...
     def __init__(self, reddit: praw.Reddit) -> None: ...

@@ -13,6 +13,7 @@ from .reddit.comment import Comment as Comment
 from .reddit.redditor import Redditor as Redditor
 from .reddit.submission import Submission as Submission
 
+
 RedditorType = Union[Redditor, str]
 SubredditType: Incomplete = ...
 ThingType = Union[Comment, Submission]

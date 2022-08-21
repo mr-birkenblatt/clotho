@@ -13,6 +13,7 @@ from pandas.core.arrays.base import ExtensionArray
 from pandas.core.base import NoNewAttributesMixin, PandasObject
 from pandas.core.dtypes.dtypes import CategoricalDtype
 
+
 def contains(cat: Any, key: Any, container: Any) -> Any:
     ...
 

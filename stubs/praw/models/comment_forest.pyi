@@ -8,6 +8,7 @@ import praw
 from ..exceptions import DuplicateReplaceException as DuplicateReplaceException
 from .reddit.more import MoreComments as MoreComments
 
+
 class CommentForest:
     def __getitem__(self, index: int) -> None: ...
 

@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 
 from _typeshed import Incomplete
 
+
 class PRAWException(Exception):
     ...
 

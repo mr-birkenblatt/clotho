@@ -5,6 +5,7 @@
 
 from typing import Any, Iterable, Optional, Union
 
+
 class SettingWithCopyError(ValueError):
     ...
 

@@ -10,6 +10,7 @@ from ...const import API_PATH as API_PATH
 from ...exceptions import ClientException as ClientException
 from .base import RedditBase as RedditBase
 
+
 class Emoji(RedditBase):
     STR_FIELD: str
 

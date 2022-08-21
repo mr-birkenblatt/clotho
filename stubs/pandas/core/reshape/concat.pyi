@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member
 from typing import Any, Optional
 
+
 def concat(
         objs: Any, axis: int = ..., join: str = ...,
         join_axes: Optional[Any] = ..., ignore_index: bool = ...,

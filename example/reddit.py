@@ -5,6 +5,7 @@ import praw
 from misc.io import open_read
 from misc.util import json_load, json_pretty
 
+
 CRED_FILE = os.path.join(os.path.dirname(__file__), "creds.json")
 
 

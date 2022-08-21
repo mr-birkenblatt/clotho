@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member
 from typing import Any, Optional
 
+
 def get_engine(engine: Any) -> Any:
     ...
 

@@ -13,6 +13,7 @@ from pandas.core.base import StringMixin
 from pandas.core.computation.ops import Term
 from pandas.core.computation.scope import Scope as Scope
 
+
 def tokenize_string(source: Any) -> Any:
     ...
 

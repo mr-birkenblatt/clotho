@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 def match(to_match: Any, values: Any, na_sentinel: int = ...) -> Any:
     ...
 

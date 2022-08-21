@@ -11,6 +11,7 @@ from .exceptions import RedditAPIException as RedditAPIException
 from .models.reddit.base import RedditBase as RedditBase
 from .util import snake_case_keys as snake_case_keys
 
+
 class Objector:
     @classmethod
     def parse_error(

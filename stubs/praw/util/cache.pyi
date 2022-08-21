@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional
 
 from _typeshed import Incomplete
 
+
 class cachedproperty:
     func: Incomplete
     __doc__: Incomplete

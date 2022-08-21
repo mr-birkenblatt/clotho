@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member,too-many-ancestors
 from typing import Any, Optional
 
+
 class TablePlotter:
     cell_width: Any = ...
     cell_height: Any = ...

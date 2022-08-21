@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument,invalid-name
 from ....const import API_PATH as API_PATH
 
+
 class InboxableMixin:
     def block(self) -> None: ...
     def collapse(self) -> None: ...

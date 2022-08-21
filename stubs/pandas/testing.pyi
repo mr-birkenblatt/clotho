@@ -4,5 +4,6 @@
 
 from typing import Any
 
+
 assert_frame_equal: Any
 assert_series_equal: Any

@@ -7,6 +7,7 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 from typing import Any, Optional
 
+
 def frame_apply(
         obj: Any, func: Any, axis: int = ...,
         broadcast: Optional[Any] = ..., raw: bool = ...,

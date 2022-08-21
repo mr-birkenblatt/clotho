@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument,invalid-name
 from ....const import API_PATH as API_PATH
 
+
 class InboxToggleableMixin:
     def disable_inbox_replies(self) -> None: ...
     def enable_inbox_replies(self) -> None: ...

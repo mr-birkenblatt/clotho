@@ -3,4 +3,5 @@
 # pylint: disable=unused-argument,invalid-name
 from _typeshed import Incomplete
 
+
 API_PATH: Incomplete

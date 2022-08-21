@@ -13,6 +13,7 @@ from ...util.cache import cachedproperty as cachedproperty
 from ..base import PRAWBase as PRAWBase
 from ..list.base import BaseList as BaseList
 
+
 WidgetType: Incomplete
 
 

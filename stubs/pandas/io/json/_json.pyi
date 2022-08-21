@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 from pandas.io.common import BaseIterator
 
+
 loads: Any
 dumps: Any
 TABLE_SCHEMA_VERSION: str

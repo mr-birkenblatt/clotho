@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 import praw
 
+
 class PRAWBase:
     @classmethod
     def parse(cls, data: Dict[str, Any], reddit: praw.Reddit) -> Any: ...

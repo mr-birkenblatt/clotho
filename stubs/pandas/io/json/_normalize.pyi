@@ -7,6 +7,7 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 from typing import Any, Dict, List, Optional, Union
 
+
 def convert_to_line_delimits(s: Any) -> Any:
     ...
 

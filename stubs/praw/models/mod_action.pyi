@@ -8,6 +8,7 @@ import praw
 
 from .base import PRAWBase as PRAWBase
 
+
 class ModAction(PRAWBase):
     @property
     def mod(self) -> praw.models.Redditor: ...

@@ -12,6 +12,7 @@ from typing import Any, Optional
 from pandas.core.accessor import PandasDelegate
 from pandas.core.arrays import ExtensionOpsMixin
 
+
 def ea_passthrough(array_method: Any) -> Any:
     ...
 

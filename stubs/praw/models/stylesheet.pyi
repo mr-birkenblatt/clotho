@@ -3,5 +3,6 @@
 # pylint: disable=unused-argument,invalid-name,too-few-public-methods
 from .base import PRAWBase as PRAWBase
 
+
 class Stylesheet(PRAWBase):
     ...

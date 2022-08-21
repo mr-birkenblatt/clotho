@@ -19,6 +19,7 @@ from .mixins import ThingModerationMixin as ThingModerationMixin
 from .mixins import UserContentMixin as UserContentMixin
 from .redditor import Redditor as Redditor
 
+
 class Comment(InboxableMixin, UserContentMixin, FullnameMixin, RedditBase):
     MISSING_COMMENT_MESSAGE: str
     STR_FIELD: str

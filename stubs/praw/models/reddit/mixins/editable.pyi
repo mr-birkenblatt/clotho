@@ -7,6 +7,7 @@ import praw
 
 from ....const import API_PATH as API_PATH
 
+
 class EditableMixin:
     def delete(self) -> None: ...
 

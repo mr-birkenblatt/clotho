@@ -9,6 +9,7 @@
 
 from typing import Any, Dict, List, Optional, Type
 
+
 _extension_array_shared_docs: Dict[str, str] = ...
 
 

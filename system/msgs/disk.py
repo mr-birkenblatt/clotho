@@ -7,6 +7,7 @@ from misc.io import open_append, open_read
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
 
+
 if TYPE_CHECKING:
     WVD = weakref.WeakValueDictionary[MHash, Message]
 else:

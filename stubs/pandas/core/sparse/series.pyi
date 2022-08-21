@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from pandas.core.series import Series
 
+
 depr_msg: str
 
 

@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member
 from typing import Any, Optional
 
+
 class CSVFormatter:
     obj: Any = ...
     sep: Any = ...

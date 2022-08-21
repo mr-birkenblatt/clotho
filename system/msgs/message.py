@@ -3,6 +3,7 @@ from typing import Optional
 
 from misc.util import get_text_hash, is_hex
 
+
 TOPIC_START = "t/"
 VALID_TOPIC = re.compile(r"^t\/[a-z0-9_]+$")
 

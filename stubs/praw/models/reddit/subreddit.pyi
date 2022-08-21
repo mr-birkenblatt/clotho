@@ -31,6 +31,7 @@ from .widgets import SubredditWidgets as SubredditWidgets
 from .widgets import WidgetEncoder as WidgetEncoder
 from .wikipage import WikiPage as WikiPage
 
+
 class Subreddit(
         MessageableMixin, SubredditListingMixin, FullnameMixin, RedditBase):
     STR_FIELD: str

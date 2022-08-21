@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument,invalid-name
 from ....const import API_PATH as API_PATH
 
+
 class GildableMixin:
     def award(
         self, *, gild_type: str = ..., is_anonymous: bool = ...,

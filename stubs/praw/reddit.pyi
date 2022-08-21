@@ -20,6 +20,7 @@ from .exceptions import RedditAPIException as RedditAPIException
 from .objector import Objector as Objector
 from .util.token_manager import BaseTokenManager as BaseTokenManager
 
+
 UPDATE_CHECKER_MISSING: bool
 Comment: Incomplete
 Redditor: Incomplete

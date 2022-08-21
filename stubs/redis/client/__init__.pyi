@@ -5,6 +5,7 @@ from typing import List, Optional, Union
 
 from redis import StrictRedis
 
+
 class Script:
     def __init__(
             self,

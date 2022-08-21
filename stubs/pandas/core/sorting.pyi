@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member
 from typing import Any, Optional
 
+
 def get_group_index(labels: Any, shape: Any, sort: Any, xnull: Any) -> Any:
     ...
 

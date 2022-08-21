@@ -9,6 +9,7 @@
 from collections import ChainMap
 from typing import Any, Optional
 
+
 class DeepChainMap(ChainMap):
     def __setitem__(self, key: Any, value: Any) -> None:
         ...

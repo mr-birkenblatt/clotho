@@ -6,6 +6,7 @@ from typing import Union
 
 from _typeshed import Incomplete
 
+
 class InlineMedia:
     TYPE: Incomplete
     path: Incomplete

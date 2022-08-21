@@ -7,6 +7,7 @@
 
 from typing import Any, Optional
 
+
 def scatter_matrix(
         frame: Any, alpha: float = ...,
         figsize: Optional[Any] = ..., ax: Optional[Any] = ...,

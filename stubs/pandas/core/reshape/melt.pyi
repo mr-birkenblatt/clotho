@@ -10,6 +10,7 @@
 
 from typing import Any, Optional
 
+
 def melt(
         frame: Any, id_vars: Optional[Any] = ...,
         value_vars: Optional[Any] = ..., var_name: Optional[Any] = ...,

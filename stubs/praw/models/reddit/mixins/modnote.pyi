@@ -5,6 +5,7 @@ from typing import Any, Generator, Optional
 
 import praw
 
+
 class ModNoteMixin:
     def create_note(
         self, *, label: Optional[str] = ..., note: str, **other_settings: Any,

@@ -15,6 +15,7 @@ from .base import RedditBase as RedditBase
 from .submission import Submission as Submission
 from .subreddit import Subreddit as Subreddit
 
+
 class CollectionModeration(PRAWBase):
     collection_id: Incomplete
     def __init__(self, reddit: praw.Reddit, collection_id: str) -> None: ...

@@ -11,6 +11,7 @@ import numpy as np
 from pandas.core.arrays import datetimelike as dtl
 from pandas.core.dtypes.dtypes import DatetimeTZDtype
 
+
 def tz_to_dtype(tz: Any) -> Any:
     ...
 

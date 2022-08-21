@@ -3,6 +3,7 @@
 # pylint: disable=unused-argument,invalid-name
 from typing import Any, Dict
 
+
 def camel_to_snake(name: str) -> str: ...
 
 

@@ -10,6 +10,7 @@ from ..base import PRAWBase as PRAWBase
 from .listing import FlairListing as FlairListing
 from .listing import ModNoteListing as ModNoteListing
 
+
 class ListingGenerator(PRAWBase, Iterator):
     limit: Incomplete
     params: Incomplete

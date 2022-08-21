@@ -6,6 +6,7 @@
 import pickle as pkl
 from typing import Any, Optional
 
+
 def load_reduce(self: Any) -> None:
     ...
 

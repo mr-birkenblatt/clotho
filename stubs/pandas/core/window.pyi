@@ -12,6 +12,7 @@ from pandas.core.base import PandasObject, SelectionMixin
 from pandas.core.groupby.base import GroupByMixin
 from pandas.util._decorators import Appender
 
+
 class _Window(PandasObject, SelectionMixin):
     exclusions: Set[str] = ...
     obj: Any = ...

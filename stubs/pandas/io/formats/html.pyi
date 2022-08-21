@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pandas.io.formats.format import DataFrameFormatter, TableFormatter
 
+
 class HTMLFormatter(TableFormatter):
     indent_delta: int = ...
     fmt: Any = ...

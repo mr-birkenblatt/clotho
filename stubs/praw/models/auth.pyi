@@ -8,6 +8,7 @@ from ..exceptions import (
 )
 from .base import PRAWBase as PRAWBase
 
+
 class Auth(PRAWBase):
     @property
     def limits(self) -> Dict[str, Optional[Union[str, int]]]: ...

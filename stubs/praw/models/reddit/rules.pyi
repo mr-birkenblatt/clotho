@@ -11,6 +11,7 @@ from ...exceptions import ClientException as ClientException
 from ...util import cachedproperty as cachedproperty
 from .base import RedditBase as RedditBase
 
+
 class Rule(RedditBase):
     STR_FIELD: str
     def mod(self) -> praw.models.reddit.rules.RuleModeration: ...

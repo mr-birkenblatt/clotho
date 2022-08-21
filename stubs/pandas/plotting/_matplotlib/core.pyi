@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member,import-error
 from typing import Any, Optional
 
+
 class MPLPlot:
     data: Any = ...
     by: Any = ...

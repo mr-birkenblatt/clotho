@@ -14,6 +14,7 @@ from .base import RedditBase as RedditBase
 from .mixins import FullnameMixin as FullnameMixin
 from .mixins import MessageableMixin as MessageableMixin
 
+
 class Redditor(
         MessageableMixin, RedditorListingMixin, FullnameMixin, RedditBase):
     STR_FIELD: str

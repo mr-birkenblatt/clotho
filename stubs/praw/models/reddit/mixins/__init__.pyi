@@ -19,6 +19,7 @@ from .reportable import ReportableMixin as ReportableMixin
 from .savable import SavableMixin as SavableMixin
 from .votable import VotableMixin as VotableMixin
 
+
 class ThingModerationMixin(ModNoteMixin):
     REMOVAL_MESSAGE_API: Incomplete
 

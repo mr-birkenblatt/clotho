@@ -7,6 +7,7 @@ from typing import Any, Optional
 from ...util import cachedproperty as cachedproperty
 from ..base import PRAWBase as PRAWBase
 
+
 class PollOption(PRAWBase):
     ...
 

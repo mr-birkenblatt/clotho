@@ -11,6 +11,7 @@ from ...exceptions import ClientException as ClientException
 from ...util import cachedproperty as cachedproperty
 from .base import RedditBase as RedditBase
 
+
 class RemovalReason(RedditBase):
     STR_FIELD: str
     def __eq__(self, other: Union[str, 'RemovalReason', object]) -> bool: ...

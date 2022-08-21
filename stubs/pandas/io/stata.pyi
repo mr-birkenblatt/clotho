@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from pandas.io.common import BaseIterator
 
+
 def read_stata(
         filepath_or_buffer: Any, convert_dates: bool = ...,
         convert_categoricals: bool = ..., encoding: Optional[Any] = ...,

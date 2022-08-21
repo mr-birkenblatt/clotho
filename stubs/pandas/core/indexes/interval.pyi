@@ -8,7 +8,8 @@
 from typing import Any, Optional, Tuple
 
 import numpy as np
-from pandas._libs.interval import IntervalMixin, Interval as Interval
+from pandas._libs.interval import Interval as Interval
+from pandas._libs.interval import IntervalMixin
 from pandas._typing import AnyArrayLike
 from pandas.core.dtypes.generic import ABCSeries
 from pandas.core.indexes.base import Index

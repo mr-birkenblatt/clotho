@@ -8,6 +8,7 @@ from _typeshed import Incomplete
 
 from ..base import PRAWBase as PRAWBase
 
+
 class BaseList(PRAWBase):
     CHILD_ATTRIBUTE: Incomplete
     def __init__(self, reddit: praw.Reddit, _data: Dict[str, Any]) -> None: ...

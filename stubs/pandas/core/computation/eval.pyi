@@ -7,6 +7,7 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 from typing import Any, Optional
 
+
 def eval(
         expr: Any, parser: str = ..., engine: Optional[Any] = ...,
         truediv: bool = ..., local_dict: Optional[Any] = ...,

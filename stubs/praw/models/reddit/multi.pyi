@@ -14,6 +14,7 @@ from .redditor import Redditor as Redditor
 from .subreddit import Subreddit as Subreddit
 from .subreddit import SubredditStream as SubredditStream
 
+
 class Multireddit(SubredditListingMixin, RedditBase):
     STR_FIELD: str
     RE_INVALID: Incomplete

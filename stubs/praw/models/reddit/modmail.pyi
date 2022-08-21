@@ -11,6 +11,7 @@ from ...const import API_PATH as API_PATH
 from ...util import snake_case_keys as snake_case_keys
 from .base import RedditBase as RedditBase
 
+
 class ModmailConversation(RedditBase):
     STR_FIELD: str
 

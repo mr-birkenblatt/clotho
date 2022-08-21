@@ -12,6 +12,7 @@ from typing import Any, List, Optional
 
 from pandas.core.base import NoNewAttributesMixin
 
+
 def cat_core(list_of_columns: List, sep: str) -> Any:
     ...
 

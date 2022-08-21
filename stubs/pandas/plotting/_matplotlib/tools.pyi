@@ -6,6 +6,7 @@
 
 from typing import Any, Optional
 
+
 def format_date_labels(ax: Any, rot: Any) -> None:
     ...
 

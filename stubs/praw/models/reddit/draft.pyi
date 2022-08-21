@@ -12,6 +12,7 @@ from .base import RedditBase as RedditBase
 from .subreddit import Subreddit as Subreddit
 from .user_subreddit import UserSubreddit as UserSubreddit
 
+
 class Draft(RedditBase):
     STR_FIELD: str
     id: Incomplete

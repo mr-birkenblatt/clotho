@@ -12,6 +12,7 @@ import numpy as np
 from pandas.core.dtypes.dtypes import ExtensionDtype
 from pandas.core.dtypes.generic import ABCExtensionArray
 
+
 def array(
         data: Sequence[object],
         dtype: Optional[Union[str, np.dtype, ExtensionDtype]] = ...,

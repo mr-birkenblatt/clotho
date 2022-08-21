@@ -6,5 +6,6 @@
 # pylint: disable=no-member
 from typing import Any
 
+
 def rewrite_exception(old_name: Any, new_name: Any) -> None:
     ...

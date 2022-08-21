@@ -12,6 +12,7 @@ from ..listing.generator import ListingGenerator as ListingGenerator
 from .base import RedditBase as RedditBase
 from .redditor import Redditor as Redditor
 
+
 class WikiPageModeration:
     wikipage: Incomplete
     def __init__(self, wikipage: 'WikiPage') -> None: ...

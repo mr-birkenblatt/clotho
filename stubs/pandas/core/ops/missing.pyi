@@ -11,6 +11,7 @@ from typing import Any
 
 from .roperator import rdivmod, rfloordiv, rmod
 
+
 def fill_zeros(result: Any, x: Any, y: Any, name: Any, fill: Any) -> Any:
     ...
 

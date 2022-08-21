@@ -16,6 +16,7 @@ from .base import RedditBase as RedditBase
 from .mixins import FullnameMixin as FullnameMixin
 from .redditor import Redditor as Redditor
 
+
 class LiveContributorRelationship:
     def __call__(self) -> List['praw.models.Redditor']: ...
     thread: Incomplete

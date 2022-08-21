@@ -7,6 +7,7 @@
 # pylint: disable=super-init-not-called,abstract-method
 from typing import Any, Callable, Dict, Optional
 
+
 def get_keywords() -> Any:
     ...
 

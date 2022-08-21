@@ -5,6 +5,7 @@
 
 from typing import Any, Optional
 
+
 class Grouper:
     def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         ...

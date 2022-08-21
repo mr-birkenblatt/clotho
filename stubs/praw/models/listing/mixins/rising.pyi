@@ -8,6 +8,7 @@ import praw
 from ...base import PRAWBase as PRAWBase
 from ..generator import ListingGenerator as ListingGenerator
 
+
 class RisingListingMixin(PRAWBase):
     def random_rising(
         self,

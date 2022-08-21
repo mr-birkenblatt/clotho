@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+
 VALID_NAME = re.compile(r"^[a-z0-9_]+$")
 
 

@@ -8,6 +8,7 @@ from _typeshed import Incomplete
 
 from .exceptions import ClientException as ClientException
 
+
 class _NotSet:
     def __bool__(self) -> bool: ...
     __nonzero__: Incomplete

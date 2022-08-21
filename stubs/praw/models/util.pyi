@@ -5,6 +5,7 @@ from typing import Any, Callable, Generator, List, Optional, Set, Union
 
 from _typeshed import Incomplete
 
+
 class BoundedSet:
     max_items: Incomplete
     def __init__(self, max_items: int) -> None: ...

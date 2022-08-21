@@ -6,6 +6,7 @@ from typing import Any, Optional
 
 from ..base import PRAWBase as PRAWBase
 
+
 class Listing(PRAWBase):
     CHILD_ATTRIBUTE: str
     def __len__(self) -> int: ...

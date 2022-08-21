@@ -7,6 +7,7 @@
 # pylint: disable=too-many-arguments,keyword-arg-before-vararg
 
 from typing import Any, Optional
+
 from pandas.core.accessor import DirNamesMixin
 from pandas.core.arrays import ExtensionArray
 

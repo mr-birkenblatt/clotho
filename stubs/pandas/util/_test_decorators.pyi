@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 from _pytest.mark.structures import MarkDecorator
 
+
 def safe_import(mod_name: Any, min_version: Optional[Any] = ...) -> Any:
     ...
 

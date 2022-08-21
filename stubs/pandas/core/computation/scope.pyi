@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument,no-name-in-module
 
 from typing import Any, Optional
+
 from pandas.core.base import StringMixin
 
 

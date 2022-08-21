@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from pandas.io.common import BaseIterator
 
+
 class XportReader(BaseIterator):
     __doc__: Any = ...
     filepath_or_buffer: Any = ...

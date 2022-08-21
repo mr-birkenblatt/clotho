@@ -11,6 +11,7 @@ from .base import PRAWBase as PRAWBase
 from .listing.generator import ListingGenerator as ListingGenerator
 from .util import stream_generator as stream_generator
 
+
 class Subreddits(PRAWBase):
     def default(
         self, **generator_kwargs: Union[str, int, Dict[str, str]],

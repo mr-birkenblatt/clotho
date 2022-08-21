@@ -10,6 +10,7 @@ from ...util.cache import cachedproperty as cachedproperty
 from .subreddit import Subreddit as Subreddit
 from .subreddit import SubredditModeration as SubredditModeration
 
+
 class UserSubreddit(Subreddit):
     def __init__(
         self, reddit: praw.Reddit, *args: Any, **kwargs: Any) -> None: ...

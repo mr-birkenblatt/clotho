@@ -7,6 +7,7 @@ from typing import Any
 
 from _typeshed import Incomplete
 
+
 class BaseTokenManager(ABC, metaclass=abc.ABCMeta):
     def __init__(self) -> None: ...
 

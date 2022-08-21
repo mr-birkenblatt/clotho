@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument,invalid-name
 from typing import Any
 
+
 VERSIONS: Any
 message: str
 version_message: str

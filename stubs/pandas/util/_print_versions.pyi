@@ -6,6 +6,7 @@
 # pylint: disable=no-member
 from typing import Any
 
+
 def get_sys_info() -> Any:
     ...
 

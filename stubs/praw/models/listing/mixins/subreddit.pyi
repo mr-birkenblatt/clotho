@@ -13,6 +13,7 @@ from .base import BaseListingMixin as BaseListingMixin
 from .gilded import GildedListingMixin as GildedListingMixin
 from .rising import RisingListingMixin as RisingListingMixin
 
+
 class CommentHelper(PRAWBase):
     subreddit: Incomplete
 

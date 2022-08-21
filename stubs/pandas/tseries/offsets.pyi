@@ -9,6 +9,7 @@ from typing import Any, Optional
 from pandas._libs.tslibs import offsets as liboffsets
 from pandas._libs.tslibs.offsets import BaseOffset
 
+
 class DateOffset(BaseOffset):
     normalize: bool = ...
 

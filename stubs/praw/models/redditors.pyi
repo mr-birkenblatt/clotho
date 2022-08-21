@@ -12,6 +12,7 @@ from .base import PRAWBase as PRAWBase
 from .listing.generator import ListingGenerator as ListingGenerator
 from .util import stream_generator as stream_generator
 
+
 class PartialRedditor(SimpleNamespace):
     ...
 

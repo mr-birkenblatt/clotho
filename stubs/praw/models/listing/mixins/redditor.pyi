@@ -10,6 +10,7 @@ from ..generator import ListingGenerator as ListingGenerator
 from .base import BaseListingMixin as BaseListingMixin
 from .gilded import GildedListingMixin as GildedListingMixin
 
+
 class SubListing(BaseListingMixin):
     def __init__(
         self, reddit: praw.Reddit, base_path: str, subpath: str) -> None: ...

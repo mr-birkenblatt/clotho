@@ -7,6 +7,7 @@
 
 from typing import Any, Optional
 
+
 def tsplot(
         series: Any, plotf: Any,
         ax: Optional[Any] = ..., **kwargs: Any) -> Any:

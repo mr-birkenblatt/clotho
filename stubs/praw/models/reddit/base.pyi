@@ -8,6 +8,7 @@ import praw
 from ...exceptions import InvalidURL as InvalidURL
 from ..base import PRAWBase as PRAWBase
 
+
 class RedditBase(PRAWBase):
     def __eq__(self, other: Union[Any, str]) -> bool: ...
     def __getattr__(self, attribute: str) -> Any: ...

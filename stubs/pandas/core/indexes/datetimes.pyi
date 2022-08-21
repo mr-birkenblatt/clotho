@@ -14,6 +14,7 @@ from pandas.core.indexes.datetimelike import (
 )
 from pandas.core.indexes.numeric import Int64Index
 
+
 class DatetimeDelegateMixin(DatetimelikeDelegateMixin):
     ...
 
