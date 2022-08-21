@@ -44,7 +44,7 @@ Action = TypedDict('Action', {
     "ref_id": str,
     "message": Optional[MessageAction],
     "link": Optional[LinkAction],
-})
+}, total=False)
 
 
 def create_message_action(ref_id: str, text: str) -> Action:
@@ -54,7 +54,6 @@ def create_message_action(ref_id: str, text: str) -> Action:
         "message": {
             "text": text,
         },
-        "link": None,
     }
 
 
@@ -68,7 +67,6 @@ def create_link_action(
     return {
         "kind": "link",
         "ref_id": ref_id,
-        "message": None,
         "link": {
             "parent_ref": parent_ref,
             "user": user,
@@ -98,6 +96,8 @@ class RedditAccess:
         yield from self._reddit.subreddit(subreddit).hot()
 
     def get_user(self, value: Union[Submission, Comment]) -> Tuple[str, str]:
+        if not hasattr(value, "author_fullname"):
+            return ("NOUSER", "NOUSER")
         ref = value.author_fullname
         res = self._users.get(ref, None)
         if res is None:
