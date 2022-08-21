@@ -98,13 +98,13 @@ class RedditAccess:
 
     def get_user(self, value: Union[Submission, Comment]) -> Tuple[str, str]:
         if not hasattr(value, "author_fullname"):
-            return ("NOUSER", "NOUSER")
+            return ("NOUSER", "u/NOUSER")
         ref = value.author_fullname
         res = self._users.get(ref, None)
         if res is None:
             user = value.author
-            user_ref = "NOUSER" if user is None else user.fullname
-            user_name = "NOUSER" if user is None else f"u/{user.name}"
+            user_ref = getattr(user, "fullname", "NOUSER")
+            user_name = f"u/{getattr(user, 'name', 'NOUSER')}"
             res = (user_ref, user_name)
             self._users[ref] = res
         return res
