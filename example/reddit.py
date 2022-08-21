@@ -1,5 +1,6 @@
 import collections
 import os
+import time
 from typing import (
     Deque,
     Dict,
@@ -160,12 +161,15 @@ class RedditAccess:
         yield self.create_message_action(doc)
         yield self.create_link_action(sub.fullname, doc)
 
+        timing_start = time.monotonic()
+
         queue: Deque[Tuple[str, CommentsOrForest]] = collections.deque()
         queue.append((doc.fullname, doc.comments))
 
         def process(
                 parent_id: str, curs: CommentsOrForest) -> Iterable[Action]:
-            print(f"batch ({len(curs)})")
+            print(
+                f"batch ({len(curs)}) {time.monotonic() - timing_start:.2f}s")
             for comment in curs:
                 if isinstance(comment, MoreComments):
                     queue.append((parent_id, comment.comments()))
