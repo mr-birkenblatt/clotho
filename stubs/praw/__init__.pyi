@@ -1,5 +1,5 @@
 # pylint: disable=unused-import,useless-import-alias,import-error
-# pyling: disable=consider-using-from-import
+# pylint: disable=consider-using-from-import
 
 import praw.models as models
 import praw.util as util
