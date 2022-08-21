@@ -10,7 +10,10 @@ from .reddit.more import MoreComments as MoreComments
 
 
 class CommentForest:
-    def __getitem__(self, index: int) -> None: ...
+    def __getitem__(
+        self,
+        index: int) -> Union[
+            'praw.models.Comment', 'praw.models.MoreComments']: ...
 
     def __init__(
         self, submission: praw.models.Submission,

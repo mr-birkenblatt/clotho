@@ -34,7 +34,7 @@ class Comment(InboxableMixin, UserContentMixin, FullnameMixin, RedditBase):
     def submission(self) -> praw.models.Submission: ...
     @submission.setter
     def submission(self, submission: praw.models.Submission) -> None: ...
-    id: Incomplete
+    id: str
 
     def __init__(
         self, reddit: praw.Reddit, id: Optional[str] = ...,
