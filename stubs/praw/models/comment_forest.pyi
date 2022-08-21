@@ -26,5 +26,5 @@ class CommentForest:
     def list(self) -> List[Union[Comment, MoreComments]]: ...
 
     def replace_more(
-        self, *, limit: int = ...,
+        self, *, limit: Optional[int] = ...,
         threshold: int = ...) -> List[MoreComments]: ...

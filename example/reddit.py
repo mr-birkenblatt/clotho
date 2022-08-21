@@ -9,11 +9,13 @@ from typing import (
     List,
     Literal,
     Optional,
+    Set,
     Tuple,
     TypedDict,
     Union,
 )
 
+import praw
 from praw import Reddit
 from praw.models.comment_forest import CommentForest
 from praw.models.reddit.comment import Comment
@@ -182,27 +184,52 @@ class RedditAccess:
         yield self.create_link_action(sub.fullname, -1, doc)
 
         timing_start = time.monotonic()
-        count = 1
+        already: Set[str] = set()
 
         queue: Deque[CommentsOrForest] = collections.deque()
+        # doc.comments.replace_more(limit=None)
+        # queue.append(doc.comments.list())
         queue.append(doc.comments)
 
         def process(curs: CommentsOrForest) -> Iterable[Action]:
-            nonlocal count
-
             # print(
             #     f"batch ({len(curs)}) "
             #     f"{time.monotonic() - timing_start:.2f}s")
+            mores: List[MoreComments] = []
+            if isinstance(curs, CommentForest):
+                try:
+                    curs.replace_more(limit=None)
+                except praw.exceptions.DuplicateReplaceException:
+                    print(f"double replace: {curs}")
+                curs = [
+                    resp
+                    for resp in curs.list()
+                    if getattr(resp, "fullname", None) not in already
+                ]
+                if curs:
+                    print(f"non-zero additional replies: {len(curs)}")
             for comment in curs:
                 if isinstance(comment, MoreComments):
-                    queue.append(comment.comments())
+                    mores.append(comment)
                     continue
+                cur_ref = comment.fullname
+                if cur_ref in already:
+                    print(f"redundant comment: {cur_ref}")
+                    continue
+                try:
+                    comment.refresh()
+                except praw.exceptions.ClientException:
+                    print(f"comment doesn't exist: {comment.fullname}")
+                if comment.replies:
+                    queue.append(comment.replies)
                 yield self.create_message_action(comment)
                 yield self.create_link_action(
                     comment.parent_id, comment.depth, comment)
-                count += 1
+                already.add(cur_ref)
+            for more in mores:
+                queue.append(more.comments())
 
         while queue:
             yield from process(queue.popleft())
 
-        print(f"done ({count}) {time.monotonic() - timing_start:.2f}s")
+        print(f"done ({len(already)}) {time.monotonic() - timing_start:.2f}s")
