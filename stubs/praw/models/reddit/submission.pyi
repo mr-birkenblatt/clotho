@@ -21,6 +21,7 @@ from .poll import PollData as PollData
 from .redditor import Redditor as Redditor
 from .subreddit import Subreddit as Subreddit
 
+
 class SubmissionFlair:
     submission: Incomplete
     def __init__(self, submission: praw.models.Submission) -> None: ...
@@ -70,7 +71,7 @@ class Submission(
     comment_limit: int
     comment_sort: str
 
-    id: Incomplete
+    id: str
 
     def __init__(
         self, reddit: praw.Reddit, id: Optional[str] = ...,
