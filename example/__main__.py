@@ -25,7 +25,7 @@ def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
                     continue
                 for action in reddit.get_comments(doc):
                     a_str = json_compact(action).decode("utf-8")
-                    a_str = a_str.replace("\\", "\\\\").replace("\n", "\\n")
+                    a_str = a_str.replace("\n", "\\n")
                     if a_str in dups:
                         print(f"skip duplicate action {a_str}")
                         continue

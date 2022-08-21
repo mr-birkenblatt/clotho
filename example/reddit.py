@@ -118,6 +118,7 @@ class RedditAccess:
             "down": downs,
         }
         if value.total_awards_received > 0:
+            print(f"awards ({value.total_awards_received})")
             votes.update({
                 award["name"]: award["count"]
                 for award in value.all_awardings
@@ -164,6 +165,7 @@ class RedditAccess:
 
         def process(
                 parent_id: str, curs: CommentsOrForest) -> Iterable[Action]:
+            print(f"batch ({len(curs)})")
             for comment in curs:
                 if isinstance(comment, MoreComments):
                     queue.append((parent_id, comment.comments()))
