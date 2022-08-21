@@ -30,7 +30,7 @@ def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
                         print(f"skip duplicate action {a_str}")
                         continue
                     print(a_str, file=fout)
-                    dups.add(a_str)
+                    # dups.add(a_str)  # NOTE: not worth it!
 
 
 if __name__ == "__main__":
