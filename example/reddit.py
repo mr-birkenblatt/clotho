@@ -7,6 +7,7 @@ from typing import (
     List,
     Literal,
     Optional,
+    Tuple,
     TypedDict,
     Union,
 )
@@ -91,34 +92,41 @@ class RedditAccess:
             client_secret=creds["client_secret"],
             user_agent=f"testscript by u/{creds['user']}")
         self._reddit = reddit
+        self._users: Dict[str, Tuple[str, str]] = {}
 
     def get_posts(self, subreddit: str) -> Iterable[Submission]:
         yield from self._reddit.subreddit(subreddit).hot()
 
-    @staticmethod
-    def create_link_action(value: Union[Submission, Comment]) -> Action:
-        if isinstance(value, Submission):
-            parent: Union[Subreddit, Submission, Comment] = value.subreddit
-        elif isinstance(value, Comment):
-            parent = value.parent()
-        else:
-            raise TypeError(f"invalid type of {value}: {type(value)}")
-        user = value.author
+    def get_user(self, value: Union[Submission, Comment]) -> Tuple[str, str]:
+        ref = value.author_fullname
+        res = self._users.get(ref, None)
+        if res is None:
+            user = value.author
+            user_ref = "NOUSER" if user is None else user.fullname
+            user_name = "NOUSER" if user is None else f"u/{user.name}"
+            res = (user_ref, user_name)
+            self._users[ref] = res
+        return res
+
+    def create_link_action(
+            self, parent_id: str, value: Union[Submission, Comment]) -> Action:
+        user_ref, user_name = self.get_user(value)
         ups = max(value.ups, 0) - min(value.downs, 0)
         downs = max(value.downs, 0) - min(value.ups, 0)
         votes = {
             "up": ups,
             "down": downs,
-            **{
+        }
+        if value.total_awards_received > 0:
+            votes.update({
                 award["name"]: award["count"]
                 for award in value.all_awardings
-            },
-        }
+            })
         return create_link_action(
             value.fullname,
-            parent.fullname,
-            "NOUSER" if user is None else user.fullname,
-            "NOUSER" if user is None else f"u/{user.name}",
+            parent_id,
+            user_ref,
+            user_name,
             value.created_utc,
             votes)
 
@@ -146,22 +154,24 @@ class RedditAccess:
         else:
             doc = sid
 
-        yield self.create_message_action(doc.subreddit)
+        sub = doc.subreddit
+        yield self.create_message_action(sub)
         yield self.create_message_action(doc)
-        yield self.create_link_action(doc)
+        yield self.create_link_action(sub.fullname, doc)
 
-        queue: Deque[CommentsOrForest] = collections.deque()
-        queue.append(doc.comments)
+        queue: Deque[Tuple[str, CommentsOrForest]] = collections.deque()
+        queue.append((doc.fullname, doc.comments))
 
-        def process(curs: CommentsOrForest) -> Iterable[Action]:
+        def process(
+                parent_id: str, curs: CommentsOrForest) -> Iterable[Action]:
             for comment in curs:
                 if isinstance(comment, MoreComments):
-                    queue.append(comment.comments())
+                    queue.append((parent_id, comment.comments()))
                     continue
                 if comment.replies:
-                    queue.append(comment.replies)
+                    queue.append((comment.fullname, comment.replies))
                 yield self.create_message_action(comment)
-                yield self.create_link_action(comment)
+                yield self.create_link_action(parent_id, comment)
 
         while queue:
-            yield from process(queue.popleft())
+            yield from process(*queue.popleft())
