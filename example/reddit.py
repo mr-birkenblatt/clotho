@@ -138,7 +138,7 @@ class RedditAccess:
             "down": downs,
         }
         if value.total_awards_received > 0:
-            print(f"awards ({value.total_awards_received})")
+            # print(f"awards ({value.total_awards_received})")
             votes.update({
                 award["name"]: award["count"]
                 for award in value.all_awardings
@@ -182,13 +182,17 @@ class RedditAccess:
         yield self.create_link_action(sub.fullname, -1, doc)
 
         timing_start = time.monotonic()
+        count = 1
 
         queue: Deque[CommentsOrForest] = collections.deque()
         queue.append(doc.comments)
 
         def process(curs: CommentsOrForest) -> Iterable[Action]:
-            print(
-                f"batch ({len(curs)}) {time.monotonic() - timing_start:.2f}s")
+            nonlocal count
+
+            # print(
+            #     f"batch ({len(curs)}) "
+            #     f"{time.monotonic() - timing_start:.2f}s")
             for comment in curs:
                 if isinstance(comment, MoreComments):
                     queue.append(comment.comments())
@@ -196,6 +200,9 @@ class RedditAccess:
                 yield self.create_message_action(comment)
                 yield self.create_link_action(
                     comment.parent_id, comment.depth, comment)
+                count += 1
 
         while queue:
             yield from process(queue.popleft())
+
+        print(f"done ({count}) {time.monotonic() - timing_start:.2f}s")
