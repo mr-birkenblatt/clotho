@@ -119,7 +119,7 @@ class Submission(
     title: str
     score: int
     upvote_ratio: float
-    author: Redditor
+    author: Optional[Redditor]
     author_fullname: str
     total_awards_received: int
     subreddit_name_prefixed: str

@@ -45,7 +45,7 @@ class Comment(InboxableMixin, UserContentMixin, FullnameMixin, RedditBase):
     name: str
 
     score: int
-    author: Redditor
+    author: Optional[Redditor]
     author_fullname: str
     total_awards_received: int
     subreddit_name_prefixed: str

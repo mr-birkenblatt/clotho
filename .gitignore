@@ -12,6 +12,7 @@
 /build
 /.mypy_cache
 /example/creds.json
+/example/reddit.jsonl
 
 # misc
 .DS_Store

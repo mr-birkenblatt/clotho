@@ -115,8 +115,8 @@ class RedditAccess:
         return create_link_action(
             value.fullname,
             parent.fullname,
-            user.fullname,
-            f"u/{user.name}",
+            "NOUSER" if user is None else user.fullname,
+            "NOUSER" is user is None else f"u/{user.name}",
             value.created_utc,
             votes)
 
