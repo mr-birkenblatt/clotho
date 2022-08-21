@@ -104,9 +104,11 @@ class RedditAccess:
         else:
             raise TypeError(f"invalid type of {value}: {type(value)}")
         user = value.author
+        ups = max(value.ups, 0) - min(value.downs, 0)
+        downs = max(value.downs, 0) - min(value.ups, 0)
         votes = {
-            "up": value.ups,
-            "down": value.downs,
+            "up": ups,
+            "down": downs,
             **{
                 award["name"]: award["count"]
                 for award in value.all_awardings
