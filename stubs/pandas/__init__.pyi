@@ -18,6 +18,8 @@ from pandas._config import option_context as option_context
 from pandas._config import options as options
 from pandas._config import reset_option as reset_option
 from pandas._config import set_option as set_option
+
+# dtype; missing; indexes; tseries; conversion; misc
 from pandas.core.api import bdate_range as bdate_range
 from pandas.core.api import Categorical as Categorical
 from pandas.core.api import CategoricalDtype as CategoricalDtype
@@ -32,9 +34,7 @@ from pandas.core.api import Float64Index as Float64Index
 from pandas.core.api import Grouper as Grouper
 from pandas.core.api import Index as Index
 from pandas.core.api import IndexSlice as IndexSlice
-from pandas.core.api import (
-    Int8Dtype as Int8Dtype,  # dtype; missing; indexes; tseries; conversion; misc
-)
+from pandas.core.api import Int8Dtype as Int8Dtype
 from pandas.core.api import Int16Dtype as Int16Dtype
 from pandas.core.api import Int32Dtype as Int32Dtype
 from pandas.core.api import Int64Dtype as Int64Dtype
