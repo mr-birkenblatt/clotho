@@ -1,4 +1,5 @@
 import collections
+import logging
 import os
 import time
 from typing import (
@@ -35,8 +36,8 @@ MessageAction = TypedDict('MessageAction', {
 })
 LinkAction = TypedDict('LinkAction', {
     "parent_ref": str,
-    "user": str,
-    "user_ref": str,
+    "user_ref": Optional[str],
+    "user_name": Optional[str],
     "created_utc": float,
     "votes": Dict[str, int],
 })
@@ -61,8 +62,8 @@ def create_message_action(ref_id: str, text: str) -> Action:
 def create_link_action(
         ref_id: str,
         parent_ref: str,
-        user_ref: str,
-        user: str,
+        user_ref: Optional[str],
+        user_name: Optional[str],
         created_utc: float,
         votes: Dict[str, int]) -> Action:
     return {
@@ -70,8 +71,8 @@ def create_link_action(
         "ref_id": ref_id,
         "link": {
             "parent_ref": parent_ref,
-            "user": user,
             "user_ref": user_ref,
+            "user_name": user_name,
             "created_utc": created_utc,
             "votes": votes,
         },
@@ -79,7 +80,14 @@ def create_link_action(
 
 
 class RedditAccess:
-    def __init__(self) -> None:
+    def __init__(self, do_log: bool) -> None:
+        if do_log:
+            handler = logging.StreamHandler()
+            handler.setLevel(logging.DEBUG)
+            for logger_name in ("praw", "prawcore"):
+                logger = logging.getLogger(logger_name)
+                logger.setLevel(logging.DEBUG)
+                logger.addHandler(handler)
         with open_read(CRED_FILE, text=True) as fin:
             creds = json_load(fin)
         if "ERROR" in creds.values():
@@ -111,7 +119,12 @@ class RedditAccess:
 
     def create_link_action(
             self, parent_id: str, value: Union[Submission, Comment]) -> Action:
-        user_ref, user_name = self.get_user(value)
+        user_ref = getattr(value, "author_fullname", None)
+        if user_ref is not None:
+            user = value.author
+            user_name = f"u/{getattr(user, 'name', 'NOUSER')}"
+        else:
+            user_name = None
         ups = max(value.ups, 0) - min(value.downs, 0)
         downs = max(value.downs, 0) - min(value.ups, 0)
         votes = {
