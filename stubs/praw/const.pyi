@@ -12,3 +12,5 @@ MIN_JPEG_SIZE: int
 MIN_PNG_SIZE: int
 JPEG_HEADER: bytes
 PNG_HEADER: bytes
+
+__version__: str

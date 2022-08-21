@@ -10,7 +10,8 @@ from .base import PRAWBase as PRAWBase
 from .reddit.draft import Draft as Draft
 from .reddit.live import LiveThread as LiveThread
 from .reddit.multi import Multireddit as Multireddit
-from .reddit.multi import Subreddit as Subreddit
+from .reddit.subreddit import Subreddit as Subreddit
+from .reddit.user_subreddit import UserSubreddit
 
 
 class DraftHelper(PRAWBase):
@@ -25,7 +26,7 @@ class DraftHelper(PRAWBase):
         selftext: Optional[str] = ..., send_replies: bool = ...,
         spoiler: bool = ...,
         subreddit: Optional[Union[
-            str, 'praw.models.Subreddit', 'praw.models.UserSubreddit']] = ...,
+            str, Subreddit, UserSubreddit]] = ...,
         title: Optional[str] = ..., url: Optional[str] = ...,
         **draft_kwargs: Any,
         ) -> praw.models.Draft: ...
@@ -54,15 +55,15 @@ class MultiredditHelper(PRAWBase):
     def create(
         self, *, description_md: Optional[str] = ..., display_name: str,
         icon_name: Optional[str] = ..., key_color: Optional[str] = ...,
-        subreddits: Union[str, 'praw.models.Subreddit'],
+        subreddits: Union[str, Subreddit],
         visibility: str = ..., weighting_scheme: str = ...,
         ) -> praw.models.Multireddit: ...
 
 
 class SubredditHelper(PRAWBase):
-    def __call__(self, display_name: str) -> praw.models.Subreddit: ...
+    def __call__(self, display_name: str) -> Subreddit: ...
 
     def create(
         self, name: str, *, link_type: str = ..., subreddit_type: str = ...,
         title: Optional[str] = ..., wikimode: str = ...,
-        **other_settings: Optional[str]) -> praw.models.Subreddit: ...
+        **other_settings: Optional[str]) -> Subreddit: ...
