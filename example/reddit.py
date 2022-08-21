@@ -116,7 +116,7 @@ class RedditAccess:
             value.fullname,
             parent.fullname,
             "NOUSER" if user is None else user.fullname,
-            "NOUSER" is user is None else f"u/{user.name}",
+            "NOUSER" if user is None else f"u/{user.name}",
             value.created_utc,
             votes)
 
