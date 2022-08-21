@@ -2,10 +2,11 @@
 # pylint: disable=useless-import-alias,multiple-statements,no-name-in-module
 # pylint: disable=unused-argument,invalid-name,redefined-builtin
 # pylint: disable=too-few-public-methods
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import praw
 from _typeshed import Incomplete
+from praw.models.reddit.submission import Award
 
 from ...const import API_PATH as API_PATH
 from ...exceptions import ClientException as ClientException
@@ -34,7 +35,30 @@ class Comment(InboxableMixin, UserContentMixin, FullnameMixin, RedditBase):
     def submission(self) -> praw.models.Submission: ...
     @submission.setter
     def submission(self, submission: praw.models.Submission) -> None: ...
+
     id: str
+    body: str
+    body_html: str
+    parent_id: str
+
+    permalink: str
+    name: str
+
+    score: int
+    author: Redditor
+    author_fullname: str
+    total_awards_received: int
+    subreddit_name_prefixed: str
+    num_reports: int
+    fullname: str
+    downs: int
+    ups: int
+
+    created_utc: float
+    all_awardings: List[Award]
+    depth: int
+
+    is_submitter: bool
 
     def __init__(
         self, reddit: praw.Reddit, id: Optional[str] = ...,

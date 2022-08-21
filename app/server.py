@@ -74,7 +74,7 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
             return User.parse_name(obj["user"])
 
     def now_ts() -> pd.Timestamp:
-        return pd.Timestamp("now")
+        return pd.Timestamp("now", tz="UTC")
 
     message_store = get_default_message_store()
     link_store = get_default_link_store()

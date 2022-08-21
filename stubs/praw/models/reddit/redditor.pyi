@@ -22,7 +22,12 @@ class Redditor(
     def from_data(cls, reddit: Any, data: Any) -> None: ...
     def notes(self) -> praw.models.RedditorModNotes: ...
     def stream(self) -> praw.models.reddit.redditor.RedditorStream: ...
-    name: Incomplete
+
+    name: str
+    fullname: str
+    link_karma: int
+    comment_karma: int
+    created_utc: float
 
     def __init__(
         self, reddit: praw.Reddit, name: Optional[str] = ...,

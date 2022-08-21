@@ -146,11 +146,11 @@ def json_read(data: bytes) -> Any:
         raise e
 
 
-UNIX_EPOCH = pd.Timestamp("1970-01-01")
+UNIX_EPOCH = pd.Timestamp("1970-01-01", tz="UTC")
 
 
 def from_timestamp(timestamp: float) -> pd.Timestamp:
-    return pd.to_datetime(timestamp, unit="s")
+    return pd.to_datetime(timestamp, unit="s", utc=True)
 
 
 def to_timestamp(time: pd.Timestamp) -> float:

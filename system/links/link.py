@@ -13,13 +13,15 @@ from system.msgs.message import MHash
 # down == active click on down
 # ack == following the chain
 # skip == moving to next link on same level
-VoteType = Literal["view", "up", "down", "ack", "skip"]
+# honor == honors
+VoteType = Literal["view", "up", "down", "ack", "skip", "honor"]
 VOTE_TYPES: Set[VoteType] = set(get_args(VoteType))
 VT_VIEW: VoteType = "view"
 VT_UP: VoteType = "up"
 VT_DOWN: VoteType = "down"
 VT_ACK: VoteType = "ack"
 VT_SKIP: VoteType = "skip"
+VT_HONOR: VoteType = "honor"
 
 LinkResponse = TypedDict('LinkResponse', {
     "parent": str,

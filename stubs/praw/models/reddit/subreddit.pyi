@@ -73,7 +73,10 @@ class Subreddit(
 
     def wiki(self) -> praw.models.reddit.subreddit.SubredditWiki: ...
 
-    display_name: Incomplete
+    display_name: str
+    id: str
+    name: str
+    fullname: str
 
     def __init__(
         self, reddit: praw.Reddit, display_name: Optional[str] = ...,

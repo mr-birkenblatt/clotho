@@ -17,15 +17,16 @@ from .exceptions import (
     MissingRequiredAttributeException as MissingRequiredAttributeException,
 )
 from .exceptions import RedditAPIException as RedditAPIException
+from .models import Comment as Comment
+from .models import Redditor as Redditor
+from .models import Submission as Submission
+from .models import Subreddit as Subreddit
+from .models import SubredditHelper as SubredditHelper
 from .objector import Objector as Objector
 from .util.token_manager import BaseTokenManager as BaseTokenManager
 
 
 UPDATE_CHECKER_MISSING: bool
-Comment: Incomplete
-Redditor: Incomplete
-Submission: Incomplete
-Subreddit: Incomplete
 logger: Incomplete
 
 
@@ -48,7 +49,7 @@ class Reddit:
 
     def __exit__(self, *args: Any) -> bool: ...
 
-    config: Incomplete
+    config: Config
     auth: Incomplete
     drafts: Incomplete
     front: Incomplete
@@ -57,7 +58,7 @@ class Reddit:
     multireddit: Incomplete
     notes: Incomplete
     redditors: Incomplete
-    subreddit: Incomplete
+    subreddit: SubredditHelper
     subreddits: Incomplete
     user: Incomplete
 
