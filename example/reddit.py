@@ -187,27 +187,20 @@ class RedditAccess:
         already: Set[str] = set()
 
         queue: Deque[CommentsOrForest] = collections.deque()
-        # doc.comments.replace_more(limit=None)
-        # queue.append(doc.comments.list())
         queue.append(doc.comments)
 
         def process(curs: CommentsOrForest) -> Iterable[Action]:
-            # print(
-            #     f"batch ({len(curs)}) "
-            #     f"{time.monotonic() - timing_start:.2f}s")
             mores: List[MoreComments] = []
             if isinstance(curs, CommentForest):
                 try:
                     curs.replace_more(limit=None)
                 except praw.exceptions.DuplicateReplaceException:
                     print(f"double replace: {curs}")
-                curs = [
-                    resp
-                    for resp in curs.list()
-                    if getattr(resp, "fullname", None) not in already
-                ]
+                curs = curs.list()
                 if curs:
-                    print(f"non-zero additional replies: {len(curs)}")
+                    print(
+                        f"batch ({len(curs)}) "
+                        f"{time.monotonic() - timing_start:.2f}s")
             for comment in curs:
                 if isinstance(comment, MoreComments):
                     mores.append(comment)
