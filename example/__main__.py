@@ -35,4 +35,6 @@ def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
 
 if __name__ == "__main__":
     process(
-        RedditAccess(do_log=False), REDDIT_ACTION_FILE, ["news", "worldnews"])
+        RedditAccess(do_log=False),
+        REDDIT_ACTION_FILE,
+        ["politics", "news", "worldnews", "conservative"])
