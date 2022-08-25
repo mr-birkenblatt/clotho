@@ -1,7 +1,7 @@
 import hashlib
 import json
 import string
-from typing import Any, IO, List, Optional, Tuple, TypeVar, Union
+from typing import Any, IO, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
@@ -144,6 +144,15 @@ def json_read(data: bytes) -> Any:
     except json.JSONDecodeError as e:
         report_json_error(e)
         raise e
+
+
+def read_jsonl(fin: IO[str]) -> Iterable[Any]:
+    for line in fin:
+        try:
+            yield json.loads(line)
+        except json.JSONDecodeError as e:
+            report_json_error(e)
+            raise e
 
 
 UNIX_EPOCH = pd.Timestamp("1970-01-01", tz="UTC")

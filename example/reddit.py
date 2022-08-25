@@ -2,18 +2,7 @@ import collections
 import logging
 import os
 import time
-from typing import (
-    Deque,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Set,
-    Tuple,
-    TypedDict,
-    Union,
-)
+from typing import Deque, Dict, Iterable, List, Set, Tuple, Union
 
 import praw
 from praw import Reddit
@@ -23,6 +12,7 @@ from praw.models.reddit.more import MoreComments
 from praw.models.reddit.submission import Submission
 from praw.models.reddit.subreddit import Subreddit
 
+from example.action import Action, create_link_action, create_message_action
 from misc.io import open_read
 from misc.util import json_load, json_pretty
 
@@ -32,56 +22,6 @@ CommentsOrForest = Union[CommentForest, List[MaybeComment]]
 
 
 CRED_FILE = os.path.join(os.path.dirname(__file__), "creds.json")
-
-MessageAction = TypedDict('MessageAction', {
-    "text": str,
-})
-LinkAction = TypedDict('LinkAction', {
-    "parent_ref": str,
-    "user_ref": Optional[str],
-    "user_name": Optional[str],
-    "created_utc": float,
-    "votes": Dict[str, int],
-    "depth": int,
-})
-Action = TypedDict('Action', {
-    "kind": Literal["message", "link"],
-    "ref_id": str,
-    "message": Optional[MessageAction],
-    "link": Optional[LinkAction],
-}, total=False)
-
-
-def create_message_action(ref_id: str, text: str) -> Action:
-    return {
-        "kind": "message",
-        "ref_id": ref_id,
-        "message": {
-            "text": text,
-        },
-    }
-
-
-def create_link_action(
-        ref_id: str,
-        parent_ref: str,
-        depth: int,
-        user_ref: Optional[str],
-        user_name: Optional[str],
-        created_utc: float,
-        votes: Dict[str, int]) -> Action:
-    return {
-        "kind": "link",
-        "ref_id": ref_id,
-        "link": {
-            "parent_ref": parent_ref,
-            "user_ref": user_ref,
-            "user_name": user_name,
-            "created_utc": created_utc,
-            "votes": votes,
-            "depth": depth,
-        },
-    }
 
 
 class RedditAccess:
