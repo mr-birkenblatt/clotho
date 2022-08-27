@@ -1,24 +1,18 @@
 import os
-import weakref
-from typing import Iterable, TYPE_CHECKING
+from typing import Iterable
 
 from misc.env import envload_path
 from misc.io import open_append, open_read
+from misc.lru import LRU
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
-
-
-if TYPE_CHECKING:
-    WVD = weakref.WeakValueDictionary[MHash, Message]
-else:
-    WVD = weakref.WeakValueDictionary
 
 
 class DiskStore(MessageStore):
     def __init__(self) -> None:
         self._path = envload_path("MSG_PATH")
         self._topics = envload_path("MSG_TOPICS")
-        self._cache: WVD = weakref.WeakValueDictionary()
+        self._cache: LRU[MHash, Message] = LRU(10000)
 
     @staticmethod
     def _escape(text: str) -> str:
@@ -50,7 +44,7 @@ class DiskStore(MessageStore):
         return message.get_hash()
 
     def read_message(self, message_hash: MHash) -> Message:
-        res = self._cache.get(message_hash, None)
+        res = self._cache.get(message_hash)
         if res is not None:
             return res
         try:
@@ -62,7 +56,7 @@ class DiskStore(MessageStore):
                     text = self._unescape(line)
                     msg = Message(msg=text)
                     mhash = msg.get_hash()
-                    self._cache[mhash] = msg
+                    self._cache.set(mhash, msg)
                     if mhash == message_hash:
                         res = msg
         except FileNotFoundError:
