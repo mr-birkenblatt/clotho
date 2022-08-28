@@ -66,14 +66,14 @@ class User:
         return 1.0
 
     def __hash__(self) -> int:
-        return hash(self.get_name())
+        return hash(self.get_id())
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, self.__class__):
             return False
         if self is other:
             return True
-        return self.get_name() == other.get_name()
+        return self.get_id() == other.get_id()
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)

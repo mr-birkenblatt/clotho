@@ -6,8 +6,9 @@ from misc.redis import ObjectRedis
 from misc.util import from_timestamp, to_timestamp
 from system.links.link import Link, parse_vote_type, Votes, VoteType, VT_UP
 from system.links.store import LinkStore
-from system.links.user import User
 from system.msgs.message import MHash
+from system.users.store import UserStore
+from system.users.user import User
 
 
 class RedisLink(Link):
@@ -38,13 +39,13 @@ class RedisLink(Link):
             MHash.parse(child),
         )
 
-    def get_user(self) -> Optional[User]:
+    def get_user(self, user_store: UserStore) -> Optional[User]:
         if self._user is not None:
             return self._user
-        res = self._r.obj_get("user", self._construct_key(VT_UP))
-        if res is None:
+        user_id = self._r.obj_get("user", self._construct_key(VT_UP))
+        if user_id is None:
             return None
-        res = User.parse_name(res)
+        res = user_store.get_user_by_id(user_id)
         self._user = res
         return res
 
@@ -66,6 +67,7 @@ class RedisLink(Link):
 
     def add_vote(
             self,
+            user_store: UserStore,
             vote_type: VoteType,
             who: User,
             now: pd.Timestamp) -> None:
@@ -73,14 +75,14 @@ class RedisLink(Link):
         with self._r.get_lock("votes"):
             key = self._construct_key(vote_type)
             votes = self.get_votes(vote_type)
-            weighted_value = who.get_weighted_vote(self.get_user())
+            weighted_value = who.get_weighted_vote(self.get_user(user_store))
             self._r.obj_put(
                 "vtotal", key, votes.get_total_votes() + weighted_value)
             self._r.obj_put(
                 "vdaily",
                 key,
                 votes.get_adjusted_daily_votes(now) + weighted_value)
-            self._r.obj_put_nx("user", key, who.get_name())
+            self._r.obj_put_nx("user", key, who.get_id())
             self._r.obj_put_nx("vfirst", key, to_timestamp(now))
             self._r.obj_put("vlast", key, to_timestamp(now))
 
@@ -107,10 +109,11 @@ class RedisLinkStore(LinkStore):
             yield self.get_link(parent, child)
 
     def get_all_user_links(self, user: User) -> Iterable[Link]:
+        user_id = user.get_id()
         for key, value in self._r.obj_dict("user").items():
             vtype, parent, child = RedisLink.parse_key(key)
             if vtype != VT_UP:
                 continue
-            if User.parse_name(value) != user:
+            if value != user_id:
                 continue
             yield self.get_link(parent, child)

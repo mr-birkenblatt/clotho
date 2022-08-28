@@ -155,8 +155,8 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         child = message_store.write_message(msg)
         link = link_store.get_link(parent, child)
         now = now_ts()
-        link.add_vote(VT_UP, user, now)
-        return link.get_response(now)
+        link.add_vote(user_store, VT_UP, user, now)
+        return link.get_response(user_store, now)
 
     @server.json_post(f"{prefix}/vote")
     def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
@@ -168,8 +168,8 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         link = link_store.get_link(parent, child)
         now = now_ts()
         for vtype in votes:
-            link.add_vote(parse_vote_type(f"{vtype}"), user, now)
-        return link.get_response(now)
+            link.add_vote(user_store, parse_vote_type(f"{vtype}"), user, now)
+        return link.get_response(user_store, now)
 
     # *** read only ***
 
@@ -222,7 +222,10 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         link_query = get_link_query_params(args)
         links = link_store.get_children(parent, **link_query)
         return {
-            "links": [link.get_response(link_query["now"]) for link in links],
+            "links": [
+                link.get_response(user_store, link_query["now"])
+                for link in links
+            ],
             "next": link_query["offset"] + len(links),
         }
 
@@ -233,7 +236,10 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         link_query = get_link_query_params(args)
         links = link_store.get_parents(child, **link_query)
         return {
-            "links": [link.get_response(link_query["now"]) for link in links],
+            "links": [
+                link.get_response(user_store, link_query["now"])
+                for link in links
+            ],
             "next": link_query["offset"] + len(links),
         }
 
@@ -245,7 +251,10 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         link_query = get_link_query_params(args)
         links = link_store.get_user_links(user, **link_query)
         return {
-            "links": [link.get_response(link_query["now"]) for link in links],
+            "links": [
+                link.get_response(user_store, link_query["now"])
+                for link in links
+            ],
             "next": link_query["offset"] + len(links),
         }
 

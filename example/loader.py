@@ -14,9 +14,10 @@ from misc.io import open_read
 from misc.util import from_timestamp, read_jsonl
 from system.links.link import parse_vote_type
 from system.links.store import LinkStore
-from system.links.user import User
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
+from system.users.store import UserStore
+from system.users.user import User
 
 
 def actions_from_file(fname: str) -> Iterable[Action]:
@@ -36,6 +37,7 @@ def interpret_action(
         *,
         message_store: MessageStore,
         link_store: LinkStore,
+        user_store: UserStore,
         now: pd.Timestamp,
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
@@ -54,10 +56,16 @@ def interpret_action(
             lookup_buffer[parent_ref].append(action)
             return None
         cur_link = link_store.get_link(parent_hash, own_hash)
-        user_name = link.get("user_ref", "__no_user__")
-        # user_name = link.get("user_name", "__no_user__")  # TODO: do this
+        user_name = link.get("user_name", "__no_user__")
         assert user_name is not None  # NOTE: mypy bug?
-        user = User(user_name)
+        user_id = user_store.get_id_from_name(user_name)
+        try:
+            user = user_store.get_user_by_id(user_id)
+        except KeyError:
+            user = User(user_name, {
+                "can_create_topic": False,
+            })
+            user_store.store_user(user)
         created_ts = from_timestamp(link["created_utc"])
         for vname, vcount in link["votes"].items():
             vtype = parse_vote_type(TYPE_CONVERTER.get(vname, "honor"))
@@ -68,7 +76,10 @@ def interpret_action(
                 continue
             for _ in range(casts):
                 cur_link.add_vote(
-                    vtype, user, now if total_votes > 0 else created_ts)
+                    user_store,
+                    vtype,
+                    user,
+                    now if total_votes > 0 else created_ts)
         return None
     if is_message_action(action):
         assert action["message"] is not None
@@ -93,6 +104,7 @@ def process_actions(
         *,
         message_store: MessageStore,
         link_store: LinkStore,
+        user_store: UserStore,
         now: pd.Timestamp,
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
@@ -102,6 +114,7 @@ def process_actions(
             action,
             message_store=message_store,
             link_store=link_store,
+            user_store=user_store,
             now=now,
             hash_lookup=hash_lookup,
             lookup_buffer=lookup_buffer)
@@ -118,6 +131,7 @@ def process_actions(
                     lb_actions,
                     message_store=message_store,
                     link_store=link_store,
+                    user_store=user_store,
                     now=now,
                     hash_lookup=hash_lookup,
                     lookup_buffer=lookup_buffer,
@@ -130,6 +144,7 @@ def process_action_file(
         *,
         message_store: MessageStore,
         link_store: LinkStore,
+        user_store: UserStore,
         now: pd.Timestamp) -> None:
     hash_lookup: Dict[str, MHash] = {}
     lookup_buffer: DefaultDict[str, List[Action]] = \
@@ -140,6 +155,7 @@ def process_action_file(
         actions_from_file(fname),
         message_store=message_store,
         link_store=link_store,
+        user_store=user_store,
         now=now,
         hash_lookup=hash_lookup,
         lookup_buffer=lookup_buffer,

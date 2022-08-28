@@ -4,8 +4,9 @@ import numpy as np
 import pandas as pd
 
 from misc.util import to_timestamp
-from system.links.user import User
 from system.msgs.message import MHash
+from system.users.store import UserStore
+from system.users.user import User
 
 
 # view == it showed up
@@ -87,7 +88,7 @@ class Link:
     def get_child(self) -> MHash:
         raise NotImplementedError()
 
-    def get_user(self) -> Optional[User]:
+    def get_user(self, user_store: UserStore) -> Optional[User]:
         raise NotImplementedError()
 
     def get_votes(self, vote_type: VoteType) -> Votes:
@@ -95,14 +96,16 @@ class Link:
 
     def add_vote(
             self,
+            user_store: UserStore,
             vote_type: VoteType,
             who: User,
             now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
-    def get_response(self, now: pd.Timestamp) -> LinkResponse:
-        user = self.get_user()
-        user_str = None if user is None else user.get_name()
+    def get_response(
+            self, user_store: UserStore, now: pd.Timestamp) -> LinkResponse:
+        user = self.get_user(user_store)
+        user_str = None if user is None else user.get_id()
         first = now
         votes = {}
         for vtype in self.get_vote_types():
