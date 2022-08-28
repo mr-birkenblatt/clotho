@@ -10,8 +10,9 @@ from system.msgs.store import MessageStore
 
 class DiskStore(MessageStore):
     def __init__(self) -> None:
-        self._path = envload_path("MSG_PATH")
-        self._topics = envload_path("MSG_TOPICS")
+        self._path = envload_path("MSG_PATH", default="userdata/msg")
+        self._topics = envload_path(
+            "MSG_TOPICS", default="userdata/topics.txt")
         self._cache: LRU[MHash, Message] = LRU(10000)
 
     @staticmethod

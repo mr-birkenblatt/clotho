@@ -16,6 +16,7 @@ help:
 	@echo "pytest	run all test with pytest"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
+	@echo "run-redis	start redis server"
 
 export LC_ALL=C
 export LANG=C
@@ -107,3 +108,6 @@ pre-commit:
 
 coverage-report:
 	./coverage/coverage.sh
+
+run-redis:
+	cd userdata && redis-server
