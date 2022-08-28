@@ -1,15 +1,22 @@
+import argparse
 import os
 from typing import List, Set
 
+import pandas as pd
+
+from example.loader import process_action_file
 from example.reddit import RedditAccess
 from misc.io import open_append
 from misc.util import json_compact
+from system.links.store import get_default_link_store
+from system.msgs.store import get_default_message_store
+from system.users.store import get_default_user_store
 
 
 REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
 
 
-def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
+def process_reddit(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
     dups: Set[str] = set()
     with open_append(fname, text=True) as fout:
         for sub in subs:
@@ -33,8 +40,42 @@ def process(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
                     # dups.add(a_str)  # NOTE: not worth it!
 
 
-if __name__ == "__main__":
-    process(
-        RedditAccess(do_log=False),
+def process_load() -> None:
+    message_store = get_default_message_store()
+    link_store = get_default_link_store()
+    user_store = get_default_user_store()
+    now = pd.Timestamp("2022-08-21")
+    process_action_file(
         REDDIT_ACTION_FILE,
-        ["politics", "news", "worldnews", "conservative"])
+        message_store=message_store,
+        link_store=link_store,
+        user_store=user_store,
+        now=now)
+
+
+def run() -> None:
+    args = parse_args()
+    if args.cmd == "reddit":
+        process_reddit(
+            RedditAccess(do_log=False),
+            REDDIT_ACTION_FILE,
+            ["politics", "news", "worldnews", "conservative"])
+    elif args.cmd == "load":
+        process_load()
+    else:
+        raise RuntimeError(f"invalid cmd: {args.cmd}")
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        prog=f"python -m {os.path.basename(os.path.dirname(__file__))}",
+        description="Create or load example")
+    parser.add_argument(
+        "cmd",
+        choices=["reddit", "load"],
+        help="the command to execute")
+    return parser.parse_args()
+
+
+if __name__ == "__main__":
+    run()
