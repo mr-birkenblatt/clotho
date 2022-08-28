@@ -81,6 +81,7 @@ def interpret_action(
                     vtype,
                     user,
                     now if total_votes > 0 else created_ts)
+            print(f"link with {casts} {vtype} votes")
         return None
     if is_message_action(action):
         assert action["message"] is not None
@@ -93,6 +94,7 @@ def interpret_action(
         msg = Message(msg=text)
         if is_topic:
             mhash = message_store.add_topic(msg)
+            print(f"adding topic: {msg.get_text()}")
         else:
             mhash = message_store.write_message(msg)
         hash_lookup[ref_id] = mhash
@@ -129,6 +131,7 @@ def process_actions(
                     print(f"advance date to {now}")
             lb_actions = lookup_buffer.pop(ref_id)
             if lb_actions:
+                print(f"processing delayed actions ({len(lb_actions)})")
                 now = process_actions(
                     lb_actions,
                     message_store=message_store,
