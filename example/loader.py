@@ -66,6 +66,7 @@ def interpret_action(
                 "can_create_topic": False,
             })
             user_store.store_user(user)
+            print(f"create user {user.get_name()}")
         created_ts = from_timestamp(link["created_utc"])
         for vname, vcount in link["votes"].items():
             vtype = parse_vote_type(TYPE_CONVERTER.get(vname, "honor"))
@@ -125,6 +126,7 @@ def process_actions(
                 topic_counts[ref_id] += 1
                 if topic_counts[ref_id] > prev_counts:
                     now += pd.Timedelta("1d")
+                    print(f"advance date to {now}")
             lb_actions = lookup_buffer.pop(ref_id)
             if lb_actions:
                 now = process_actions(
