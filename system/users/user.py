@@ -1,26 +1,53 @@
 import re
-from typing import Optional
+from typing import Any, cast, get_args, Optional, TypedDict
 
 
-VALID_NAME = re.compile(r"^[a-z0-9_]+$")
+VALID_NAME = re.compile(r"^\W+$")
+
+
+Permissions = TypedDict('Permissions', {
+    "can_create_topic": bool,
+})
+PERMISSIONS_KEYS = get_args(Permissions)
+
+
+def ensure_permissions(obj: Any) -> Permissions:
+    if len(obj.keys() | set(PERMISSIONS_KEYS)) != len(PERMISSIONS_KEYS):
+        raise ValueError(f"wrong keys: {obj.keys()} != {PERMISSIONS_KEYS}")
+    return cast(Permissions, {
+        key: bool(obj[key])
+        for key in PERMISSIONS_KEYS
+    })
 
 
 class User:
-    def __init__(self, name: str) -> None:
+    def __init__(
+            self,
+            name: str,
+            permissions: Permissions) -> None:
         if VALID_NAME.search(name) is None:
             raise ValueError(f"invalid user name {name}")
+        self._user_id: Optional[str] = None
         self._name = name
+        self._permissions = permissions
+
+    def get_id(self) -> str:
+        from system.users.store import UserStore
+
+        res = self._user_id
+        if res is None:
+            res = UserStore.get_id_from_name(self._name)
+            self._user_id = res
+        return res
 
     def get_name(self) -> str:
         return self._name
 
     def can_create_topic(self) -> bool:
-        # FIXME implement permissiosn
-        return True
+        return self._permissions.get("can_create_topic", False)
 
-    @staticmethod
-    def parse_name(name: str) -> 'User':
-        return User(name)
+    def get_permissions(self) -> Permissions:
+        return self._permissions.copy()
 
     def get_reputation(self) -> float:
         # FIXME implement ELO

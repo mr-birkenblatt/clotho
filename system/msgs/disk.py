@@ -29,7 +29,8 @@ class DiskStore(MessageStore):
             yield hash_str[2:4]
             yield hash_str[4:6]
             yield hash_str[6:56]
-            yield hash_str[56:]
+            # NOTE: we ignore the last segment
+            # yield hash_str[56:]
 
         all_segs = list(split_hash(message_hash.to_parseable()))
         segs = all_segs[:-1]

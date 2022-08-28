@@ -5,8 +5,8 @@ import pandas as pd
 from misc.env import envload_str
 from system.links.link import Link
 from system.links.scorer import Scorer
-from system.links.user import User
 from system.msgs.message import MHash
+from system.users.user import User
 
 
 class LinkStore:

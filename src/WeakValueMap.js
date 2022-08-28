@@ -1,8 +1,13 @@
 export default class WeakValueMap {
-  constructor(maxValues = 500) {
+  constructor(maxValues = 500, softLimit = undefined) {
     this.obj = {};
     this.times = {};
     this.maxValues = maxValues;
+    this.softLimit = softLimit !== undefined
+      ? softLimit : Math.max(1, Math.floor(maxValues * 0.9));
+    if (this.softLimit > this.maxValues) {
+      throw Error(`softLimit=${this.softLimit} > maxValues=${this.maxValues}`);
+    }
   }
 
   now() {
@@ -18,8 +23,9 @@ export default class WeakValueMap {
   }
 
   set(key, value) {
-    const excess = Object.keys(this.obj).length - this.maxValues;
-    if (excess > 0) {
+    const len = Object.keys(this.obj).length;
+    if (len > this.maxValues) {
+      const excess = len - this.softLimit;
       Object.keys(this.obj).sort((a, b) => {
         return this.times[a] - this.times[b];
       }).slice(0, excess).forEach((key) => {

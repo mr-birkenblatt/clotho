@@ -21,9 +21,10 @@ from misc.util import to_list
 from system.links.link import LinkResponse, parse_vote_type, VT_UP
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
-from system.links.user import User
 from system.msgs.message import Message, MHash
 from system.msgs.store import get_default_message_store
+from system.users.store import get_default_user_store
+from system.users.user import User
 
 
 LinkQuery = TypedDict('LinkQuery', {
@@ -69,28 +70,56 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
 
     server.set_default_token_expiration(48 * 60 * 60)  # 2 days
 
-    def get_user(args: WorkerArgs) -> User:
-        with server.get_token_obj(args["token"]) as obj:
-            return User.parse_name(obj["user"])
-
     def now_ts() -> pd.Timestamp:
         return pd.Timestamp("now", tz="UTC")
 
     message_store = get_default_message_store()
     link_store = get_default_link_store()
+    user_store = get_default_user_store()
+
+    def get_user(args: WorkerArgs) -> User:
+        with server.get_token_obj(args["token"]) as obj:
+            return user_store.get_user_by_id(
+                user_store.get_id_from_name(obj["user"]))
 
     # *** user management ***
 
     @server.json_post(f"{prefix}/login")
     def _post_login(_req: QSRH, rargs: ReqArgs) -> LoginResponse:
         args = rargs["post"]
-        user = args["user"]
+        user_name = args["user"]
+        user_id = user_store.get_id_from_name(user_name)
+        user = user_store.get_user_by_id(user_id)
         token = server.create_token()
         with server.get_token_obj(token) as obj:
-            obj["user"] = user
+            obj["user"] = user.get_name()
         return {
             "token": token,
-            "user": user,
+            "user": user.get_name(),
+            "permissions": user.get_permissions(),
+        }
+
+    @server.json_post(f"{prefix}/signup")
+    def _post_signup(_req: QSRH, rargs: ReqArgs) -> LoginResponse:
+        args = rargs["post"]
+        user_name = args["user"]
+        user_id = user_store.get_id_from_name(user_name)
+        try:
+            user_store.get_user_by_id(user_id)
+            raise ValueError(f"user already exists: {user_name}")
+        except KeyError:
+            pass
+        user = User(user_name, {
+            "can_create_topic": False,
+        })
+        user_store.store_user(user)
+        token = server.create_token()
+        with server.get_token_obj(token) as obj:
+            obj["user"] = user.get_name()
+        return {
+            "token": token,
+            "user": user.get_name(),
+            "permissions": user.get_permissions(),
         }
 
     @server.json_post(f"{prefix}/user")
@@ -100,6 +129,7 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         return {
             "token": args["token"],
             "user": user.get_name(),
+            "permissions": user.get_permissions(),
         }
 
     # *** interactions ***
@@ -210,7 +240,8 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
     @server.json_post(f"{prefix}/userlinks")
     def _post_userlinks(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
-        user = User.parse_name(args["user"])
+        user = user_store.get_user_by_id(
+            user_store.get_id_from_name(args["user"]))
         link_query = get_link_query_params(args)
         links = link_store.get_user_links(user, **link_query)
         return {

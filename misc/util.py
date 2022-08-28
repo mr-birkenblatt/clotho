@@ -19,6 +19,12 @@ def get_text_hash(text: str) -> str:
     return blake.hexdigest()
 
 
+def get_short_hash(text: str) -> str:
+    blake = hashlib.blake2b(digest_size=4)
+    blake.update(text.encode("utf-8"))
+    return blake.hexdigest()
+
+
 def is_hex(text: str) -> bool:
     hex_digits = set(string.hexdigits)
     return all(char in hex_digits for char in text)
@@ -148,6 +154,9 @@ def json_read(data: bytes) -> Any:
 
 def read_jsonl(fin: IO[str]) -> Iterable[Any]:
     for line in fin:
+        line = line.rstrip()
+        if not line:
+            continue
         try:
             yield json.loads(line)
         except json.JSONDecodeError as e:
