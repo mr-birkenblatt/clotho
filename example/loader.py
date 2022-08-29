@@ -170,7 +170,7 @@ def process_actions(
                     hash_lookup=hash_lookup,
                     lookup_buffer=lookup_buffer,
                     topic_counts=topic_counts)
-    print_progress()
+    print_progress(counter // 10000)
     return now
 
 
