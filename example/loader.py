@@ -124,13 +124,13 @@ def process_actions(
         if ref is not None:
             ref_id, is_topic = ref
             if is_topic:
-                prev_counts = max(topic_counts.values())
+                prev_counts = max(topic_counts.values(), default=0)
                 topic_counts[ref_id] += 1
                 if topic_counts[ref_id] > prev_counts:
                     now += pd.Timedelta("1d")
                     print(f"advance date to {now}")
-            lb_actions = lookup_buffer.pop(ref_id)
-            if lb_actions:
+            lb_actions = lookup_buffer.pop(ref_id, None)
+            if lb_actions is not None and lb_actions:
                 print(f"processing delayed actions ({len(lb_actions)})")
                 now = process_actions(
                     lb_actions,

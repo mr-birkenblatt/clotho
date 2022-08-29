@@ -2,7 +2,7 @@ import re
 from typing import Any, cast, get_args, Optional, TypedDict
 
 
-VALID_NAME = re.compile(r"^\W+$")
+VALID_NAME = re.compile(r"^\S+$")
 
 
 Permissions = TypedDict('Permissions', {

@@ -2,7 +2,7 @@ import os
 from typing import Any, Iterable, TypedDict
 
 from misc.env import envload_path
-from misc.io import open_append, open_read
+from misc.io import ensure_folder, open_append, open_read
 from misc.lru import LRU
 from misc.util import json_compact, read_jsonl
 from system.users.store import UserStore
@@ -48,6 +48,7 @@ class DiskUserStore(UserStore):
 
     def store_user(self, user: User) -> None:
         user_id = user.get_id()
+        ensure_folder(os.path.dirname(self._compute_path(user_id)))
         with open_append(self._compute_path(user_id), text=True) as fout:
             fout.write(
                 f"{json_compact(self._get_user_dict(user)).decode('utf-8')}\n")
