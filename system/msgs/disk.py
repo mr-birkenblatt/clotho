@@ -29,7 +29,8 @@ class DiskStore(MessageStore):
             yield hash_str[:2]
             yield hash_str[2:4]
             yield hash_str[4:6]
-            yield hash_str[6:56]
+            # NOTE: fewer files -- more overlap
+            # yield hash_str[6:56]
             # NOTE: we ignore the last segment
             # yield hash_str[56:]
 
