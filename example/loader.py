@@ -70,7 +70,8 @@ def interpret_action(
                 "can_create_topic": False,
             })
             user_store.store_user(user)
-            totals["users"] += 1
+            totals["new_users"] += 1
+        totals["users"] += 1
         created_ts = from_timestamp(link["created_utc"])
         for vname, vcount in link["votes"].items():
             vtype = parse_vote_type(TYPE_CONVERTER.get(vname, "honor"))
@@ -101,16 +102,19 @@ def interpret_action(
                 text = tmp.get_text()
                 is_topic = True
         msg = Message(msg=text)
-        if is_topic and msg not in message_store.get_topics():
-            message_store.add_topic(msg)
-            print(f"adding topic: {msg.get_text()}")
+        if is_topic:
+            if msg not in message_store.get_topics():
+                message_store.add_topic(msg)
+                print(f"adding topic: {msg.get_text()}")
+                totals["new_topics"] += 1
             totals["topics"] += 1
         try:
             msg = message_store.read_message(msg.get_hash())
             mhash = msg.get_hash()
         except KeyError:
             mhash = message_store.write_message(msg)
-            totals["messages"] += 1
+            totals["new_messages"] += 1
+        totals["messages"] += 1
         hash_lookup[ref_id] = mhash
         return ref_id, is_topic
     raise ValueError(f"unknown action: {action['kind']}")
