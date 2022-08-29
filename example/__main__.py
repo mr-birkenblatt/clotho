@@ -14,6 +14,7 @@ from system.users.store import get_default_user_store
 
 
 REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
+ROOTS = ["politics", "news", "worldnews", "conservative"]
 
 
 def process_reddit(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
@@ -50,16 +51,14 @@ def process_load() -> None:
         message_store=message_store,
         link_store=link_store,
         user_store=user_store,
-        now=now)
+        now=now,
+        roots=set(ROOTS))
 
 
 def run() -> None:
     args = parse_args()
     if args.cmd == "reddit":
-        process_reddit(
-            RedditAccess(do_log=False),
-            REDDIT_ACTION_FILE,
-            ["politics", "news", "worldnews", "conservative"])
+        process_reddit(RedditAccess(do_log=False), REDDIT_ACTION_FILE, ROOTS)
     elif args.cmd == "load":
         process_load()
     else:

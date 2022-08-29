@@ -140,10 +140,12 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         user = get_user(args)
         assert user.can_create_topic()
         topic = f"{args['topic']}"
-        thash = message_store.add_topic(Message(msg=topic))
+        msg = Message(msg=topic)
+        message_store.add_topic(msg)
+        message_store.write_message(msg)
         return {
             "topic": topic,
-            "hash": thash.to_parseable(),
+            "hash": msg.get_hash().to_parseable(),
         }
 
     @server.json_post(f"{prefix}/message")
@@ -152,6 +154,8 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         user = get_user(args)
         parent = MHash.parse(f"{args['parent']}")
         msg = Message(msg=args["msg"])
+        if not msg.is_valid_message():
+            raise ValueError("cannot create topic via /message use /topic")
         child = message_store.write_message(msg)
         link = link_store.get_link(parent, child)
         now = now_ts()

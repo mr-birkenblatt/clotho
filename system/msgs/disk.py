@@ -40,7 +40,6 @@ class DiskStore(MessageStore):
         return os.path.join(self._path, *segs, f"{rest}.msg")
 
     def write_message(self, message: Message) -> MHash:
-        assert message.is_valid_message()
         mhash = message.get_hash()
         ensure_folder(os.path.dirname(self._compute_path(mhash)))
         with open_append(self._compute_path(mhash), text=True) as fout:

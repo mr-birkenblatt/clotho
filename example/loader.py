@@ -1,6 +1,6 @@
 
 import collections
-from typing import DefaultDict, Dict, Iterable, List, Optional, Tuple
+from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 import pandas as pd
 
@@ -39,8 +39,10 @@ def interpret_action(
         link_store: LinkStore,
         user_store: UserStore,
         now: pd.Timestamp,
+        roots: Set[str],
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
+        totals: Dict[str, int],
         ) -> Optional[Tuple[str, bool]]:
     ref_id = action["ref_id"]
     if is_link_action(action):
@@ -82,31 +84,28 @@ def interpret_action(
                     vtype,
                     user,
                     now if total_votes > 0 else created_ts)
-            print(f"link with {casts} {vtype} votes")
+            totals[vtype] += casts
+        totals["links"] += 1
         return None
     if is_message_action(action):
         assert action["message"] is not None
         message = action["message"]
         text = message["text"]
         is_topic = False
-        if text.startswith("r/"):
+        if text.startswith("r/") and text[2:] in roots:
             tmp = Message(msg=f"t/{text[2:]}")
             if tmp.is_topic():
                 text = tmp.get_text()
                 is_topic = True
         msg = Message(msg=text)
-        if is_topic:
-            if msg not in message_store.get_topics():
-                mhash = message_store.add_topic(msg)
-                print(f"adding topic: {msg.get_text()}")
-            else:
-                mhash = msg.get_hash()
-        else:
-            try:
-                msg = message_store.read_message(msg.get_hash())
-                mhash = msg.get_hash()
-            except KeyError:
-                mhash = message_store.write_message(msg)
+        if is_topic and msg not in message_store.get_topics():
+            message_store.add_topic(msg)
+            print(f"adding topic: {msg.get_text()}")
+        try:
+            msg = message_store.read_message(msg.get_hash())
+            mhash = msg.get_hash()
+        except KeyError:
+            mhash = message_store.write_message(msg)
         hash_lookup[ref_id] = mhash
         return ref_id, is_topic
     raise ValueError(f"unknown action: {action['kind']}")
@@ -119,18 +118,34 @@ def process_actions(
         link_store: LinkStore,
         user_store: UserStore,
         now: pd.Timestamp,
+        roots: Set[str],
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
         topic_counts: DefaultDict[str, int]) -> pd.Timestamp:
+    totals: Dict[str, int] = collections.defaultdict(lambda: 0)
+
+    def print_progress() -> None:
+        if totals:
+            for vtype, casts in totals.items():
+                if vtype == "links":
+                    continue
+                print(
+                    f"{totals.get('links')} links with {casts} {vtype} votes")
+            totals.clear()
+
     for action in actions:
+        if totals.get("links", 0) >= 10000:
+            print_progress()
         ref = interpret_action(
             action,
             message_store=message_store,
             link_store=link_store,
             user_store=user_store,
             now=now,
+            roots=roots,
             hash_lookup=hash_lookup,
-            lookup_buffer=lookup_buffer)
+            lookup_buffer=lookup_buffer,
+            totals=totals)
         if ref is not None:
             ref_id, is_topic = ref
             if is_topic:
@@ -149,9 +164,11 @@ def process_actions(
                     link_store=link_store,
                     user_store=user_store,
                     now=now,
+                    roots=roots,
                     hash_lookup=hash_lookup,
                     lookup_buffer=lookup_buffer,
                     topic_counts=topic_counts)
+    print_progress()
     return now
 
 
@@ -161,7 +178,8 @@ def process_action_file(
         message_store: MessageStore,
         link_store: LinkStore,
         user_store: UserStore,
-        now: pd.Timestamp) -> None:
+        now: pd.Timestamp,
+        roots: Set[str]) -> None:
     hash_lookup: Dict[str, MHash] = {}
     lookup_buffer: DefaultDict[str, List[Action]] = \
         collections.defaultdict(list)
@@ -173,6 +191,7 @@ def process_action_file(
         link_store=link_store,
         user_store=user_store,
         now=now,
+        roots=roots,
         hash_lookup=hash_lookup,
         lookup_buffer=lookup_buffer,
         topic_counts=topic_counts)
