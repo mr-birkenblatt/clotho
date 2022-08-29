@@ -91,7 +91,9 @@ def interpret_action(
     if is_message_action(action):
         assert action["message"] is not None
         message = action["message"]
-        text = message["text"]
+        text = message["text"].strip()
+        if not text:
+            text = "[missing]"
         is_topic = False
         if text.startswith("r/") and text[2:].lower() in roots:
             tmp = Message(msg=f"t/{text[2:].lower()}")
