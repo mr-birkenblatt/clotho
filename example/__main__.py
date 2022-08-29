@@ -45,7 +45,7 @@ def process_load() -> None:
     message_store = get_default_message_store()
     link_store = get_default_link_store()
     user_store = get_default_user_store()
-    now = pd.Timestamp("2022-08-18", tz="UTC")
+    now = pd.Timestamp("2022-08-22", tz="UTC")
     process_action_file(
         REDDIT_ACTION_FILE,
         message_store=message_store,

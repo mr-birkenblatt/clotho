@@ -131,7 +131,7 @@ def process_actions(
             print("---")
             for vtype, casts in totals.items():
                 print(f"{vtype}: {casts}")
-            totals.clear()
+            # totals.clear()
 
     for action in actions:
         if totals.get("links", 0) >= 10000:
