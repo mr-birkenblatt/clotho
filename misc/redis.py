@@ -406,7 +406,7 @@ class ObjectRedis(RedisConnection):
         """
         path = self.compute_name(name, key)
         with self.get_connection() as conn:
-            res = int(conn.setnx(path, value))
+            res = int(conn.setnx(path, json_compact(value)))
         return res != 0
 
     def obj_put_expire(
