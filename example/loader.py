@@ -142,10 +142,13 @@ def process_actions(
     def print_progress(epoch: int) -> None:
         if totals:
             print(f"---{epoch}---")
-            for vtype, casts in sorted(totals.items()):
-                print(f"{vtype}: {casts}")
+            for key, count in sorted(totals.items()):
+                print(f"{key}: {count}")
             print(f"elapsed: {time.monotonic() - reference_time:.2f}s")
-            # totals.clear()
+            for key in list(totals.keys()):
+                if not key.startswith("new_"):
+                    continue
+                totals.pop(key, None)
 
     for action in actions:
         if counter % 10000 == 0:
