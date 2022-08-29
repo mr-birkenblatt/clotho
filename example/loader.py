@@ -136,7 +136,8 @@ def process_actions(
             if is_topic:
                 prev_counts = max(topic_counts.values(), default=0)
                 topic_counts[ref_id] += 1
-                if topic_counts[ref_id] > prev_counts:
+                # NOTE: time hack!
+                if topic_counts[ref_id] // 100 > prev_counts // 100:
                     now += pd.Timedelta("1d")
                     print(f"advance date to {now}")
             lb_actions = lookup_buffer.pop(ref_id, None)
