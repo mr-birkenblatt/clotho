@@ -125,17 +125,19 @@ def process_actions(
         lookup_buffer: DefaultDict[str, List[Action]],
         topic_counts: DefaultDict[str, int]) -> pd.Timestamp:
     totals: Dict[str, int] = collections.defaultdict(lambda: 0)
+    counter = 0
 
-    def print_progress() -> None:
+    def print_progress(epoch: int) -> None:
         if totals:
-            print("---")
+            print(f"---{epoch}---")
             for vtype, casts in totals.items():
                 print(f"{vtype}: {casts}")
             # totals.clear()
 
     for action in actions:
-        if totals.get("links", 0) >= 10000:
-            print_progress()
+        if counter % 10000 == 0:
+            print_progress(counter // 10000)
+        counter += 1
         ref = interpret_action(
             action,
             message_store=message_store,
