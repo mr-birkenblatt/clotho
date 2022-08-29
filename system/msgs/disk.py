@@ -75,12 +75,15 @@ class DiskStore(MessageStore):
         return topic.get_hash()
 
     def get_topics(self) -> Iterable[Message]:
-        with open_read(self._topics, text=True) as fin:
-            for line in fin:
-                line = line.rstrip()
-                if not line:
-                    continue
-                text = self._unescape(line)
-                msg = Message(msg=text)
-                assert msg.is_topic()
-                yield msg
+        try:
+            with open_read(self._topics, text=True) as fin:
+                for line in fin:
+                    line = line.rstrip()
+                    if not line:
+                        continue
+                    text = self._unescape(line)
+                    msg = Message(msg=text)
+                    assert msg.is_topic()
+                    yield msg
+        except FileNotFoundError:
+            pass
