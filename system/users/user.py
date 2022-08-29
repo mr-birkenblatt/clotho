@@ -1,5 +1,5 @@
 import re
-from typing import Any, cast, get_args, Optional, TypedDict
+from typing import Any, cast, Optional, TypedDict
 
 
 VALID_NAME = re.compile(r"^\S+$")
@@ -8,11 +8,13 @@ VALID_NAME = re.compile(r"^\S+$")
 Permissions = TypedDict('Permissions', {
     "can_create_topic": bool,
 })
-PERMISSIONS_KEYS = get_args(Permissions)
+PERMISSIONS_KEYS = {
+    "can_create_topic",
+}
 
 
 def ensure_permissions(obj: Any) -> Permissions:
-    if len(obj.keys() | set(PERMISSIONS_KEYS)) != len(PERMISSIONS_KEYS):
+    if len(obj.keys() | PERMISSIONS_KEYS) != len(PERMISSIONS_KEYS):
         raise ValueError(f"wrong keys: {obj.keys()} != {PERMISSIONS_KEYS}")
     return cast(Permissions, {
         key: bool(obj[key])
