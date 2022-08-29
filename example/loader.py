@@ -94,10 +94,17 @@ def interpret_action(
             is_topic = True
         msg = Message(msg=text)
         if is_topic:
-            mhash = message_store.add_topic(msg)
-            print(f"adding topic: {msg.get_text()}")
+            if msg not in message_store.get_topics():
+                mhash = message_store.add_topic(msg)
+                print(f"adding topic: {msg.get_text()}")
+            else:
+                mhash = msg.get_hash()
         else:
-            mhash = message_store.write_message(msg)
+            try:
+                msg = message_store.read_message(msg.get_hash())
+                mhash = msg.get_hash()
+            except KeyError:
+                mhash = message_store.write_message(msg)
         hash_lookup[ref_id] = mhash
         return ref_id, is_topic
     raise ValueError(f"unknown action: {action['kind']}")
