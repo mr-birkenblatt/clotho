@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 from typing import List, Set
 
 import pandas as pd
@@ -46,12 +47,14 @@ def process_load() -> None:
     link_store = get_default_link_store()
     user_store = get_default_user_store()
     now = pd.Timestamp("2022-08-22", tz="UTC")
+    reference_time = time.monotonic()
     process_action_file(
         REDDIT_ACTION_FILE,
         message_store=message_store,
         link_store=link_store,
         user_store=user_store,
         now=now,
+        reference_time=reference_time,
         roots=set(ROOTS))
 
 

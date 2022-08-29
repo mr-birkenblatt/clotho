@@ -1,5 +1,6 @@
 
 import collections
+import time
 from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 import pandas as pd
@@ -120,6 +121,7 @@ def process_actions(
         link_store: LinkStore,
         user_store: UserStore,
         now: pd.Timestamp,
+        reference_time: float,
         roots: Set[str],
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
@@ -130,8 +132,9 @@ def process_actions(
     def print_progress(epoch: int) -> None:
         if totals:
             print(f"---{epoch}---")
-            for vtype, casts in totals.items():
+            for vtype, casts in sorted(totals.items()):
                 print(f"{vtype}: {casts}")
+            print(f"elapsed: {time.monotonic() - reference_time:.2f}s")
             # totals.clear()
 
     for action in actions:
@@ -166,6 +169,7 @@ def process_actions(
                     link_store=link_store,
                     user_store=user_store,
                     now=now,
+                    reference_time=reference_time,
                     roots=roots,
                     hash_lookup=hash_lookup,
                     lookup_buffer=lookup_buffer,
@@ -181,6 +185,7 @@ def process_action_file(
         link_store: LinkStore,
         user_store: UserStore,
         now: pd.Timestamp,
+        reference_time: float,
         roots: Set[str]) -> None:
     hash_lookup: Dict[str, MHash] = {}
     lookup_buffer: DefaultDict[str, List[Action]] = \
@@ -193,6 +198,7 @@ def process_action_file(
         link_store=link_store,
         user_store=user_store,
         now=now,
+        reference_time=reference_time,
         roots=roots,
         hash_lookup=hash_lookup,
         lookup_buffer=lookup_buffer,
