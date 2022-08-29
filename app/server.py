@@ -153,7 +153,7 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
         args = rargs["post"]
         user = get_user(args)
         parent = MHash.parse(f"{args['parent']}")
-        msg = Message(msg=args["msg"])
+        msg = Message(msg=args["msg"].strip().replace("\r", ""))
         if not msg.is_valid_message():
             raise ValueError("cannot create topic via /message use /topic")
         child = message_store.write_message(msg)

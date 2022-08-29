@@ -47,7 +47,8 @@ class MHash:
 
 class Message:
     def __init__(self, *, msg: str, msg_hash: Optional[MHash] = None) -> None:
-        assert msg, "messages cannot be empty"
+        if not msg:
+            raise ValueError("messages cannot be empty")
         self._msg = msg
         self._msg_hash = None
         if msg_hash is not None:
