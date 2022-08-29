@@ -70,9 +70,9 @@ def interpret_action(
                 "can_create_topic": False,
             })
             user_store.store_user(user)
-            totals["new_users"] += 1
-        totals["users"] += 1
+            totals["users"] += 1
         created_ts = from_timestamp(link["created_utc"])
+        any_new = False
         for vname, vcount in link["votes"].items():
             vtype = parse_vote_type(TYPE_CONVERTER.get(vname, "honor"))
             prev_votes = cur_link.get_votes(vtype)
@@ -80,6 +80,7 @@ def interpret_action(
             casts = vcount - total_votes
             if casts <= 0:
                 continue
+            any_new = True
             for _ in range(casts):
                 cur_link.add_vote(
                     user_store,
@@ -87,12 +88,14 @@ def interpret_action(
                     user,
                     now if total_votes > 0 else created_ts)
             totals[vtype] += casts
+        if any_new:
+            totals["new_links"] += 1
         totals["links"] += 1
         return None
     if is_message_action(action):
         assert action["message"] is not None
         message = action["message"]
-        text = message["text"].strip()
+        text = message["text"].strip().replace("\r", "")
         if not text:
             text = "[missing]"
         is_topic = False
@@ -103,11 +106,12 @@ def interpret_action(
                 is_topic = True
         msg = Message(msg=text)
         if is_topic:
-            if msg not in message_store.get_topics():
+            topics = list(message_store.get_topics())
+            if msg not in topics:
                 message_store.add_topic(msg)
                 print(f"adding topic: {msg.get_text()}")
                 totals["new_topics"] += 1
-            totals["topics"] += 1
+            totals["topics"] = len(topics)
         try:
             msg = message_store.read_message(msg.get_hash())
             mhash = msg.get_hash()
