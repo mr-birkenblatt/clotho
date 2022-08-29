@@ -12,7 +12,7 @@
 /build
 /.mypy_cache
 /example/creds.json
-/example/reddit.jsonl
+/example/reddit*.jsonl
 /userdata/*
 
 # misc
