@@ -92,8 +92,8 @@ def interpret_action(
         message = action["message"]
         text = message["text"]
         is_topic = False
-        if text.startswith("r/") and text[2:] in roots:
-            tmp = Message(msg=f"t/{text[2:]}")
+        if text.startswith("r/") and text[2:].lower() in roots:
+            tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
                 is_topic = True
