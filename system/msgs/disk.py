@@ -69,7 +69,8 @@ class DiskStore(MessageStore):
         return res
 
     def add_topic(self, topic: Message) -> MHash:
-        assert topic.is_topic()
+        if not topic.is_topic():
+            raise ValueError(f"{topic}(\"{topic.get_text()}\") is not a topic")
         with open_append(self._topics, text=True) as fout:
             fout.write(f"{self._escape(topic.get_text())}\n")
         return topic.get_hash()

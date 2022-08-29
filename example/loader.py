@@ -90,8 +90,10 @@ def interpret_action(
         text = message["text"]
         is_topic = False
         if text.startswith("r/"):
-            text = f"t/{text[2:]}"
-            is_topic = True
+            tmp = Message(msg=f"t/{text[2:]}")
+            if tmp.is_topic():
+                text = tmp.get_text()
+                is_topic = True
         msg = Message(msg=text)
         if is_topic:
             if msg not in message_store.get_topics():
