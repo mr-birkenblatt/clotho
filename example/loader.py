@@ -56,8 +56,9 @@ def interpret_action(
             lookup_buffer[parent_ref].append(action)
             return None
         cur_link = link_store.get_link(parent_hash, own_hash)
-        user_name = link.get("user_name", "__no_user__")
-        assert user_name is not None  # NOTE: mypy bug?
+        user_name = link.get("user_name")
+        if user_name is None:
+            user_name = "__no_user__"
         user_id = user_store.get_id_from_name(user_name)
         try:
             user = user_store.get_user_by_id(user_id)
