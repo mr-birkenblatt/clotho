@@ -17,6 +17,8 @@ help:
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
 	@echo "run-redis	start redis server"
+	@echo "run-api	start api server"
+	@echo "run-web	start web server"
 
 export LC_ALL=C
 export LANG=C
@@ -111,3 +113,9 @@ coverage-report:
 
 run-redis:
 	cd userdata && redis-server
+
+run-api:
+	python3 -m app
+
+run-web:
+	yarn start

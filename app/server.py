@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 import sys
 import threading
-from typing import Optional, TypedDict
+from typing import Optional, Tuple, TypedDict
 
 import pandas as pd
 from quick_server import create_server, QuickServer
@@ -39,7 +39,11 @@ MAX_RESPONSE = 1024 * 100  # 100kB  # rough size
 MAX_LINKS = 20
 
 
-def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
+def setup(
+        addr: str,
+        port: int,
+        parallel: bool,
+        deploy: bool) -> Tuple[QuickServer, str]:
     server: QuickServer = create_server(
         (addr, port),
         parallel,
@@ -262,15 +266,27 @@ def setup(addr: str, port: int, parallel: bool, deploy: bool) -> QuickServer:
             "next": link_query["offset"] + len(links),
         }
 
-    return server
+    return server, prefix
 
 
 def setup_server(
         deploy: bool,
         addr: Optional[str],
-        port: Optional[int]) -> QuickServer:
+        port: Optional[int]) -> Tuple[QuickServer, str]:
     if addr is None:
         addr = envload_str("HOST", default="localhost")
     if port is None:
         port = envload_int("PORT", default=8080)
     return setup(addr, port, parallel=True, deploy=deploy)
+
+
+def start(server: QuickServer, prefix: str) -> None:
+    addr, port = server.server_address
+    print(f"starting API at http://{addr}:{port}{prefix}/")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        print("shutting down..")
+        server.server_close()
