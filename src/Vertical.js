@@ -427,11 +427,11 @@ class Vertical extends PureComponent {
                               this.lineName(realIx - 1),
                               this.lineName(realIx),
                               this.getHIndex(realIx - 1, true),
-                              this.getHIndex(realIx, true)).map((val) => {
-                            console.log("key", val[0]);
+                              this.getHIndex(realIx, true),
+                              this.requestRedraw).map((val) => {
                             return (
                               <ItemMidContent
-                                  key={val[0]}
+                                  key={val.key}
                                   buttonSize={buttonSize}
                                   radius={radius}>
                                 { renderLinkItem(val) }
