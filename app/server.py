@@ -274,7 +274,7 @@ def setup_server(
         addr: Optional[str],
         port: Optional[int]) -> Tuple[QuickServer, str]:
     if addr is None:
-        addr = envload_str("HOST", default="localhost")
+        addr = envload_str("HOST", default="127.0.0.1")
     if port is None:
         port = envload_int("PORT", default=8080)
     return setup(addr, port, parallel=True, deploy=deploy)

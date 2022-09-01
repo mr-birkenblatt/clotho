@@ -95,17 +95,16 @@ class RedisLinkStore(LinkStore):
         return RedisLink(self._r, parent, child)
 
     def get_all_children(self, parent: MHash) -> Iterable[Link]:
-        for key in self._r.obj_partial_keys(
-                f"{VT_UP}:{parent.to_parseable()}:"):
-            _, _, child = RedisLink.parse_key(key)
-            yield self.get_link(parent, child)
+        for child in self._r.obj_partial_keys(
+                f"vfirst:{VT_UP}:{parent.to_parseable()}:"):
+            yield self.get_link(parent, MHash.parse(child))
 
     def get_all_parents(self, child: MHash) -> Iterable[Link]:
-        for key in self._r.obj_partial_keys(f"{VT_UP}:"):
-            _, parent, cur_child = RedisLink.parse_key(key)
-            if cur_child != child:
+        for key in self._r.obj_partial_keys(f"vfirst:{VT_UP}:"):
+            parent, cur_child = key.split(":", 1)
+            if MHash.parse(cur_child) != child:
                 continue
-            yield self.get_link(parent, child)
+            yield self.get_link(MHash.parse(parent), child)
 
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         user_id = user.get_id()

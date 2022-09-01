@@ -227,16 +227,20 @@ class Vertical extends PureComponent {
 
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
-        dispatch(addLine({
-          lineName: getChildLine(order[order.length - 1]),
-          isBack: true,
-        }));
+        getChildLine(order[order.length - 1], (child) => {
+          dispatch(addLine({
+            lineName: child,
+            isBack: true,
+          }));
+        })
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
-        dispatch(addLine({
-          lineName: getParentLine(order[0]),
-          isBack: false,
-        }));
+        getParentLine(order[0], (parent) => {
+          dispatch(addLine({
+            lineName: parent,
+            isBack: false,
+          }));
+        });
         this.awaitOrderChange = order;
       }
     }
@@ -318,7 +322,9 @@ class Vertical extends PureComponent {
       } else {
         // NOTE: careful! can end in an infinite loop if elements are not
         // filled up correctly.
-        this.requestRedraw();
+        setTimeout(() => {
+          this.requestRedraw();
+        }, 100);
       }
     }
   }
@@ -422,6 +428,7 @@ class Vertical extends PureComponent {
                               this.lineName(realIx),
                               this.getHIndex(realIx - 1, true),
                               this.getHIndex(realIx, true)).map((val) => {
+                            console.log("key", val[0]);
                             return (
                               <ItemMidContent
                                   key={val[0]}

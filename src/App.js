@@ -38,33 +38,138 @@ const MainColumn = styled.div`
   flex-direction: column;
   flex-grow: 0;
   overflow: hidden;
-`
+`;
+
+
+const URL_PREFIX = `${window.location.origin}/api`;
+
+
+function getChild(name, cb) {
+  console.log("child", name);
+  fetch(`${URL_PREFIX}/children`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      "parent": name,
+      "offset": 0,
+      "limit": 1,
+      "scorer": "best",
+    })
+  }).then((resp) => resp.json()).then((obj) => {
+    const { links } = obj;
+    cb(links[0].child);
+  }).catch((e) => {
+    console.error(e);
+  });
+}
+
+
+function getParent(name, cb) {
+  console.log("parent", name);
+  fetch(`${URL_PREFIX}/parents`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      "child": name,
+      "offset": 0,
+      "limit": 1,
+      "scorer": "best",
+    })
+  }).then((resp) => resp.json()).then((obj) => {
+    const { links } = obj;
+    cb(links[0].parent);
+  }).catch((e) => {
+    console.error(e);
+  });
+}
+
+
+function getChildren(name, offset, limit, cb) {
+  fetch(`${URL_PREFIX}/children`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      "parent": name,
+      "offset": offset,
+      "limit": limit,
+      "scorer": "best",
+    })
+  }).then((resp) => resp.json()).then((obj) => {
+    const { links, next } = obj;
+    const res = {};
+    links.forEach((link, ix) => {
+      res[ix + offset] = `**name**: ${link.child} _ix_: ${ix + offset}`;
+    });
+    if (links.length < limit) {
+      if (next > 0 && links.length > 0) {
+        getChildren(name, next, limit - links.length, (rec) => {
+          cb({...res, ...rec});
+        });
+        return;
+      } else {
+        [...Array(limit - links.length).keys()].forEach((ix) => {
+          const pos = offset + links.length + ix;
+          res[pos] = `no data ${pos}`;
+        });
+      }
+    }
+    cb(res);
+  }).catch((e) => {
+    console.error(e);
+  });
+}
+
+
+function getParents(name, offset, limit, cb) {
+  fetch(`${URL_PREFIX}/parents`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      "child": name,
+      "offset": offset,
+      "limit": limit,
+      "scorer": "best",
+    })
+  }).then((resp) => resp.json()).then((obj) => {
+    const { links, next } = obj;
+    const res = {};
+    links.forEach((link, ix) => {
+      res[offset + ix] = `**name**: ${link.parent} _ix_: ${ix + offset}`;
+    });
+    if (links.length < limit) {
+      if (next > 0 && links.length > 0) {
+        getParents(name, next, limit - links.length, (rec) => {
+          cb({...res, ...rec});
+        });
+        return;
+      } else {
+        [...Array(limit - links.length).keys()].forEach((ix) => {
+          const pos = offset + links.length + ix;
+          res[pos] = `no data ${pos}`;
+        });
+      }
+    }
+    cb(res);
+  }).catch((e) => {
+    console.error(e);
+  });
+}
 
 
 export default class App extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {};
-    this.parentLines = new ContentLoader(5, (name, offset, limit, cb) => {
-      // console.log(`loading parent ${name} ${offset} ${limit}`);
-      setTimeout(() => {
-        const res = {};
-        [...Array(limit).keys()].forEach(ix => {
-          res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
-        });
-        cb(res);
-      }, 500);
-    });
-    this.childLines = new ContentLoader(5, (name, offset, limit, cb) => {
-      // console.log(`loading child ${name} ${offset} ${limit}`);
-      setTimeout(() => {
-        const res = {};
-        [...Array(limit).keys()].forEach(ix => {
-          res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
-        });
-        cb(res);
-      }, 1000);
-    });
+    this.parentLines = new ContentLoader(5, getParents);
+    this.childLines = new ContentLoader(5, getChildren);
   }
 
   getItem = (isParent, name, index, contentCb, readyCb) => {
@@ -86,14 +191,12 @@ export default class App extends PureComponent {
     );
   }
 
-  getChildLine = (lineName) => {
-    // console.log(`${lineName} => L${+lineName.slice(1) + 1}`);
-    return `L${+lineName.slice(1) + 1}`;
+  getChildLine = (lineName, cb) => {
+    getChild(lineName, cb);
   }
 
-  getParentLine = (lineName) => {
-    // console.log(`${lineName} => L${+lineName.slice(1) - 1}`);
-    return `L${+lineName.slice(1) - 1}`;
+  getParentLine = (lineName, cb) => {
+    getParent(lineName, cb);
   }
 
   getLinkItems = (parentLineName, childLineName, parentIndex, childIndex) => {
