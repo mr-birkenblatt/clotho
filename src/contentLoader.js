@@ -14,88 +14,6 @@ function json(resp) {
 }
 
 
-// function getChild(name, cb) {
-//   console.log("child", name);
-//   fetch(`${URL_PREFIX}/children`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({
-//       "parent": name,
-//       "offset": 0,
-//       "limit": 1,
-//       "scorer": "best",
-//     })
-//   }).then((resp) => resp.json()).then((obj) => {
-//     const { links } = obj;
-//     cb(links[0].child);
-//   }).catch((e) => {
-//     console.error(e);
-//   });
-// }
-
-
-// function getParent(name, cb) {
-//   console.log("parent", name);
-//   fetch(`${URL_PREFIX}/parents`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({
-//       "child": name,
-//       "offset": 0,
-//       "limit": 1,
-//       "scorer": "best",
-//     })
-//   }).then((resp) => resp.json()).then((obj) => {
-//     const { links } = obj;
-//     cb(links[0].parent);
-//   }).catch((e) => {
-//     console.error(e);
-//   });
-// }
-
-
-// function getChildren(name, offset, limit, cb) {
-//   fetch(`${URL_PREFIX}/children`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({
-//       "parent": name,
-//       "offset": offset,
-//       "limit": limit,
-//       "scorer": "best",
-//     })
-//   }).then((resp) => resp.json()).then((obj) => {
-//     const { links, next } = obj;
-//     const res = {};
-//     links.forEach((link, ix) => {
-//       res[ix + offset] = `**name**: ${link.child} _ix_: ${ix + offset}`;
-//     });
-//     if (links.length < limit) {
-//       if (next > 0 && links.length > 0) {
-//         getChildren(name, next, limit - links.length, (rec) => {
-//           cb({...res, ...rec});
-//         });
-//         return;
-//       } else {
-//         [...Array(limit - links.length).keys()].forEach((ix) => {
-//           const pos = offset + links.length + ix;
-//           res[pos] = `no data ${pos}`;
-//         });
-//       }
-//     }
-//     cb(res);
-//   }).catch((e) => {
-//     console.error(e);
-//   });
-// }
-
-
 export default class ContentLoader {
   constructor() {
     this.topics = null;
@@ -120,17 +38,44 @@ export default class ContentLoader {
     return this.fetchLine(false, name, offset, limit, resultCb);
   }
 
+  fetchMsg(objs, readyCb) {
+    const mapping = {};
+    objs.forEach((obj) => {
+      mapping[obj.mhash] = obj;
+    });
+    fetch(`${URL_PREFIX}/read`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        "hashes": objs.map((obj => obj.mhash)),
+      })
+    }).then(json).then((obj) => {
+      const { messages, skipped } = obj;
+      Object.keys(messages).forEach((mhash) => {
+        mapping[mhash].msg = messages[mhash];
+        this.msgs.set(mhash, messages[mhash]);
+      });
+      if (skipped.length > 0) {
+        this.fetchMsg(skipped.map(cur => mapping[cur]), readyCb);
+      } else {
+        readyCb();
+      }
+    }).catch(errHnd);
+  }
+
   fetchLine(isGetParent, name, offset, limit, resultCb) {
     const isHash = name[0] !== '!';
-    const lineNum = isHash? 0 : +name.slice(1);
+    const lineNum = isHash? 0 : Math.floor(+name.slice(1) / 1000);
     const padResult = (curRes) => {
       [...Array(limit).keys()].forEach((ix) => {
         const pos = offset + ix;
         if (curRes[pos] === undefined) {
           curRes[pos] = {
-            child: isGetParent ? name : `!${pos + lineNum}`,
+            mhash: `!${pos + 1000 * lineNum}`,
             first: 0,
-            parent: isGetParent ? `!${pos + lineNum}` : name,
+            msg: `no data ${pos}`,
             user: "nouser",
             votes: {},
           };
@@ -151,9 +96,9 @@ export default class ContentLoader {
             const tres = Object.keys(this.topics).slice(offset, offset + limit);
             resultCb(padResult(tres.map((thash) => {
               return {
-                child: thash,
+                mhash: thash,
                 first: 0,
-                parent: name,
+                msg: tres[thash],
                 user: "nouser",
                 votes: {},
               };
@@ -165,45 +110,58 @@ export default class ContentLoader {
       }
       return;
     }
-
+    const query = isGetParent ? {
+      "child": name,
+    } : {
+      "parent": name,
+    };
+    fetch(`${URL_PREFIX}/${isGetParent ? 'parents' : 'children'}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...query,
+        "offset": offset,
+        "limit": limit,
+        "scorer": "best",
+      })
+    }).then(json).then((obj) => {
+      const { links, next } = obj;
+      const res = {};
+      links.forEach((link, ix) => {
+        const mhash = isGetParent ? link.parent : link.child;
+        res[ix + offset] = {
+          mhash,
+          first: link.first,
+          msg: this.msgs.get(mhash),
+          user: link.user,
+          votes: link.votes,
+        };
+      });
+      const finalize = () => {
+        if (links.length < limit && next > 0 && links.length > 0) {
+          getChildren(name, next, limit - links.length, (rec) => {
+            resultCb(padResult({...res, ...rec}));
+          });
+        } else {
+          resultCb(padResult(res));
+        }
+      };
+      const objs = [];
+      Object.keys(res).forEach((cur) => {
+        if (cur.mhash[0] === '!' || cur.msg !== null) {
+          return;
+        }
+        objs.push(cur);
+      });
+      if (objs.length > 0) {
+        this.fetchMsg(objs, finalize);
+      } else {
+        finalize();
+      }
+    }).catch(errHnd);
   }
-
-  //// function getParents(name, offset, limit, cb) {
-//   fetch(`${URL_PREFIX}/parents`, {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//     },
-//     body: JSON.stringify({
-//       "child": name,
-//       "offset": offset,
-//       "limit": limit,
-//       "scorer": "best",
-//     })
-//   }).then((resp) => resp.json()).then((obj) => {
-//     const { links, next } = obj;
-//     const res = {};
-//     links.forEach((link, ix) => {
-//       res[offset + ix] = `**name**: ${link.parent} _ix_: ${ix + offset}`;
-//     });
-//     if (links.length < limit) {
-//       if (next > 0 && links.length > 0) {
-//         getParents(name, next, limit - links.length, (rec) => {
-//           cb({...res, ...rec});
-//         });
-//         return;
-//       } else {
-//         [...Array(limit - links.length).keys()].forEach((ix) => {
-//           const pos = offset + links.length + ix;
-//           res[pos] = `no data ${pos}`;
-//         });
-//       }
-//     }
-//     cb(res);
-//   }).catch((e) => {
-//     console.error(e);
-//   });
-// }
 
   getItem(isParent, name, index, contentCb, readyCb) {
 
