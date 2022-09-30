@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Generic, Optional, TypeVar
+from typing import Callable, Dict, Generic, Optional, TypeVar
 
 
 KT = TypeVar('KT')
@@ -28,6 +28,13 @@ class LRU(Generic[KT, VT]):
         self._values[key] = value
         self._times[key] = time.monotonic()
         self.gc()
+
+    def clear_keys(self, prefix_match: Callable[[KT], bool]) -> None:
+        for key in list(self._values.keys()):
+            if prefix_match(key):
+                # FIXME: mypy bug?
+                self._values.pop(key, None)  # type: ignore
+                self._times.pop(key, None)
 
     def gc(self) -> None:
         if len(self._values) <= self._max_items:
