@@ -6,6 +6,26 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 from misc.lru import LRU
 
 
+class KeyRange:
+    def __init__(self, shortest: str, longest: Optional[str]) -> None:
+        if longest is not None:
+            if len(shortest) > len(longest):
+                raise ValueError(f"{shortest} > {longest}")
+            if not longest.startswith(shortest):
+                raise ValueError(f"{shortest} |> {longest}")
+        self._shortest = shortest
+        self._longest = longest
+
+    def match(self, key: str) -> bool:
+        if not key.startswith(self._shortest):
+            return False
+        # FIXME: define longest
+        return True
+
+    def is_beginning(self, key: str) -> bool:
+        return self._shortest.startswith(key)
+
+
 class MissingKey:  # pylint: disable=too-few-public-methods
     pass
 
@@ -21,11 +41,11 @@ def is_missing_key(value: VType) -> bool:
 
 
 class CacheCoordinator:
-    def invalidate_cache(self, pid: str, prefix: str) -> None:
+    def invalidate_cache(self, pid: str, key_range: KeyRange) -> None:
         raise NotImplementedError()
 
-    def clear_cache(self, lsm: 'LSM', pid: str, prefix: str) -> None:
-        lsm.clear_cache(pid, prefix)
+    def clear_cache(self, lsm: 'LSM', pid: str, key_range: KeyRange) -> None:
+        lsm.clear_cache(pid, key_range)
 
 
 class ChunkCoordinator:
@@ -38,6 +58,9 @@ class ChunkCoordinator:
 
     def fetch_values(
             self, key: str, lsm: 'LSM') -> Iterable[Tuple[str, VType]]:
+        raise NotImplementedError()
+
+    def clear_cache(self, key_range: KeyRange) -> None:
         raise NotImplementedError()
 
 
@@ -60,13 +83,13 @@ class LSM:
         self._chunk_coordinator = chunk_coordinator
         atexit.register(self.flushall)
 
-    def invalidate_cache(self, prefix: str) -> None:
-        self._cache_coordinator.invalidate_cache(self._pid, prefix)
+    def invalidate_cache(self, key_range: KeyRange) -> None:
+        self._cache_coordinator.invalidate_cache(self._pid, key_range)
 
-    def clear_cache(self, pid: str, prefix: str) -> None:
+    def clear_cache(self, pid: str, key_range: KeyRange) -> None:
         if pid == self._pid:
             return
-        self._cache.clear_keys(lambda key: key.startswith(prefix))
+        self._cache.clear_keys(key_range.match)
 
     def maybe_flush(self) -> None:
         if self._last_write + self._write_cache_freq < time.monotonic():
