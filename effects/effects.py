@@ -13,24 +13,23 @@ from typing import (
 )
 
 
-LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
 KT = TypeVar('KT')
-PT = TypeVar('PT')
 VT = TypeVar('VT')
+LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
 
 
 DELAY = 5
 
 
-class EffectBase(Generic[PT]):
+class EffectBase(Generic[KT]):
     def __init__(self) -> None:
-        self._dependents: List['EffectDependent[PT, Any, Any]'] = []
+        self._dependents: List['EffectDependent[KT, Any]'] = []
 
     def add_dependent(
-            self, dependent: 'EffectDependent[PT, Any, Any]') -> None:
+            self, dependent: 'EffectDependent[KT, Any]') -> None:
         self._dependents.append(dependent)
 
-    def on_update(self, key: PT) -> None:
+    def on_update(self, key: KT) -> None:
         cur_time = time.monotonic()
         for dependent in self._dependents:
             dependent.trigger_update(key, cur_time)
@@ -66,12 +65,12 @@ class SetRootType(Generic[KT, VT], EffectRoot[KT, Set[VT]]):
         self.on_update(key)
 
 
-class EffectDependent(Generic[KT, VT, PT], EffectBase[PT]):
+class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def __init__(
             self,
             parents: LT,
             effect: Callable[
-                ['EffectDependent[KT, VT, PT]', LT, KT], None]) -> None:
+                ['EffectDependent[KT, VT]', LT, KT], None]) -> None:
         super().__init__()
         self._pending: Dict[KT, float] = {}
         self._parents = parents
@@ -133,3 +132,28 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[PT]):
             return res
         self.execute_update(key)
         return self.retrieve_value(key)
+
+
+class ValueDependentType(Generic[KT, VT], EffectDependent[KT, VT]):
+    def do_set_value(self, key: KT, value: VT) -> None:
+        raise NotImplementedError()
+
+    def set_value(self, key: KT, value: VT) -> None:
+        self.do_set_value(key, value)
+        self.on_update(key)
+
+
+class SetDependentType(Generic[KT, VT], EffectDependent[KT, Set[VT]]):
+    def do_add_value(self, key: KT, value: VT) -> None:
+        raise NotImplementedError()
+
+    def add_value(self, key: KT, value: VT) -> None:
+        self.do_add_value(key, value)
+        self.on_update(key)
+
+    def do_remove_value(self, key: KT, value: VT) -> None:
+        raise NotImplementedError()
+
+    def remove_value(self, key: KT, value: VT) -> None:
+        self.do_remove_value(key, value)
+        self.on_update(key)
