@@ -1,7 +1,6 @@
 import threading
 import time
 from typing import (
-    Any,
     Callable,
     Dict,
     Generic,
@@ -9,8 +8,13 @@ from typing import (
     Optional,
     Set,
     Tuple,
+    TYPE_CHECKING,
     TypeVar,
 )
+
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 KT = TypeVar('KT')
