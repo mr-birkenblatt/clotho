@@ -30,6 +30,11 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
 
+    - name: Start Redis
+      uses: supercharge/redis-github-action@1.4.0
+      with:
+        redis-version: ${{ matrix.redis-version }}
+
     - name: Cache python modules 3.8
       uses: actions/cache@v2
       with:
@@ -92,3 +97,7 @@ jobs:
     - name: Lint Code (pylint)
       run: |
         make lint-pylint
+
+    - name: Run tests (pytest)
+      run: |
+        make pytest

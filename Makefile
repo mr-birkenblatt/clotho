@@ -108,6 +108,9 @@ pre-commit:
 	pre-commit install
 	isort .
 
+pytest:
+	python3 -m pytest -xvv --full-trace test
+
 coverage-report:
 	./coverage/coverage.sh
 

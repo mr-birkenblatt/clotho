@@ -51,6 +51,7 @@ RedisModule = Literal[
     "link",
     "locks",
     "token",
+    "test",
 ]
 LOCK_MODULE: RedisModule = "locks"
 

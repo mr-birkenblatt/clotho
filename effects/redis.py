@@ -19,7 +19,7 @@ LT = TypeVar('LT', bound=Tuple[EffectBase, ...])
 
 class StrRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def __init__(
-            self, module: RedisModule, key_fn: Callable[[KT], VT]) -> None:
+            self, module: RedisModule, key_fn: Callable[[KT], str]) -> None:
         super().__init__()
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
