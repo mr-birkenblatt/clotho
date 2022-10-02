@@ -1,10 +1,11 @@
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, List, Optional, Tuple
 
 import pandas as pd
 
 from misc.redis import ObjectRedis
 from misc.util import from_timestamp, to_timestamp
 from system.links.link import Link, parse_vote_type, Votes, VoteType, VT_UP
+from system.links.scorer import Scorer
 from system.links.store import LinkStore
 from system.msgs.message import MHash
 from system.users.store import UserStore
@@ -115,3 +116,36 @@ class RedisLinkStore(LinkStore):
             if value != user_id:
                 continue
             yield self.get_link(parent, child)
+
+    def get_children(
+            self,
+            parent: MHash,
+            *,
+            scorer: Scorer,
+            now: pd.Timestamp,
+            offset: int,
+            limit: int) -> List[Link]:
+        return self.limit_results(
+            self.get_all_children(parent), scorer, now, offset, limit)
+
+    def get_parents(
+            self,
+            child: MHash,
+            *,
+            scorer: Scorer,
+            now: pd.Timestamp,
+            offset: int,
+            limit: int) -> List[Link]:
+        return self.limit_results(
+            self.get_all_parents(child), scorer, now, offset, limit)
+
+    def get_user_links(
+            self,
+            user: User,
+            *,
+            scorer: Scorer,
+            now: pd.Timestamp,
+            offset: int,
+            limit: int) -> List[Link]:
+        return self.limit_results(
+            self.get_all_user_links(user), scorer, now, offset, limit)
