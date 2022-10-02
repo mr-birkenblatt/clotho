@@ -43,7 +43,7 @@ lint-indent:
 	| xargs grep --color=always -nE "^(\s{4})*\s{1,3}\S.*$$"
 
 lint-forgottenformat:
-	! ./forgottenformat.sh
+	PYTHON=$(PYTHON) && ! ./forgottenformat.sh
 
 lint-requirements:
 	locale
@@ -90,13 +90,13 @@ lint-all: \
 	lint-flake8
 
 install:
-	./install.sh $(PYTHON)
+	PYTHON=$(PYTHON) && ./install.sh
 
 requirements-check:
-	./requirements_check.sh $(PYTHON) $(FILE)
+	PYTHON=$(PYTHON) && ./requirements_check.sh $(FILE)
 
 requirements-complete:
-	./requirements_complete.sh $(PYTHON) $(FILE)
+	PYTHON=$(PYTHON) && ./requirements_complete.sh $(FILE)
 
 name:
 	git describe --abbrev=10 --tags HEAD

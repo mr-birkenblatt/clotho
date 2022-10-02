@@ -2,6 +2,8 @@
 
 set -e
 
+PYTHON="${PYTHON:-python3}"
+
 ANY_DOUBLE="([^\\\\\"]|\\\\\")*"
 ANY_SINGLE="([^\\\\']|\\\\')*"
 IS_CURLY="([{][^{]|[^}][}])"
@@ -40,6 +42,6 @@ EOF
 
 find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
     | xargs grep -nE "['\"]" \
-    | python3 -c "${PY_FILTER}" \
+    | ${PYTHON} -c "${PY_FILTER}" \
     | grep -E "${REGEX}" \
     | grep --color=always -nE "${MAIN_MATCH}"

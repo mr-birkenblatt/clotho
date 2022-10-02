@@ -2,7 +2,7 @@
 
 set -e
 
-PYTHON=${PYTHON:-python3}
+PYTHON="${PYTHON:-python3}"
 FILES=($@)
 export USER_FILEPATH=./userdata
 
@@ -13,6 +13,8 @@ run_test() {
     ${PYTHON} -m pytest -xvv --full-trace --junitxml="test-results/parts/result${2}.xml" $1
 }
 export -f run_test
+
+redis-cli --scan --pattern 'api:test:*' | xargs redis-cli del
 
 if ! [ -z ${FILES} ]; then
     IDX=0

@@ -65,7 +65,7 @@ jobs:
 
     - name: Lint Code (no f"a", "{a}", or f'{a}')
       run: |
-        make lint-forgottenformat
+        make lint-forgottenformat PYTHON=python
 
     - name: Only pyi in stubs
       run: |
