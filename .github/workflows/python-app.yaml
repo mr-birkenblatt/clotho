@@ -33,7 +33,7 @@ jobs:
     - name: Start Redis
       uses: supercharge/redis-github-action@1.4.0
       with:
-        redis-version: ${{ matrix.redis-version }}
+        redis-version: 6
 
     - name: Cache python modules 3.8
       uses: actions/cache@v2
