@@ -2,7 +2,7 @@
 
 set -e
 
-PYTHON=${1:-python3}
+PYTHON=${PYTHON:-python3}
 which ${PYTHON} > /dev/null
 if [ $? -ne 0 ]; then
     PYTHON=python

@@ -12,6 +12,7 @@
 /example/creds.json
 /example/reddit*.jsonl
 /userdata/*
+/test-results
 
 # misc
 .DS_Store

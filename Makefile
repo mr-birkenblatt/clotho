@@ -109,7 +109,7 @@ pre-commit:
 	isort .
 
 pytest:
-	python3 -m pytest -xvv --full-trace test
+	PYTHON=$(PYTHON) && ./run_pytest.sh $(FILE)
 
 coverage-report:
 	./coverage/coverage.sh
