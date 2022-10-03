@@ -19,11 +19,13 @@ find . -type d \( \
     -name '*.py' \
     -exec ${PYTHON} -m compileall -q -j 0 {} +
 
-redis-cli \
-    "EVAL" \
-    "for _,k in ipairs(redis.call('keys', KEYS[1])) do redis.call('del', k) end" \
-    1 \
-    'api:test:*'
+if command -v redis-cli &> /dev/null; then
+    redis-cli \
+        "EVAL" \
+        "for _,k in ipairs(redis.call('keys', KEYS[1])) do redis.call('del', k) end" \
+        1 \
+        'api:test:*'
+fi
 
 run_test() {
     ${PYTHON} -m pytest \
