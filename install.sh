@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
 PYTHON="${PYTHON:-python3}"
 which ${PYTHON} > /dev/null
