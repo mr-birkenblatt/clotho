@@ -29,6 +29,24 @@ from misc.io import open_read
 from misc.util import json_compact, json_read
 
 
+REDIS_SALT_LOCK = threading.RLock()
+REDIS_SALT: Dict[str, str] = {}
+
+
+def get_salt() -> Optional[str]:
+    test_id = os.getenv("PYTEST_CURRENT_TEST")
+    if test_id is None:
+        return None
+    res = REDIS_SALT.get(test_id)
+    if res is None:
+        with REDIS_SALT_LOCK:
+            res = REDIS_SALT.get(test_id)
+            if res is None:
+                res = uuid.uuid4().hex
+                REDIS_SALT[test_id] = res
+    return res
+
+
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods
     def __call__(
             self,
@@ -166,7 +184,9 @@ class RedisWrapper:
 class RedisConnection:
     def __init__(self, module: RedisModule) -> None:
         self._conn = RedisWrapper(module)
-        self._module = module
+        salt = get_salt()
+        salt_str = "" if salt is None else f":{salt}"
+        self._module = f"{module}{salt_str}"
 
     def get_connection(self) -> ContextManager[StrictRedis]:
         return self._conn.get_connection()

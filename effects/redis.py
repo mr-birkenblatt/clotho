@@ -57,7 +57,7 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def do_remove_value(self, key: KT, value: str) -> None:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            conn.sremove(rkey, value.encode("utf-8"))
+            conn.srem(rkey, value.encode("utf-8"))
 
     def get_value(self, key: KT) -> Optional[Set[str]]:
         rkey = self.get_redis_key(key)
@@ -114,7 +114,7 @@ class SetDependentRedisType(Generic[KT], SetDependentType[KT, str]):
     def do_remove_value(self, key: KT, value: str) -> None:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            conn.sremove(rkey, value.encode("utf-8"))
+            conn.srem(rkey, value.encode("utf-8"))
 
     def retrieve_value(self, key: KT) -> Optional[Set[str]]:
         rkey = self.get_redis_key(key)
