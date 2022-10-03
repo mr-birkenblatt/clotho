@@ -131,7 +131,7 @@ jobs:
 
     - name: Run test on Node ${{ matrix.ci_node_index }}
       run: |
-        set -e
+        set -ex
         OUT=$(python -m test split_tests --filepath test-results/results.xml --total-nodes ${{ matrix.ci_node_total }} --node-id ${{ matrix.ci_node_index }})
         IFS=',' read -a FILE_INFO <<< "$OUT"
         FILES=("${FILE_INFO[@]:1}")
