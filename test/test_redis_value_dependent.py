@@ -73,6 +73,8 @@ def test_value() -> None:
 
     assert dep_a_a.maybe_get_value("a") == "abc-abc-abc"
 
+    value_a.set_value("a", 7)
+    value_b.set_value("a", "=")
     value_a.set_value("a", 5)
     value_b.set_value("a", "+")
     time.sleep(0.4)

@@ -9,6 +9,7 @@ def test_value() -> None:
     assert root.maybe_get_value("a") == 5
     root.set_value("b", 10)
     assert root.maybe_get_value("b") == 10
+    root.set_value("a", 13)
     root.set_value("a", 3)
     assert root.maybe_get_value("a") == 3
     assert root.maybe_get_value("b") == 10
@@ -21,6 +22,8 @@ def test_set() -> None:
     assert root.maybe_get_value("foo") == {"a"}
     root.add_value("bar", "b")
     assert root.maybe_get_value("bar") == {"b"}
+    root.add_value("foo", "c")
+    assert root.maybe_get_value("foo") == {"a", "c"}
     root.add_value("foo", "c")
     assert root.maybe_get_value("foo") == {"a", "c"}
     assert root.maybe_get_value("bar") == {"b"}
