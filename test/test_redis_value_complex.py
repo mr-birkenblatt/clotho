@@ -59,7 +59,7 @@ def test_complex() -> None:
     links.set_value(Link(l_from="a", l_to="b"), 6)
     time.sleep(0.2)
 
-    assert dests.get_value(Link(l_from="a", l_to="b"), []) == [6, 2, 3]
+    assert dests.get_value(Link(l_from="a", l_to="b"), []) == [2, 3, 6]
     assert dests.get_value(Link(l_from="b", l_to="b"), []) == [0, 4, 5]
     assert dests.get_value(Link(l_from="c", l_to="b"), []) == [1]
     assert dests.get_value(Link(l_from="d", l_to="b"), []) == [2]
