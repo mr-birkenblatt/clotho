@@ -6,6 +6,7 @@
 # testing
 /test-results/
 /coverage/reports/
+/test/dump.rdb
 
 # production
 /build

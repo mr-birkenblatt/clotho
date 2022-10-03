@@ -114,6 +114,9 @@ pytest:
 coverage-report:
 	./coverage/coverage.sh
 
+run-test-redis:
+	cd test && redis-server
+
 run-redis:
 	cd userdata && redis-server
 
