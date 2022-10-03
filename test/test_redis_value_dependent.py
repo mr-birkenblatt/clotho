@@ -5,7 +5,7 @@ from effects.effects import EffectDependent
 from effects.redis import ValueDependentRedisType, ValueRootRedisType
 
 
-def test_value() -> None:
+def test_dependent() -> None:
     value_a: ValueRootRedisType[str, int] = ValueRootRedisType(
         "test", lambda key: f"count:{key}")
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(

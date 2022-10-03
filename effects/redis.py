@@ -1,4 +1,4 @@
-from typing import Callable, Generic, Optional, Set, Tuple, TypeVar
+from typing import Callable, Generic, Iterable, Optional, Set, Tuple, TypeVar
 
 from effects.effects import (
     EffectBase,
@@ -35,6 +35,24 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
         with self._redis.get_connection() as conn:
             res = conn.get(rkey)
         return json_read(res) if res is not None else None
+
+    def get_range(
+            self,
+            prefix: str,
+            postfix: Optional[str] = None) -> Iterable[VT]:
+        prefix = f"{self._redis.get_prefix()}:{prefix}"
+        if postfix is None:
+            keys = list(self._redis.keys_str(prefix))
+        else:
+            keys = [
+                key
+                for key in self._redis.keys_str(prefix)
+                if key.endswith(postfix)
+            ]
+        with self._redis.get_connection() as conn:
+            for res in conn.mget(keys):
+                if res is not None:
+                    yield json_read(res)
 
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
