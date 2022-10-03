@@ -111,9 +111,6 @@ pre-commit:
 pytest:
 	PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
 
-coverage-report:
-	./coverage/coverage.sh
-
 run-test-redis:
 	cd test && redis-server
 
@@ -125,3 +122,6 @@ run-api:
 
 run-web:
 	yarn start
+
+coverage:
+	cd coverage/reports/html_report && open index.html
