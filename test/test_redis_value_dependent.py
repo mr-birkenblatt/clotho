@@ -2,11 +2,7 @@ import time
 from typing import List, Tuple
 
 from effects.effects import EffectDependent
-from effects.redis import (
-    SetRootRedisType,
-    ValueDependentRedisType,
-    ValueRootRedisType,
-)
+from effects.redis import ValueDependentRedisType, ValueRootRedisType
 
 
 def test_value() -> None:
