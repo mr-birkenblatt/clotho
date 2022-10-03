@@ -81,7 +81,7 @@ REDIS_SERVICE_CONN: Dict[RedisModule, Optional[StrictRedis]] = {}
 DO_CACHE = True
 LOCK = threading.RLock()
 LOCKS: Dict[str, Optional[Tuple[threading.RLock, Lock]]] = {}
-LOCK_ID: str = str(uuid.uuid4())
+LOCK_ID: str = uuid.uuid4().hex
 
 
 class RedisWrapper:
