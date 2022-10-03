@@ -123,5 +123,5 @@ run-api:
 run-web:
 	yarn start
 
-coverage:
+coverage-report:
 	cd coverage/reports/html_report && open index.html
