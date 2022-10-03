@@ -52,7 +52,7 @@ def test_value() -> None:
     value_a.set_value("b", 2)
     value_b.set_value("b", "defg")
     time.sleep(0.2)
-    assert dep_a.maybe_get_value("a") == ["abc", "abc", "abc",]
+    assert dep_a.maybe_get_value("a") == ["abc", "abc", "abc"]
     assert dep_b.maybe_get_value("a") == 3
     assert dep_a.maybe_get_value("b") == ["defg", "defg"]
     assert dep_b.maybe_get_value("b") == 4
