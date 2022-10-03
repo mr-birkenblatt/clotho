@@ -109,7 +109,7 @@ pre-commit:
 	isort .
 
 pytest:
-	PYTHON=$(PYTHON) && ./run_pytest.sh $(FILE)
+	PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
 
 coverage-report:
 	./coverage/coverage.sh
