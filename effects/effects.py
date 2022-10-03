@@ -22,9 +22,6 @@ VT = TypeVar('VT')
 LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
 
 
-DELAY = 5
-
-
 class EffectBase(Generic[KT]):
     def __init__(self) -> None:
         self._dependents: List['EffectDependent[KT, Any]'] = []
@@ -40,7 +37,13 @@ class EffectBase(Generic[KT]):
 
 
 class EffectRoot(Generic[KT, VT], EffectBase[KT]):
-    def get_value(self, key: KT) -> Optional[VT]:
+    def get_value(self, key: KT, default: VT) -> VT:
+        res = self.maybe_get_value(key)
+        if res is None:
+            return default
+        return res
+
+    def maybe_get_value(self, key: KT) -> Optional[VT]:
         raise NotImplementedError()
 
 
@@ -74,11 +77,13 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             self,
             parents: LT,
             effect: Callable[
-                ['EffectDependent[KT, VT]', LT, KT], None]) -> None:
+                ['EffectDependent[KT, VT]', LT, KT], None],
+            delay: float) -> None:
         super().__init__()
         self._pending: Dict[KT, float] = {}
         self._parents = parents
         self._effect = effect
+        self._delay = delay
         self._thread: Optional[threading.Thread] = None
         for parent in self._parents:
             parent.add_dependent(self)
@@ -106,8 +111,9 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
 
     def trigger_update(self, key: KT, cur_time: float) -> None:
         prev_time = self._pending.get(key)
-        if prev_time is None or prev_time > DELAY + cur_time:
-            self._pending[key] = DELAY + cur_time
+        end_time = self._delay + cur_time
+        if prev_time is None or prev_time > end_time:
+            self._pending[key] = end_time
         self.init_thread()
 
     def poll_update(self, cur_time: float) -> Optional[float]:
@@ -118,7 +124,7 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
                 if next_time is None or update_time < next_time:
                     next_time = update_time
                 continue
-            self._pending.pop(key, default=None)  # type: ignore
+            self._pending.pop(key, None)
             to_update.append(key)
         for key in to_update:
             self.execute_update(key)
@@ -130,34 +136,22 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def retrieve_value(self, key: KT) -> Optional[VT]:
         raise NotImplementedError()
 
-    def get_value(self, key: KT) -> Optional[VT]:
+    def get_value(self, key: KT, default: VT) -> VT:
+        res = self.maybe_get_value(key)
+        if res is None:
+            return default
+        return res
+
+    def maybe_get_value(self, key: KT) -> Optional[VT]:
         res = self.retrieve_value(key)
         if res is not None:
             return res
         self.execute_update(key)
         return self.retrieve_value(key)
 
-
-class ValueDependentType(Generic[KT, VT], EffectDependent[KT, VT]):
     def do_set_value(self, key: KT, value: VT) -> None:
         raise NotImplementedError()
 
     def set_value(self, key: KT, value: VT) -> None:
         self.do_set_value(key, value)
-        self.on_update(key)
-
-
-class SetDependentType(Generic[KT, VT], EffectDependent[KT, Set[VT]]):
-    def do_add_value(self, key: KT, value: VT) -> None:
-        raise NotImplementedError()
-
-    def add_value(self, key: KT, value: VT) -> None:
-        self.do_add_value(key, value)
-        self.on_update(key)
-
-    def do_remove_value(self, key: KT, value: VT) -> None:
-        raise NotImplementedError()
-
-    def remove_value(self, key: KT, value: VT) -> None:
-        self.do_remove_value(key, value)
         self.on_update(key)
