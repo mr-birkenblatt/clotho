@@ -63,6 +63,15 @@ class ValueRootType(Generic[KT, VT], EffectRoot[KT, VT]):
         self.do_set_value(key, value)
         self.on_update(key)
 
+    def do_set_new_value(self, key: KT, value: VT) -> bool:
+        raise NotImplementedError()
+
+    def set_new_value(self, key: KT, value: VT) -> bool:
+        was_set = self.do_set_new_value(key, value)
+        if was_set:
+            self.on_update(key)
+        return was_set
+
 
 class SetRootType(Generic[KT, VT], EffectRoot[KT, Set[VT]]):
     def do_add_value(self, key: KT, value: VT) -> bool:
@@ -173,3 +182,12 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
         res = self.do_update_value(key, value)
         self.on_update(key)
         return res
+
+    def do_set_new_value(self, key: KT, value: VT) -> bool:
+        raise NotImplementedError()
+
+    def set_new_value(self, key: KT, value: VT) -> bool:
+        was_set = self.do_set_new_value(key, value)
+        if was_set:
+            self.on_update(key)
+        return was_set

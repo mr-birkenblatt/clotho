@@ -25,6 +25,11 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def get_redis_key(self, key: KT) -> str:
         return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
 
+    def do_set_value(self, key: KT, value: VT) -> None:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            conn.set(rkey, json_compact(value))
+
     def do_update_value(self, key: KT, value: VT) -> Optional[VT]:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
@@ -34,10 +39,11 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
                 res = pipe.execute()[0]
                 return json_read(res) if res is not None else None
 
-    def do_set_value(self, key: KT, value: VT) -> None:
+    def do_set_new_value(self, key: KT, value: VT) -> bool:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            conn.set(rkey, json_compact(value))
+            res = conn.setnx(rkey, json_compact(value))
+            return bool(res)
 
     def maybe_get_value(self, key: KT) -> Optional[VT]:
         rkey = self.get_redis_key(key)
@@ -126,6 +132,12 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
                 pipe.set(rkey, json_compact(value))
                 res = pipe.execute()[0]
                 return json_read(res) if res is not None else None
+
+    def do_set_new_value(self, key: KT, value: VT) -> bool:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            res = conn.setnx(rkey, json_compact(value))
+            return bool(res)
 
     def retrieve_value(self, key: KT) -> Optional[VT]:
         rkey = self.get_redis_key(key)

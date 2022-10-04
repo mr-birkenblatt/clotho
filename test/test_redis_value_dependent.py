@@ -66,14 +66,40 @@ def test_dependent() -> None:
         v_a, = parents
         obj.set_value(key, "-".join(v_a.get_value(key, [])))
 
+    def update_a_b(
+            obj: EffectDependent[str, str],
+            parents: Tuple[ValueDependentRedisType[str, List[str]]],
+            key: str) -> None:
+        v_a, = parents
+        obj.set_new_value(key, "-".join(v_a.get_value(key, [])))
+
+    def update_a_c(
+            obj: EffectDependent[str, str],
+            parents: Tuple[ValueDependentRedisType[str, List[str]]],
+            key: str) -> None:
+        pass
+
     dep_a_a: ValueDependentRedisType[str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"concat:{key}",
         (dep_a,),
         update_a_a,
         0.1)
+    dep_a_b: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+        "test",
+        lambda key: f"first:{key}",
+        (dep_a,),
+        update_a_b,
+        0.1)
+    dep_a_c: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+        "test",
+        lambda key: f"never:{key}",
+        (dep_a,),
+        update_a_c,
+        0.1)
 
     assert dep_a_a.maybe_get_value("a") == "abc-abc-abc"
+    assert dep_a_b.maybe_get_value("a") == "abc-abc-abc"
 
     value_a.set_value("a", 7)
     value_b.set_value("a", "=")
@@ -81,6 +107,7 @@ def test_dependent() -> None:
     value_b.set_value("a", "+")
     time.sleep(0.4)
     assert dep_a_a.maybe_get_value("a") == "+-+-+-+-+"
+    assert dep_a_b.maybe_get_value("a") == "abc-abc-abc"
     assert dep_a.maybe_get_value("a") == ["+", "+", "+", "+", "+"]
     assert dep_b.maybe_get_value("a") == 1
     assert value_a.maybe_get_value("a") == 5
@@ -90,3 +117,7 @@ def test_dependent() -> None:
     assert dep_a_a.maybe_get_value("b") == "defg-defg"
     assert dep_a.maybe_get_value("b") == ["defg", "defg"]
     assert dep_b.maybe_get_value("b") == 4
+
+    assert dep_a_a.get_value("c", "MISSING") == ""
+    assert dep_a_b.maybe_get_value("c") == ""
+    assert dep_a_c.get_value("c", "MISSING") == "MISSING"
