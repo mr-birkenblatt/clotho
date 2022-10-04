@@ -73,7 +73,7 @@ def test_dependent() -> None:
         v_a, = parents
         obj.set_new_value(key, "-".join(v_a.get_value(key, [])))
 
-    def update_a_c(
+    def update_a_c(  # pylint: disable=unused-argument
             obj: EffectDependent[str, str],
             parents: Tuple[ValueDependentRedisType[str, List[str]]],
             key: str) -> None:
