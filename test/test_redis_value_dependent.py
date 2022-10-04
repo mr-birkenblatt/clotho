@@ -73,11 +73,14 @@ def test_dependent() -> None:
         v_a, = parents
         obj.set_new_value(key, "-".join(v_a.get_value(key, [])))
 
-    def update_a_c(  # pylint: disable=unused-argument
+    def update_a_c(
             obj: EffectDependent[str, str],
             parents: Tuple[ValueDependentRedisType[str, List[str]]],
             key: str) -> None:
-        pass
+        v_a, = parents
+        val = v_a.get_value(key, [])
+        if val:
+            obj.set_value(key, "-".join(val))
 
     dep_a_a: ValueDependentRedisType[str, str] = ValueDependentRedisType(
         "test",
@@ -100,6 +103,7 @@ def test_dependent() -> None:
 
     assert dep_a_a.maybe_get_value("a") == "abc-abc-abc"
     assert dep_a_b.maybe_get_value("a") == "abc-abc-abc"
+    assert dep_a_c.maybe_get_value("a") == "abc-abc-abc"
 
     value_a.set_value("a", 7)
     value_b.set_value("a", "=")
