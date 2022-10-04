@@ -4,6 +4,7 @@ import pandas as pd
 
 from effects.effects import EffectDependent
 from effects.redis import (
+    ListDependentRedisType,
     SetRootRedisType,
     ValueDependentRedisType,
     ValueRootRedisType,
@@ -184,8 +185,8 @@ class RedisLinkStore(LinkStore):
                 pkey,
                 list(last.get_range_keys(key_children("vlast", pkey))))
 
-        self.r_call: ValueDependentRedisType[PLink, List[str], RLink] = \
-            ValueDependentRedisType(
+        self.r_call: ListDependentRedisType[PLink, str, RLink] = \
+            ListDependentRedisType(
                 "link",
                 key_parent_constructor("vcall"),
                 (self.r_last,),
@@ -202,8 +203,8 @@ class RedisLinkStore(LinkStore):
                 ckey,
                 list(last.get_range_keys(*key_parents("vlast", ckey))))
 
-        self.r_pall: ValueDependentRedisType[CLink, List[str], RLink] = \
-            ValueDependentRedisType(
+        self.r_pall: ListDependentRedisType[CLink, str, RLink] = \
+            ListDependentRedisType(
                 "link",
                 key_child_constructor("vpall"),
                 (self.r_last,),
@@ -214,15 +215,13 @@ class RedisLinkStore(LinkStore):
         return RedisLink(self, parent, child)
 
     def get_all_children(self, parent: MHash) -> Iterable[Link]:
-        for child in self._r.obj_partial_keys(
-                f"vfirst:{VT_UP}:{parent.to_parseable()}:"):
+        for child in self.r_call.get_value(
+                PLink(vote_type=VT_UP, parent=parent), default=[]):
             yield self.get_link(parent, MHash.parse(child))
 
     def get_all_parents(self, child: MHash) -> Iterable[Link]:
-        for key in self._r.obj_partial_keys(f"vfirst:{VT_UP}:"):
-            parent, cur_child = key.split(":", 1)
-            if MHash.parse(cur_child) != child:
-                continue
+        for parent in self.r_pall.get_value(
+                CLink(vote_type=VT_UP, child=child), default=[]):
             yield self.get_link(MHash.parse(parent), child)
 
     def get_all_user_links(self, user: User) -> Iterable[Link]:

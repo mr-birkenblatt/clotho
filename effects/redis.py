@@ -1,4 +1,13 @@
-from typing import Callable, Generic, Iterable, Optional, Set, Tuple, TypeVar
+from typing import (
+    Callable,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+)
 
 from effects.effects import (
     EffectBase,
@@ -164,3 +173,50 @@ class ValueDependentRedisType(
         with self._redis.get_connection() as conn:
             res = conn.get(rkey)
         return json_read(res) if res is not None else None
+
+
+class ListDependentRedisType(
+        Generic[KT, VT, PT], EffectDependent[KT, List[VT], PT]):
+    def __init__(
+            self,
+            module: RedisModule,
+            key_fn: Callable[[KT], str],
+            parents: LT,
+            effect: Callable[
+                [EffectDependent[KT, List[VT], PT], LT, PT], None],
+            delay: float) -> None:
+        super().__init__(parents, effect, delay)
+        self._redis = RedisConnection(module)
+        self._key_fn = key_fn
+
+    def get_redis_key(self, key: KT) -> str:
+        return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
+
+    def do_set_value(self, key: KT, value: List[VT]) -> None:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            conn.set(rkey, json_compact(value))
+
+    def do_update_value(self, key: KT, value: List[VT]) -> Optional[List[VT]]:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            with conn.pipeline() as pipe:
+                pipe.get(rkey)
+                pipe.set(rkey, json_compact(value))
+                res = pipe.execute()[0]
+                return json_read(res) if res is not None else None
+
+    def do_set_new_value(self, key: KT, value: List[VT]) -> bool:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            res = conn.setnx(rkey, json_compact(value))
+            return bool(res)
+
+    def retrieve_value(self, key: KT) -> Optional[List[VT]]:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            res = conn.get(rkey)
+        return json_read(res) if res is not None else None
+
+    def get_value_range(self, key: KT, from_ix: int, to_ix: int) -> List[VT]:
+        raise NotImplementedError()
