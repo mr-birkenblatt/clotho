@@ -176,14 +176,14 @@ class ValueDependentRedisType(
 
 
 class ListDependentRedisType(
-        Generic[KT, VT, PT], EffectDependent[KT, List[VT], PT]):
+        Generic[KT, PT], EffectDependent[KT, List[str], PT]):
     def __init__(
             self,
             module: RedisModule,
             key_fn: Callable[[KT], str],
             parents: LT,
             effect: Callable[
-                [EffectDependent[KT, List[VT], PT], LT, PT], None],
+                [EffectDependent[KT, List[str], PT], LT, PT], None],
             delay: float) -> None:
         super().__init__(parents, effect, delay)
         self._redis = RedisConnection(module)
@@ -192,31 +192,84 @@ class ListDependentRedisType(
     def get_redis_key(self, key: KT) -> str:
         return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
 
-    def do_set_value(self, key: KT, value: List[VT]) -> None:
-        rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
-            conn.set(rkey, json_compact(value))
-
-    def do_update_value(self, key: KT, value: List[VT]) -> Optional[List[VT]]:
+    def do_set_value(self, key: KT, value: List[str]) -> None:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
             with conn.pipeline() as pipe:
-                pipe.get(rkey)
-                pipe.set(rkey, json_compact(value))
+                pipe.delete(rkey)
+                pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
+                pipe.execute()
+
+    def do_update_value(self, key: KT, value: List[str]) -> Optional[List[VT]]:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection() as conn:
+            with conn.pipeline() as pipe:
+                pipe.lrange(rkey, 0, -1)
+                pipe.delete(rkey)
+                pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
                 res = pipe.execute()[0]
-                return json_read(res) if res is not None else None
+                if res is None:
+                    return None
+                return [val.decode("utf-8") for val in res]
 
-    def do_set_new_value(self, key: KT, value: List[VT]) -> bool:
+    def do_set_new_value(self, key: KT, value: List[str]) -> bool:
+        rkey = self.get_redis_key(key)
+        # FIXME make atomic
+        with self._redis.get_connection() as conn:
+            if conn.llen(rkey) > 0:
+                return False
+            length = conn.rpush(rkey, *[val.encode("utf-8") for val in value])
+            if length > len(value):
+                conn.ltrim(rkey, -len(value), -1)
+                return False
+            return True
+
+    def retrieve_value(self, key: KT) -> Optional[List[str]]:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            res = conn.setnx(rkey, json_compact(value))
-            return bool(res)
+            res = conn.lrange(rkey, 0, -1)
+        if res is None:
+            return None
+        return [val.decode("utf-8") for val in res]
 
-    def retrieve_value(self, key: KT) -> Optional[List[VT]]:
+    def get_value_range(
+            self,
+            key: KT,
+            from_ix: Optional[int],
+            to_ix: Optional[int]) -> List[str]:
+        if to_ix == 0:
+            return []
+        if from_ix is None:
+            from_ix = 0
+        if to_ix is None:
+            to_ix = -1
+        elif to_ix != 0:
+            to_ix -= 1
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            res = conn.get(rkey)
-        return json_read(res) if res is not None else None
+            res = conn.lrange(rkey, from_ix, to_ix)
+        if res is None:
+            return []
+        return [val.decode("utf-8") for val in res]
 
-    def get_value_range(self, key: KT, from_ix: int, to_ix: int) -> List[VT]:
-        raise NotImplementedError()
+    def __getitem__(self, arg: Tuple[KT, slice]) -> List[str]:
+        key, slicer = arg
+        if slicer.step is None or slicer.step > 0:
+            res = self.get_value_range(key, slicer.start, slicer.stop)
+        else:
+            flip_start = slicer.stop
+            if flip_start is not None:
+                if flip_start >= 0:
+                    flip_start += 1
+                elif flip_start < 0:
+                    flip_start -= 1
+            flip_stop = slicer.start
+            if flip_stop is not None:
+                if flip_stop >= 0:
+                    flip_stop += 1
+                elif flip_stop < 0:
+                    flip_stop -= 1
+            res = self.get_value_range(key, flip_start, flip_stop)
+        if slicer.step is not None and slicer.step != 1:
+            return res[::slicer.step]
+        return res
