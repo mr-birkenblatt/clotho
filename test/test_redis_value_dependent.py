@@ -25,7 +25,7 @@ def test_dependent() -> None:
             parents: Tuple[ValueRootRedisType[str, str]],
             key: str) -> None:
         v_a, = parents
-        ref = obj.maybe_get_value(key)
+        ref = obj.retrieve_value(key)
         old = obj.update_value(key, len(v_a.get_value(key, "MISSING")))
         assert (old is None and ref is None) or old == ref
 
