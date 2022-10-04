@@ -12,7 +12,7 @@ def test_dependent() -> None:
         "test", lambda key: f"name:{key}")
 
     def update_a(
-            obj: EffectDependent[str, List[str]],
+            obj: EffectDependent[str, List[str], str],
             parents: Tuple[
                 ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
             key: str) -> None:
@@ -21,7 +21,7 @@ def test_dependent() -> None:
             key, [v_b.get_value(key, "MISSING")] * v_a.get_value(key, 0))
 
     def update_b(
-            obj: EffectDependent[str, int],
+            obj: EffectDependent[str, int, str],
             parents: Tuple[ValueRootRedisType[str, str]],
             key: str) -> None:
         v_a, = parents
@@ -29,13 +29,14 @@ def test_dependent() -> None:
         old = obj.update_value(key, len(v_a.get_value(key, "MISSING")))
         assert (old is None and ref is None) or old == ref
 
-    dep_a: ValueDependentRedisType[str, List[str]] = ValueDependentRedisType(
-        "test",
-        lambda key: f"list:{key}",
-        (value_a, value_b),
-        update_a,
-        0.1)
-    dep_b: ValueDependentRedisType[str, int] = ValueDependentRedisType(
+    dep_a: ValueDependentRedisType[str, List[str], str] = \
+        ValueDependentRedisType(
+            "test",
+            lambda key: f"list:{key}",
+            (value_a, value_b),
+            update_a,
+            0.1)
+    dep_b: ValueDependentRedisType[str, int, str] = ValueDependentRedisType(
         "test",
         lambda key: f"len:{key}",
         (value_b,),
@@ -60,41 +61,41 @@ def test_dependent() -> None:
     assert dep_b.maybe_get_value("b") == 4
 
     def update_a_a(
-            obj: EffectDependent[str, str],
-            parents: Tuple[ValueDependentRedisType[str, List[str]]],
+            obj: EffectDependent[str, str, str],
+            parents: Tuple[ValueDependentRedisType[str, List[str], str]],
             key: str) -> None:
         v_a, = parents
         obj.set_value(key, "-".join(v_a.get_value(key, [])))
 
     def update_a_b(
-            obj: EffectDependent[str, str],
-            parents: Tuple[ValueDependentRedisType[str, List[str]]],
+            obj: EffectDependent[str, str, str],
+            parents: Tuple[ValueDependentRedisType[str, List[str], str]],
             key: str) -> None:
         v_a, = parents
         obj.set_new_value(key, "-".join(v_a.get_value(key, [])))
 
     def update_a_c(
-            obj: EffectDependent[str, str],
-            parents: Tuple[ValueDependentRedisType[str, List[str]]],
+            obj: EffectDependent[str, str, str],
+            parents: Tuple[ValueDependentRedisType[str, List[str], str]],
             key: str) -> None:
         v_a, = parents
         val = v_a.get_value(key, [])
         if val:
             obj.set_value(key, "-".join(val))
 
-    dep_a_a: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+    dep_a_a: ValueDependentRedisType[str, str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"concat:{key}",
         (dep_a,),
         update_a_a,
         0.1)
-    dep_a_b: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+    dep_a_b: ValueDependentRedisType[str, str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"first:{key}",
         (dep_a,),
         update_a_b,
         0.1)
-    dep_a_c: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+    dep_a_c: ValueDependentRedisType[str, str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"never:{key}",
         (dep_a,),

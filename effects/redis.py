@@ -12,6 +12,7 @@ from misc.util import json_compact, json_read
 
 KT = TypeVar('KT')
 VT = TypeVar('VT')
+PT = TypeVar('PT')
 LT = TypeVar('LT', bound=Tuple[EffectBase, ...])
 
 
@@ -69,6 +70,24 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
                 if res is not None:
                     yield json_read(res)
 
+    def get_range_keys(
+            self,
+            prefix: str,
+            postfix: Optional[str] = None) -> Iterable[str]:
+        prefix = f"{self._redis.get_prefix()}:{prefix}"
+        fromix = len(prefix)
+        toix = None if not postfix else -len(postfix)
+        if postfix is None:
+            keys = list(self._redis.keys_str(prefix))
+        else:
+            keys = [
+                key
+                for key in self._redis.keys_str(prefix)
+                if key.endswith(postfix)
+            ]
+        for key in keys:
+            yield key[fromix:toix]
+
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def __init__(
@@ -104,13 +123,14 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
             return set(mem.decode("utf-8") for mem in conn.smembers(rkey))
 
 
-class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
+class ValueDependentRedisType(
+        Generic[KT, VT, PT], EffectDependent[KT, VT, PT]):
     def __init__(
             self,
             module: RedisModule,
             key_fn: Callable[[KT], str],
             parents: LT,
-            effect: Callable[[EffectDependent[KT, VT], LT, KT], None],
+            effect: Callable[[EffectDependent[KT, VT, PT], LT, PT], None],
             delay: float) -> None:
         super().__init__(parents, effect, delay)
         self._redis = RedisConnection(module)

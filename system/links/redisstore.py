@@ -1,10 +1,15 @@
-from typing import Iterable, List, Optional, Tuple
+from typing import Callable, Iterable, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
-from misc.redis import ObjectRedis
+from effects.effects import EffectDependent
+from effects.redis import (
+    SetRootRedisType,
+    ValueDependentRedisType,
+    ValueRootRedisType,
+)
 from misc.util import from_timestamp, to_timestamp
-from system.links.link import Link, parse_vote_type, Votes, VoteType, VT_UP
+from system.links.link import Link, Votes, VoteType, VT_UP
 from system.links.scorer import Scorer
 from system.links.store import LinkStore
 from system.msgs.message import MHash
@@ -12,10 +17,70 @@ from system.users.store import UserStore
 from system.users.user import User
 
 
+RLink = NamedTuple('RLink', [
+    ("vote_type", VoteType),
+    ("parent", MHash),
+    ("child", MHash),
+])
+PLink = NamedTuple('PLink', [
+    ("vote_type", VoteType),
+    ("parent", MHash),
+])
+CLink = NamedTuple('CLink', [
+    ("vote_type", VoteType),
+    ("child", MHash),
+])
+
+
+def key_children(prefix: str, link: PLink) -> str:
+    return f"{prefix}:{link.vote_type}:{link.parent.to_parseable()}:"
+
+
+def key_parents(prefix: str, link: CLink) -> Tuple[str, str]:
+    return (
+        f"{prefix}:{link.vote_type}:",
+        f":{link.child.to_parseable()}",
+    )
+
+
+def key_parent_constructor(prefix: str) -> Callable[[PLink], str]:
+
+    def construct_key(link: PLink) -> str:
+        return (
+            f"{prefix}:{link.vote_type}:"
+            f"{link.parent.to_parseable()}")
+
+    return construct_key
+
+
+def key_child_constructor(prefix: str) -> Callable[[CLink], str]:
+
+    def construct_key(link: CLink) -> str:
+        return (
+            f"{prefix}:{link.vote_type}:"
+            f"{link.child.to_parseable()}")
+
+    return construct_key
+
+
+def key_constructor(prefix: str) -> Callable[[RLink], str]:
+
+    def construct_key(link: RLink) -> str:
+        return (
+            f"{prefix}:{link.vote_type}:"
+            f"{link.parent.to_parseable()}:"
+            f"{link.child.to_parseable()}")
+
+    return construct_key
+
+
 class RedisLink(Link):
     def __init__(
-            self, redis: ObjectRedis, parent: MHash, child: MHash) -> None:
-        self._r = redis
+            self,
+            store: 'RedisLinkStore',
+            parent: MHash,
+            child: MHash) -> None:
+        self._s = store
         self._parent = parent
         self._child = child
         self._user: Optional[User] = None
@@ -26,24 +91,13 @@ class RedisLink(Link):
     def get_child(self) -> MHash:
         return self._child
 
-    def _construct_key(self, vote_type: VoteType) -> str:
-        return (
-            f"{vote_type}:{self._parent.to_parseable()}:"
-            f"{self._child.to_parseable()}")
-
-    @staticmethod
-    def parse_key(key: str) -> Tuple[VoteType, MHash, MHash]:
-        vtype, parent, child = key.split(":", 2)
-        return (
-            parse_vote_type(vtype),
-            MHash.parse(parent),
-            MHash.parse(child),
-        )
-
     def get_user(self, user_store: UserStore) -> Optional[User]:
         if self._user is not None:
             return self._user
-        user_id = self._r.obj_get("user", self._construct_key(VT_UP))
+        store = self._s
+        key = RLink(
+            vote_type=VT_UP, parent=self._parent, child=self._child)
+        user_id = store.r_user.maybe_get_value(key)
         if user_id is None:
             return None
         res = user_store.get_user_by_id(user_id)
@@ -51,11 +105,13 @@ class RedisLink(Link):
         return res
 
     def get_votes(self, vote_type: VoteType) -> Votes:
-        key = self._construct_key(vote_type)
-        vtotal = float(self._r.obj_get("vtotal", key, default=0.0))
-        vdaily = float(self._r.obj_get("vdaily", key, default=0.0))
-        vfirst = self._r.obj_get("vfirst", key)
-        vlast = self._r.obj_get("vlast", key)
+        store = self._s
+        key = RLink(
+            vote_type=vote_type, parent=self._parent, child=self._child)
+        vtotal = store.r_total.get_value(key, default=0.0)
+        vdaily = store.r_daily.get_value(key, default=0.0)
+        vfirst = store.r_first.maybe_get_value(key)
+        vlast = store.r_last.maybe_get_value(key)
         if vfirst is None:
             first = None
         else:
@@ -72,28 +128,90 @@ class RedisLink(Link):
             vote_type: VoteType,
             who: User,
             now: pd.Timestamp) -> None:
-        # FIXME: remove lock / make atomic
-        with self._r.get_lock("votes"):
-            key = self._construct_key(vote_type)
-            votes = self.get_votes(vote_type)
-            weighted_value = who.get_weighted_vote(self.get_user(user_store))
-            self._r.obj_put(
-                "vtotal", key, votes.get_total_votes() + weighted_value)
-            self._r.obj_put(
-                "vdaily",
-                key,
-                votes.get_adjusted_daily_votes(now) + weighted_value)
-            self._r.obj_put_nx("user", key, who.get_id())
-            self._r.obj_put_nx("vfirst", key, to_timestamp(now))
-            self._r.obj_put("vlast", key, to_timestamp(now))
+        store = self._s
+        key = RLink(
+            vote_type=vote_type, parent=self._parent, child=self._child)
+        # FIXME: make atomic
+        user_id = who.get_id()
+        if store.r_voted.add_value(key, user_id):
+            return
+        votes = self.get_votes(vote_type)
+        weighted_value = who.get_weighted_vote(self.get_user(user_store))
+        store.r_total.set_value(key, votes.get_total_votes() + weighted_value)
+        store.r_daily.set_value(
+            key, votes.get_adjusted_daily_votes(now) + weighted_value)
+        store.r_user.do_set_new_value(key, user_id)
+        store.r_last.set_value(key, to_timestamp(now))
 
 
 class RedisLinkStore(LinkStore):
     def __init__(self) -> None:
-        self._r = ObjectRedis("link")
+        self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
+            "link", key_constructor("user"))
+        self.r_voted: SetRootRedisType[RLink] = SetRootRedisType(
+            "link", key_constructor("voted"))
+        self.r_total: ValueRootRedisType[RLink, float] = ValueRootRedisType(
+            "link", key_constructor("vtotal"))
+        self.r_daily: ValueRootRedisType[RLink, float] = ValueRootRedisType(
+            "link", key_constructor("vdaily"))
+        self.r_last: ValueRootRedisType[RLink, float] = ValueRootRedisType(
+            "link", key_constructor("vlast"))
+
+        def compute_first(
+                obj: EffectDependent[RLink, float, RLink],
+                parents: Tuple[ValueRootRedisType[RLink, float]],
+                key: RLink) -> None:
+            last, = parents
+            val = last.maybe_get_value(key)
+            if val is not None:
+                obj.set_new_value(key, val)
+
+        self.r_first: ValueDependentRedisType[RLink, float, RLink] = \
+            ValueDependentRedisType(
+                "link",
+                key_constructor("vfirst"),
+                (self.r_last,),
+                compute_first,
+                5.0)
+
+        def compute_call(
+                obj: EffectDependent[PLink, List[str], RLink],
+                parents: Tuple[ValueRootRedisType[RLink, float]],
+                key: RLink) -> None:
+            last, = parents
+            pkey = PLink(vote_type=key.vote_type, parent=key.parent)
+            obj.set_value(
+                pkey,
+                list(last.get_range_keys(key_children("vlast", pkey))))
+
+        self.r_call: ValueDependentRedisType[PLink, List[str], RLink] = \
+            ValueDependentRedisType(
+                "link",
+                key_parent_constructor("vcall"),
+                (self.r_last,),
+                compute_call,
+                2.0)
+
+        def compute_pall(
+                obj: EffectDependent[CLink, List[str], RLink],
+                parents: Tuple[ValueRootRedisType[RLink, float]],
+                key: RLink) -> None:
+            last, = parents
+            ckey = CLink(vote_type=key.vote_type, child=key.child)
+            obj.set_value(
+                ckey,
+                list(last.get_range_keys(*key_parents("vlast", ckey))))
+
+        self.r_pall: ValueDependentRedisType[CLink, List[str], RLink] = \
+            ValueDependentRedisType(
+                "link",
+                key_child_constructor("vpall"),
+                (self.r_last,),
+                compute_pall,
+                2.0)
 
     def get_link(self, parent: MHash, child: MHash) -> Link:
-        return RedisLink(self._r, parent, child)
+        return RedisLink(self, parent, child)
 
     def get_all_children(self, parent: MHash) -> Iterable[Link]:
         for child in self._r.obj_partial_keys(

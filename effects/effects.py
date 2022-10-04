@@ -19,15 +19,16 @@ if TYPE_CHECKING:
 
 KT = TypeVar('KT')
 VT = TypeVar('VT')
+PT = TypeVar('PT')
 LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
 
 
 class EffectBase(Generic[KT]):
     def __init__(self) -> None:
-        self._dependents: List['EffectDependent[KT, Any]'] = []
+        self._dependents: List['EffectDependent[Any, Any, KT]'] = []
 
     def add_dependent(
-            self, dependent: 'EffectDependent[KT, Any]') -> None:
+            self, dependent: 'EffectDependent[Any, Any, KT]') -> None:
         self._dependents.append(dependent)
 
     def on_update(self, key: KT) -> None:
@@ -91,15 +92,15 @@ class SetRootType(Generic[KT, VT], EffectRoot[KT, Set[VT]]):
         return res
 
 
-class EffectDependent(Generic[KT, VT], EffectBase[KT]):
+class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
     def __init__(
             self,
             parents: LT,
             effect: Callable[
-                ['EffectDependent[KT, VT]', LT, KT], None],
+                ['EffectDependent[KT, VT, PT]', LT, PT], None],
             delay: float) -> None:
         super().__init__()
-        self._pending: Dict[KT, float] = {}
+        self._pending: Dict[PT, float] = {}
         self._parents = parents
         self._effect = effect
         self._delay = delay
@@ -128,7 +129,7 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
         finally:
             self._thread = None
 
-    def trigger_update(self, key: KT, cur_time: float) -> None:
+    def trigger_update(self, key: PT, cur_time: float) -> None:
         prev_time = self._pending.get(key)
         end_time = self._delay + cur_time
         if prev_time is None or prev_time > end_time:
@@ -137,7 +138,7 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
 
     def poll_update(self, cur_time: float) -> Optional[float]:
         next_time: Optional[float] = None
-        to_update: List[KT] = []
+        to_update: List[PT] = []
         for (key, update_time) in list(self._pending.items()):
             if update_time > cur_time:
                 if next_time is None or update_time < next_time:
@@ -149,7 +150,7 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             self.execute_update(key)
         return next_time
 
-    def execute_update(self, key: KT) -> None:
+    def execute_update(self, key: PT) -> None:
         self._effect(self, self._parents, key)
 
     def retrieve_value(self, key: KT) -> Optional[VT]:
@@ -162,10 +163,10 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
         return res
 
     def maybe_get_value(self, key: KT) -> Optional[VT]:
-        res = self.retrieve_value(key)
-        if res is not None:
-            return res
-        self.execute_update(key)
+        # res = self.retrieve_value(key)
+        # if res is not None:
+        #     return res
+        # self.execute_update(key)
         return self.retrieve_value(key)
 
     def do_set_value(self, key: KT, value: VT) -> None:
