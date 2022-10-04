@@ -7,12 +7,14 @@ def test_value() -> None:
     assert root.maybe_get_value("a") is None
     root.set_value("a", 5)
     assert root.maybe_get_value("a") == 5
-    root.set_value("b", 10)
+    assert root.update_value("b", 10) is None
     assert root.maybe_get_value("b") == 10
     root.set_value("a", 13)
     root.set_value("a", 3)
     assert root.maybe_get_value("a") == 3
     assert root.maybe_get_value("b") == 10
+    root.set_value("a", 4)
+    assert root.update_value("a", 5) == 4
 
 
 def test_set() -> None:

@@ -48,6 +48,14 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
 
 
 class ValueRootType(Generic[KT, VT], EffectRoot[KT, VT]):
+    def do_update_value(self, key: KT, value: VT) -> Optional[VT]:
+        raise NotImplementedError()
+
+    def update_value(self, key: KT, value: VT) -> Optional[VT]:
+        res = self.do_update_value(key, value)
+        self.on_update(key)
+        return res
+
     def do_set_value(self, key: KT, value: VT) -> None:
         raise NotImplementedError()
 
@@ -157,3 +165,11 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def set_value(self, key: KT, value: VT) -> None:
         self.do_set_value(key, value)
         self.on_update(key)
+
+    def do_update_value(self, key: KT, value: VT) -> Optional[VT]:
+        raise NotImplementedError()
+
+    def update_value(self, key: KT, value: VT) -> Optional[VT]:
+        res = self.do_update_value(key, value)
+        self.on_update(key)
+        return res
