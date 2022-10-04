@@ -109,6 +109,7 @@ def test_dependent() -> None:
     value_b.set_value("a", "=")
     value_a.set_value("a", 5)
     value_b.set_value("a", "+")
+    assert dep_a_a.maybe_get_value("a") == "abc-abc-abc"  # time sensitive
     time.sleep(0.4)
     assert dep_a_a.maybe_get_value("a") == "+-+-+-+-+"
     assert dep_a_b.maybe_get_value("a") == "abc-abc-abc"
