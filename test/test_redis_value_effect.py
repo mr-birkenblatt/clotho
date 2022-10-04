@@ -18,19 +18,19 @@ def test_value() -> None:
 def test_set() -> None:
     root: SetRootRedisType[str] = SetRootRedisType("test", lambda key: key)
     assert root.maybe_get_value("foo") == set()
-    root.add_value("foo", "a")
+    assert not root.add_value("foo", "a")
     assert root.maybe_get_value("foo") == {"a"}
-    root.add_value("bar", "b")
+    assert not root.add_value("bar", "b")
     assert root.maybe_get_value("bar") == {"b"}
-    root.add_value("foo", "c")
+    assert not root.add_value("foo", "c")
     assert root.maybe_get_value("foo") == {"a", "c"}
-    root.add_value("foo", "c")
+    assert root.add_value("foo", "c")
     assert root.maybe_get_value("foo") == {"a", "c"}
     assert root.maybe_get_value("bar") == {"b"}
-    root.remove_value("foo", "c")
+    assert root.remove_value("foo", "c")
     assert root.maybe_get_value("foo") == {"a"}
-    root.remove_value("foo", "b")
+    assert not root.remove_value("foo", "b")
     assert root.maybe_get_value("foo") == {"a"}
-    root.remove_value("foo", "a")
+    assert root.remove_value("foo", "a")
     assert root.maybe_get_value("foo") == set()
     assert root.maybe_get_value("bar") == {"b"}

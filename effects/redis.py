@@ -65,15 +65,21 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def get_redis_key(self, key: KT) -> str:
         return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
 
-    def do_add_value(self, key: KT, value: str) -> None:
+    def do_add_value(self, key: KT, value: str) -> bool:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            conn.sadd(rkey, value.encode("utf-8"))
+            with conn.pipeline() as pipe:
+                pipe.sismember(rkey)
+                pipe.sadd(rkey, value.encode("utf-8"))
+                return bool(pipe.execute()[0])
 
-    def do_remove_value(self, key: KT, value: str) -> None:
+    def do_remove_value(self, key: KT, value: str) -> bool:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            conn.srem(rkey, value.encode("utf-8"))
+            with conn.pipeline() as pipe:
+                pipe.sismember(rkey)
+                pipe.srem(rkey, value.encode("utf-8"))
+                return bool(pipe.execute()[0])
 
     def maybe_get_value(self, key: KT) -> Optional[Set[str]]:
         rkey = self.get_redis_key(key)
