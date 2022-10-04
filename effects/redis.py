@@ -265,10 +265,10 @@ class ListDependentRedisType(
                     flip_start -= 1
             flip_stop = slicer.start
             if flip_stop is not None:
-                if flip_stop >= 0:
+                if flip_stop != -1:
                     flip_stop += 1
-                elif flip_stop < 0:
-                    flip_stop -= 1
+                else:
+                    flip_stop = None
             res = self.get_value_range(key, flip_start, flip_stop)
         if slicer.step is not None and slicer.step != 1:
             return res[::slicer.step]
