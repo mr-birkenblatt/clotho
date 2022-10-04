@@ -243,7 +243,7 @@ class ListDependentRedisType(
             from_ix = 0
         if to_ix is None:
             to_ix = -1
-        elif to_ix != 0:
+        else:
             to_ix -= 1
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
@@ -259,10 +259,10 @@ class ListDependentRedisType(
         else:
             flip_start = slicer.stop
             if flip_start is not None:
-                if flip_start >= 0:
+                if flip_start != -1:
                     flip_start += 1
-                elif flip_start < 0:
-                    flip_start -= 1
+                else:
+                    return []
             flip_stop = slicer.start
             if flip_stop is not None:
                 if flip_stop != -1:

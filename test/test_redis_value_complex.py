@@ -168,6 +168,7 @@ def test_complex_list() -> None:
     assert srcs.get_value_range(TLink(l_to="b"), 4, 5) == []
 
     assert srcs[TLink(l_to="b"), 0:2] == ["0", "1"]
+    assert srcs[TLink(l_to="b"), 2:0] == []
     assert srcs[TLink(l_to="b"), None:2] == ["0", "1"]
     assert srcs[TLink(l_to="b"), 1:3] == ["1", "2"]
     assert srcs[TLink(l_to="b"), 1:] == ["1", "2", "6"]
@@ -187,6 +188,10 @@ def test_complex_list() -> None:
     assert srcs[TLink(l_to="b"), 0:2:-1] == arr[0:2:-1]
     assert srcs[TLink(l_to="b"), 0:1:-1] == arr[0:1:-1]
     assert srcs[TLink(l_to="b"), 0:0:-1] == arr[0:0:-1]
+    assert srcs[TLink(l_to="b"), 3:-1:-1] == arr[3:-1:-1]
+    assert srcs[TLink(l_to="b"), 3:-2:-1] == arr[3:-2:-1]
+    assert srcs[TLink(l_to="b"), 3:-3:-1] == arr[3:-3:-1]
+    assert srcs[TLink(l_to="b"), 3:-4:-1] == arr[3:-4:-1]
     assert srcs[TLink(l_to="b"), :2:-1] == arr[:2:-1]
     assert srcs[TLink(l_to="b"), 2::-1] == arr[2::-1]
     assert srcs[TLink(l_to="b"), -1:2:-1] == arr[-1:2:-1]
