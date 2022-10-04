@@ -46,6 +46,7 @@ def test_dependent() -> None:
     assert value_a.maybe_get_value("a") is None
     value_a.set_value("a", 2)
     assert value_a.maybe_get_value("a") == 2
+    value_b.on_update("a")
     time.sleep(0.2)
     assert dep_a.maybe_get_value("a") == ["MISSING", "MISSING"]
     assert dep_b.maybe_get_value("a") == 7
@@ -101,6 +102,11 @@ def test_dependent() -> None:
         (dep_a,),
         update_a_c,
         0.1)
+
+    dep_a.on_update("a")
+    dep_a.on_update("b")
+    dep_a.on_update("c")
+    time.sleep(0.2)
 
     assert dep_a_a.maybe_get_value("a") == "abc-abc-abc"
     assert dep_a_b.maybe_get_value("a") == "abc-abc-abc"

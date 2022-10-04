@@ -163,10 +163,6 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
         return res
 
     def maybe_get_value(self, key: KT) -> Optional[VT]:
-        # res = self.retrieve_value(key)
-        # if res is not None:
-        #     return res
-        # self.execute_update(key)
         return self.retrieve_value(key)
 
     def do_set_value(self, key: KT, value: VT) -> None:

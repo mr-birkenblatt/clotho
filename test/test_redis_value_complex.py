@@ -57,7 +57,7 @@ def test_complex() -> None:
 
     links.set_value(Link(l_from="a", l_to="b"), 1)
 
-    assert srcs.get_value(TLink(l_to="b"), []) == [1]
+    assert srcs.get_value(TLink(l_to="b"), []) == []  # time sensitive
 
     links.set_value(Link(l_from="a", l_to="c"), 2)
     links.set_value(Link(l_from="a", l_to="d"), 3)
