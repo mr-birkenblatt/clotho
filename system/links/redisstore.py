@@ -18,6 +18,19 @@ from system.users.store import UserStore
 from system.users.user import User
 
 
+DELAY_MULTIPLIER = 1.0
+
+
+def set_delay_multiplier(mul: float) -> None:
+    global DELAY_MULTIPLIER
+
+    DELAY_MULTIPLIER = mul
+
+
+def get_delay_multiplier() -> float:
+    return DELAY_MULTIPLIER
+
+
 RLink = NamedTuple('RLink', [
     ("vote_type", VoteType),
     ("parent", MHash),
@@ -159,6 +172,7 @@ class RedisLink(Link):
 
 class RedisLinkStore(LinkStore):
     def __init__(self) -> None:
+        dmul = get_delay_multiplier()
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
             "link", key_constructor("user"))
         self.r_user_links = SetRootRedisType[str](
@@ -197,7 +211,7 @@ class RedisLinkStore(LinkStore):
                 key_constructor("vfirst"),
                 (self.r_last, self.r_user),
                 compute_first,
-                5.0)
+                5.0 * dmul)
 
         # all children for a given parent
 
@@ -217,7 +231,7 @@ class RedisLinkStore(LinkStore):
                 key_parent_constructor("vcall"),
                 (self.r_last,),
                 compute_call,
-                2.0)
+                2.0 * dmul)
 
         # all parents for a given child
 
@@ -237,7 +251,7 @@ class RedisLinkStore(LinkStore):
                 key_child_constructor("vpall"),
                 (self.r_last,),
                 compute_pall,
-                2.0)
+                2.0 * dmul)
 
         # sorted lists by score
 
@@ -274,7 +288,7 @@ class RedisLinkStore(LinkStore):
                 key_parent_constructor(f"scall:{sname}"),
                 (self.r_call,),
                 compute_call_sorted,
-                2.0)
+                2.0 * dmul)
 
             # all parents for a given child sorted with score
 
@@ -299,7 +313,7 @@ class RedisLinkStore(LinkStore):
                 key_child_constructor(f"spall:{sname}"),
                 (self.r_pall,),
                 compute_pall_sorted,
-                2.0)
+                2.0 * dmul)
 
             # all links created by a user sorted with score
 
@@ -333,7 +347,7 @@ class RedisLinkStore(LinkStore):
                 lambda user: f"suserlinks:{sname}:{user}",
                 (self.r_user_links,),
                 compute_user_sorted,
-                2.0)
+                4.0 * dmul)
 
         for scorer in self.valid_scorers():
             add_scorer_dependent_types(scorer)

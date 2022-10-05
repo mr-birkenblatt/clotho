@@ -82,6 +82,7 @@ def interpret_action(
                 continue
             any_new = True
             for _ in range(casts):
+                # FIXME use a user pool
                 cur_link.add_vote(
                     user_store,
                     vtype,

@@ -107,7 +107,7 @@ class Link:
         user = self.get_user(user_store)
         user_str = None if user is None else user.get_id()
         first = now
-        votes = {}
+        votes: Dict[VoteType, float] = {}
         for vtype in self.get_vote_types():
             cur_vote = self.get_votes(vtype)
             cur_total = cur_vote.get_total_votes()

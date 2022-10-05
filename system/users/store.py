@@ -33,4 +33,7 @@ def get_user_store(name: str) -> UserStore:
     if name == "disk":
         from system.users.disk import DiskUserStore
         return DiskUserStore()
+    if name == "ram":
+        from system.users.ram import RamUserStore
+        return RamUserStore()
     raise ValueError(f"unknown user store: {name}")
