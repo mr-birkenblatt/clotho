@@ -6,7 +6,6 @@ from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
     SetRootRedisType,
-    ValueDependentRedisType,
     ValueRootRedisType,
 )
 from misc.util import from_timestamp, now_ts, to_timestamp
@@ -167,7 +166,12 @@ class RedisLink(Link):
         store.r_daily.set_value(
             key, votes.get_adjusted_daily_votes(now) + weighted_value)
         store.r_user.do_set_new_value(key, user_id)
-        store.r_last.set_value(key, to_timestamp(now))
+        nows = to_timestamp(now)
+        is_new = store.r_first.set_new_value(key, nows)
+        store.r_last.set_value(key, nows)
+        if is_new and key.vote_type == VT_UP:
+            store.r_user_links.add_value(
+                user_id, parseable_link(key.parent, key.child))
 
 
 class RedisLinkStore(LinkStore):
@@ -183,35 +187,10 @@ class RedisLinkStore(LinkStore):
             "link", key_constructor("vtotal"))
         self.r_daily: ValueRootRedisType[RLink, float] = ValueRootRedisType(
             "link", key_constructor("vdaily"))
+        self.r_first: ValueRootRedisType[RLink, float] = ValueRootRedisType(
+            "link", key_constructor("vfirst"))
         self.r_last: ValueRootRedisType[RLink, float] = ValueRootRedisType(
             "link", key_constructor("vlast"))
-
-        # link creation time+user
-
-        def compute_first(
-                obj: EffectDependent[RLink, float, RLink],
-                parents: Tuple[
-                    ValueRootRedisType[RLink, float],
-                    ValueRootRedisType[RLink, str]],
-                key: RLink) -> None:
-            last, user = parents
-            val = last.maybe_get_value(key)
-            if val is None:
-                return
-            is_new = obj.set_new_value(key, val)
-            if is_new and key.vote_type == VT_UP:
-                user_id = user.maybe_get_value(key)
-                if user_id is not None:
-                    self.r_user_links.add_value(
-                        user_id, parseable_link(key.parent, key.child))
-
-        self.r_first: ValueDependentRedisType[RLink, float, RLink] = \
-            ValueDependentRedisType(
-                "link",
-                key_constructor("vfirst"),
-                (self.r_last, self.r_user),
-                compute_first,
-                5.0 * dmul)
 
         # all children for a given parent
 
