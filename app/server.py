@@ -225,7 +225,7 @@ def setup(
         args = rargs["post"]
         parent = MHash.parse(args["parent"])
         link_query = get_link_query_params(args)
-        links = link_store.get_children(parent, **link_query)
+        links = list(link_store.get_children(parent, **link_query))
         return {
             "links": [
                 link.get_response(user_store, link_query["now"])
@@ -239,7 +239,7 @@ def setup(
         args = rargs["post"]
         child = MHash.parse(args["child"])
         link_query = get_link_query_params(args)
-        links = link_store.get_parents(child, **link_query)
+        links = list(link_store.get_parents(child, **link_query))
         return {
             "links": [
                 link.get_response(user_store, link_query["now"])
@@ -254,7 +254,7 @@ def setup(
         user = user_store.get_user_by_id(
             user_store.get_id_from_name(args["user"]))
         link_query = get_link_query_params(args)
-        links = link_store.get_user_links(user, **link_query)
+        links = list(link_store.get_user_links(user, **link_query))
         return {
             "links": [
                 link.get_response(user_store, link_query["now"])
