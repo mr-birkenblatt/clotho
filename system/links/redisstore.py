@@ -33,6 +33,18 @@ CLink = NamedTuple('CLink', [
 ])
 
 
+def parseable_link(link: RLink) -> str:
+    return f"{link.parent.to_parseable()}:{link.child.to_parseable()}"
+
+
+def parse_link(vote_type: VoteType, link: str) -> RLink:
+    parent, child = link.split(":", 1)
+    return RLink(
+        vote_type=vote_type,
+        parent=MHash.parse(parent),
+        child=MHash.parse(child))
+
+
 def key_children(prefix: str, link: PLink) -> str:
     return f"{prefix}:{link.vote_type}:{link.parent.to_parseable()}:"
 
@@ -149,6 +161,8 @@ class RedisLinkStore(LinkStore):
     def __init__(self) -> None:
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
             "link", key_constructor("user"))
+        self.r_user_links = SetRootRedisType[str](
+            "link", lambda user: f"userlinks:{user}")
         self.r_voted: SetRootRedisType[RLink] = SetRootRedisType(
             "link", key_constructor("voted"))
         self.r_total: ValueRootRedisType[RLink, float] = ValueRootRedisType(
@@ -160,18 +174,25 @@ class RedisLinkStore(LinkStore):
 
         def compute_first(
                 obj: EffectDependent[RLink, float, RLink],
-                parents: Tuple[ValueRootRedisType[RLink, float]],
+                parents: Tuple[
+                    ValueRootRedisType[RLink, float],
+                    ValueRootRedisType[RLink, str]],
                 key: RLink) -> None:
-            last, = parents
+            last, user = parents
             val = last.maybe_get_value(key)
-            if val is not None:
-                obj.set_new_value(key, val)
+            if val is None:
+                return
+            is_new = obj.set_new_value(key, val)
+            if is_new and key.vote_type == VT_UP:
+                user_id = user.maybe_get_value(key)
+                if user_id is not None:
+                    self.r_user_links.add_value(user_id, parseable_link(key))
 
         self.r_first: ValueDependentRedisType[RLink, float, RLink] = \
             ValueDependentRedisType(
                 "link",
                 key_constructor("vfirst"),
-                (self.r_last,),
+                (self.r_last, self.r_user),
                 compute_first,
                 5.0)
 
@@ -185,7 +206,7 @@ class RedisLinkStore(LinkStore):
                 pkey,
                 list(last.get_range_keys(key_children("vlast", pkey))))
 
-        self.r_call: ListDependentRedisType[PLink, str, RLink] = \
+        self.r_call: ListDependentRedisType[PLink, RLink] = \
             ListDependentRedisType(
                 "link",
                 key_parent_constructor("vcall"),
@@ -203,7 +224,7 @@ class RedisLinkStore(LinkStore):
                 ckey,
                 list(last.get_range_keys(*key_parents("vlast", ckey))))
 
-        self.r_pall: ListDependentRedisType[CLink, str, RLink] = \
+        self.r_pall: ListDependentRedisType[CLink, RLink] = \
             ListDependentRedisType(
                 "link",
                 key_child_constructor("vpall"),
@@ -226,13 +247,9 @@ class RedisLinkStore(LinkStore):
 
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         user_id = user.get_id()
-        for key, value in self._r.obj_dict("user").items():
-            vtype, parent, child = RedisLink.parse_key(key)
-            if vtype != VT_UP:
-                continue
-            if value != user_id:
-                continue
-            yield self.get_link(parent, child)
+        for link in self.r_user_links.get_value(user_id, set()):
+            rlink = parse_link(VT_UP, link)
+            yield self.get_link(rlink.parent, rlink.child)
 
     def get_children(
             self,
