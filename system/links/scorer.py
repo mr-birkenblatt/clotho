@@ -14,22 +14,38 @@ ScorerName = Literal[
 VALID_SCORER_NAMES = set(get_args(ScorerName))
 
 
-class Scorer:  # pylint: disable=too-few-public-methods
+class Scorer:
+    @staticmethod
+    def name() -> ScorerName:
+        raise NotImplementedError()
+
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         raise NotImplementedError()
 
 
-class NewScorer(Scorer):  # pylint: disable=too-few-public-methods
+class NewScorer(Scorer):
+    @staticmethod
+    def name() -> ScorerName:
+        return "new"
+
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         return to_timestamp(link.get_votes(VT_UP).get_first_vote_time(now))
 
 
-class TopScorer(Scorer):  # pylint: disable=too-few-public-methods
+class TopScorer(Scorer):
+    @staticmethod
+    def name() -> ScorerName:
+        return "top"
+
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         return link.get_votes(VT_UP).get_total_votes()
 
 
-class BestScorer(Scorer):  # pylint: disable=too-few-public-methods
+class BestScorer(Scorer):
+    @staticmethod
+    def name() -> ScorerName:
+        return "best"
+
     def get_score(self, link: Link, now: pd.Timestamp) -> float:
         ups = link.get_votes(VT_UP)
         downs = link.get_votes(VT_DOWN)
@@ -43,9 +59,9 @@ class BestScorer(Scorer):  # pylint: disable=too-few-public-methods
 
 
 SCORERS: Dict[ScorerName, Scorer] = {
-    "new": NewScorer(),
-    "top": TopScorer(),
-    "best": BestScorer(),
+    NewScorer.name(): NewScorer(),
+    TopScorer.name(): TopScorer(),
+    BestScorer.name(): BestScorer(),
 }
 
 

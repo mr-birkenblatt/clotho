@@ -17,7 +17,7 @@ from app.response_types import (
 )
 from app.token import RedisTokenHandler
 from misc.env import envload_int, envload_str
-from misc.util import to_list
+from misc.util import now_ts, to_list
 from system.links.link import LinkResponse, parse_vote_type, VT_UP
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
@@ -73,9 +73,6 @@ def setup(
     print(f"python version: {sys.version}")
 
     server.set_default_token_expiration(48 * 60 * 60)  # 2 days
-
-    def now_ts() -> pd.Timestamp:
-        return pd.Timestamp("now", tz="UTC")
 
     message_store = get_default_message_store()
     link_store = get_default_link_store()

@@ -10,6 +10,10 @@ from system.users.user import User
 
 
 class LinkStore:
+    @staticmethod
+    def valid_scorers() -> List[Scorer]:
+        raise NotImplementedError()
+
     def get_link(self, parent: MHash, child: MHash) -> Link:
         raise NotImplementedError()
 
@@ -40,7 +44,7 @@ class LinkStore:
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
-            limit: int) -> List[Link]:
+            limit: int) -> Iterable[Link]:
         return self.limit_results(
             self.get_all_children(parent), scorer, now, offset, limit)
 
@@ -51,7 +55,7 @@ class LinkStore:
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
-            limit: int) -> List[Link]:
+            limit: int) -> Iterable[Link]:
         return self.limit_results(
             self.get_all_parents(child), scorer, now, offset, limit)
 
@@ -62,7 +66,7 @@ class LinkStore:
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
-            limit: int) -> List[Link]:
+            limit: int) -> Iterable[Link]:
         return self.limit_results(
             self.get_all_user_links(user), scorer, now, offset, limit)
 

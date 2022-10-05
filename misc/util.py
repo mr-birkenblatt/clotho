@@ -173,3 +173,7 @@ def from_timestamp(timestamp: float) -> pd.Timestamp:
 
 def to_timestamp(time: pd.Timestamp) -> float:
     return (time - UNIX_EPOCH) / pd.Timedelta("1s")
+
+
+def now_ts() -> pd.Timestamp:
+    return pd.Timestamp("now", tz="UTC")
