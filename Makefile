@@ -24,7 +24,7 @@ export LC_ALL=C
 export LANG=C
 
 lint-comment:
-	! find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	! ./findpy.sh \
 	| xargs grep --color=always -nE \
 	  '#.*(todo|xxx|fixme|n[oO][tT][eE]:|Note:|nopep8\s*$$)|.\"^s%'
 
@@ -35,11 +35,11 @@ lint-pyi:
 	./pyi.sh
 
 lint-stringformat:
-	! find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	! ./findpy.sh \
 	| xargs grep --color=always -nE "%[^'\"]*\"\\s*%\\s*"
 
 lint-indent:
-	! find . \( -name '*.py' -or -name '*.pyi' \) -and -not -path './venv/*' \
+	! ./findpy.sh \
 	| xargs grep --color=always -nE "^(\s{4})*\s{1,3}\S.*$$"
 
 lint-forgottenformat:
@@ -51,22 +51,17 @@ lint-requirements:
 	sort -ufc requirements.txt
 
 lint-pycodestyle:
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort | xargs pycodestyle --exclude=venv --show-source
+	./findpy.sh | sort
+	./findpy.sh | sort | xargs pycodestyle --exclude=venv --show-source
 
 lint-pycodestyle-debug:
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	./findpy.sh | sort
+	./findpy.sh \
 	| sort | xargs pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source
 
 lint-pylint:
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort | xargs pylint -j 6
+	./findpy.sh | sort
+	./findpy.sh | sort | xargs pylint -j 6
 
 lint-type-check:
 	mypy . --config-file mypy.ini

@@ -40,7 +40,7 @@ while True:
         stdout.flush()
 EOF
 
-find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+./findpy.sh \
     | xargs grep -nE "['\"]" \
     | ${PYTHON} -c "${PY_FILTER}" \
     | grep -E "${REGEX}" \
