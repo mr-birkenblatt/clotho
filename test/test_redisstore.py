@@ -175,8 +175,7 @@ def test_scenario() -> None:
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[1].to_parseable()
     assert resp["user"] == users[0].get_id()
-    # FIXME "first" is not guaranteed to be set for some reasom
-    # assert int(resp["first"]) == int(first_s)
+    assert int(resp["first"]) == int(first_s)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
     assert int(rvotes[VT_UP]) == 3
@@ -186,7 +185,7 @@ def test_scenario() -> None:
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[3].to_parseable()
     assert resp["user"] == users[0].get_id()
-    # assert int(resp["first"]) == int(first_s + 10.0 * 2)
+    assert int(resp["first"]) == int(first_s + 10.0 * 2)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
     assert int(rvotes[VT_UP]) == 1
