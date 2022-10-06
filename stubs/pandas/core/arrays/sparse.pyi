@@ -14,6 +14,7 @@ from pandas.core.arrays import ExtensionArray, ExtensionOpsMixin
 from pandas.core.base import PandasObject
 from pandas.core.dtypes.base import ExtensionDtype
 
+
 class SparseDtype(ExtensionDtype):
     def __init__(self, dtype: Dtype = ..., fill_value: Any = ...) -> None:
         ...

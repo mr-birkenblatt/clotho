@@ -1,10 +1,11 @@
 import hashlib
 import json
 import string
-from typing import Any, IO, List, Optional, Tuple, TypeVar, Union
+from typing import Any, IO, Iterable, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
+
 
 CT = TypeVar('CT')
 RT = TypeVar('RT')
@@ -14,6 +15,12 @@ DT = TypeVar('DT', bound=Union[pd.DataFrame, pd.Series])
 
 def get_text_hash(text: str) -> str:
     blake = hashlib.blake2b(digest_size=32)
+    blake.update(text.encode("utf-8"))
+    return blake.hexdigest()
+
+
+def get_short_hash(text: str) -> str:
+    blake = hashlib.blake2b(digest_size=4)
     blake.update(text.encode("utf-8"))
     return blake.hexdigest()
 
@@ -145,12 +152,28 @@ def json_read(data: bytes) -> Any:
         raise e
 
 
-UNIX_EPOCH = pd.Timestamp("1970-01-01")
+def read_jsonl(fin: IO[str]) -> Iterable[Any]:
+    for line in fin:
+        line = line.rstrip()
+        if not line:
+            continue
+        try:
+            yield json.loads(line)
+        except json.JSONDecodeError as e:
+            report_json_error(e)
+            raise e
+
+
+UNIX_EPOCH = pd.Timestamp("1970-01-01", tz="UTC")
 
 
 def from_timestamp(timestamp: float) -> pd.Timestamp:
-    return pd.to_datetime(timestamp, unit="s")
+    return pd.to_datetime(timestamp, unit="s", utc=True)
 
 
 def to_timestamp(time: pd.Timestamp) -> float:
     return (time - UNIX_EPOCH) / pd.Timedelta("1s")
+
+
+def now_ts() -> pd.Timestamp:
+    return pd.Timestamp("now", tz="UTC")

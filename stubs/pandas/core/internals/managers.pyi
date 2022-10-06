@@ -31,6 +31,7 @@ from .concat import (
     is_uniform_join_units,
 )
 
+
 class BlockManager(PandasObject):
     axes: Any = ...
     blocks: Any = ...

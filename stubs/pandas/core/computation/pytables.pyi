@@ -13,6 +13,7 @@ import pandas.core.computation.expr as expr
 import pandas.core.computation.ops as ops
 from pandas.core.computation.expr import BaseExprVisitor
 
+
 class Scope(expr.Scope):
     queryables: Any = ...
 

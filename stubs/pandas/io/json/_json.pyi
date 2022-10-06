@@ -5,11 +5,10 @@
 # pylint: disable=relative-beyond-top-level,arguments-differ
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
-
-
 from typing import Any, Optional
 
 from pandas.io.common import BaseIterator
+
 
 loads: Any
 dumps: Any

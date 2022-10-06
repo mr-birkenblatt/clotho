@@ -10,6 +10,7 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 
 from pandas.core import base, generic
 
+
 if TYPE_CHECKING:
     import pandas as pd
 

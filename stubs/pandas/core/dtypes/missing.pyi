@@ -39,6 +39,7 @@ from .generic import ABCSeries as ABCSeries
 from .generic import ABCTimedeltaArray as ABCTimedeltaArray
 from .inference import is_list_like
 
+
 isposinf_scalar: Any
 isneginf_scalar: Any
 

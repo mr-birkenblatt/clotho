@@ -5,6 +5,7 @@
 
 from typing import Any
 
+
 class CheckedCall:
     def __init__(self, f: Any) -> None:
         ...

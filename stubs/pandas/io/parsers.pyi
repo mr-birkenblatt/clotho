@@ -12,6 +12,7 @@ from typing import Any, Optional
 from pandas._typing import FilePathOrBuffer
 from pandas.io.common import BaseIterator
 
+
 read_csv: Any
 read_table: Any
 

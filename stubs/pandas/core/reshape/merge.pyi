@@ -5,6 +5,7 @@
 # pylint: disable=too-few-public-methods
 from typing import Any, Optional
 
+
 def merge(
         left: Any, right: Any, how: str = ..., on: Optional[Any] = ...,
         left_on: Optional[Any] = ..., right_on: Optional[Any] = ...,

@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from pandas.core.base import PandasObject
 
+
 def hist_series(
         self: Any, by: Optional[Any] = ..., ax: Optional[Any] = ...,
         grid: bool = ..., xlabelsize: Optional[Any] = ...,

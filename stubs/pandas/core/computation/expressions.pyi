@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 def set_use_numexpr(v: bool = ...) -> None:
     ...
 

@@ -14,6 +14,7 @@ from pandas._libs.tslibs import NaTType
 
 from .base import ExtensionArray, ExtensionOpsMixin
 
+
 class AttributesMixin:
     ...
 

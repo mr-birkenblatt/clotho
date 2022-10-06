@@ -10,6 +10,7 @@ from typing import Any, Callable, FrozenSet, Iterator, Optional, Type, Union
 from pandas._typing import FrameOrSeries
 from pandas.core.groupby.groupby import GroupBy
 
+
 NamedAgg = namedtuple('NamedAgg', ['column', 'aggfunc'])
 AggScalar = Union[str, Callable[..., Any]]
 ScalarResult: Any

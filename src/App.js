@@ -38,38 +38,18 @@ const MainColumn = styled.div`
   flex-direction: column;
   flex-grow: 0;
   overflow: hidden;
-`
+`;
 
 
 export default class App extends PureComponent {
   constructor(props) {
     super(props);
     this.state = {};
-    this.parentLines = new ContentLoader(5, (name, offset, limit, cb) => {
-      // console.log(`loading parent ${name} ${offset} ${limit}`);
-      setTimeout(() => {
-        const res = {};
-        [...Array(limit).keys()].forEach(ix => {
-          res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
-        });
-        cb(res);
-      }, 500);
-    });
-    this.childLines = new ContentLoader(5, (name, offset, limit, cb) => {
-      // console.log(`loading child ${name} ${offset} ${limit}`);
-      setTimeout(() => {
-        const res = {};
-        [...Array(limit).keys()].forEach(ix => {
-          res[ix + offset] = `**name**: ${name} _ix_: ${ix + offset}`;
-        });
-        cb(res);
-      }, 1000);
-    });
+    this.loader = new ContentLoader();
   }
 
   getItem = (isParent, name, index, contentCb, readyCb) => {
-    return (isParent ? this.parentLines : this.childLines).get(
-      name, index, contentCb, readyCb);
+    return this.loader.getItem(isParent, name, index, contentCb, readyCb);
   }
 
   getVItem = (isParent, lineName, height) => {
@@ -86,25 +66,26 @@ export default class App extends PureComponent {
     );
   }
 
-  getChildLine = (lineName) => {
-    // console.log(`${lineName} => L${+lineName.slice(1) + 1}`);
-    return `L${+lineName.slice(1) + 1}`;
+  getChildLine = (lineName, cb) => {
+    this.loader.getChild(lineName, cb);
   }
 
-  getParentLine = (lineName) => {
-    // console.log(`${lineName} => L${+lineName.slice(1) - 1}`);
-    return `L${+lineName.slice(1) - 1}`;
+  getParentLine = (lineName, cb) => {
+    this.loader.getParent(lineName, cb);
   }
 
   getLinkItems = (parentLineName, childLineName, parentIndex, childIndex) => {
-    return [
-      [parentLineName, parentIndex],
-      [childLineName, childIndex],
-    ];
+    return this.loader.getLinkInfo(
+      parentLineName,
+      childLineName,
+      parentIndex,
+      childIndex);
   }
 
-  renderLinkItem = (val) => {
-    return (<span>[L({val[0]}) H({val[1]})]</span>);
+  renderLinkItem = (link) => {
+    return (
+      <span>{link.key}: {link.count}</span>
+    );
   }
 
   render() {

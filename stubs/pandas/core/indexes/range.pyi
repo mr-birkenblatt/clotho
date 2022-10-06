@@ -13,6 +13,7 @@ from typing import Any, Optional, Union
 import numpy as np
 from pandas.core.indexes.numeric import Int64Index
 
+
 class RangeIndex(Int64Index):
     def __new__(
             cls, start: Optional[Any] = ..., stop: Optional[Any] = ...,

@@ -20,13 +20,31 @@ from typing import (
 )
 
 from redis import StrictRedis
-from redis.client import Script  # pylint: disable=no-name-in-module
+from redis.client import Script
 from redis.exceptions import ResponseError
 from redis_lock import Lock
 
 from misc.env import envload_int, envload_str
 from misc.io import open_read
 from misc.util import json_compact, json_read
+
+
+REDIS_SALT_LOCK = threading.RLock()
+REDIS_SALT: Dict[str, str] = {}
+
+
+def get_salt() -> Optional[str]:
+    test_id = os.getenv("PYTEST_CURRENT_TEST")
+    if test_id is None:
+        return None
+    res = REDIS_SALT.get(test_id)
+    if res is None:
+        with REDIS_SALT_LOCK:
+            res = REDIS_SALT.get(test_id)
+            if res is None:
+                res = uuid.uuid4().hex
+                REDIS_SALT[test_id] = res
+    return res
 
 
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods
@@ -51,6 +69,7 @@ RedisModule = Literal[
     "link",
     "locks",
     "token",
+    "test",
 ]
 LOCK_MODULE: RedisModule = "locks"
 
@@ -62,7 +81,7 @@ REDIS_SERVICE_CONN: Dict[RedisModule, Optional[StrictRedis]] = {}
 DO_CACHE = True
 LOCK = threading.RLock()
 LOCKS: Dict[str, Optional[Tuple[threading.RLock, Lock]]] = {}
-LOCK_ID: str = str(uuid.uuid4())
+LOCK_ID: str = uuid.uuid4().hex
 
 
 class RedisWrapper:
@@ -165,7 +184,9 @@ class RedisWrapper:
 class RedisConnection:
     def __init__(self, module: RedisModule) -> None:
         self._conn = RedisWrapper(module)
-        self._module = module
+        salt = get_salt()
+        salt_str = "" if salt is None else f":{salt}"
+        self._module = f"{module}{salt_str}"
 
     def get_connection(self) -> ContextManager[StrictRedis]:
         return self._conn.get_connection()
@@ -406,7 +427,7 @@ class ObjectRedis(RedisConnection):
         """
         path = self.compute_name(name, key)
         with self.get_connection() as conn:
-            res = int(conn.setnx(path, value))
+            res = int(conn.setnx(path, json_compact(value)))
         return res != 0
 
     def obj_put_expire(

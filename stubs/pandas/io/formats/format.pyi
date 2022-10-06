@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 common_docstring: str
 return_docstring: str
 

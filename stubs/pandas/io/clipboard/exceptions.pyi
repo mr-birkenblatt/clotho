@@ -8,6 +8,7 @@
 
 from typing import Any
 
+
 class PyperclipException(RuntimeError):
     ...
 

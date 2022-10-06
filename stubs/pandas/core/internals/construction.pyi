@@ -10,6 +10,7 @@
 
 from typing import Any, Optional
 
+
 def arrays_to_mgr(
         arrays: Any, arr_names: Any, index: Any, columns: Any,
         dtype: Optional[Any] = ...) -> Any:

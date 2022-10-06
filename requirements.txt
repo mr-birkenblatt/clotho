@@ -10,4 +10,4 @@ pytest-cov==3.0.0
 pytest==6.2.1
 python-redis-lock==3.7.0
 quick-server==0.7.15
-redis==4.3.4
+redis==3.5.3

@@ -9,6 +9,7 @@ from typing import Any, List, Optional, Type, Union
 from pandas import DataFrame, Series
 from pandas.core.computation.pytables import Expr
 
+
 Term = Expr
 
 

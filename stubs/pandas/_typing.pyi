@@ -24,6 +24,7 @@ from pandas.core.dtypes.generic import (
     ABCSparseSeries,
 )
 
+
 AnyArrayLike = TypeVar(
     'AnyArrayLike',
     ABCExtensionArray,

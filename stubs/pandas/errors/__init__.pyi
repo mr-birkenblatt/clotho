@@ -5,6 +5,7 @@
 
 from typing import Any
 
+
 class PerformanceWarning(Warning):
     ...
 
@@ -43,7 +44,6 @@ class NullFrequencyError(ValueError):
 
 class AccessorRegistrationWarning(Warning):
     ...
-
 
 
 class AbstractMethodError(NotImplementedError):

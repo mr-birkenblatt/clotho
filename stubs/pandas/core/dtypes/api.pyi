@@ -49,6 +49,7 @@ from pandas.core.dtypes.common import (
     pandas_dtype,
 )
 
+
 __all__ = [
     "is_array_like",
     "is_bool",

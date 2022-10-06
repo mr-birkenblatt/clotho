@@ -24,6 +24,7 @@ from pandas.core.indexes.period import PeriodIndex as PeriodIndex
 from pandas.core.indexes.range import RangeIndex as RangeIndex
 from pandas.core.indexes.timedeltas import TimedeltaIndex as TimedeltaIndex
 
+
 __all__ = [
     "Index",
     "MultiIndex",

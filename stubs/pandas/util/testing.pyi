@@ -13,6 +13,7 @@ from typing import Any, Optional, Union
 import pandas as pd
 from pandas import Categorical, DataFrame, Index, Series
 
+
 N: int
 K: int
 

@@ -4,6 +4,7 @@
 # pylint: disable=too-few-public-methods
 from typing import Any
 
+
 BaseOffset: Any
 
 

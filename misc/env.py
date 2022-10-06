@@ -1,9 +1,11 @@
 import os
 from typing import Literal, Optional
 
+
 EnvPath = Literal[
     "MSG_PATH",
     "MSG_TOPICS",
+    "USER_PATH",
 ]
 EnvStr = Literal[
     "HOST",
@@ -11,6 +13,7 @@ EnvStr = Literal[
     "MSG_STORE",
     "REDIS_HOST",
     "REDIS_PASS",
+    "USER_STORE",
 ]
 EnvInt = Literal[
     "PORT",

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
+
+PYTHON="${PYTHON:-python3}"
 
 ANY_DOUBLE="([^\\\\\"]|\\\\\")*"
 ANY_SINGLE="([^\\\\']|\\\\')*"
@@ -38,8 +40,8 @@ while True:
         stdout.flush()
 EOF
 
-find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+./findpy.sh \
     | xargs grep -nE "['\"]" \
-    | python3 -c "${PY_FILTER}" \
+    | ${PYTHON} -c "${PY_FILTER}" \
     | grep -E "${REGEX}" \
     | grep --color=always -nE "${MAIN_MATCH}"

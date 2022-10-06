@@ -4,21 +4,20 @@ name: Python Checks
 
 on:
   pull_request:
-    branches:
-      - staging
+    types: [opened, synchronize, reopened]
   push:
     branches:
-      - '*'
+      - main
     tags:
       - 'v*'
 
 jobs:
-  ci_pipeline:
-    name: main
+  lints_pipeline:
+    name: Lints CI Pipeline
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8']
+        python: ['3.8', '3.9']
     env:
       ENV: CI
 
@@ -30,20 +29,15 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
 
-    - name: Cache python modules 3.8
+    - name: Cache python modules
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
         make install PYTHON=python
-
-    - name: Git Check (tests may not alter any git visible files)
-      run: |
-        git status -sb --porcelain
-        [ -z "$(git status --porcelain)" ]
 
     - name: Lint Code (use uppercase TODO, XXX, FIXME, NOTE and explain nopep8)
       run: |
@@ -71,7 +65,7 @@ jobs:
 
     - name: Lint Code (no f"a", "{a}", or f'{a}')
       run: |
-        make lint-forgottenformat
+        make lint-forgottenformat PYTHON=python
 
     - name: Only pyi in stubs
       run: |
@@ -92,3 +86,125 @@ jobs:
     - name: Lint Code (pylint)
       run: |
         make lint-pylint
+
+  tests_pipeline:
+    name: Tests CI Pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.8']
+        ci_node_total: [3]
+        ci_node_index: [0, 1, 2]
+    env:
+      ENV: CI
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Start Redis
+      uses: supercharge/redis-github-action@1.4.0
+      with:
+        redis-version: 6
+
+    - name: Restore test-result Cache
+      uses: actions/cache@v3
+      with:
+        path: test-results/*
+        key:  v1-test-results-${{ matrix.python }}-${{ hashFiles('test/test*.py')}}-${{ hashFiles('test/data*') }}
+        restore-keys: |
+          test-results-${{ matrix.python }}-
+
+    - name: Cache python modules
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        make install PYTHON=python
+
+    - name: Run test on Node ${{ matrix.ci_node_index }}
+      run: |
+        set -ex
+        OUT=$(python -m test split_tests --filepath test-results/results.xml --total-nodes ${{ matrix.ci_node_total }} --node-id ${{ matrix.ci_node_index }})
+        IFS=',' read -a FILE_INFO <<< "$OUT"
+        FILES=("${FILE_INFO[@]:1}")
+        echo "Selected Files are: " ${FILES[@]}
+        echo "Previous timings are: ${FILE_INFO[0]}"
+        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE=${FILES[@]}
+
+    - name: Upload Artifact(results)
+      uses: actions/upload-artifact@v3
+      with:
+        name: results-${{ matrix.python }}-${{ matrix.ci_node_index }}
+        path: test-results/results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml
+
+    - name: Upload Artifact(coverage reports)
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-${{ matrix.python }}-${{ matrix.ci_node_index }}
+        path: .coverage
+
+    - name: Git Check (tests may not alter any git visible files)
+      run: |
+        git status -sb --porcelain
+        [ -z "$(git status --porcelain)" ]
+
+  coverage_pipeline:
+    needs: tests_pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.8']
+    env:
+      ENV: CI
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Cache python modules
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        make install PYTHON=python
+        mkdir -p test-results/parts
+
+    - name: Download all results
+      # Downloads results-*.xml,
+      uses: actions/download-artifact@v2
+
+    - name: Merge results
+      run: |
+        mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
+        python -m test merge_results --dir test-results --out-fname results.xml
+
+    - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step would save our cache.
+      uses: actions/cache@v3
+      with:
+        path: test-results/*
+        key:  v1-test-results-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
+
+    - name: Download all coverage reports
+      uses: actions/download-artifact@v2
+
+    - name: Merge coverage reports
+      run: |
+        coverage combine coverage*/.coverage
+        coverage xml -o coverage/reports/xml_report.xml
+        coverage html -d coverage/reports/html_report
+        coverage report

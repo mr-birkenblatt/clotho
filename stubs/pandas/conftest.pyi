@@ -7,6 +7,7 @@
 # pylint: disable=super-init-not-called,abstract-method
 from typing import Any
 
+
 def pytest_addoption(parser: Any) -> None:
     ...
 

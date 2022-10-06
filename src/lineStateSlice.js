@@ -27,7 +27,10 @@ export const lineStateSlice = createSlice({
     currentLineIxs: {},
     currentLineFocus: {},
     locks: {},
-    vOrder: ["L0", "L1"],
+    vOrder: [
+      "!0",
+      "9709aa3742acc01b0247eac2968ae4e4605ef0814c541c1df418309b76fce89d",
+    ],
     vCurrentIx: 1,
     vCorrection: 0,
     vOffset: 0,

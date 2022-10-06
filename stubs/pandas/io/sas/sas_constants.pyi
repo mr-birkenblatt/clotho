@@ -7,8 +7,8 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,signature-differs
 # pylint: disable=blacklisted-name,c-extension-no-member,import-error
-
 from typing import Any
+
 
 magic: Any
 align_1_checker_value: bytes
@@ -104,6 +104,7 @@ rdc_compression: bytes
 compression_literals: Any
 encoding_names: Any
 
+
 class SASIndex:
     row_size_index: int = ...
     column_size_index: int = ...
@@ -114,6 +115,7 @@ class SASIndex:
     format_and_label_index: int = ...
     column_list_index: int = ...
     data_subheader_index: int = ...
+
 
 subheader_signature_to_index: Any
 sas_date_formats: Any

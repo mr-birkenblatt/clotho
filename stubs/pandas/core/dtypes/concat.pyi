@@ -9,6 +9,7 @@
 
 from typing import Any
 
+
 def get_dtype_kinds(v: Any) -> Any:
     ...
 

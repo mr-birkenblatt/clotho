@@ -9,6 +9,7 @@
 # pylint: disable=blacklisted-name,c-extension-no-member
 from typing import Any, Optional
 
+
 jinja2: Any
 has_mpl: bool
 no_mpl_message: str

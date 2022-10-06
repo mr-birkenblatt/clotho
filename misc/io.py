@@ -18,6 +18,7 @@ from typing import (
     overload,
 )
 
+
 MAIN_LOCK = threading.RLock()
 STALE_FILE_RETRIES: List[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]
 TMP_POSTFIX = ".tmp~"
@@ -110,22 +111,22 @@ def get_tmp(basefile: str) -> str:
 
 
 @overload
-def open_read(filename: str, text: Literal[True]) -> IO[str]:
+def open_read(filename: str, *, text: Literal[True]) -> IO[str]:
     ...
 
 
 @overload
-def open_read(filename: str, text: Literal[False]) -> IO[bytes]:
+def open_read(filename: str, *, text: Literal[False]) -> IO[bytes]:
     ...
 
 
 # FIXME: make downstream users with use fixed text literals
 @overload
-def open_read(filename: str, text: bool) -> IO[Any]:
+def open_read(filename: str, *, text: bool) -> IO[Any]:
     ...
 
 
-def open_read(filename: str, text: bool) -> IO[Any]:
+def open_read(filename: str, *, text: bool) -> IO[Any]:
     # FIXME: for now we are lock-free
 
     def actual_read() -> IO[Any]:
@@ -160,6 +161,7 @@ def open_read(filename: str, text: bool) -> IO[Any]:
 @overload
 def open_append(
         filename: str,
+        *,
         text: Literal[True],
         **kwargs: Any) -> IO[str]:
     ...
@@ -168,6 +170,7 @@ def open_append(
 @overload
 def open_append(
         filename: str,
+        *,
         text: Literal[False],
         **kwargs: Any) -> IO[bytes]:
     ...
@@ -177,6 +180,7 @@ def open_append(
 @overload
 def open_append(
         filename: str,
+        *,
         text: bool,
         **kwargs: Any) -> IO[Any]:
     ...
@@ -184,6 +188,7 @@ def open_append(
 
 def open_append(
         filename: str,
+        *,
         text: bool,
         **kwargs: Any) -> IO[Any]:
     # FIXME: for now we are lock-free
@@ -195,7 +200,7 @@ def open_append(
 
 
 @contextmanager
-def open_write(filename: str, text: bool) -> Iterator[IO[Any]]:
+def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
     filename = normalize_file(filename)
 
     mode = get_mode("w", text)

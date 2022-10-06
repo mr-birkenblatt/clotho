@@ -10,6 +10,7 @@
 
 from typing import Any
 
+
 def radd(left: Any, right: Any) -> Any:
     ...
 

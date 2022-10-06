@@ -5,6 +5,7 @@
 
 from typing import Any
 
+
 is_bool: Any
 is_integer: Any
 is_float: Any

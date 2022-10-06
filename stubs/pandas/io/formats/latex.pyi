@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from pandas.io.formats.format import TableFormatter
 
+
 class LatexFormatter(TableFormatter):
     fmt: Any = ...
     frame: Any = ...

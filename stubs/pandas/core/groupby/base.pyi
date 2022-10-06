@@ -10,6 +10,7 @@
 
 from typing import Any
 
+
 class GroupByMixin:
     ...
 

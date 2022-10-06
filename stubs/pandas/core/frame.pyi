@@ -22,6 +22,7 @@ from typing import (
 import numpy as np
 from pandas.core.generic import NDFrame
 
+
 if TYPE_CHECKING:
     import pandas as pd
 

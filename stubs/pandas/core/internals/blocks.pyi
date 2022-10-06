@@ -13,6 +13,7 @@ from typing import Any, Optional
 import pandas._libs.internals as libinternals
 from pandas.core.base import PandasObject
 
+
 class Block(PandasObject):
     is_numeric: bool = ...
     is_float: bool = ...

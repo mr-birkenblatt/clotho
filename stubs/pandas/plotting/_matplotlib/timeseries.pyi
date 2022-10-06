@@ -7,11 +7,16 @@
 
 from typing import Any, Optional
 
-def tsplot(series: Any, plotf: Any, ax: Optional[Any] = ..., **kwargs: Any) -> Any:
+
+def tsplot(
+        series: Any, plotf: Any,
+        ax: Optional[Any] = ..., **kwargs: Any) -> Any:
     ...
+
 
 def format_timedelta_ticks(x: Any, pos: Any, n_decimals: Any) -> Any:
     ...
+
 
 def format_dateaxis(subplot: Any, freq: Any, index: Any) -> None:
     ...

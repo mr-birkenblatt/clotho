@@ -14,7 +14,7 @@ class SettingWithCopyWarning(Warning):
     ...
 
 
-def flatten(l: Any) -> None:
+def flatten(v: Any) -> None:
     ...
 
 
@@ -73,11 +73,11 @@ def is_null_slice(obj: Any) -> Any:
     ...
 
 
-def is_true_slices(l: Any) -> Any:
+def is_true_slices(v: Any) -> Any:
     ...
 
 
-def is_full_slice(obj: Any, l: Any) -> Any:
+def is_full_slice(obj: Any, v: Any) -> Any:
     ...
 
 

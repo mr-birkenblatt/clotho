@@ -35,6 +35,7 @@ from pandas.core.dtypes.inference import is_scalar as is_scalar
 from pandas.core.dtypes.inference import is_sequence as is_sequence
 from pandas.core.dtypes.inference import is_string_like as is_string_like
 
+
 ensure_float64: Any
 ensure_float32: Any
 ensure_uint64: Any

@@ -1,16 +1,20 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
 
 # testing
-# /coverage
+/test-results/
+/coverage/reports/
+/test/dump.rdb
+.coverage
 
 # production
 /build
 /.mypy_cache
+/example/creds.json
+/example/reddit*.jsonl
+/userdata/*
 
 # misc
 .DS_Store
@@ -19,6 +23,7 @@
 .env.test.local
 .env.production.local
 .vscode
+.cmd_history
 
 npm-debug.log*
 yarn-debug.log*
