@@ -9,6 +9,7 @@
 from collections import namedtuple
 from typing import Any, Optional
 
+
 DeprecatedOption = namedtuple("DeprecatedOption", "key msg rkey removal_ver")
 
 RegisteredOption = namedtuple(

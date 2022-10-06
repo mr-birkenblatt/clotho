@@ -7,6 +7,7 @@
 
 from typing import Any, Optional
 
+
 def mask_missing(arr: Any, values_to_mask: Any) -> Any:
     ...
 

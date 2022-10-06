@@ -13,6 +13,7 @@ from typing import Any, Optional
 
 from pandas.plotting._matplotlib.core import LinePlot
 
+
 class BoxPlot(LinePlot):
     BP = namedtuple('BP', ['ax', 'lines'])
     return_type: Any = ...

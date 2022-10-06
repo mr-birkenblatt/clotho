@@ -7,6 +7,7 @@
 
 from typing import Any, Optional
 
+
 def table(
         ax: Any, data: Any, rowLabels: Optional[Any] = ...,
         colLabels: Optional[Any] = ..., **kwargs: Any) -> Any:

@@ -9,6 +9,7 @@ from pandas.core.groupby.base import GroupByMixin
 from pandas.core.groupby.groupby import _GroupBy
 from pandas.core.groupby.grouper import Grouper
 
+
 class Resampler(_GroupBy):
     groupby: Any = ...
     keys: Any = ...

@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 class _Unstacker:
     values: Any = ...
     value_columns: Any = ...

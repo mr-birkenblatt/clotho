@@ -12,6 +12,7 @@ from typing import Any, Optional, TYPE_CHECKING
 
 from pandas.core.base import IndexOpsMixin, PandasObject
 
+
 if TYPE_CHECKING:
     import pandas as pd
 

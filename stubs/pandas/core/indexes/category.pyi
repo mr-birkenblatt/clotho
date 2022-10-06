@@ -13,6 +13,7 @@ from pandas._typing import AnyArrayLike
 from pandas.core import accessor
 from pandas.core.indexes.base import Index
 
+
 class CategoricalIndex(Index, accessor.PandasDelegate):
     def __new__(
             cls, data: Optional[Any] = ...,

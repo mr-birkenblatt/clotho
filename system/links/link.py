@@ -4,21 +4,25 @@ import numpy as np
 import pandas as pd
 
 from misc.util import to_timestamp
-from system.links.user import User
 from system.msgs.message import MHash
+from system.users.store import UserStore
+from system.users.user import User
+
 
 # view == it showed up
 # up == active click on up
 # down == active click on down
 # ack == following the chain
 # skip == moving to next link on same level
-VoteType = Literal["view", "up", "down", "ack", "skip"]
+# honor == honors
+VoteType = Literal["view", "up", "down", "ack", "skip", "honor"]
 VOTE_TYPES: Set[VoteType] = set(get_args(VoteType))
 VT_VIEW: VoteType = "view"
 VT_UP: VoteType = "up"
 VT_DOWN: VoteType = "down"
 VT_ACK: VoteType = "ack"
 VT_SKIP: VoteType = "skip"
+VT_HONOR: VoteType = "honor"
 
 LinkResponse = TypedDict('LinkResponse', {
     "parent": str,
@@ -84,7 +88,7 @@ class Link:
     def get_child(self) -> MHash:
         raise NotImplementedError()
 
-    def get_user(self) -> Optional[User]:
+    def get_user(self, user_store: UserStore) -> Optional[User]:
         raise NotImplementedError()
 
     def get_votes(self, vote_type: VoteType) -> Votes:
@@ -92,16 +96,18 @@ class Link:
 
     def add_vote(
             self,
+            user_store: UserStore,
             vote_type: VoteType,
             who: User,
             now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
-    def get_response(self, now: pd.Timestamp) -> LinkResponse:
-        user = self.get_user()
-        user_str = None if user is None else user.get_name()
+    def get_response(
+            self, user_store: UserStore, now: pd.Timestamp) -> LinkResponse:
+        user = self.get_user(user_store)
+        user_str = None if user is None else user.get_id()
         first = now
-        votes = {}
+        votes: Dict[VoteType, float] = {}
         for vtype in self.get_vote_types():
             cur_vote = self.get_votes(vtype)
             cur_total = cur_vote.get_total_votes()

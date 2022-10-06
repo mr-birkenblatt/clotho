@@ -7,9 +7,8 @@
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,signature-differs
 # pylint: disable=blacklisted-name,c-extension-no-member
-
-
 from typing import Any, Optional
+
 
 class _HtmlFrameParser:
     io: Any = ...

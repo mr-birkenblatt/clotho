@@ -12,6 +12,7 @@ from pandas.core.base import PandasObject, SelectionMixin
 from pandas.core.index import Index
 from pandas.core.internals import BlockManager
 
+
 if TYPE_CHECKING:
     import pandas as pd
 

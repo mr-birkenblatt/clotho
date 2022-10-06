@@ -11,6 +11,7 @@ from typing import Any, Optional
 from pandas._libs.interval import IntervalMixin
 from pandas.core.arrays.base import ExtensionArray
 
+
 class IntervalArray(IntervalMixin, ExtensionArray):
     ndim: int = ...
     can_hold_na: bool = ...

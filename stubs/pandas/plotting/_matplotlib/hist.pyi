@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from pandas.plotting._matplotlib.core import LinePlot
 
+
 class HistPlot(LinePlot):
     bins: Any = ...
     bottom: Any = ...

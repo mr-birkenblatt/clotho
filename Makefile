@@ -16,12 +16,15 @@ help:
 	@echo "pytest	run all test with pytest"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
+	@echo "run-redis	start redis server"
+	@echo "run-api	start api server"
+	@echo "run-web	start web server"
 
 export LC_ALL=C
 export LANG=C
 
 lint-comment:
-	! find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	! ./findpy.sh \
 	| xargs grep --color=always -nE \
 	  '#.*(todo|xxx|fixme|n[oO][tT][eE]:|Note:|nopep8\s*$$)|.\"^s%'
 
@@ -32,15 +35,15 @@ lint-pyi:
 	./pyi.sh
 
 lint-stringformat:
-	! find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
+	! ./findpy.sh \
 	| xargs grep --color=always -nE "%[^'\"]*\"\\s*%\\s*"
 
 lint-indent:
-	! find . \( -name '*.py' -or -name '*.pyi' \) -and -not -path './venv/*' \
+	! ./findpy.sh \
 	| xargs grep --color=always -nE "^(\s{4})*\s{1,3}\S.*$$"
 
 lint-forgottenformat:
-	! ./forgottenformat.sh
+	PYTHON=$(PYTHON) && ! ./forgottenformat.sh
 
 lint-requirements:
 	locale
@@ -48,16 +51,17 @@ lint-requirements:
 	sort -ufc requirements.txt
 
 lint-pycodestyle:
-	pycodestyle --exclude=venv --show-source .
+	./findpy.sh | sort
+	./findpy.sh | sort | xargs pycodestyle --exclude=venv --show-source
 
 lint-pycodestyle-debug:
-	pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source .
+	./findpy.sh | sort
+	./findpy.sh \
+	| sort | xargs pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source
 
 lint-pylint:
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort
-	find . \( -name '*.py' -o -name '*.pyi' \) -and -not -path './venv/*' \
-	| sort | xargs pylint -j 6
+	./findpy.sh | sort
+	./findpy.sh | sort | xargs pylint -j 6
 
 lint-type-check:
 	mypy . --config-file mypy.ini
@@ -81,13 +85,13 @@ lint-all: \
 	lint-flake8
 
 install:
-	./install.sh $(PYTHON)
+	PYTHON=$(PYTHON) && ./install.sh
 
 requirements-check:
-	./requirements_check.sh $(PYTHON) $(FILE)
+	PYTHON=$(PYTHON) && ./requirements_check.sh $(FILE)
 
 requirements-complete:
-	./requirements_complete.sh $(PYTHON) $(FILE)
+	PYTHON=$(PYTHON) && ./requirements_complete.sh $(FILE)
 
 name:
 	git describe --abbrev=10 --tags HEAD
@@ -99,5 +103,20 @@ pre-commit:
 	pre-commit install
 	isort .
 
+pytest:
+	PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
+
+run-test-redis:
+	cd test && redis-server
+
+run-redis:
+	cd userdata && redis-server
+
+run-api:
+	python3 -m app
+
+run-web:
+	yarn start
+
 coverage-report:
-	./coverage/coverage.sh
+	cd coverage/reports/html_report && open index.html

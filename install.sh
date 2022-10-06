@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-set -e
+set -ex
 
-PYTHON=${1:-python3}
+PYTHON="${PYTHON:-python3}"
 which ${PYTHON} > /dev/null
 if [ $? -ne 0 ]; then
     PYTHON=python

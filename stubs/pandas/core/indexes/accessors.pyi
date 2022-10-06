@@ -13,6 +13,7 @@ from typing import Any
 from pandas.core.accessor import PandasDelegate
 from pandas.core.base import NoNewAttributesMixin, PandasObject
 
+
 class Properties(PandasDelegate, PandasObject, NoNewAttributesMixin):
     orig: Any = ...
     name: Any = ...

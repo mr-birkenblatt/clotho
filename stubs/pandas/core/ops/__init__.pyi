@@ -32,6 +32,7 @@ from pandas.core.ops.roperator import (  # pylint: disable=import-error
     rxor,
 )
 
+
 def get_op_result_name(left: Any, right: Any) -> Any:
     ...
 

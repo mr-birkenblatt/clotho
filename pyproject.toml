@@ -5,6 +5,8 @@
     line_length = 79
     force_alphabetical_sort_within_sections = true
     skip_glob = []
+    multi_line_output = 3
+    lines_after_imports = 2
 
 [tool.pylint.BASIC]
     good-names = [

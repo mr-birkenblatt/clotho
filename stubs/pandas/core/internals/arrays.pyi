@@ -4,4 +4,5 @@
 # pylint: disable=unused-argument,multiple-statements
 from typing import Any
 
+
 def extract_array(obj: Any, extract_numpy: bool = ...) -> Any: ...

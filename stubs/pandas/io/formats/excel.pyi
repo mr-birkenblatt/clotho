@@ -4,6 +4,7 @@
 # pylint: disable=unused-argument,multiple-statements,too-few-public-methods
 from typing import Any, Optional
 
+
 class ExcelCell:
     __fields__: Any = ...
     row: Any = ...

@@ -8,6 +8,7 @@
 
 from typing import Any
 
+
 class DirNamesMixin:
     def __dir__(self) -> Any:
         ...

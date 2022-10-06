@@ -5,6 +5,7 @@
 
 from pathlib import Path
 from typing import Optional, Sequence, Union
+
 from pandas.core.api import DataFrame
 
 

@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from pandas.core.indexes.base import Index
 
+
 class NumericIndex(Index):
     def __new__(
             cls, data: Optional[Any] = ..., dtype: Optional[Any] = ...,

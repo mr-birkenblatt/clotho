@@ -4,13 +4,11 @@
 # pylint: disable=unused-import,useless-import-alias
 
 
-from pandas.core.arrays import (
-    Categorical as Categorical,
-    DatetimeArray as DatetimeArray,
-    IntegerArray as IntegerArray,
-    IntervalArray as IntervalArray,
-    PandasArray as PandasArray,
-    PeriodArray as PeriodArray,
-    SparseArray as SparseArray,
-    TimedeltaArray as TimedeltaArray,
-)
+from pandas.core.arrays import Categorical as Categorical
+from pandas.core.arrays import DatetimeArray as DatetimeArray
+from pandas.core.arrays import IntegerArray as IntegerArray
+from pandas.core.arrays import IntervalArray as IntervalArray
+from pandas.core.arrays import PandasArray as PandasArray
+from pandas.core.arrays import PeriodArray as PeriodArray
+from pandas.core.arrays import SparseArray as SparseArray
+from pandas.core.arrays import TimedeltaArray as TimedeltaArray

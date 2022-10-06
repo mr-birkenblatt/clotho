@@ -12,6 +12,7 @@ from typing import Any, Optional
 import numpy as np
 from pandas.core.base import PandasObject
 
+
 class FrozenList(PandasObject, list):
     def union(self, other: Any) -> Any:
         ...

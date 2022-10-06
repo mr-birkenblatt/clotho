@@ -10,6 +10,7 @@
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union
 
+
 def deprecate(
         name: str, alternative: Callable, version: str,
         alt_name: Optional[str] = ...,

@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 from pandas.core.base import StringMixin
 
+
 class UndefinedVariableError(NameError):
     def __init__(self, name: Any, is_local: Any) -> None:
         ...

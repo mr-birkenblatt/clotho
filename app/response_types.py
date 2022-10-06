@@ -1,10 +1,13 @@
 from typing import Dict, List, TypedDict
 
 from system.links.link import LinkResponse
+from system.users.user import Permissions
+
 
 LoginResponse = TypedDict('LoginResponse', {
     "token": str,
     "user": str,
+    "permissions": Permissions,
 })
 TopicResponse = TypedDict('TopicResponse', {
     "topic": str,

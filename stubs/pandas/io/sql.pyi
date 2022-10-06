@@ -12,6 +12,7 @@ from typing import Any, Optional
 
 from pandas.core.base import PandasObject
 
+
 class SQLAlchemyRequired(ImportError):
     ...
 

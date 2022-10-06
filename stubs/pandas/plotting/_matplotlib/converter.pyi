@@ -10,6 +10,7 @@
 
 from typing import Any, Optional
 
+
 HOURS_PER_DAY: float
 MIN_PER_HOUR: float
 SEC_PER_MIN: float

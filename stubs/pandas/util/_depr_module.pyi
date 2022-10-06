@@ -6,6 +6,7 @@
 # pylint: disable=no-member,too-few-public-methods
 from typing import Any, Optional
 
+
 class _DeprecatedModule:
     deprmod: Any = ...
     deprmodto: Any = ...

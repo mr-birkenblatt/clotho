@@ -7,6 +7,7 @@
 
 from typing import Any
 
+
 def validate_args(
         fname: Any, args: Any, max_fname_arg_count: Any,
         compat_args: Any) -> None:

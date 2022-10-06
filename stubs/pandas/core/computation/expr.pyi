@@ -6,14 +6,13 @@
 # pylint: disable=no-member,too-few-public-methods,keyword-arg-before-vararg
 # pylint: disable=super-init-not-called,abstract-method,redefined-builtin
 # pylint: disable=unused-import,useless-import-alias,no-name-in-module
-
-
 import ast
 from typing import Any, Optional, Type
 
 from pandas.core.base import StringMixin
 from pandas.core.computation.ops import Term
 from pandas.core.computation.scope import Scope as Scope
+
 
 def tokenize_string(source: Any) -> Any:
     ...

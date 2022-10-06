@@ -9,6 +9,7 @@ from typing import Any, Optional
 
 from pandas.core.arrays import datetimelike as dtl
 
+
 class TimedeltaArray(dtl.DatetimeLikeArrayMixin, dtl.TimelikeOps):
     __array_priority__: int = ...
     ndim: int = ...

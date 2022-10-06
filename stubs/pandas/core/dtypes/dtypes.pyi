@@ -12,6 +12,7 @@ from pandas._libs.tslibs import Period, Timestamp
 from pandas.core.dtypes.base import ExtensionDtype as ExtensionDtype
 from pandas.core.dtypes.inference import is_list_like
 
+
 str_type = str
 ordered_sentinel: object
 OrderedType = Union[None, bool, object]

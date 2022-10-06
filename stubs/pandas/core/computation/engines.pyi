@@ -6,6 +6,7 @@
 import abc
 from typing import Any
 
+
 class NumExprClobberingError(NameError):
     ...
 

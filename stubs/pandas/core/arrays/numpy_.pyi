@@ -12,6 +12,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from pandas.core.arrays.base import ExtensionArray, ExtensionOpsMixin
 from pandas.core.dtypes.dtypes import ExtensionDtype
 
+
 class PandasDtype(ExtensionDtype):
     def __init__(self, dtype: Any) -> None:
         ...

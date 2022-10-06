@@ -5,6 +5,7 @@
 
 from typing import Any, Optional
 
+
 def set_locale(new_locale: Any, lc_var: Any = ...) -> None:
     ...
 

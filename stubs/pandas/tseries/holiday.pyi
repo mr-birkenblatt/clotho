@@ -5,6 +5,7 @@
 
 from typing import Any, List, Optional
 
+
 def next_monday(dt: Any) -> Any:
     ...
 

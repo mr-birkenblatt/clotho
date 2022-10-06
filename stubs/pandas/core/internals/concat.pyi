@@ -8,6 +8,7 @@
 
 from typing import Any, Optional
 
+
 def get_mgr_concatenation_plan(mgr: Any, indexers: Any) -> Any:
     ...
 
