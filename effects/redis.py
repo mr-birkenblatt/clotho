@@ -139,9 +139,10 @@ class ValueDependentRedisType(
             module: RedisModule,
             key_fn: Callable[[KT], str],
             parents: LT,
-            effect: Callable[[EffectDependent[KT, VT, PT], LT, PT], None],
+            effect: Callable[[EffectDependent[KT, VT, PT], LT, PT, KT], None],
+            conversion: Callable[[PT], KT],
             delay: float) -> None:
-        super().__init__(parents, effect, delay)
+        super().__init__(parents, effect, conversion, delay)
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
 
@@ -183,9 +184,10 @@ class ListDependentRedisType(
             key_fn: Callable[[KT], str],
             parents: LT,
             effect: Callable[
-                [EffectDependent[KT, List[str], PT], LT, PT], None],
+                [EffectDependent[KT, List[str], PT], LT, PT, KT], None],
+            conversion: Callable[[PT], KT],
             delay: float) -> None:
-        super().__init__(parents, effect, delay)
+        super().__init__(parents, effect, conversion, delay)
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
 

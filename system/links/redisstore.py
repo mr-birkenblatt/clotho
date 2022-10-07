@@ -204,12 +204,12 @@ class RedisLinkStore(LinkStore):
         def compute_call(
                 obj: EffectDependent[PLink, List[str], RLink],
                 parents: Tuple[ValueRootRedisType[RLink, float]],
-                key: RLink) -> None:
+                _: RLink,
+                key: PLink) -> None:
             last, = parents
-            pkey = PLink(vote_type=key.vote_type, parent=key.parent)
             obj.set_value(
-                pkey,
-                list(last.get_range_keys(key_children("vlast", pkey))))
+                key,
+                list(last.get_range_keys(key_children("vlast", key))))
 
         self.r_call: ListDependentRedisType[PLink, RLink] = \
             ListDependentRedisType(
@@ -217,6 +217,8 @@ class RedisLinkStore(LinkStore):
                 key_parent_constructor("vcall"),
                 (self.r_last,),
                 compute_call,
+                lambda pkey: PLink(
+                    vote_type=pkey.vote_type, parent=pkey.parent),
                 2.0 * dmul)
 
         # all parents for a given child
@@ -224,12 +226,12 @@ class RedisLinkStore(LinkStore):
         def compute_pall(
                 obj: EffectDependent[CLink, List[str], RLink],
                 parents: Tuple[ValueRootRedisType[RLink, float]],
-                key: RLink) -> None:
+                _: RLink,
+                key: CLink) -> None:
             last, = parents
-            ckey = CLink(vote_type=key.vote_type, child=key.child)
             obj.set_value(
-                ckey,
-                list(last.get_range_keys(*key_parents("vlast", ckey))))
+                key,
+                list(last.get_range_keys(*key_parents("vlast", key))))
 
         self.r_pall: ListDependentRedisType[CLink, RLink] = \
             ListDependentRedisType(
@@ -237,6 +239,7 @@ class RedisLinkStore(LinkStore):
                 key_child_constructor("vpall"),
                 (self.r_last,),
                 compute_pall,
+                lambda pkey: CLink(vote_type=pkey.vote_type, child=pkey.child),
                 2.0 * dmul)
 
         # sorted lists by score
@@ -256,13 +259,14 @@ class RedisLinkStore(LinkStore):
             def compute_call_sorted(
                     obj: EffectDependent[PLink, List[str], PLink],
                     parents: Tuple[ListDependentRedisType[PLink, RLink]],
+                    pkey: PLink,
                     key: PLink) -> None:
                 call, = parents
                 now = now_ts()
                 links = sorted(
                     (
-                        self.get_link(key.parent, MHash.parse(child))
-                        for child in call.get_value(key, [])
+                        self.get_link(pkey.parent, MHash.parse(child))
+                        for child in call.get_value(pkey, [])
                     ),
                     key=lambda link: scorer.get_score(link, now),
                     reverse=True)
@@ -274,6 +278,7 @@ class RedisLinkStore(LinkStore):
                 key_parent_constructor(f"scall:{sname}"),
                 (self.r_call,),
                 compute_call_sorted,
+                lambda pkey: pkey,
                 2.0 * dmul)
 
             # all parents for a given child sorted with score
@@ -281,13 +286,14 @@ class RedisLinkStore(LinkStore):
             def compute_pall_sorted(
                     obj: EffectDependent[CLink, List[str], CLink],
                     parents: Tuple[ListDependentRedisType[CLink, RLink]],
+                    pkey: CLink,
                     key: CLink) -> None:
                 pall, = parents
                 now = now_ts()
                 links = sorted(
                     (
-                        self.get_link(MHash.parse(parent), key.child)
-                        for parent in pall.get_value(key, [])
+                        self.get_link(MHash.parse(parent), pkey.child)
+                        for parent in pall.get_value(pkey, [])
                     ),
                     key=lambda link: scorer.get_score(link, now),
                     reverse=True)
@@ -299,6 +305,7 @@ class RedisLinkStore(LinkStore):
                 key_child_constructor(f"spall:{sname}"),
                 (self.r_pall,),
                 compute_pall_sorted,
+                lambda pkey: pkey,
                 2.0 * dmul)
 
             # all links created by a user sorted with score
@@ -306,6 +313,7 @@ class RedisLinkStore(LinkStore):
             def compute_user_sorted(
                     obj: EffectDependent[str, List[str], str],
                     parents: Tuple[SetRootRedisType[str]],
+                    pkey: str,
                     key: str) -> None:
                 user_links, = parents
                 now = now_ts()
@@ -317,7 +325,7 @@ class RedisLinkStore(LinkStore):
                 links = sorted(
                     (
                         to_link(ulink)
-                        for ulink in user_links.get_value(key, set())
+                        for ulink in user_links.get_value(pkey, set())
                     ),
                     key=lambda link: scorer.get_score(link, now),
                     reverse=True)
@@ -333,6 +341,7 @@ class RedisLinkStore(LinkStore):
                 lambda user: f"suserlinks:{sname}:{user}",
                 (self.r_user_links,),
                 compute_user_sorted,
+                lambda pkey: pkey,
                 4.0 * dmul)
 
         for scorer in self.valid_scorers():

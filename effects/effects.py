@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 KT = TypeVar('KT')
 VT = TypeVar('VT')
 PT = TypeVar('PT')
+AT = TypeVar('AT')
 LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
 
 
@@ -36,8 +37,14 @@ class EffectBase(Generic[KT]):
         for dependent in self._dependents:
             dependent.trigger_update(key, cur_time)
 
+    def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
+        raise NotImplementedError()
+
 
 class EffectRoot(Generic[KT, VT], EffectBase[KT]):
+    def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
+        pass
+
     def get_value(self, key: KT, default: VT) -> VT:
         res = self.maybe_get_value(key)
         if res is None:
@@ -97,12 +104,14 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
             self,
             parents: LT,
             effect: Callable[
-                ['EffectDependent[KT, VT, PT]', LT, PT], None],
+                ['EffectDependent[KT, VT, PT]', LT, PT, KT], None],
+            conversion: Callable[[PT], KT],
             delay: float) -> None:
         super().__init__()
         self._pending: Dict[PT, float] = {}
         self._parents = parents
         self._effect = effect
+        self._conversion = conversion
         self._delay = delay
         self._thread: Optional[threading.Thread] = None
         for parent in self._parents:
@@ -150,8 +159,27 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
             self.execute_update(key)
         return next_time
 
+    def settle(self, key: KT) -> None:
+        self.do_settle(key, lambda kkey: kkey)
+
+    def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
+
+        def pconvert(pkey: PT) -> AT:
+            return convert(self._conversion(pkey))
+
+        for parent in self._parents:
+            parent.do_settle(key, pconvert)
+        to_update: List[PT] = []
+        for pkey in list(self._pending.keys()):
+            if key != pconvert(pkey):
+                continue
+            self._pending.pop(pkey, None)
+            to_update.append(pkey)
+        for pkey in to_update:
+            self.execute_update(pkey)
+
     def execute_update(self, key: PT) -> None:
-        self._effect(self, self._parents, key)
+        self._effect(self, self._parents, key, self._conversion(key))
 
     def retrieve_value(self, key: KT) -> Optional[VT]:
         raise NotImplementedError()
