@@ -34,4 +34,7 @@ def get_message_store(name: str) -> MessageStore:
     if name == "disk":
         from system.msgs.disk import DiskStore
         return DiskStore()
+    if name == "ram":
+        from system.msgs.ram import RamMessageStore
+        return RamMessageStore()
     raise ValueError(f"unknown message store: {name}")
