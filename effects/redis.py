@@ -204,11 +204,12 @@ class ListDependentRedisType(
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
             with conn.pipeline() as pipe:
+                pipe.exists(rkey)
                 pipe.lrange(rkey, 0, -1)
                 pipe.delete(rkey)
                 pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
-                res = pipe.execute()[0]
-                if res is None:
+                has, res, _, _ = pipe.execute()
+                if not int(has):
                     return None
                 return [val.decode("utf-8") for val in res]
 
