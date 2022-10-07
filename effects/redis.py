@@ -227,8 +227,11 @@ class ListDependentRedisType(
     def retrieve_value(self, key: KT) -> Optional[List[str]]:
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
-            res = conn.lrange(rkey, 0, -1)
-        if res is None:
+            with conn.pipeline() as pipe:
+                pipe.exists(rkey)
+                pipe.lrange(rkey, 0, -1)
+                has, res = pipe.execute()
+        if not int(has):
             return None
         return [val.decode("utf-8") for val in res]
 
@@ -248,8 +251,6 @@ class ListDependentRedisType(
         rkey = self.get_redis_key(key)
         with self._redis.get_connection() as conn:
             res = conn.lrange(rkey, from_ix, to_ix)
-        if res is None:
-            return []
         return [val.decode("utf-8") for val in res]
 
     def __getitem__(self, arg: Tuple[KT, slice]) -> List[str]:

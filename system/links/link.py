@@ -1,4 +1,14 @@
-from typing import cast, Dict, get_args, Literal, Optional, Set, TypedDict
+from typing import (
+    Callable,
+    cast,
+    Dict,
+    get_args,
+    Iterable,
+    Literal,
+    Optional,
+    Set,
+    TypedDict,
+)
 
 import numpy as np
 import pandas as pd
@@ -46,7 +56,8 @@ class Votes:
             daily: float,
             total: float,
             first: Optional[pd.Timestamp],
-            last: Optional[pd.Timestamp]) -> None:
+            last: Optional[pd.Timestamp],
+            voters_fn: Callable[[UserStore], Iterable[User]]) -> None:
         assert daily >= 0
         assert total >= 0
         self._type = vote_type
@@ -54,6 +65,8 @@ class Votes:
         self._total = total
         self._first = first
         self._last = last
+        self._voters: Optional[Set[User]] = None
+        self._voters_fn = voters_fn
 
     def get_daily_votes(self) -> float:
         return self._daily
@@ -75,6 +88,13 @@ class Votes:
             return 0.0
         diff = (now - self._last) / pd.Timedelta("1d")
         return self._daily * np.exp(-diff)
+
+    def get_voters(self, user_store: UserStore) -> Set[User]:
+        voters = self._voters
+        if voters is None:
+            voters = set(self._voters_fn(user_store))
+            self._voters = voters
+        return voters
 
 
 class Link:

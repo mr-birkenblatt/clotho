@@ -1,6 +1,7 @@
 
 import collections
 import time
+import uuid
 from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 import pandas as pd
@@ -13,7 +14,7 @@ from example.action import (
 )
 from misc.io import open_read
 from misc.util import from_timestamp, read_jsonl
-from system.links.link import parse_vote_type
+from system.links.link import parse_vote_type, VT_DOWN, VT_UP
 from system.links.store import LinkStore
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
@@ -44,6 +45,7 @@ def interpret_action(
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
         totals: Dict[str, int],
+        user_pool: Set[User],
         ) -> Optional[Tuple[str, bool]]:
     ref_id = action["ref_id"]
     if is_link_action(action):
@@ -70,6 +72,7 @@ def interpret_action(
                 "can_create_topic": False,
             })
             user_store.store_user(user)
+            user_pool.add(user)
             totals["users"] += 1
         created_ts = from_timestamp(link["created_utc"])
         any_new = False
@@ -78,15 +81,35 @@ def interpret_action(
             prev_votes = cur_link.get_votes(vtype)
             total_votes = int(prev_votes.get_total_votes())
             casts = vcount - total_votes
+            first_users: List[User] = []
+            prev_users = prev_votes.get_voters(user_store)
+            if vtype == VT_UP:
+                down_votes = cur_link.get_votes(VT_DOWN)
+                if int(down_votes.get_total_votes()) > 0:
+                    casts = 1 + vcount - total_votes
+                first_users = [] if user not in prev_users else [user]
+            elif vtype == VT_DOWN:
+                casts += 1
             if casts <= 0:
                 continue
             any_new = True
+            cur_user_pool = set(user_pool - set(first_users) - prev_users)
             for _ in range(casts):
-                # FIXME use a user pool
+                if first_users:
+                    vote_user = first_users.pop(0)
+                elif cur_user_pool:
+                    vote_user = cur_user_pool.pop()
+                else:
+                    vote_user = User(f"u{uuid.uuid4().hex}", {
+                        "can_create_topic": False,
+                    })
+                    user_store.store_user(vote_user)
+                    user_pool.add(vote_user)
+                    totals["users_synth"] += 1
                 cur_link.add_vote(
                     user_store,
                     vtype,
-                    user,
+                    vote_user,
                     now if total_votes > 0 else created_ts)
             totals[vtype] += casts
         if any_new:
@@ -138,6 +161,7 @@ def process_actions(
         lookup_buffer: DefaultDict[str, List[Action]],
         topic_counts: DefaultDict[str, int]) -> pd.Timestamp:
     totals: Dict[str, int] = collections.defaultdict(lambda: 0)
+    user_pool: Set[User] = set()
     counter = 0
 
     def print_progress(epoch: int) -> None:
@@ -164,7 +188,8 @@ def process_actions(
             roots=roots,
             hash_lookup=hash_lookup,
             lookup_buffer=lookup_buffer,
-            totals=totals)
+            totals=totals,
+            user_pool=user_pool)
         if ref is not None:
             ref_id, is_topic = ref
             if is_topic:

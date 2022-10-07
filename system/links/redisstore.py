@@ -145,7 +145,14 @@ class RedisLink(Link):
             last = None
         else:
             last = from_timestamp(float(vlast))
-        return Votes(vote_type, vdaily, vtotal, first, last)
+
+        def get_voters(user_store: UserStore) -> Iterable[User]:
+            return (
+                user_store.get_user_by_id(user_id)
+                for user_id in store.r_voted.get_value(key, set())
+            )
+
+        return Votes(vote_type, vdaily, vtotal, first, last, get_voters)
 
     def add_vote(
             self,

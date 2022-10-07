@@ -191,6 +191,9 @@ def test_scenario() -> None:
     assert int(rvotes[VT_UP]) == 1
     assert int(rvotes[VT_DOWN]) == 4
 
+    assert get_link(0, 3).get_votes(VT_DOWN).get_voters(user_store) == {
+        users[0], users[1], users[2], users[4]}
+
     assert set(store.get_all_user_links(users[0])) == \
         set(store.get_all_children(msgs[0]))
     assert set(store.get_all_user_links(users[2])) == \
