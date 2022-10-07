@@ -8,7 +8,7 @@ from system.links.link import Link, VoteType, VT_DOWN, VT_UP
 from system.links.redisstore import set_delay_multiplier
 from system.links.scorer import get_scorer, ScorerName
 from system.links.store import get_link_store
-from system.msgs.message import MHash
+from system.msgs.message import MHash, set_mhash_print_hook
 from system.users.store import get_user_store
 from system.users.user import User
 
@@ -47,9 +47,8 @@ DMUL = 0.05
 
 def test_scenario() -> None:
     msgs = [get_random_mhash() for _ in range(10)]
-
-    for mix, msg in enumerate(msgs):
-        print(f"msg {mix}: {msg}")
+    mlookup = {mhash: f"msgs[{ix}]" for (ix, mhash) in enumerate(msgs)}
+    set_mhash_print_hook(lambda mhash: mlookup[mhash])
 
     users = [
         User(f"u{uid}", {

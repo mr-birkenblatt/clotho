@@ -1,5 +1,5 @@
 import re
-from typing import Optional
+from typing import Callable, Optional
 
 from misc.util import get_text_hash, is_hex
 
@@ -39,10 +39,23 @@ class MHash:
         return not self.__eq__(other)
 
     def __str__(self) -> str:
-        return self.to_parseable()
+        return PRINT_HOOK(self)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}[{self.to_parseable()}]"
+        return f"{self.__class__.__name__}[{PRINT_HOOK(self)}]"
+
+
+def default_print_hook(mhash: MHash) -> str:
+    return mhash.to_parseable()
+
+
+PRINT_HOOK = default_print_hook
+
+
+def set_mhash_print_hook(hook: Callable[[MHash], str]) -> None:
+    global PRINT_HOOK
+
+    PRINT_HOOK = hook
 
 
 class Message:
