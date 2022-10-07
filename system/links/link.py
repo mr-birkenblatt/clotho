@@ -120,7 +120,7 @@ class Link:
             "parent": self.get_parent().to_parseable(),
             "child": self.get_child().to_parseable(),
             "user": user_str,
-            "first": to_timestamp(cur_first),
+            "first": to_timestamp(first),
             "votes": votes,
         }
 

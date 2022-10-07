@@ -48,7 +48,8 @@ DMUL = 0.05
 def test_scenario() -> None:
     msgs = [get_random_mhash() for _ in range(10)]
     mlookup = {mhash: f"msgs[{ix}]" for (ix, mhash) in enumerate(msgs)}
-    set_mhash_print_hook(lambda mhash: mlookup[mhash])
+    set_mhash_print_hook(
+        lambda mhash: mlookup.get(mhash, mhash.to_parseable()))
 
     users = [
         User(f"u{uid}", {
@@ -184,7 +185,7 @@ def test_scenario() -> None:
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[3].to_parseable()
     assert resp["user"] == users[0].get_id()
-    assert int(resp["first"]) == int(first_s + 10.0 * 2)
+    assert int(resp["first"]) == int(first_s + 10.0)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
     assert int(rvotes[VT_UP]) == 1
