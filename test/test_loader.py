@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Set
 import pandas as pd
 
 from example.loader import process_action_file
-from system.links.link import Link, VoteType
+from system.links.link import Link, VoteType, VT_UP
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_link_store, LinkStore
 from system.msgs.message import MHash, set_mhash_print_hook
@@ -65,7 +65,7 @@ def test_loader() -> None:
     now = pd.Timestamp("2022-08-22", tz="UTC")
 
     msgs_raw = [
-        "r/news",
+        "t/news",
         "msg 1 > root",
         "msg 2 > msg 1",
         "msg 3 > msg 1",
@@ -77,12 +77,19 @@ def test_loader() -> None:
         "msg 8 > msg 7",
         "msg 8 > msg 7",
     ]
+    msgs = [MHash.from_message(text) for text in msgs_raw]
     msgs_lookup = {MHash.from_message(text): text for text in msgs_raw}
 
-    set_mhash_print_hook(
-        lambda mhash: (
+    def print_hook(mhash: MHash) -> str:
+        try:
+            index = msgs.index(mhash)
+        except ValueError:
+            index = -1
+        return (
             f"m{mhash.to_parseable()[:4]} "
-            f"({msgs_lookup.get(mhash, 'unknown')})"))
+            f"({index}: '{msgs_lookup.get(mhash, 'unknown')}')")
+
+    set_mhash_print_hook(print_hook)
 
     reference_time = time.monotonic()
     now = process_action_file(
@@ -92,14 +99,13 @@ def test_loader() -> None:
         user_store=user_store,
         now=now,
         reference_time=reference_time,
-        roots={"r/news"})
+        roots={"news"})
 
     settle_elapsed = link_store.settle_all()
     print(f"settle: {settle_elapsed}s")
 
     scorer_new = get_scorer("new")
     root = list(message_store.get_topics())[0].get_hash()
-    msgs = [MHash.from_message(text) for text in msgs_raw]
 
     print_links(link_store, user_store, scorer_new, now, root, set())
 
@@ -107,13 +113,15 @@ def test_loader() -> None:
             parent: MHash,
             child: MHash,
             uname: Optional[str],
-            votes: Dict[VoteType, int]) -> None:
-        match_cfg(link_store.get_link(parent, child), uname, votes)
+            votes: Dict[VoteType, int],
+            voters: Optional[Dict[VoteType, Set[str]]] = None) -> None:
+        match_cfg(link_store.get_link(parent, child), uname, votes, voters)
 
     def match_cfg(
             link: Link,
             uname: Optional[str],
-            votes: Dict[VoteType, int]) -> None:
+            votes: Dict[VoteType, int],
+            voters: Optional[Dict[VoteType, Set[str]]] = None) -> None:
         user = link.get_user(user_store)
         if user is None:
             assert uname is None
@@ -123,6 +131,12 @@ def test_loader() -> None:
         for vtype in vtypes:
             assert int(link.get_votes(vtype).get_total_votes()) == \
                 votes.get(vtype, 0)
+        if voters is not None:
+            for (vtype, vusers) in voters.items():
+                lusers = link.get_votes(vtype).get_voters(user_store)
+                for vuser in vusers:
+                    vuser_id = user_store.get_id_from_name(vuser)
+                    assert user_store.get_user_by_id(vuser_id) in lusers
 
     root_links = list(link_store.get_children(
         root,
@@ -139,12 +153,21 @@ def test_loader() -> None:
     match_cfg(root_links[1], "u/ddd", {"up": 1, "down": 122})
     match_cfg(root_links[2], "u/aaa", {"up": 3397})
 
-    # match_link(msgs[0])
+    match_link(
+        msgs[7],
+        msgs[9],
+        "u/aaa",
+        {"up": 12},
+        {
+            VT_UP: {
+                "u/aaa", "u/bbb", "u/ccc", "u/ddd", "u/eee", "u/hhh", "u/iii"
+            },
+        })
+    match_link(msgs[7], msgs[5], "u/iii", {"down": 4, "up": 4})
+    match_link(msgs[5], msgs[6], "u/aaa", {"up": 1}, {VT_UP: {"u/aaa"}})
+    match_link(msgs[4], msgs[5], "u/ddd", {"down": 46, "up": 46, "honor": 5})
+    match_link(msgs[1], msgs[2], "u/bbb", {"down": 5, "up": 146})
+    match_link(msgs[1], msgs[3], "u/ccc", {"up": 211})
+    match_link(msgs[6], msgs[2], None, {})
 
-    # ma41b -> maafc (u/aaa; down=1, up=13)
-    # ma41b -> m6060 (u/iii; down=4, up=4)
-    # m6060 -> m2869 (u/aaa; down=0, up=1)
-    # md8d1 -> m6060 (u/ddd; down=46, up=46, honor=5)
-    # mf1fc -> m26af (u/bbb; down=5, up=146)
-    # mf1fc -> madb5 (u/ccc; down=0, up=211)
     assert False
