@@ -26,6 +26,9 @@ class LinkStore:
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         raise NotImplementedError()
 
+    def settle_all(self) -> float:
+        raise NotImplementedError()
+
     def limit_results(
             self,
             links: Iterable[Link],

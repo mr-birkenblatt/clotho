@@ -1,3 +1,4 @@
+import time
 from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
@@ -346,6 +347,18 @@ class RedisLinkStore(LinkStore):
 
         for scorer in self.valid_scorers():
             add_scorer_dependent_types(scorer)
+
+    def settle_all(self) -> float:
+        start_time = time.monotonic()
+        self.r_call.settle_all()
+        self.r_pall.settle_all()
+        for scall in self.r_call_sorted.values():
+            scall.settle_all()
+        for spall in self.r_pall_sorted.values():
+            spall.settle_all()
+        for suser in self.r_user_sorted.values():
+            suser.settle_all()
+        return time.monotonic() - start_time
 
     @staticmethod
     def valid_scorers() -> List[Scorer]:

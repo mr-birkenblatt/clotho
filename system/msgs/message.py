@@ -49,7 +49,7 @@ def default_print_hook(mhash: MHash) -> str:
     return mhash.to_parseable()
 
 
-PRINT_HOOK = default_print_hook
+PRINT_HOOK: Callable[[MHash], str] = default_print_hook
 
 
 def set_mhash_print_hook(hook: Callable[[MHash], str]) -> None:

@@ -225,13 +225,13 @@ def process_action_file(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: Set[str]) -> None:
+        roots: Set[str]) -> pd.Timestamp:
     hash_lookup: Dict[str, MHash] = {}
     lookup_buffer: DefaultDict[str, List[Action]] = \
         collections.defaultdict(list)
     topic_counts: DefaultDict[str, int] = \
         collections.defaultdict(lambda: 0)
-    process_actions(
+    return process_actions(
         actions_from_file(fname),
         message_store=message_store,
         link_store=link_store,
