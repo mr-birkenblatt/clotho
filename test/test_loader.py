@@ -92,7 +92,7 @@ def test_loader() -> None:
     set_mhash_print_hook(print_hook)
 
     reference_time = time.monotonic()
-    now = process_action_file(
+    count, now = process_action_file(
         "test/data/loader.jsonl",
         message_store=message_store,
         link_store=link_store,
@@ -101,6 +101,7 @@ def test_loader() -> None:
         reference_time=reference_time,
         roots={"news"})
 
+    print(f"total actions: {count}")
     settle_elapsed = link_store.settle_all()
     print(f"settle: {settle_elapsed}s")
 

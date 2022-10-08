@@ -45,6 +45,7 @@ def interpret_action(
         lookup_buffer: DefaultDict[str, List[Action]],
         totals: Dict[str, int],
         user_pool: Set[User],
+        synth_pool: Set[User],
         ) -> Optional[Tuple[str, bool]]:
     ref_id = action["ref_id"]
     if is_link_action(action):
@@ -86,25 +87,29 @@ def interpret_action(
                 down_votes = link["votes"].get("down", 0)
                 if down_votes > 0:
                     casts = 1 + vcount - total_votes
-                first_users = [] if user not in prev_users else [user]
+                first_users = [] if user in prev_users else [user]
             elif vtype == VT_DOWN:
                 if casts > 0:
                     casts += 1
+                    prev_users.add(user)
             if casts <= 0:
                 continue
             any_new = True
             cur_user_pool = set(user_pool - set(first_users) - prev_users)
+            cur_synth_pool = set(synth_pool - set(first_users) - prev_users)
             for _ in range(casts):
                 if first_users:
                     vote_user = first_users.pop(0)
                 elif cur_user_pool:
                     vote_user = cur_user_pool.pop()
+                elif cur_synth_pool:
+                    vote_user = cur_synth_pool.pop()
                 else:
                     vote_user = User(f"s/{totals.get('users_synth', 0)}", {
                         "can_create_topic": False,
                     })
                     user_store.store_user(vote_user)
-                    user_pool.add(vote_user)
+                    synth_pool.add(vote_user)
                     totals["users_synth"] += 1
                 cur_link.add_vote(
                     user_store,
@@ -159,10 +164,11 @@ def process_actions(
         roots: Set[str],
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
-        topic_counts: DefaultDict[str, int]) -> pd.Timestamp:
-    totals: Dict[str, int] = collections.defaultdict(lambda: 0)
-    user_pool: Set[User] = set()
-    counter = 0
+        topic_counts: DefaultDict[str, int],
+        totals: Dict[str, int],
+        user_pool: Set[User],
+        synth_pool: Set[User],
+        counter: int) -> Tuple[int, pd.Timestamp]:
 
     def print_progress(epoch: int) -> None:
         if totals:
@@ -189,7 +195,8 @@ def process_actions(
             hash_lookup=hash_lookup,
             lookup_buffer=lookup_buffer,
             totals=totals,
-            user_pool=user_pool)
+            user_pool=user_pool,
+            synth_pool=synth_pool)
         if ref is not None:
             ref_id, is_topic = ref
             if is_topic:
@@ -202,7 +209,7 @@ def process_actions(
             lb_actions = lookup_buffer.pop(ref_id, None)
             if lb_actions is not None and lb_actions:
                 print(f"processing delayed actions ({len(lb_actions)})")
-                now = process_actions(
+                counter, now = process_actions(
                     lb_actions,
                     message_store=message_store,
                     link_store=link_store,
@@ -212,9 +219,13 @@ def process_actions(
                     roots=roots,
                     hash_lookup=hash_lookup,
                     lookup_buffer=lookup_buffer,
-                    topic_counts=topic_counts)
+                    topic_counts=topic_counts,
+                    totals=totals,
+                    user_pool=user_pool,
+                    synth_pool=synth_pool,
+                    counter=counter)
     print_progress(counter // 10000)
-    return now
+    return (counter, now)
 
 
 def process_action_file(
@@ -225,12 +236,16 @@ def process_action_file(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: Set[str]) -> pd.Timestamp:
+        roots: Set[str]) -> Tuple[int, pd.Timestamp]:
     hash_lookup: Dict[str, MHash] = {}
     lookup_buffer: DefaultDict[str, List[Action]] = \
         collections.defaultdict(list)
     topic_counts: DefaultDict[str, int] = \
         collections.defaultdict(lambda: 0)
+    totals: Dict[str, int] = collections.defaultdict(lambda: 0)
+    user_pool: Set[User] = set()
+    synth_pool: Set[User] = set()
+    counter = 0
     return process_actions(
         actions_from_file(fname),
         message_store=message_store,
@@ -241,4 +256,8 @@ def process_action_file(
         roots=roots,
         hash_lookup=hash_lookup,
         lookup_buffer=lookup_buffer,
-        topic_counts=topic_counts)
+        topic_counts=topic_counts,
+        totals=totals,
+        user_pool=user_pool,
+        synth_pool=synth_pool,
+        counter=counter)

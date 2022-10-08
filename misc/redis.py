@@ -42,7 +42,7 @@ def get_salt() -> Optional[str]:
         with REDIS_SALT_LOCK:
             res = REDIS_SALT.get(test_id)
             if res is None:
-                res = uuid.uuid4().hex
+                res = f"salt:{uuid.uuid4().hex}"
                 REDIS_SALT[test_id] = res
     return res
 
@@ -185,8 +185,8 @@ class RedisConnection:
     def __init__(self, module: RedisModule) -> None:
         self._conn = RedisWrapper(module)
         salt = get_salt()
-        salt_str = "" if salt is None else f":{salt}"
-        self._module = f"{module}{salt_str}"
+        salt_str = "" if salt is None else f"{salt}:"
+        self._module = f"{salt_str}{module}"
 
     def get_connection(self) -> ContextManager[StrictRedis]:
         return self._conn.get_connection()
