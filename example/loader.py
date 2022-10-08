@@ -1,7 +1,6 @@
 
 import collections
 import time
-import uuid
 from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
 
 import pandas as pd
@@ -84,12 +83,13 @@ def interpret_action(
             first_users: List[User] = []
             prev_users = prev_votes.get_voters(user_store)
             if vtype == VT_UP:
-                down_votes = cur_link.get_votes(VT_DOWN)
-                if int(down_votes.get_total_votes()) > 0:
+                down_votes = link["votes"].get("down", 0)
+                if down_votes > 0:
                     casts = 1 + vcount - total_votes
                 first_users = [] if user not in prev_users else [user]
             elif vtype == VT_DOWN:
-                casts += 1
+                if casts > 0:
+                    casts += 1
             if casts <= 0:
                 continue
             any_new = True
@@ -100,7 +100,7 @@ def interpret_action(
                 elif cur_user_pool:
                     vote_user = cur_user_pool.pop()
                 else:
-                    vote_user = User(f"u{uuid.uuid4().hex}", {
+                    vote_user = User(f"s/{totals.get('users_synth', 0)}", {
                         "can_create_topic": False,
                     })
                     user_store.store_user(vote_user)
