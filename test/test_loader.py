@@ -64,7 +64,25 @@ def test_loader() -> None:
     user_store = get_user_store("ram")
     now = pd.Timestamp("2022-08-22", tz="UTC")
 
-    set_mhash_print_hook(lambda mhash: f"m{mhash.to_parseable()[:4]}")
+    msgs_raw = [
+        "r/news",
+        "msg 1 > root",
+        "msg 2 > msg 1",
+        "msg 3 > msg 1",
+        "msg 4 > root",
+        "msg 5 > msg 4",
+        "msg 6 > msg 5",
+        "msg 7 > root",
+        "msg 7 > msg 5",
+        "msg 8 > msg 7",
+        "msg 8 > msg 7",
+    ]
+    msgs_lookup = {MHash.from_message(text): text for text in msgs_raw}
+
+    set_mhash_print_hook(
+        lambda mhash: (
+            f"m{mhash.to_parseable()[:4]} "
+            f"({msgs_lookup.get(mhash, 'unknown')})"))
 
     reference_time = time.monotonic()
     now = process_action_file(
@@ -74,14 +92,23 @@ def test_loader() -> None:
         user_store=user_store,
         now=now,
         reference_time=reference_time,
-        roots={"news"})
+        roots={"r/news"})
 
-    print(f"settle: {link_store.settle_all()}s")
+    settle_elapsed = link_store.settle_all()
+    print(f"settle: {settle_elapsed}s")
 
     scorer_new = get_scorer("new")
     root = list(message_store.get_topics())[0].get_hash()
+    msgs = [MHash.from_message(text) for text in msgs_raw]
 
     print_links(link_store, user_store, scorer_new, now, root, set())
+
+    def match_link(
+            parent: MHash,
+            child: MHash,
+            uname: Optional[str],
+            votes: Dict[VoteType, int]) -> None:
+        match_cfg(link_store.get_link(parent, child), uname, votes)
 
     def match_cfg(
             link: Link,
@@ -104,13 +131,15 @@ def test_loader() -> None:
         offset=0,
         limit=10))
     assert len(root_links) == 3
-    assert root_links[0].get_child() == MHash.from_message("msg 7 > root")
-    assert root_links[1].get_child() == MHash.from_message("msg 4 > root")
-    assert root_links[2].get_child() == MHash.from_message("msg 1 > root")
+    assert root_links[0].get_child() == msgs[7]
+    assert root_links[1].get_child() == msgs[4]
+    assert root_links[2].get_child() == msgs[1]
 
     match_cfg(root_links[0], "u/aaa", {"up": 2, "down": 1, "honor": 1})
     match_cfg(root_links[1], "u/ddd", {"up": 1, "down": 122})
     match_cfg(root_links[2], "u/aaa", {"up": 3397})
+
+    # match_link(msgs[0])
 
     # ma41b -> maafc (u/aaa; down=1, up=13)
     # ma41b -> m6060 (u/iii; down=4, up=4)
