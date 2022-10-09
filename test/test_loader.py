@@ -70,7 +70,7 @@ def test_loader() -> None:
         "msg 2 > msg 1",
         "msg 3 > msg 1",
         "msg 4 > root",
-        "msg 5 > msg 4",
+        "[missing]",
         "msg 6 > msg 5",
         "msg 7 > root",
         "msg 7 > msg 5",

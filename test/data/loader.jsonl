@@ -7,7 +7,7 @@
 {"kind":"link","link":{"created_utc":1661090602.0,"depth":0,"parent_ref":"msg1","user_name":"u/ccc","user_ref":"ccc","votes":{"down":0,"up":211}},"ref_id":"msg3"}
 {"kind":"message","message":{"text":"msg 4 > root"},"ref_id":"msg4"}
 {"kind":"link","link":{"created_utc":1661091419.0,"depth":0,"parent_ref":"root","user_name":"u/ddd","user_ref":"ddd","votes":{"down":121,"up":0}},"ref_id":"msg4"}
-{"kind":"message","message":{"text":"msg 5 > msg 4"},"ref_id":"msg5"}
+{"kind":"message","message":{"text":""},"ref_id":"msg5"}
 {"kind":"link","link":{"created_utc":1661091633.0,"depth":0,"parent_ref":"msg4","user_name":"u/eee","user_ref":"eee","votes":{"down":46,"up":5}},"ref_id":"msg5"}
 {"kind":"message","message":{"text":"msg 6 > msg 5"},"ref_id":"msg6"}
 {"kind":"link","link":{"created_utc":1661096132.0,"depth":0,"parent_ref":"msg5","user_name":"u/aaa","user_ref":"aaa","votes":{"down":0,"up":1}},"ref_id":"msg6"}
