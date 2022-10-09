@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Set
 import pandas as pd
 
 from example.loader import process_action_file
-from system.links.link import Link, VoteType, VT_UP
+from system.links.link import Link, VoteType, VT_DOWN, VT_UP
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_link_store, LinkStore
 from system.msgs.message import MHash, set_mhash_print_hook
@@ -76,6 +76,7 @@ def test_loader() -> None:
         "msg 7 > msg 5",
         "msg 8 > msg 7",
         "msg 8 > msg 7",
+        "msg 9 > msg 2",
     ]
     msgs = [MHash.from_message(text) for text in msgs_raw]
     msgs_lookup = {MHash.from_message(text): text for text in msgs_raw}
@@ -135,9 +136,13 @@ def test_loader() -> None:
         if voters is not None:
             for (vtype, vusers) in voters.items():
                 lusers = link.get_votes(vtype).get_voters(user_store)
+                print(
+                    f"({link.get_parent()} -> {link.get_child()}) "
+                    f"{vtype}: {lusers}")
                 for vuser in vusers:
                     vuser_id = user_store.get_id_from_name(vuser)
-                    assert user_store.get_user_by_id(vuser_id) in lusers
+                    vuser_obj = user_store.get_user_by_id(vuser_id)
+                    assert vuser_obj in lusers
 
     root_links = list(link_store.get_children(
         root,
@@ -150,25 +155,37 @@ def test_loader() -> None:
     assert root_links[1].get_child() == msgs[4]
     assert root_links[2].get_child() == msgs[1]
 
-    match_cfg(root_links[0], "u/aaa", {"up": 2, "down": 1, "honor": 1})
+    match_cfg(root_links[0], "u/aaa", {"up": 1, "honor": 1})
     match_cfg(root_links[1], "u/ddd", {"up": 1, "down": 122})
     match_cfg(root_links[2], "u/aaa", {"up": 3397})
 
     match_link(
         msgs[7],
         msgs[9],
-        "u/aaa",
+        "u/iii",
         {"up": 12},
         {
             VT_UP: {
-                "u/aaa", "u/bbb", "u/ccc", "u/ddd", "u/eee", "u/hhh", "u/iii"
+                "u/aaa", "u/bbb", "u/ccc", "u/ddd", "u/eee", "u/iii",
             },
         })
-    match_link(msgs[7], msgs[5], "u/iii", {"down": 4, "up": 4})
+    match_link(msgs[7], msgs[5], "u/aaa", {"down": 4, "up": 4})
+    match_link(msgs[7], msgs[9], "u/iii", {"up": 12}, {VT_UP: {"u/iii"}})
     match_link(msgs[5], msgs[6], "u/aaa", {"up": 1}, {VT_UP: {"u/aaa"}})
-    match_link(msgs[4], msgs[5], "u/ddd", {"down": 46, "up": 46, "honor": 5})
-    match_link(msgs[1], msgs[2], "u/bbb", {"down": 5, "up": 146})
+    match_link(msgs[4], msgs[5], "u/eee", {"down": 47, "up": 46, "honor": 5})
+    match_link(msgs[1], msgs[2], "u/bbb", {"down": 6, "up": 146})
     match_link(msgs[1], msgs[3], "u/ccc", {"up": 211})
     match_link(msgs[6], msgs[2], None, {})
-
-    assert False
+    match_link(msgs[3], msgs[11], "u/aaa", {"up": 3})
+    match_link(
+        msgs[2],
+        msgs[11],
+        "u/mmm",
+        {"up": 1, "down": 8},
+        {
+            VT_UP: {"u/mmm"},
+            VT_DOWN: {
+                "__no_user__", "u/aaa", "u/iii", "u/bbb",
+                "u/ddd", "u/eee", "u/ccc", "u/hhh",
+            },
+        })

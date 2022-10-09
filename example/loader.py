@@ -76,6 +76,8 @@ def interpret_action(
             totals["users"] += 1
         created_ts = from_timestamp(link["created_utc"])
         any_new = False
+        if "up" not in link["votes"]:
+            link["votes"]["up"] = 0
         for vname, vcount in link["votes"].items():
             vtype = parse_vote_type(TYPE_CONVERTER.get(vname, "honor"))
             prev_votes = cur_link.get_votes(vtype)
