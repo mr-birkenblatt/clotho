@@ -163,7 +163,8 @@ class RedisWrapper:
     @staticmethod
     def _invalidate_connection(module: RedisModule) -> None:
         with LOCK:
-            REDIS_SERVICE_CONN[module] = None
+            key = f"{module}-{threading.get_ident() % CONCURRENT_MODULE_CONN}"
+            REDIS_SERVICE_CONN[key] = None
 
     @classmethod
     @contextlib.contextmanager
