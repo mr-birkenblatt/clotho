@@ -77,7 +77,7 @@ LOCK_MODULE: RedisModule = "locks"
 SCRIPT_CACHE: Dict[str, str] = {}
 SCRIPT_UTILS_CACHE: str = ""
 SCRIPT_UTILS_LINES: int = 0
-REDIS_SERVICE_CONN: Dict[RedisModule, Optional[StrictRedis]] = {}
+REDIS_SERVICE_CONN: Dict[str, Optional[StrictRedis]] = {}
 DO_CACHE = True
 LOCK = threading.RLock()
 LOCKS: Dict[str, Optional[Tuple[threading.RLock, Lock]]] = {}
@@ -108,13 +108,11 @@ class RedisWrapper:
         if not DO_CACHE:
             return cls._create_connection()
 
-        res = REDIS_SERVICE_CONN.get(module)
+        key = f"{module}-{threading.get_ident()}"
+        res = REDIS_SERVICE_CONN.get(key)
         if res is None:
-            with LOCK:
-                res = REDIS_SERVICE_CONN.get(module)
-                if res is None:
-                    res = cls._create_connection()
-                    REDIS_SERVICE_CONN[module] = res
+            res = cls._create_connection()
+            REDIS_SERVICE_CONN[key] = res
         return res
 
     @classmethod
