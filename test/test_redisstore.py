@@ -81,7 +81,7 @@ def test_scenario() -> None:
     assert int(get_link(0, 1).get_votes(VT_UP).get_total_votes()) == 3
     assert int(get_link(0, 1).get_votes(VT_DOWN).get_total_votes()) == 1
 
-    time.sleep(3.0 * dmul)  # update tier 1
+    time.sleep(4.0 * dmul)  # update tier 1
     # (all parents, all children)
 
     def get_children(links: Iterable[Link]) -> List[MHash]:
@@ -116,7 +116,7 @@ def test_scenario() -> None:
     assert set(get_parents(store.get_all_parents(msgs[9]))) == {msgs[7]}
     assert len(get_parents(store.get_all_parents(msgs[4]))) == 0
 
-    time.sleep(3.0 * dmul)  # update tier 2
+    time.sleep(4.0 * dmul)  # update tier 2
     # (sorted parents, sorted children, first user, user list)
 
     def get_sorted(
@@ -199,7 +199,7 @@ def test_scenario() -> None:
     assert set(store.get_all_user_links(users[2])) == \
         set(store.get_all_children(msgs[3]))
 
-    time.sleep(3.0 * dmul)  # update tier 3
+    time.sleep(4.0 * dmul)  # update tier 3
     # (sorted user list)
 
     def get_sorted_user(
