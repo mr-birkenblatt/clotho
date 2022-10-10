@@ -97,8 +97,15 @@ def interpret_action(
             if casts <= 0:
                 continue
             any_new = True
-            cur_user_pool = set(user_pool - set(first_users) - prev_users)
-            cur_synth_pool = set(synth_pool - set(first_users) - prev_users)
+            if casts > len(first_users):
+                cur_user_pool = set(user_pool - set(first_users) - prev_users)
+            else:
+                cur_user_pool = set()
+            if casts > len(cur_user_pool) + len(first_users):
+                cur_synth_pool = set(
+                    synth_pool - set(first_users) - prev_users)
+            else:
+                cur_synth_pool = set()
             for _ in range(casts):
                 if first_users:
                     vote_user = first_users.pop(0)
