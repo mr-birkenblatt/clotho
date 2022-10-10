@@ -56,6 +56,7 @@ def process_load() -> None:
         now=now,
         reference_time=reference_time,
         roots=set(ROOTS))
+    link_store.settle_all()
 
 
 def run() -> None:
