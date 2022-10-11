@@ -9,6 +9,9 @@ from system.users.store import UserStore
 from system.users.user import ensure_permissions, Permissions, User
 
 
+USER_EXT = ".user"
+
+
 UserDict = TypedDict('UserDict', {
     "name": str,
     "permissions": Permissions,
@@ -46,7 +49,7 @@ class DiskUserStore(UserStore):
         all_segs = list(split_hash(user_id))
         segs = all_segs[:-1]
         rest = all_segs[-1]
-        return os.path.join(self._path, *segs, f"{rest}.user")
+        return os.path.join(self._path, *segs, f"{rest}{USER_EXT}")
 
     def store_user(self, user: User) -> None:
         user_id = user.get_id()
@@ -55,20 +58,34 @@ class DiskUserStore(UserStore):
             fout.write(
                 f"{json_compact(self._get_user_dict(user)).decode('utf-8')}\n")
 
+    def _get_users_for_file(self, fname: str) -> Iterable[User]:
+        users = set()
+        try:
+            with open_read(fname, text=True) as fin:
+                for obj in read_jsonl(fin):
+                    uobj = ensure_user_dict(obj)
+                    user = User(uobj["name"], uobj["permissions"])
+                    users.add(user)
+        except FileNotFoundError:
+            pass
+        yield from users
+
     def get_user_by_id(self, user_id: str) -> User:
         res = self._cache.get(user_id)
         if res is not None:
             return res
-        try:
-            with open_read(self._compute_path(user_id), text=True) as fin:
-                for obj in read_jsonl(fin):
-                    uobj = ensure_user_dict(obj)
-                    user = User(uobj["name"], uobj["permissions"])
-                    self._cache.set(user.get_id(), user)
-                    if user.get_id() == user_id:
-                        res = user
-        except FileNotFoundError:
-            pass
+        fname = self._compute_path(user_id)
+        for user in self._get_users_for_file(fname):
+            self._cache.set(user.get_id(), user)
+            if user.get_id() == user_id:
+                res = user
         if res is None:
             raise KeyError(f"no user for the id: {user_id}")
         return res
+
+    def get_all_users(self) -> Iterable[User]:
+        for (root, _, files) in os.walk(self._path):
+            for fname in files:
+                if not fname.endswith(USER_EXT):
+                    continue
+                yield from self._get_users_for_file(os.path.join(root, fname))

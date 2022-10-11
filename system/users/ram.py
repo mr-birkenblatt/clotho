@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Iterable
 
 from system.users.store import UserStore
 from system.users.user import User
@@ -13,3 +13,6 @@ class RamUserStore(UserStore):
 
     def store_user(self, user: User) -> None:
         self._users[user.get_id()] = user
+
+    def get_all_users(self) -> Iterable[User]:
+        yield from self._users.values()

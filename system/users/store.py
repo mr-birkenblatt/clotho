@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Iterable, Optional
 
 from misc.env import envload_str
 from misc.util import get_short_hash
@@ -10,6 +10,9 @@ class UserStore:
         raise NotImplementedError()
 
     def store_user(self, user: User) -> None:
+        raise NotImplementedError()
+
+    def get_all_users(self) -> Iterable[User]:
         raise NotImplementedError()
 
     @staticmethod

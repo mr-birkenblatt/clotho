@@ -252,7 +252,9 @@ def process_action_file(
     topic_counts: DefaultDict[str, int] = \
         collections.defaultdict(lambda: 0)
     totals: Dict[str, int] = collections.defaultdict(lambda: 0)
-    user_pool: Set[User] = set()
+    user_pool: Set[User] = set(user_store.get_all_users())
+    if user_pool:
+        print(f"loaded {len(user_pool)} users")
     synth_pool: Set[User] = set()
     counter = 0
     return process_actions(
