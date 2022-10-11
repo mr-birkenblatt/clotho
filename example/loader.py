@@ -44,8 +44,8 @@ def interpret_action(
         hash_lookup: Dict[str, MHash],
         lookup_buffer: DefaultDict[str, List[Action]],
         totals: Dict[str, int],
-        user_pool: Set[User],
-        synth_pool: Set[User],
+        user_pool: List[User],
+        synth_pool: List[User],
         ) -> Optional[Tuple[str, bool]]:
     ref_id = action["ref_id"]
     if is_link_action(action):
@@ -72,7 +72,7 @@ def interpret_action(
                 "can_create_topic": False,
             })
             user_store.store_user(user)
-            user_pool.add(user)
+            user_pool.append(user)
             totals["users"] += 1
         created_ts = from_timestamp(link["created_utc"])
         any_new = False
@@ -97,13 +97,15 @@ def interpret_action(
             if casts <= 0:
                 continue
             any_new = True
+            pigeon_count = casts + len(first_users) + len(prev_users)
             if casts > len(first_users):
-                cur_user_pool = set(user_pool - set(first_users) - prev_users)
+                cur_user_pool = set(
+                    user_pool[:pigeon_count]) - set(first_users) - prev_users
             else:
                 cur_user_pool = set()
             if casts > len(cur_user_pool) + len(first_users):
                 cur_synth_pool = set(
-                    synth_pool - set(first_users) - prev_users)
+                    synth_pool[:pigeon_count]) - set(first_users) - prev_users
             else:
                 cur_synth_pool = set()
             for _ in range(casts):
@@ -118,7 +120,7 @@ def interpret_action(
                         "can_create_topic": False,
                     })
                     user_store.store_user(vote_user)
-                    synth_pool.add(vote_user)
+                    synth_pool.append(vote_user)
                     totals["users_synth"] += 1
                 cur_link.add_vote(
                     user_store,
@@ -175,8 +177,8 @@ def process_actions(
         lookup_buffer: DefaultDict[str, List[Action]],
         topic_counts: DefaultDict[str, int],
         totals: Dict[str, int],
-        user_pool: Set[User],
-        synth_pool: Set[User],
+        user_pool: List[User],
+        synth_pool: List[User],
         counter: int) -> Tuple[int, pd.Timestamp]:
 
     def print_progress(epoch: int) -> None:
@@ -252,10 +254,10 @@ def process_action_file(
     topic_counts: DefaultDict[str, int] = \
         collections.defaultdict(lambda: 0)
     totals: Dict[str, int] = collections.defaultdict(lambda: 0)
-    user_pool: Set[User] = set(user_store.get_all_users())
+    user_pool: List[User] = list(user_store.get_all_users())
     if user_pool:
         print(f"loaded {len(user_pool)} users")
-    synth_pool: Set[User] = set()
+    synth_pool: List[User] = []
     counter = 0
     return process_actions(
         actions_from_file(fname),
