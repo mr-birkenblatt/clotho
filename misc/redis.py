@@ -33,6 +33,11 @@ REDIS_SALT_LOCK = threading.RLock()
 REDIS_SALT: Dict[str, str] = {}
 
 
+def is_test() -> bool:
+    test_id = os.getenv("PYTEST_CURRENT_TEST")
+    return test_id is not None
+
+
 def get_salt() -> Optional[str]:
     test_id = os.getenv("PYTEST_CURRENT_TEST")
     if test_id is None:
@@ -194,6 +199,8 @@ class RedisConnection:
         return self._conn.get_connection()
 
     def get_dynamic_script(self, code: str) -> RedisFunctionBytes:
+        if is_test():
+            print(f"Compiled script:\n-- SCRIPT START\n{code}\n-- SCRIPT END")
         compute = Script(None, code.encode("utf-8"))
         context = 3
 
