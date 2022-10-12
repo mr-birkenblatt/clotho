@@ -5,8 +5,7 @@ set -ex
 PYTHON="${PYTHON:-python3}"
 RESULT_FNAME="${RESULT_FNAME:-results.xml}"
 IFS=',' read -a FILE_INFO <<< "$1"
-FILES=("${FILE_INFO[@]:1}")
-echo "Previous timings are: ${FILE_INFO[@]}"
+FILES=("${FILE_INFO[@]}")
 export USER_FILEPATH=./userdata
 
 coverage erase

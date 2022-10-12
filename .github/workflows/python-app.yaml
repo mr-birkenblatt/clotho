@@ -133,8 +133,11 @@ jobs:
       run: |
         set -ex
         OUT=$(python -m test split_tests --filepath test-results/results.xml --total-nodes ${{ matrix.ci_node_total }} --node-id ${{ matrix.ci_node_index }})
-        echo "Selected Files are: ${OUT}"
-        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${OUT}"
+        IFS=',' read -a FILE_INFO <<< "$1"
+        FILES=$(echo "${OUT}" | sed -E 's/^.*,//')
+        echo "Previous timings are: ${FILE_INFO[0]}"
+        echo "Selected Files are: ${FILES}"
+        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
 
     - name: Upload Artifact(results)
       uses: actions/upload-artifact@v3
