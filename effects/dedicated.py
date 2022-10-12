@@ -281,6 +281,11 @@ class CallFn(Expr):  # pylint: disable=too-few-public-methods
         return f"{self._fname}({argstr})"
 
 
+class ToJSON(CallFn):  # pylint: disable=too-few-public-methods
+    def __init__(self, arg: Expr) -> None:
+        super().__init__("cjson.encode", arg)
+
+
 class RedisFn(CallFn):  # pylint: disable=too-few-public-methods
     def __init__(self, redis_fn: str, key: KeyVariable, *args: Expr) -> None:
         super().__init__("redis.call", Literal(redis_fn), key, *args)
