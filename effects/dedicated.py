@@ -236,7 +236,7 @@ class NotOp(Expr):  # pylint: disable=too-few-public-methods
         self._expr = expr
 
     def compile(self) -> str:
-        return f"(not {self._expr})"
+        return f"(not {self._expr.compile()})"
 
 
 class Op(Expr):

@@ -182,8 +182,11 @@ def test_dependent_list() -> None:
             key: str) -> None:
         v_a, v_b = parents
         arr = [v_b.get_value(pkey, "MISSING")] * v_a.get_value(pkey, 0)
-        obj.set_new_value(key, arr)
-        assert obj.maybe_get_value(key) == arr
+        old = obj.maybe_get_value(key)
+        if obj.set_new_value(key, arr):
+            assert obj.maybe_get_value(key) == arr
+        else:
+            assert obj.maybe_get_value(key) == old
 
     dep_a = ListDependentRedisType(
         "test",

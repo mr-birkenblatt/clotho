@@ -12,6 +12,7 @@ from typing import (
 from effects.dedicated import (
     Arg,
     Branch,
+    EqOp,
     ForLoop,
     Literal,
     LiteralKey,
@@ -238,7 +239,8 @@ class ListDependentRedisType(
             key_var = script.add_key(LiteralKey())
             res_var = script.add_local(LocalVariable(Literal(0)))
 
-            branch = Branch(NotOp(RedisFn("EXISTS", key_var)))
+            branch = Branch(EqOp(RedisFn("LLEN", key_var), Literal(0)))
+            script.add_stmt(branch)
             loop = ForLoop(script, new_value)
             loop.get_loop().add_stmt(RedisFn(
                 "RPUSH", key_var, loop.get_value()).as_stmt())

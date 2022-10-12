@@ -200,7 +200,9 @@ class RedisConnection:
 
     def get_dynamic_script(self, code: str) -> RedisFunctionBytes:
         if is_test():
-            print(f"Compiled script:\n-- SCRIPT START\n{code}\n-- SCRIPT END")
+            print(
+                "Compiled script:\n-- SCRIPT START\n"
+                f"{code.rstrip()}\n-- SCRIPT END")
         compute = Script(None, code.encode("utf-8"))
         context = 3
 
