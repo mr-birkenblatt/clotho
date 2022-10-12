@@ -37,7 +37,7 @@ run_test() {
 }
 export -f run_test
 
-if ! [ -z ${FILES} ]; then
+if ! [ -z "${FILES[@]}" ]; then
     IDX=0
     echo "${FILES[@]}"
     for CUR_TEST in "${FILES[@]}"; do
