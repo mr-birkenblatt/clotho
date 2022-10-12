@@ -135,7 +135,7 @@ jobs:
         OUT=$(python -m test split_tests --filepath test-results/results.xml --total-nodes ${{ matrix.ci_node_total }} --node-id ${{ matrix.ci_node_index }})
         IFS=',' read -a FILE_INFO <<< "$OUT"
         FILES=("${FILE_INFO[@]:1}")
-        echo "Selected Files are: " ${FILES[@]}
+        echo "Selected Files are: ${FILES[@]}"
         echo "Previous timings are: ${FILE_INFO[0]}"
         make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE=${FILES[@]}
 

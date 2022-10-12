@@ -12,11 +12,11 @@ from typing import (
 from effects.dedicated import (
     Arg,
     Branch,
-    EqOp,
     ForLoop,
     Literal,
     LiteralKey,
     LocalVariable,
+    NotOp,
     RedisFn,
     Script,
 )
@@ -211,7 +211,8 @@ class ListDependentRedisType(
         with self._redis.get_connection() as conn:
             with conn.pipeline() as pipe:
                 pipe.delete(rkey)
-                pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
+                if value:
+                    pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
                 pipe.execute()
 
     def do_update_value(self, key: KT, value: List[str]) -> Optional[List[VT]]:
@@ -221,20 +222,23 @@ class ListDependentRedisType(
                 pipe.exists(rkey)
                 pipe.lrange(rkey, 0, -1)
                 pipe.delete(rkey)
-                pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
+                if value:
+                    pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
                 has, res, _, _ = pipe.execute()
                 if not int(has):
                     return None
                 return [val.decode("utf-8") for val in res]
 
     def do_set_new_value(self, key: KT, value: List[str]) -> bool:
+        if not value:
+            return False
         if self._update_new_val is None:
             script = Script()
             new_value = script.add_arg(Arg())
             key_var = script.add_key(LiteralKey())
             res_var = script.add_local(LocalVariable(Literal(0)))
 
-            branch = Branch(EqOp(RedisFn("LLEN", key_var), Literal(0)))
+            branch = Branch(NotOp(RedisFn("EXISTS", key_var)))
             loop = ForLoop(script, new_value)
             loop.get_loop().add_stmt(RedisFn(
                 "RPUSH", key_var, loop.get_value()).as_stmt())

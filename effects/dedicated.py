@@ -231,7 +231,15 @@ class Literal(Expr):  # pylint: disable=too-few-public-methods
         return f"\"{res}\""
 
 
-class Op(Expr):  # pylint: disable=too-few-public-methods
+class NotOp(Expr):  # pylint: disable=too-few-public-methods
+    def __init__(self, expr: Expr) -> None:
+        self._expr = expr
+
+    def compile(self) -> str:
+        return f"(not {self._expr})"
+
+
+class Op(Expr):
     def __init__(self, lhs: Expr, rhs: Expr) -> None:
         self._lhs = lhs
         self._rhs = rhs
