@@ -193,6 +193,56 @@ class RedisConnection:
     def get_connection(self) -> ContextManager[StrictRedis]:
         return self._conn.get_connection()
 
+    def get_dynamic_script(self, code: str) -> RedisFunctionBytes:
+        compute = Script(None, code.encode("utf-8"))
+        context = 5
+
+        def get_error(err_msg: str) -> Optional[Tuple[str, List[str]]]:
+            ustr = "user_script:"
+            ix = err_msg.find(ustr)
+            if ix < 0:
+                return None
+            eix = err_msg.find(":", ix + len(ustr))
+            if eix < 0:
+                return None
+            num = int(err_msg[ix + len(ustr):eix])
+            rel_line = num
+
+            new_msg = f"{err_msg[:ix]}:{rel_line}{err_msg[eix:]}"
+            ctx = code.splitlines()
+            return new_msg, ctx[max(num - context - 1, 0):num + context]
+
+        @contextlib.contextmanager
+        def get_client(client: Optional[StrictRedis]) -> Iterator[StrictRedis]:
+            try:
+                if client is None:
+                    with self.get_connection() as res:
+                        yield res
+                else:
+                    yield client
+            except ResponseError as e:
+                handle_err(e)
+                raise e
+
+        def handle_err(exc: ResponseError) -> None:
+            if exc.args:
+                msg = exc.args[0]
+                res = get_error(msg)
+                if res is not None:
+                    ctx = "\n".join((
+                        f"{'>' if ix == context else ' '} {line}"
+                        for (ix, line) in enumerate(res[1])))
+                    exc.args = (f"{res[0].rstrip()}\nContext:\n{ctx}",)
+
+        def execute_bytes_result(
+                keys: List[str],
+                args: List[Union[bytes, str, int]],
+                client: Optional[StrictRedis] = None) -> bytes:
+            with get_client(client) as inner:
+                return compute(keys=keys, args=args, client=inner)
+
+        return execute_bytes_result
+
     @overload
     def get_script(
             self,
