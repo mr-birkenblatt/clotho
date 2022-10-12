@@ -246,6 +246,11 @@ class Op(Expr):  # pylint: disable=too-few-public-methods
         raise NotImplementedError()
 
 
+class AndOp(Op):  # pylint: disable=too-few-public-methods
+    def compile(self) -> str:
+        return f"({self.get_left()} and {self.get_right()})"
+
+
 class AddOp(Op):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         return f"({self.get_left()} + {self.get_right()})"
@@ -269,6 +274,11 @@ class CallFn(Expr):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         argstr = ", ".join((arg.compile() for arg in self._args))
         return f"{self._fname}({argstr})"
+
+
+class RedisFn(CallFn):  # pylint: disable=too-few-public-methods
+    def __init__(self, redis_fn: str, key: KeyVariable, *args: Expr) -> None:
+        super().__init__("redis.call", Literal(redis_fn), key, *args)
 
 
 class Branch(Compilable):

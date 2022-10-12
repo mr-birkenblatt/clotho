@@ -195,7 +195,7 @@ class RedisConnection:
 
     def get_dynamic_script(self, code: str) -> RedisFunctionBytes:
         compute = Script(None, code.encode("utf-8"))
-        context = 5
+        context = 3
 
         def get_error(err_msg: str) -> Optional[Tuple[str, List[str]]]:
             ustr = "user_script:"
@@ -232,7 +232,9 @@ class RedisConnection:
                     ctx = "\n".join((
                         f"{'>' if ix == context else ' '} {line}"
                         for (ix, line) in enumerate(res[1])))
-                    exc.args = (f"{res[0].rstrip()}\nContext:\n{ctx}",)
+                    exc.args = (
+                        f"{res[0].rstrip()}\nCode:\n{code}\nContext:\n{ctx}",
+                    )
 
         def execute_bytes_result(
                 keys: List[str],

@@ -12,12 +12,12 @@ from typing import (
 from effects.dedicated import (
     Arg,
     Branch,
-    CallFn,
     EqOp,
     ForLoop,
     Literal,
     LiteralKey,
     LocalVariable,
+    RedisFn,
     Script,
 )
 from effects.effects import (
@@ -234,10 +234,10 @@ class ListDependentRedisType(
             key_var = script.add_key(LiteralKey())
             res_var = script.add_local(LocalVariable(Literal(0)))
 
-            branch = Branch(EqOp(CallFn("redis.llen", key_var), Literal(0)))
+            branch = Branch(EqOp(RedisFn("LLEN", key_var), Literal(0)))
             loop = ForLoop(script, new_value)
-            loop.get_loop().add_stmt(
-                CallFn("redis.rpush", key_var, loop.get_value()).as_stmt())
+            loop.get_loop().add_stmt(RedisFn(
+                "RPUSH", key_var, loop.get_value()).as_stmt())
             branch.get_success().add_stmt(
                 loop).add_stmt(res_var.assign(Literal(1)))
 

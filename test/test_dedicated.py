@@ -7,6 +7,7 @@ from effects.dedicated import (
     Literal,
     LocalVariable,
     LtOp,
+    RedisFn,
     RootValue,
     Script,
 )
@@ -54,8 +55,7 @@ def test_dedicated() -> None:
     branch.get_success().add_stmt(var_a.assign(AddOp(input_a, input_b)))
     branch.get_failure().add_stmt(branch_inner)
 
-    script.add_stmt(branch).add_stmt(
-        CallFn("redis.call", Literal("SET"), output_a, var_a).as_stmt())
+    script.add_stmt(branch).add_stmt(RedisFn("SET", output_a, var_a).as_stmt())
 
     script.set_return_value(Literal(1))
 

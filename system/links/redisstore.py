@@ -3,7 +3,20 @@ from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
-from effects.dedicated import Arg, RootSet, RootValue, Script
+from effects.dedicated import (
+    AddOp,
+    AndOp,
+    Arg,
+    Branch,
+    CallFn,
+    EqOp,
+    Literal,
+    LocalVariable,
+    RedisFn,
+    RootSet,
+    RootValue,
+    Script,
+)
 from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
@@ -166,22 +179,9 @@ class RedisLink(Link):
         store = self._s
         key = RLink(
             vote_type=vote_type, parent=self._parent, child=self._child)
-        # FIXME: make atomic
-        user_id = who.get_id()
-        if store.r_voted.add_value(key, user_id):
-            return
-        votes = self.get_votes(vote_type)
         weighted_value = who.get_weighted_vote(self.get_user(user_store))
-        store.r_total.set_value(key, votes.get_total_votes() + weighted_value)
-        store.r_daily.set_value(
-            key, votes.get_adjusted_daily_votes(now) + weighted_value)
-        store.r_user.do_set_new_value(key, user_id)
         nows = to_timestamp(now)
-        is_new = store.r_first.set_new_value(key, nows)
-        store.r_last.set_value(key, nows)
-        if is_new and key.vote_type == VT_UP:
-            store.r_user_links.add_value(
-                user_id, parseable_link(key.parent, key.child))
+        store.add_vote(key, who, vote_type, weighted_value, nows)
 
 
 class RedisLinkStore(LinkStore):
@@ -364,6 +364,7 @@ class RedisLinkStore(LinkStore):
         user_id = user.get_id()
         self._add_vote.execute(
             args=[
+                user_id,
                 weighted_value,
                 vote_type,
                 now,
@@ -374,10 +375,11 @@ class RedisLinkStore(LinkStore):
 
     def create_add_vote_script(self) -> Script:
         script = Script()
+        user_id = script.add_arg(Arg())
         weighted_value = script.add_arg(Arg())
         vote_type = script.add_arg(Arg())
         now = script.add_arg(Arg())
-        parseable_link = script.add_arg(Arg())
+        plink = script.add_arg(Arg())
         r_voted: RootSet[RLink] = script.add_key(RootSet(self.r_voted))
         r_total: RootValue[RLink, float] = script.add_key(
             RootValue(self.r_total))
@@ -389,46 +391,38 @@ class RedisLinkStore(LinkStore):
         r_last: RootValue[RLink, float] = script.add_key(
             RootValue(self.r_last))
         r_user_links: RootSet[str] = script.add_key(RootSet(self.r_user_links))
+        is_new = script.add_local(LocalVariable(Literal(False)))
+
+        main = Branch(EqOp(RedisFn("SISMEMBER", r_voted, user_id), Literal(0)))
+        script.add_stmt(main)
+        mseq = main.get_success()
+        mseq.add_stmt(RedisFn("SADD", r_voted, user_id).as_stmt())
+
+        total_sum = AddOp(RedisFn("GET", r_total), weighted_value)
+        mseq.add_stmt(RedisFn("SET", r_total, total_sum).as_stmt())
+
+        daily_sum = AddOp(RedisFn("GET", r_daily), weighted_value)
+        mseq.add_stmt(RedisFn("SET", r_daily, daily_sum).as_stmt())
+
+        user_new_value = Branch(EqOp(RedisFn("EXISTS", r_user), Literal(0)))
+        mseq.add_stmt(user_new_value)
+        user_new_value.get_success().add_stmt(
+            RedisFn("SET", r_user, user_id).as_stmt())
+
+        first_new_value = Branch(EqOp(RedisFn("EXISTS", r_first), Literal(0)))
+        mseq.add_stmt(first_new_value)
+        fnv_seq = first_new_value.get_success()
+        fnv_seq.add_stmt(RedisFn("SET", r_first, now).as_stmt())
+        fnv_seq.add_stmt(is_new.assign(Literal(True)))
+
+        mseq.add_stmt(RedisFn("SET", r_last, now).as_stmt())
+
+        is_user_link = Branch(AndOp(is_new, EqOp(vote_type, Literal(VT_UP))))
+        mseq.add_stmt(is_user_link)
+        is_user_link.get_success().add_stmt(
+            RedisFn("SADD", r_user_links, plink).as_stmt())
+
         return script
-
-        # def do_add_value(self, key: KT, value: str) -> bool:
-    #     rkey = self.get_redis_key(key)
-    #     with self._redis.get_connection() as conn:
-    #         with conn.pipeline() as pipe:
-    #             val = value.encode("utf-8")
-    #             pipe.sismember(rkey, val)
-    #             pipe.sadd(rkey, val)
-    #             return bool(pipe.execute()[0])
-
-    # def do_remove_value(self, key: KT, value: str) -> bool:
-    #     rkey = self.get_redis_key(key)
-    #     with self._redis.get_connection() as conn:
-    #         with conn.pipeline() as pipe:
-    #             val = value.encode("utf-8")
-    #             pipe.sismember(rkey, val)
-    #             pipe.srem(rkey, val)
-    #             return bool(pipe.execute()[0])
-
-    # def set_value(self, key: KT, value: VT) -> None:
-    #     rkey = self.get_redis_key(key)
-    #     with self._redis.get_connection() as conn:
-    #         conn.set(rkey, json_compact(value))
-
-    # user_id = who.get_id()
-# if store.r_voted.add_value(key, user_id):
-#     return
-# votes = self.get_votes(vote_type)
-# weighted_value = who.get_weighted_vote(self.get_user(user_store))
-# store.r_total.set_value(key, votes.get_total_votes() + weighted_value)
-# store.r_daily.set_value(
-#     key, votes.get_adjusted_daily_votes(now) + weighted_value)
-# store.r_user.do_set_new_value(key, user_id)
-# nows = to_timestamp(now)
-# is_new = store.r_first.set_new_value(key, nows)
-# store.r_last.set_value(key, nows)
-# if is_new and key.vote_type == VT_UP:
-#     store.r_user_links.add_value(
-#         user_id, parseable_link(key.parent, key.child))
 
     def settle_all(self) -> float:
         start_time = time.monotonic()
