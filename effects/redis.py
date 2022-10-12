@@ -17,7 +17,6 @@ from effects.dedicated import (
     Literal,
     LiteralKey,
     LocalVariable,
-    NotOp,
     RedisFn,
     Script,
 )
