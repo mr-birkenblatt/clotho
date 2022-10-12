@@ -3,12 +3,14 @@ from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
+from effects.dedicated import Arg, RootSet, RootValue, Script
 from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
     SetRootRedisType,
     ValueRootRedisType,
 )
+from misc.redis import RedisConnection
 from misc.util import from_timestamp, now_ts, to_timestamp
 from system.links.link import Link, Votes, VoteType, VT_UP
 from system.links.scorer import get_scorer, Scorer, ScorerName
@@ -347,6 +349,86 @@ class RedisLinkStore(LinkStore):
 
         for scorer in self.valid_scorers():
             add_scorer_dependent_types(scorer)
+
+        # add_vote lua script
+        self._conn = RedisConnection("link")
+        self._add_vote = self.create_add_vote_script()
+
+    def add_vote(
+            self,
+            link: RLink,
+            user: User,
+            vote_type: VoteType,
+            weighted_value: float,
+            now: float) -> None:
+        user_id = user.get_id()
+        self._add_vote.execute(
+            args=[
+                weighted_value,
+                vote_type,
+                now,
+                parseable_link(link.parent, link.child),
+            ],
+            keys=[link, link, link, link, link, link, user_id],
+            conn=self._conn)
+
+    def create_add_vote_script(self) -> Script:
+        script = Script()
+        weighted_value = script.add_arg(Arg())
+        vote_type = script.add_arg(Arg())
+        now = script.add_arg(Arg())
+        parseable_link = script.add_arg(Arg())
+        r_voted: RootSet[RLink] = script.add_key(RootSet(self.r_voted))
+        r_total: RootValue[RLink, float] = script.add_key(
+            RootValue(self.r_total))
+        r_daily: RootValue[RLink, float] = script.add_key(
+            RootValue(self.r_daily))
+        r_user: RootValue[RLink, str] = script.add_key(RootValue(self.r_user))
+        r_first: RootValue[RLink, float] = script.add_key(
+            RootValue(self.r_first))
+        r_last: RootValue[RLink, float] = script.add_key(
+            RootValue(self.r_last))
+        r_user_links: RootSet[str] = script.add_key(RootSet(self.r_user_links))
+        return script
+
+        # def do_add_value(self, key: KT, value: str) -> bool:
+    #     rkey = self.get_redis_key(key)
+    #     with self._redis.get_connection() as conn:
+    #         with conn.pipeline() as pipe:
+    #             val = value.encode("utf-8")
+    #             pipe.sismember(rkey, val)
+    #             pipe.sadd(rkey, val)
+    #             return bool(pipe.execute()[0])
+
+    # def do_remove_value(self, key: KT, value: str) -> bool:
+    #     rkey = self.get_redis_key(key)
+    #     with self._redis.get_connection() as conn:
+    #         with conn.pipeline() as pipe:
+    #             val = value.encode("utf-8")
+    #             pipe.sismember(rkey, val)
+    #             pipe.srem(rkey, val)
+    #             return bool(pipe.execute()[0])
+
+    # def set_value(self, key: KT, value: VT) -> None:
+    #     rkey = self.get_redis_key(key)
+    #     with self._redis.get_connection() as conn:
+    #         conn.set(rkey, json_compact(value))
+
+    # user_id = who.get_id()
+# if store.r_voted.add_value(key, user_id):
+#     return
+# votes = self.get_votes(vote_type)
+# weighted_value = who.get_weighted_vote(self.get_user(user_store))
+# store.r_total.set_value(key, votes.get_total_votes() + weighted_value)
+# store.r_daily.set_value(
+#     key, votes.get_adjusted_daily_votes(now) + weighted_value)
+# store.r_user.do_set_new_value(key, user_id)
+# nows = to_timestamp(now)
+# is_new = store.r_first.set_new_value(key, nows)
+# store.r_last.set_value(key, nows)
+# if is_new and key.vote_type == VT_UP:
+#     store.r_user_links.add_value(
+#         user_id, parseable_link(key.parent, key.child))
 
     def settle_all(self) -> float:
         start_time = time.monotonic()

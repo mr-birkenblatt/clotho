@@ -230,12 +230,9 @@ class ListDependentRedisType(
     def do_set_new_value(self, key: KT, value: List[str]) -> bool:
         if self._update_new_val is None:
             script = Script()
-            new_value = Arg()
-            script.add_arg(new_value)
-            key_var = LiteralKey()
-            script.add_key(key_var)
-            res_var = LocalVariable(Literal(0))
-            script.add_local(res_var)
+            new_value = script.add_arg(Arg())
+            key_var = script.add_key(LiteralKey())
+            res_var = script.add_local(LocalVariable(Literal(0)))
 
             branch = Branch(EqOp(CallFn("redis.llen", key_var), Literal(0)))
             loop = ForLoop(script, new_value)

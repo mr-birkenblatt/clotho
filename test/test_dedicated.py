@@ -36,19 +36,14 @@ return 1
 
 def test_dedicated() -> None:
     script = Script()
-    input_a = Arg()
-    input_b = Arg()
-    script.add_arg(input_a)
-    script.add_arg(input_b)
+    input_a = script.add_arg(Arg())
+    input_b = script.add_arg(Arg())
 
     value_a: ValueRootRedisType[str, float] = ValueRootRedisType(
         "test", lambda key: key)
-    output_a: RootValue[str, float] = RootValue(value_a)
-    script.add_key(output_a)
-    var_a = LocalVariable(Literal(0.0))
-    script.add_local(var_a)
-    var_b = LocalVariable(output_a)
-    script.add_local(var_b)
+    output_a: RootValue[str, float] = script.add_key(RootValue(value_a))
+    var_a = script.add_local(LocalVariable(Literal(0.0)))
+    var_b = script.add_local(LocalVariable(output_a))
 
     postfix = CallFn("string.sub", var_b, Literal(-4))
     branch_inner = Branch(EqOp(postfix, Literal(":abc")))
@@ -56,13 +51,10 @@ def test_dedicated() -> None:
     branch_inner.get_failure().add_stmt(var_a.assign(Literal(1.0)))
 
     branch = Branch(LtOp(input_a, Literal(1.0)))
-    br_a = branch.get_success()
-    br_a.add_stmt(var_a.assign(AddOp(input_a, input_b)))
-    br_b = branch.get_failure()
-    br_b.add_stmt(branch_inner)
+    branch.get_success().add_stmt(var_a.assign(AddOp(input_a, input_b)))
+    branch.get_failure().add_stmt(branch_inner)
 
-    script.add_stmt(branch)
-    script.add_stmt(
+    script.add_stmt(branch).add_stmt(
         CallFn("redis.call", Literal("SET"), output_a, var_a).as_stmt())
 
     script.set_return_value(Literal(1))

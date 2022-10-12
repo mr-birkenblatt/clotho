@@ -25,6 +25,10 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 PT = TypeVar('PT')
 
+AT = TypeVar('AT', bound='Arg')
+KV = TypeVar('KV', bound='KeyVariable')
+LV = TypeVar('LV', bound='LocalVariable')
+
 
 class Compilable:  # pylint: disable=too-few-public-methods
     def compile(self, indent: int) -> str:
@@ -74,20 +78,24 @@ class Script(Compilable):
         self._compute: Optional[RedisFunctionBytes] = None
         self._loops: int = 0
 
-    def add_stmt(self, statement: Compilable) -> None:
+    def add_stmt(self, statement: Compilable) -> 'Script':
         self._seq.add_stmt(statement)
+        return self
 
-    def add_arg(self, arg: 'Arg') -> None:
+    def add_arg(self, arg: AT) -> AT:
         self._args.append(arg)
         arg.set_index(len(self._args))
+        return arg
 
-    def add_key(self, key: 'KeyVariable') -> None:
+    def add_key(self, key: KV) -> KV:
         self._keys.append(key)
         key.set_index(len(self._keys))
+        return key
 
-    def add_local(self, local: 'LocalVariable') -> None:
+    def add_local(self, local: LV) -> LV:
         self._locals.append(local)
         local.set_index(len(self._locals))
+        return local
 
     def add_loop(self) -> int:
         self._loops += 1
@@ -113,6 +121,8 @@ class Script(Compilable):
             args: List[JSONType],
             keys: List[Any],
             conn: RedisConnection) -> bytes:
+        assert len(keys) == len(self._keys)
+        assert len(args) == len(self._args)
         if self._compute is None:
             code = self.compile(0)
             self._compute = conn.get_dynamic_script(code)
@@ -331,23 +341,6 @@ class ForLoop(Compilable):
         return f"{start_a}{start_b}{block}{end}"
 
 
-# user_id = who.get_id()
-# if store.r_voted.add_value(key, user_id):
-#     return
-# votes = self.get_votes(vote_type)
-# weighted_value = who.get_weighted_vote(self.get_user(user_store))
-# store.r_total.set_value(key, votes.get_total_votes() + weighted_value)
-# store.r_daily.set_value(
-#     key, votes.get_adjusted_daily_votes(now) + weighted_value)
-# store.r_user.do_set_new_value(key, user_id)
-# nows = to_timestamp(now)
-# is_new = store.r_first.set_new_value(key, nows)
-# store.r_last.set_value(key, nows)
-# if is_new and key.vote_type == VT_UP:
-#     store.r_user_links.add_value(
-#         user_id, parseable_link(key.parent, key.child))
-
-
 class RootValue(Generic[KT, VT], KeyVariable[KT]):
     def __init__(self, ref: 'ValueRootRedisType[KT, VT]') -> None:
         self._ref = ref
@@ -359,7 +352,7 @@ class RootValue(Generic[KT, VT], KeyVariable[KT]):
         self._ref.on_update(key)
 
 
-class RootSet(Generic[KT, VT], KeyVariable[KT]):
+class RootSet(Generic[KT], KeyVariable[KT]):
     def __init__(self, ref: 'SetRootRedisType[KT]') -> None:
         self._ref = ref
 
