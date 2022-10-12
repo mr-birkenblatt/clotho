@@ -104,7 +104,7 @@ pre-commit:
 	isort .
 
 pytest:
-	PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
+	PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh "$(FILE[@])"
 
 run-test-redis:
 	cd test && redis-server
