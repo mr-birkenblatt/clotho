@@ -1,13 +1,4 @@
-from typing import (
-    Any,
-    Callable,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
 
 from redis import StrictRedis
 
@@ -41,7 +32,7 @@ class Expr:
         raise NotImplementedError()
 
     def as_stmt(self) -> Stmt:
-        return Stmt(lambda: self.compile())
+        return Stmt(self.compile)
 
 
 class Sequence(Compilable):
