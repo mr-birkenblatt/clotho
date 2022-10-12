@@ -38,7 +38,8 @@ export -f run_test
 
 if ! [ -z ${FILES} ]; then
     IDX=0
-    for CUR_TEST in ${FILES[@]}; do
+    echo "${FILES[@]}"
+    for CUR_TEST in "${FILES[@]}"; do
         run_test $CUR_TEST $IDX
         IDX=$((IDX+1))
     done
