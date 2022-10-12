@@ -1,10 +1,12 @@
 from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
 
-from redis import StrictRedis
-
 from effects.redis import SetRootRedisType, ValueRootRedisType
 from misc.redis import RedisConnection, RedisFunctionBytes
 from misc.util import json_compact
+
+
+JSONType = Union[str, int, float, List[str], List[int], List[float]]
+LiteralType = Union[str, int, float, bool]
 
 
 KT = TypeVar('KT')
@@ -39,8 +41,9 @@ class Sequence(Compilable):
     def __init__(self) -> None:
         self._seq: List[Compilable] = []
 
-    def add_stmt(self, statement: Compilable) -> None:
+    def add_stmt(self, statement: Compilable) -> 'Sequence':
         self._seq.append(statement)
+        return self
 
     def is_empty(self) -> bool:
         return not self._seq
@@ -50,13 +53,14 @@ class Sequence(Compilable):
 
 
 class Script(Compilable):
-    def __init__(self, conn: RedisConnection) -> None:
-        self._conn = conn
+    def __init__(self) -> None:
         self._args: List[Arg] = []
         self._keys: List[KeyVariable] = []
         self._locals: List[LocalVariable] = []
+        self._return: Optional[Expr] = None
         self._seq = Sequence()
         self._compute: Optional[RedisFunctionBytes] = None
+        self._loops: int = 0
 
     def add_stmt(self, statement: Compilable) -> None:
         self._seq.add_stmt(statement)
@@ -73,32 +77,44 @@ class Script(Compilable):
         self._locals.append(local)
         local.set_index(len(self._locals))
 
+    def add_loop(self) -> int:
+        self._loops += 1
+        return self._loops
+
+    def set_return_value(self, expr: Expr) -> None:
+        self._return = expr
+
     def compile(self, indent: int) -> str:
         ind = " " * indent
         keys = "\n".join((f"{ind}{key.get_declare()}" for key in self._keys))
         decl = "\n".join((f"{ind}{arg.get_declare()}" for arg in self._args))
         lcl = "\n".join((f"{ind}{lcl.get_declare()}" for lcl in self._locals))
-        return f"{keys}\n{decl}\n{lcl}\n{self._seq.compile(indent)}\n"
+        if self._return is None:
+            ret = ""
+        else:
+            ret = f"\n{ind}return {self._return.compile()}"
+        return f"{keys}\n{decl}\n{lcl}\n{self._seq.compile(indent)}{ret}\n"
 
     def execute(
             self,
             *,
-            args: List[Union[str, int, float]],
+            args: List[JSONType],
             keys: List[Any],
-            client: Optional[StrictRedis] = None) -> bytes:
+            conn: RedisConnection) -> bytes:
         if self._compute is None:
             code = self.compile(0)
-            self._compute = self._conn.get_dynamic_script(code)
-        res = self._compute(
-            keys=[
-                key_var.get_value(key)
-                for (key, key_var) in zip(keys, self._keys)
-            ],
-            args=[
-                arg_var.get_value(arg)
-                for (arg, arg_var) in zip(args, self._args)
-            ],
-            client=client)
+            self._compute = conn.get_dynamic_script(code)
+        with conn.get_connection() as client:
+            res = self._compute(
+                keys=[
+                    key_var.get_value(key)
+                    for (key, key_var) in zip(keys, self._keys)
+                ],
+                args=[
+                    arg_var.get_value(arg)
+                    for (arg, arg_var) in zip(args, self._args)
+                ],
+                client=client)
         for (key, key_var) in zip(keys, self._keys):
             key_var.post_completion(key)
         return res
@@ -141,7 +157,7 @@ class Arg(Variable):
     def prefix(self) -> str:
         return "arg"
 
-    def get_value(self, value: Union[str, int, float]) -> bytes:
+    def get_value(self, value: JSONType) -> bytes:
         return json_compact(value)
 
 
@@ -172,10 +188,12 @@ class LocalVariable(Variable):
 
 
 class Literal(Expr):  # pylint: disable=too-few-public-methods
-    def __init__(self, value: Union[str, int, float]) -> None:
+    def __init__(self, value: LiteralType) -> None:
         self._value = value
 
     def compile(self) -> str:
+        if isinstance(self._value, bool):
+            return f"{self._value}".lower()
         if isinstance(self._value, (int, float)):
             return f"{self._value}"
         res = f"{self._value}"
@@ -223,7 +241,7 @@ class CallFn(Expr):  # pylint: disable=too-few-public-methods
         return f"{self._fname}({argstr})"
 
 
-class Branch(Compilable):  # pylint: disable=too-few-public-methods
+class Branch(Compilable):
     def __init__(self, condition: Expr) -> None:
         self._condition = condition
         self._success = Sequence()
@@ -247,6 +265,50 @@ class Branch(Compilable):  # pylint: disable=too-few-public-methods
             block_b = f"{self._failure.compile(indent + 2)}\n"
         end = f"{ind}end"
         return f"{start}{block_a}{middle}{block_b}{end}"
+
+
+class IndexVariable(Variable):
+    def get_declare_rhs(self) -> str:
+        raise RuntimeError("must be used in for loop")
+
+    def prefix(self) -> str:
+        return "ix"
+
+
+class ValueVariable(Variable):
+    def get_declare_rhs(self) -> str:
+        raise RuntimeError("must be used in for loop")
+
+    def prefix(self) -> str:
+        return "val"
+
+
+class ForLoop(Compilable):
+    def __init__(self, script: Script, array: Expr) -> None:
+        loop_ix = script.add_loop()
+        self._ix = IndexVariable()
+        self._ix.set_index(loop_ix)
+        self._val = ValueVariable()
+        self._val.set_index(loop_ix)
+        self._loop = Sequence()
+        self._array = array
+
+    def get_index(self) -> Variable:
+        return self._ix
+
+    def get_value(self) -> Variable:
+        return self._val
+
+    def get_loop(self) -> Sequence:
+        return self._loop
+
+    def compile(self, indent: int) -> str:
+        ind = indent * " "
+        start_a = f"{ind}for {self._ix.get_ref()}, {self._val.get_ref()} "
+        start_b = f"in pairs({self._array.compile()}) do\n"
+        block = f"{self._loop.compile(indent + 2)}\n"
+        end = f"{ind}end"
+        return f"{start_a}{start_b}{block}{end}"
 
 
 # user_id = who.get_id()

@@ -9,6 +9,17 @@ from typing import (
     TypeVar,
 )
 
+from effects.dedicated import (
+    Arg,
+    Branch,
+    CallFn,
+    EqOp,
+    ForLoop,
+    KeyVariable,
+    Literal,
+    LocalVariable,
+    Script,
+)
 from effects.effects import (
     EffectBase,
     EffectDependent,
@@ -190,6 +201,7 @@ class ListDependentRedisType(
         super().__init__(parents, effect, conversion, delay)
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
+        self._update_new_val: Optional[Script] = None
 
     def get_redis_key(self, key: KT) -> str:
         return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
@@ -216,16 +228,27 @@ class ListDependentRedisType(
                 return [val.decode("utf-8") for val in res]
 
     def do_set_new_value(self, key: KT, value: List[str]) -> bool:
+        if self._update_new_val is None:
+            script = Script()
+            new_value = Arg()
+            script.add_arg(new_value)
+            key_var: KeyVariable[str] = KeyVariable()
+            script.add_key(key_var)
+            res_var = LocalVariable(Literal(0))
+            script.add_local(res_var)
+
+            branch = Branch(EqOp(CallFn("redis.llen", key_var), Literal(0)))
+            loop = ForLoop(script, new_value)
+            loop.get_loop().add_stmt(
+                CallFn("redis.rpush", key_var, loop.get_value()).as_stmt())
+            branch.get_success().add_stmt(
+                loop).add_stmt(res_var.assign(Literal(1)))
+
+            script.set_return_value(res_var)
+            self._update_new_val = script
         rkey = self.get_redis_key(key)
-        # FIXME make atomic
-        with self._redis.get_connection() as conn:
-            if conn.llen(rkey) > 0:
-                return False
-            length = conn.rpush(rkey, *[val.encode("utf-8") for val in value])
-            if length > len(value):
-                conn.ltrim(rkey, -len(value), -1)
-                return False
-            return True
+        return int(self._update_new_val.execute(
+            args=[value], keys=[rkey], conn=self._redis)) != 0
 
     def retrieve_value(self, key: KT) -> Optional[List[str]]:
         rkey = self.get_redis_key(key)

@@ -34,8 +34,7 @@ redis.call("SET", key_1, var_1)
 
 
 def test_dedicated() -> None:
-    conn = RedisConnection("test")
-    script = Script(conn)
+    script = Script()
     input_a = Arg()
     input_b = Arg()
     script.add_arg(input_a)
@@ -65,15 +64,18 @@ def test_dedicated() -> None:
     script.add_stmt(
         CallFn("redis.call", Literal("SET"), output_a, var_a).as_stmt())
 
+    script.set_return_value(Literal(1))
+
     assert script.compile(0) == SCRIPT_REF
 
+    conn = RedisConnection("test")
     assert value_a.maybe_get_value("abc") is None
     assert value_a.maybe_get_value("def") is None
-    script.execute(args=[-1.0, 3.0], keys=["def"])
+    script.execute(args=[-1.0, 3.0], keys=["def"], conn=conn)
     assert value_a.maybe_get_value("def") == 2.0
-    script.execute(args=[3.0, -1.0], keys=["def"])
+    script.execute(args=[3.0, -1.0], keys=["def"], conn=conn)
     assert value_a.maybe_get_value("def") == 1.0
     assert value_a.maybe_get_value("abc") is None
 
-    script.execute(args=[3.0, -1.0], keys=["abc"])
+    assert int(script.execute(args=[3.0, -1.0], keys=["abc"], conn=conn)) != 0
     assert value_a.maybe_get_value("abc") == -1.0
