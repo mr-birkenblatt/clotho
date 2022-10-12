@@ -4,7 +4,7 @@ set -ex
 
 PYTHON="${PYTHON:-python3}"
 RESULT_FNAME="${RESULT_FNAME:-results.xml}"
-FILES=($@)
+FILES=("$@")
 export USER_FILEPATH=./userdata
 
 coverage erase
