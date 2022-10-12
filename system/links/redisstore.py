@@ -8,7 +8,6 @@ from effects.dedicated import (
     AndOp,
     Arg,
     Branch,
-    CallFn,
     EqOp,
     Literal,
     LocalVariable,
