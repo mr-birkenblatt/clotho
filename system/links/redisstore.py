@@ -8,10 +8,10 @@ from effects.dedicated import (
     AndOp,
     Arg,
     Branch,
-    CallFn,
     EqOp,
     Literal,
     LocalVariable,
+    OrOp,
     RedisFn,
     RootSet,
     RootValue,
@@ -399,11 +399,11 @@ class RedisLinkStore(LinkStore):
         mseq.add_stmt(RedisFn("SADD", r_voted, user_id).as_stmt())
 
         total_sum = AddOp(
-            CallFn("tonumber", RedisFn("GET", r_total)), weighted_value)
+            OrOp(RedisFn("GET", r_total), Literal(0)), weighted_value)
         mseq.add_stmt(RedisFn("SET", r_total, total_sum).as_stmt())
 
         daily_sum = AddOp(
-            CallFn("tonumber", RedisFn("GET", r_daily)), weighted_value)
+            OrOp(RedisFn("GET", r_daily), Literal(0)), weighted_value)
         mseq.add_stmt(RedisFn("SET", r_daily, daily_sum).as_stmt())
 
         user_new_value = Branch(EqOp(RedisFn("EXISTS", r_user), Literal(0)))

@@ -251,6 +251,11 @@ class AndOp(Op):  # pylint: disable=too-few-public-methods
         return f"({self.get_left()} and {self.get_right()})"
 
 
+class OrOp(Op):  # pylint: disable=too-few-public-methods
+    def compile(self) -> str:
+        return f"({self.get_left()} or {self.get_right()})"
+
+
 class AddOp(Op):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         return f"({self.get_left()} + {self.get_right()})"
