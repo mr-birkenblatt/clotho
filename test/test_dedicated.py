@@ -30,6 +30,7 @@ else
     end
 end
 redis.call("SET", key_1, var_1)
+return 1
 """.lstrip().replace("    ", "  ")
 
 
