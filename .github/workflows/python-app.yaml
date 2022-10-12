@@ -137,7 +137,7 @@ jobs:
         FILES=("${FILE_INFO[@]:1}")
         echo "Selected Files are: ${FILES[@]}"
         echo "Previous timings are: ${FILE_INFO[0]}"
-        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE=${FILES[@]}
+        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES[@]}"
 
     - name: Upload Artifact(results)
       uses: actions/upload-artifact@v3
