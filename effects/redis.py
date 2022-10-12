@@ -15,8 +15,8 @@ from effects.dedicated import (
     CallFn,
     EqOp,
     ForLoop,
-    KeyVariable,
     Literal,
+    LiteralKey,
     LocalVariable,
     Script,
 )
@@ -232,7 +232,7 @@ class ListDependentRedisType(
             script = Script()
             new_value = Arg()
             script.add_arg(new_value)
-            key_var: KeyVariable[str] = KeyVariable()
+            key_var = LiteralKey()
             script.add_key(key_var)
             res_var = LocalVariable(Literal(0))
             script.add_local(res_var)

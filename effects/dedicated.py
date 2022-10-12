@@ -1,8 +1,20 @@
-from typing import Any, Callable, Generic, List, Optional, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    List,
+    Optional,
+    TYPE_CHECKING,
+    TypeVar,
+    Union,
+)
 
-from effects.redis import SetRootRedisType, ValueRootRedisType
 from misc.redis import RedisConnection, RedisFunctionBytes
 from misc.util import json_compact
+
+
+if TYPE_CHECKING:
+    from effects.redis import SetRootRedisType, ValueRootRedisType
 
 
 JSONType = Union[str, int, float, List[str], List[int], List[float]]
@@ -175,6 +187,14 @@ class KeyVariable(Generic[KT], Variable):
         raise NotImplementedError()
 
 
+class LiteralKey(KeyVariable[str]):
+    def get_value(self, key: str) -> str:
+        return key
+
+    def post_completion(self, key: str) -> None:
+        pass
+
+
 class LocalVariable(Variable):
     def __init__(self, init: Expr) -> None:
         super().__init__()
@@ -329,7 +349,7 @@ class ForLoop(Compilable):
 
 
 class RootValue(Generic[KT, VT], KeyVariable[KT]):
-    def __init__(self, ref: ValueRootRedisType[KT, VT]) -> None:
+    def __init__(self, ref: 'ValueRootRedisType[KT, VT]') -> None:
         self._ref = ref
 
     def get_value(self, key: KT) -> str:
@@ -340,7 +360,7 @@ class RootValue(Generic[KT, VT], KeyVariable[KT]):
 
 
 class RootSet(Generic[KT, VT], KeyVariable[KT]):
-    def __init__(self, ref: SetRootRedisType[KT]) -> None:
+    def __init__(self, ref: 'SetRootRedisType[KT]') -> None:
         self._ref = ref
 
     def get_value(self, key: KT) -> str:
