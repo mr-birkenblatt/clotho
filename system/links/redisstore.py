@@ -395,10 +395,10 @@ class RedisLinkStore(LinkStore):
         is_new = script.add_local(LocalVariable(Literal(False)))
 
         main = Branch(EqOp(
-            RedisFn("SISMEMBER", r_voted, ToJSON(user_id)), Literal(0)))
+            RedisFn("SISMEMBER", r_voted, user_id), Literal(0)))
         script.add_stmt(main)
         mseq = main.get_success()
-        mseq.add_stmt(RedisFn("SADD", r_voted, ToJSON(user_id)).as_stmt())
+        mseq.add_stmt(RedisFn("SADD", r_voted, user_id).as_stmt())
 
         total_sum = AddOp(
             OrOp(RedisFn("GET", r_total), Literal(0)), weighted_value)
@@ -424,7 +424,7 @@ class RedisLinkStore(LinkStore):
         is_user_link = Branch(AndOp(is_new, EqOp(vote_type, Literal(VT_UP))))
         mseq.add_stmt(is_user_link)
         is_user_link.get_success().add_stmt(
-            RedisFn("SADD", r_user_links, ToJSON(plink)).as_stmt())
+            RedisFn("SADD", r_user_links, plink).as_stmt())
 
         return script
 
