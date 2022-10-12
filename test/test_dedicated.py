@@ -21,16 +21,16 @@ local arg_2 = cjson.decode(ARGV[2])
 local var_1 = 0.0
 local var_2 = key_1
 if (arg_1 < 1.0) then
-  var_1 = (arg_1 + arg_2)
+    var_1 = (arg_1 + arg_2)
 else
-  if (string.sub(var_2, -4) == ":abc") then
-    var_1 = -1.0
-  else
-    var_1 = 1.0
-  end
+    if (string.sub(var_2, -4) == ":abc") then
+        var_1 = -1.0
+    else
+        var_1 = 1.0
+    end
 end
 redis.call("SET", key_1, var_1)
-""".lstrip()
+""".lstrip().replace("    ", "  ")
 
 
 def test_dedicated() -> None:
