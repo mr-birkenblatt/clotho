@@ -1,9 +1,12 @@
 from typing import (
     Any,
     Callable,
+    Dict,
     Generic,
     List,
     Optional,
+    Set,
+    Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
@@ -74,8 +77,10 @@ class Sequence(Compilable):
 
 class Script(Compilable):
     def __init__(self) -> None:
-        self._args: List[Arg] = []
-        self._keys: List[KeyVariable] = []
+        self._args: List[Tuple[str, Arg]] = []
+        self._keys: List[Tuple[str, KeyVariable]] = []
+        self._anames: Set[str] = set()
+        self._knames: Set[str] = set()
         self._locals: List[LocalVariable] = []
         self._return: Optional[Expr] = None
         self._seq = Sequence()
@@ -86,14 +91,20 @@ class Script(Compilable):
         self._seq.add_stmt(statement)
         return self
 
-    def add_arg(self) -> 'Arg':
+    def add_arg(self, name: str) -> 'Arg':
+        if name in self._anames:
+            raise ValueError(f"ambiguous arg name: '{name}'")
         arg = Arg()
-        self._args.append(arg)
+        self._args.append((name, arg))
+        self._anames.add(name)
         arg.set_index(len(self._args))
         return arg
 
-    def add_key(self, key: KV) -> KV:
-        self._keys.append(key)
+    def add_key(self, name: str, key: KV) -> KV:
+        if name in self._knames:
+            raise ValueError(f"ambiguous key name: '{name}'")
+        self._keys.append((name, key))
+        self._knames.add(name)
         key.set_index(len(self._keys))
         return key
 
@@ -112,8 +123,10 @@ class Script(Compilable):
 
     def compile(self, indent: int) -> str:
         ind = " " * indent
-        keys = "\n".join((f"{ind}{key.get_declare()}" for key in self._keys))
-        decl = "\n".join((f"{ind}{arg.get_declare()}" for arg in self._args))
+        keys = "\n".join(
+            (f"{ind}{key.get_declare()}" for _, key in self._keys))
+        decl = "\n".join(
+            (f"{ind}{arg.get_declare()}" for _, arg in self._args))
         lcl = "\n".join((f"{ind}{lcl.get_declare()}" for lcl in self._locals))
         if self._return is None:
             ret = ""
@@ -124,27 +137,26 @@ class Script(Compilable):
     def execute(
             self,
             *,
-            args: List[JSONType],
-            keys: List[Any],
+            args: Dict[str, JSONType],
+            keys: Dict[str, Any],
             conn: RedisConnection) -> bytes:
         assert len(keys) == len(self._keys)
         assert len(args) == len(self._args)
+        argv = [
+            arg_var.get_value(args[aname])
+            for aname, arg_var in self._args
+        ]
+        keyv = [
+            key_var.get_value(keys[kname])
+            for kname, key_var in self._keys
+        ]
         if self._compute is None:
             code = self.compile(0)
             self._compute = conn.get_dynamic_script(code)
         with conn.get_connection() as client:
-            res = self._compute(
-                keys=[
-                    key_var.get_value(key)
-                    for (key, key_var) in zip(keys, self._keys)
-                ],
-                args=[
-                    arg_var.get_value(arg)
-                    for (arg, arg_var) in zip(args, self._args)
-                ],
-                client=client)
-        for (key, key_var) in zip(keys, self._keys):
-            key_var.post_completion(key)
+            res = self._compute(keys=keyv, args=argv, client=client)
+        for kname, key_var in self._keys:
+            key_var.post_completion(keys[kname])
         return res
 
 

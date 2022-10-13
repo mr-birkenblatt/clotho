@@ -231,8 +231,8 @@ class ListDependentRedisType(
             return False
         if self._update_new_val is None:
             script = Script()
-            new_value = script.add_arg()
-            key_var = script.add_key(LiteralKey())
+            new_value = script.add_arg("value")
+            key_var = script.add_key("rkey", LiteralKey())
             res_var = script.add_local(0)
 
             branch = Branch(EqOp(RedisFn("LLEN", key_var), 0))
@@ -246,7 +246,7 @@ class ListDependentRedisType(
             self._update_new_val = script
         rkey = self.get_redis_key(key)
         return int(self._update_new_val.execute(
-            args=[value], keys=[rkey], conn=self._redis)) != 0
+            args={"value": value}, keys={"rkey": rkey}, conn=self._redis)) != 0
 
     def retrieve_value(self, key: KT) -> Optional[List[str]]:
         rkey = self.get_redis_key(key)

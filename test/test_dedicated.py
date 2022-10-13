@@ -34,12 +34,13 @@ return 1
 
 def test_dedicated() -> None:
     script = Script()
-    input_a = script.add_arg()
-    input_b = script.add_arg()
+    input_a = script.add_arg("input_a")
+    input_b = script.add_arg("input_b")
 
     value_a: ValueRootRedisType[str, float] = ValueRootRedisType(
         "test", lambda key: key)
-    output_a: RootValue[str, float] = script.add_key(RootValue(value_a))
+    output_a: RootValue[str, float] = script.add_key(
+        "value_a", RootValue(value_a))
     var_a = script.add_local(0.0)
     var_b = script.add_local(output_a)
 
@@ -61,11 +62,20 @@ def test_dedicated() -> None:
     conn = RedisConnection("test")
     assert value_a.maybe_get_value("abc") is None
     assert value_a.maybe_get_value("def") is None
-    script.execute(args=[-1.0, 3.0], keys=["def"], conn=conn)
+    script.execute(
+        args={"input_a": -1.0, "input_b": 3.0},
+        keys={"value_a": "def"},
+        conn=conn)
     assert value_a.maybe_get_value("def") == 2.0
-    script.execute(args=[3.0, -1.0], keys=["def"], conn=conn)
+    script.execute(
+        args={"input_a": 3.0, "input_b": -1.0},
+        keys={"value_a": "def"},
+        conn=conn)
     assert value_a.maybe_get_value("def") == 1.0
     assert value_a.maybe_get_value("abc") is None
 
-    assert int(script.execute(args=[3.0, -1.0], keys=["abc"], conn=conn)) != 0
+    assert int(script.execute(
+        args={"input_a": 3.0, "input_b": -1.0},
+        keys={"value_a": "abc"},
+        conn=conn)) != 0
     assert value_a.maybe_get_value("abc") == -1.0

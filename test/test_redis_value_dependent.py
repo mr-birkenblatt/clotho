@@ -87,7 +87,12 @@ def test_dependent() -> None:
             pkey: str,
             key: str) -> None:
         v_a, = parents
-        obj.set_new_value(key, "-".join(v_a.get_value(pkey, [])))
+        new = "-".join(v_a.get_value(pkey, []))
+        old = obj.maybe_get_value(key)
+        if obj.set_new_value(key, new):
+            assert obj.maybe_get_value(key) == new
+        else:
+            assert obj.maybe_get_value(key) == old
 
     def update_a_c(
             obj: EffectDependent[str, str, str],

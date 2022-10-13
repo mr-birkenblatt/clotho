@@ -361,34 +361,45 @@ class RedisLinkStore(LinkStore):
             now: float) -> None:
         user_id = user.get_id()
         self._add_vote.execute(
-            args=[
-                user_id,
-                weighted_value,
-                vote_type,
-                now,
-                parseable_link(link.parent, link.child),
-            ],
-            keys=[link, link, link, link, link, link, user_id],
+            args={
+                "user_id": user_id,
+                "weighted_value": weighted_value,
+                "vote_type": vote_type,
+                "now": now,
+                "plink": parseable_link(link.parent, link.child),
+            },
+            keys={
+                "r_voted": link,
+                "r_total": link,
+                "r_daily": link,
+                "r_user": link,
+                "r_first": link,
+                "r_last": link,
+                "r_user_links": user_id,
+            },
             conn=self._conn)
 
     def create_add_vote_script(self) -> Script:
         script = Script()
-        user_id = script.add_arg()
-        weighted_value = script.add_arg()
-        vote_type = script.add_arg()
-        now = script.add_arg()
-        plink = script.add_arg()
-        r_voted: RootSet[RLink] = script.add_key(RootSet(self.r_voted))
+        user_id = script.add_arg("user_id")
+        weighted_value = script.add_arg("weighted_value")
+        vote_type = script.add_arg("vote_type")
+        now = script.add_arg("now")
+        plink = script.add_arg("plink")
+        r_voted: RootSet[RLink] = script.add_key(
+            "r_voted", RootSet(self.r_voted))
         r_total: RootValue[RLink, float] = script.add_key(
-            RootValue(self.r_total))
+            "r_total", RootValue(self.r_total))
         r_daily: RootValue[RLink, float] = script.add_key(
-            RootValue(self.r_daily))
-        r_user: RootValue[RLink, str] = script.add_key(RootValue(self.r_user))
+            "r_daily", RootValue(self.r_daily))
+        r_user: RootValue[RLink, str] = script.add_key(
+            "r_user", RootValue(self.r_user))
         r_first: RootValue[RLink, float] = script.add_key(
-            RootValue(self.r_first))
+            "r_first", RootValue(self.r_first))
         r_last: RootValue[RLink, float] = script.add_key(
-            RootValue(self.r_last))
-        r_user_links: RootSet[str] = script.add_key(RootSet(self.r_user_links))
+            "r_last", RootValue(self.r_last))
+        r_user_links: RootSet[str] = script.add_key(
+            "r_user_links", RootSet(self.r_user_links))
         is_new = script.add_local(False)
 
         main = Branch(EqOp(RedisFn("SISMEMBER", r_voted, user_id), 0))
