@@ -9,7 +9,7 @@ from typing import (
     TypeVar,
 )
 
-from effects.dedicated import EqOp, LiteralKey, RedisFn, Script
+from effects.dedicated import LiteralKey, RedisFn, Script
 from effects.effects import (
     EffectBase,
     EffectDependent,
@@ -228,8 +228,8 @@ class ListDependentRedisType(
             key_var = script.add_key("rkey", LiteralKey())
             res_var = script.add_local(0)
 
-            success, _ = script.branch(EqOp(RedisFn("LLEN", key_var), 0))
-            loop, _, loop_value = success.for_loop(new_value)
+            success, _ = script.if_(RedisFn("LLEN", key_var).eq(0))
+            loop, _, loop_value = success.for_(new_value)
             loop.add(RedisFn("RPUSH", key_var, loop_value))
             success.add(res_var.assign(1))
 

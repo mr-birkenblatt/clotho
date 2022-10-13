@@ -3,17 +3,7 @@ from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
 
 import pandas as pd
 
-from effects.dedicated import (
-    AddOp,
-    AndOp,
-    EqOp,
-    OrOp,
-    RedisFn,
-    RootSet,
-    RootValue,
-    Script,
-    ToJSON,
-)
+from effects.dedicated import RedisFn, RootSet, RootValue, Script
 from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
@@ -401,20 +391,19 @@ class RedisLinkStore(LinkStore):
             "r_user_links", RootSet(self.r_user_links))
         is_new = script.add_local(False)
 
-        mseq, _ = script.branch(
-            EqOp(RedisFn("SISMEMBER", r_voted, user_id), 0))
+        mseq, _ = script.if_(RedisFn("SISMEMBER", r_voted, user_id).eq(0))
         mseq.add(RedisFn("SADD", r_voted, user_id))
 
-        total_sum = AddOp(OrOp(RedisFn("GET", r_total), 0), weighted_value)
+        total_sum = RedisFn("GET", r_total).or_(0) + weighted_value
         mseq.add(RedisFn("SET", r_total, total_sum))
 
-        daily_sum = AddOp(OrOp(RedisFn("GET", r_daily), 0), weighted_value)
+        daily_sum = RedisFn("GET", r_daily).or_(0) + weighted_value
         mseq.add(RedisFn("SET", r_daily, daily_sum))
 
-        user_exists, _ = mseq.branch(EqOp(RedisFn("EXISTS", r_user), 0))
-        user_exists.add(RedisFn("SET", r_user, ToJSON(user_id)))
+        user_exists, _ = mseq.if_(RedisFn("EXISTS", r_user).eq(0))
+        user_exists.add(RedisFn("SET", r_user, user_id.json()))
 
-        fnv_seq, _ = mseq.branch(EqOp(RedisFn("EXISTS", r_first), 0))
+        fnv_seq, _ = mseq.if_(RedisFn("EXISTS", r_first).eq(0))
         fnv_seq.add((
             RedisFn("SET", r_first, now),
             is_new.assign(True),
@@ -422,7 +411,7 @@ class RedisLinkStore(LinkStore):
 
         mseq.add(RedisFn("SET", r_last, now))
 
-        is_user_link, _ = mseq.branch(AndOp(is_new, EqOp(vote_type, VT_UP)))
+        is_user_link, _ = mseq.if_(is_new.and_(vote_type.eq(VT_UP)))
         is_user_link.add(RedisFn("SADD", r_user_links, plink))
 
         return script

@@ -1,12 +1,4 @@
-from effects.dedicated import (
-    AddOp,
-    CallFn,
-    EqOp,
-    LtOp,
-    RedisFn,
-    RootValue,
-    Script,
-)
+from effects.dedicated import CallFn, RedisFn, RootValue, Script
 from effects.redis import ValueRootRedisType
 from misc.redis import RedisConnection
 
@@ -43,12 +35,11 @@ def test_dedicated() -> None:
     var_a = script.add_local(0.0)
     var_b = script.add_local(output_a)
 
-    success, failure = script.branch(LtOp(input_a, 1.0))
-    success.add(var_a.assign(AddOp(input_a, input_b)))
+    success, failure = script.if_(input_a.lt(1.0))
+    success.add(var_a.assign(input_a + input_b))
 
-    inner_success, inner_failure = failure.branch(
-        EqOp(CallFn("string.sub", var_b, -4), ":abc"))
-
+    inner_success, inner_failure = failure.if_(
+        CallFn("string.sub", var_b, -4).eq(":abc"))
     inner_success.add(var_a.assign(-1.0))
     inner_failure.add(var_a.assign(1.0))
 

@@ -37,7 +37,7 @@ class Compilable:  # pylint: disable=too-few-public-methods
         raise NotImplementedError()
 
 
-class Stmt(Compilable):  # pylint: disable=too-few-public-methods
+class ExprHelper(Compilable):  # pylint: disable=too-few-public-methods
     def __init__(self, code_fn: Callable[[], str]) -> None:
         self._code_fn = code_fn
 
@@ -51,8 +51,29 @@ class Expr:
     def compile(self) -> str:
         raise NotImplementedError()
 
-    def as_stmt(self) -> Stmt:
-        return Stmt(self.compile)
+    def as_stmt(self) -> ExprHelper:
+        return ExprHelper(self.compile)
+
+    def __add__(self, other: MixedType) -> 'Expr':
+        return AddOp(self, other)
+
+    def eq(self, other: MixedType) -> 'Expr':  # pylint: disable=invalid-name
+        return EqOp(self, other)
+
+    def lt(self, other: MixedType) -> 'Expr':  # pylint: disable=invalid-name
+        return LtOp(self, other)
+
+    def not_(self) -> 'Expr':
+        return NotOp(self)
+
+    def or_(self, other: MixedType) -> 'Expr':
+        return OrOp(self, other)
+
+    def and_(self, other: MixedType) -> 'Expr':
+        return AndOp(self, other)
+
+    def json(self) -> 'Expr':
+        return ToJSON(self)
 
 
 def lit_helper(value: MixedType) -> 'Expr':
@@ -82,14 +103,12 @@ class Sequence(Compilable):
     def compile(self, indent: int) -> str:
         return "\n".join((stmt.compile(indent) for stmt in self._seq))
 
-    def for_loop(
-            self, array: Expr) -> Tuple['Sequence', 'Variable', 'Variable']:
+    def for_(self, array: Expr) -> Tuple['Sequence', 'Variable', 'Variable']:
         loop = ForLoop(self._script, array)
         self.add(loop)
         return loop.get_loop(), loop.get_index(), loop.get_value()
 
-    def branch(
-            self, condition: MixedType) -> Tuple['Sequence', 'Sequence']:
+    def if_(self, condition: MixedType) -> Tuple['Sequence', 'Sequence']:
         branch = Branch(self._script, condition)
         self.add(branch)
         return branch.get_success(), branch.get_failure()
@@ -190,8 +209,9 @@ class Variable(Expr):
     def prefix(self) -> str:
         raise NotImplementedError()
 
-    def assign(self, expr: MixedType) -> Stmt:
-        return Stmt(lambda: f"{self.get_ref()} = {lit_helper(expr).compile()}")
+    def assign(self, expr: MixedType) -> ExprHelper:
+        return ExprHelper(
+            lambda: f"{self.get_ref()} = {lit_helper(expr).compile()}")
 
     def get_declare(self) -> str:
         return f"local {self.get_ref()} = {self.get_declare_rhs()}"
