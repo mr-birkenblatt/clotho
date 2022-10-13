@@ -75,20 +75,20 @@ class Sequence(Compilable):
         return "\n".join((stmt.compile(indent) for stmt in self._seq))
 
 
-class Script(Compilable):
+class Script(Sequence):
     def __init__(self) -> None:
+        super().__init__()
         self._args: List[Tuple[str, Arg]] = []
         self._keys: List[Tuple[str, KeyVariable]] = []
         self._anames: Set[str] = set()
         self._knames: Set[str] = set()
         self._locals: List[LocalVariable] = []
         self._return: Optional[Expr] = None
-        self._seq = Sequence()
         self._compute: Optional[RedisFunctionBytes] = None
         self._loops: int = 0
 
     def add_stmt(self, statement: Compilable) -> 'Script':
-        self._seq.add_stmt(statement)
+        super().add_stmt(statement)
         return self
 
     def add_arg(self, name: str) -> 'Arg':
@@ -132,7 +132,7 @@ class Script(Compilable):
             ret = ""
         else:
             ret = f"\n{ind}return {self._return.compile()}"
-        return f"{keys}\n{decl}\n{lcl}\n{self._seq.compile(indent)}{ret}\n"
+        return f"{keys}\n{decl}\n{lcl}\n{super().compile(indent)}{ret}\n"
 
     def execute(
             self,
