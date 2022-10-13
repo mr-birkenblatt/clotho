@@ -19,15 +19,13 @@ if TYPE_CHECKING:
 
 JSONType = Union[str, int, float, List[str], List[int], List[float]]
 LiteralType = Union[str, int, float, bool]
+MixedType = Union['Expr', LiteralType]
 
 
 KT = TypeVar('KT')
 VT = TypeVar('VT')
 PT = TypeVar('PT')
-
-AT = TypeVar('AT', bound='Arg')
 KV = TypeVar('KV', bound='KeyVariable')
-LV = TypeVar('LV', bound='LocalVariable')
 
 
 class Compilable:  # pylint: disable=too-few-public-methods
@@ -51,6 +49,12 @@ class Expr:
 
     def as_stmt(self) -> Stmt:
         return Stmt(self.compile)
+
+
+def lit_helper(value: MixedType) -> 'Expr':
+    if isinstance(value, Expr):
+        return value
+    return Literal(value)
 
 
 class Sequence(Compilable):
@@ -82,7 +86,8 @@ class Script(Compilable):
         self._seq.add_stmt(statement)
         return self
 
-    def add_arg(self, arg: AT) -> AT:
+    def add_arg(self) -> 'Arg':
+        arg = Arg()
         self._args.append(arg)
         arg.set_index(len(self._args))
         return arg
@@ -92,7 +97,8 @@ class Script(Compilable):
         key.set_index(len(self._keys))
         return key
 
-    def add_local(self, local: LV) -> LV:
+    def add_local(self, init: MixedType) -> 'LocalVariable':
+        local = LocalVariable(init)
         self._locals.append(local)
         local.set_index(len(self._locals))
         return local
@@ -101,8 +107,8 @@ class Script(Compilable):
         self._loops += 1
         return self._loops
 
-    def set_return_value(self, expr: Expr) -> None:
-        self._return = expr
+    def set_return_value(self, expr: MixedType) -> None:
+        self._return = lit_helper(expr)
 
     def compile(self, indent: int) -> str:
         ind = " " * indent
@@ -156,8 +162,8 @@ class Variable(Expr):
     def prefix(self) -> str:
         raise NotImplementedError()
 
-    def assign(self, expr: Expr) -> Stmt:
-        return Stmt(lambda: f"{self.get_ref()} = {expr.compile()}")
+    def assign(self, expr: MixedType) -> Stmt:
+        return Stmt(lambda: f"{self.get_ref()} = {lit_helper(expr).compile()}")
 
     def get_declare(self) -> str:
         return f"local {self.get_ref()} = {self.get_declare_rhs()}"
@@ -206,9 +212,9 @@ class LiteralKey(KeyVariable[str]):
 
 
 class LocalVariable(Variable):
-    def __init__(self, init: Expr) -> None:
+    def __init__(self, init: MixedType) -> None:
         super().__init__()
-        self._init = init
+        self._init = lit_helper(init)
 
     def get_declare_rhs(self) -> str:
         return self._init.compile()
@@ -227,22 +233,22 @@ class Literal(Expr):  # pylint: disable=too-few-public-methods
         if isinstance(self._value, (int, float)):
             return f"{self._value}"
         res = f"{self._value}"
-        res = res.replace("\"", "\\\"")
+        res = res.replace("\"", "\\\"").replace("\n", "\\n")
         return f"\"{res}\""
 
 
 class NotOp(Expr):  # pylint: disable=too-few-public-methods
-    def __init__(self, expr: Expr) -> None:
-        self._expr = expr
+    def __init__(self, expr: MixedType) -> None:
+        self._expr = lit_helper(expr)
 
     def compile(self) -> str:
         return f"(not {self._expr.compile()})"
 
 
 class Op(Expr):
-    def __init__(self, lhs: Expr, rhs: Expr) -> None:
-        self._lhs = lhs
-        self._rhs = rhs
+    def __init__(self, lhs: MixedType, rhs: MixedType) -> None:
+        self._lhs = lit_helper(lhs)
+        self._rhs = lit_helper(rhs)
 
     def get_left(self) -> str:
         return self._lhs.compile()
@@ -280,9 +286,9 @@ class EqOp(Op):  # pylint: disable=too-few-public-methods
 
 
 class CallFn(Expr):  # pylint: disable=too-few-public-methods
-    def __init__(self, fname: str, *args: Expr) -> None:
+    def __init__(self, fname: str, *args: MixedType) -> None:
         self._fname = fname
-        self._args = args
+        self._args: List[Expr] = [lit_helper(arg) for arg in args]
 
     def compile(self) -> str:
         argstr = ", ".join((arg.compile() for arg in self._args))
@@ -290,18 +296,19 @@ class CallFn(Expr):  # pylint: disable=too-few-public-methods
 
 
 class ToJSON(CallFn):  # pylint: disable=too-few-public-methods
-    def __init__(self, arg: Expr) -> None:
+    def __init__(self, arg: MixedType) -> None:
         super().__init__("cjson.encode", arg)
 
 
 class RedisFn(CallFn):  # pylint: disable=too-few-public-methods
-    def __init__(self, redis_fn: str, key: KeyVariable, *args: Expr) -> None:
-        super().__init__("redis.call", Literal(redis_fn), key, *args)
+    def __init__(
+            self, redis_fn: str, key: KeyVariable, *args: MixedType) -> None:
+        super().__init__("redis.call", redis_fn, key, *args)
 
 
 class Branch(Compilable):
-    def __init__(self, condition: Expr) -> None:
-        self._condition = condition
+    def __init__(self, condition: MixedType) -> None:
+        self._condition = lit_helper(condition)
         self._success = Sequence()
         self._failure = Sequence()
 

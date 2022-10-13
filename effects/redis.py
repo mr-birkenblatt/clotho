@@ -10,13 +10,10 @@ from typing import (
 )
 
 from effects.dedicated import (
-    Arg,
     Branch,
     EqOp,
     ForLoop,
-    Literal,
     LiteralKey,
-    LocalVariable,
     RedisFn,
     Script,
 )
@@ -234,17 +231,16 @@ class ListDependentRedisType(
             return False
         if self._update_new_val is None:
             script = Script()
-            new_value = script.add_arg(Arg())
+            new_value = script.add_arg()
             key_var = script.add_key(LiteralKey())
-            res_var = script.add_local(LocalVariable(Literal(0)))
+            res_var = script.add_local(0)
 
-            branch = Branch(EqOp(RedisFn("LLEN", key_var), Literal(0)))
+            branch = Branch(EqOp(RedisFn("LLEN", key_var), 0))
             script.add_stmt(branch)
             loop = ForLoop(script, new_value)
             loop.get_loop().add_stmt(RedisFn(
                 "RPUSH", key_var, loop.get_value()).as_stmt())
-            branch.get_success().add_stmt(
-                loop).add_stmt(res_var.assign(Literal(1)))
+            branch.get_success().add_stmt(loop).add_stmt(res_var.assign(1))
 
             script.set_return_value(res_var)
             self._update_new_val = script

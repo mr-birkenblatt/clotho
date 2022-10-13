@@ -6,11 +6,8 @@ import pandas as pd
 from effects.dedicated import (
     AddOp,
     AndOp,
-    Arg,
     Branch,
     EqOp,
-    Literal,
-    LocalVariable,
     OrOp,
     RedisFn,
     RootSet,
@@ -376,11 +373,11 @@ class RedisLinkStore(LinkStore):
 
     def create_add_vote_script(self) -> Script:
         script = Script()
-        user_id = script.add_arg(Arg())
-        weighted_value = script.add_arg(Arg())
-        vote_type = script.add_arg(Arg())
-        now = script.add_arg(Arg())
-        plink = script.add_arg(Arg())
+        user_id = script.add_arg()
+        weighted_value = script.add_arg()
+        vote_type = script.add_arg()
+        now = script.add_arg()
+        plink = script.add_arg()
         r_voted: RootSet[RLink] = script.add_key(RootSet(self.r_voted))
         r_total: RootValue[RLink, float] = script.add_key(
             RootValue(self.r_total))
@@ -392,36 +389,33 @@ class RedisLinkStore(LinkStore):
         r_last: RootValue[RLink, float] = script.add_key(
             RootValue(self.r_last))
         r_user_links: RootSet[str] = script.add_key(RootSet(self.r_user_links))
-        is_new = script.add_local(LocalVariable(Literal(False)))
+        is_new = script.add_local(False)
 
-        main = Branch(EqOp(
-            RedisFn("SISMEMBER", r_voted, user_id), Literal(0)))
+        main = Branch(EqOp(RedisFn("SISMEMBER", r_voted, user_id), 0))
         script.add_stmt(main)
         mseq = main.get_success()
         mseq.add_stmt(RedisFn("SADD", r_voted, user_id).as_stmt())
 
-        total_sum = AddOp(
-            OrOp(RedisFn("GET", r_total), Literal(0)), weighted_value)
+        total_sum = AddOp(OrOp(RedisFn("GET", r_total), 0), weighted_value)
         mseq.add_stmt(RedisFn("SET", r_total, total_sum).as_stmt())
 
-        daily_sum = AddOp(
-            OrOp(RedisFn("GET", r_daily), Literal(0)), weighted_value)
+        daily_sum = AddOp(OrOp(RedisFn("GET", r_daily), 0), weighted_value)
         mseq.add_stmt(RedisFn("SET", r_daily, daily_sum).as_stmt())
 
-        user_new_value = Branch(EqOp(RedisFn("EXISTS", r_user), Literal(0)))
+        user_new_value = Branch(EqOp(RedisFn("EXISTS", r_user), 0))
         mseq.add_stmt(user_new_value)
         user_new_value.get_success().add_stmt(
             RedisFn("SET", r_user, ToJSON(user_id)).as_stmt())
 
-        first_new_value = Branch(EqOp(RedisFn("EXISTS", r_first), Literal(0)))
+        first_new_value = Branch(EqOp(RedisFn("EXISTS", r_first), 0))
         mseq.add_stmt(first_new_value)
         fnv_seq = first_new_value.get_success()
         fnv_seq.add_stmt(RedisFn("SET", r_first, now).as_stmt())
-        fnv_seq.add_stmt(is_new.assign(Literal(True)))
+        fnv_seq.add_stmt(is_new.assign(True))
 
         mseq.add_stmt(RedisFn("SET", r_last, now).as_stmt())
 
-        is_user_link = Branch(AndOp(is_new, EqOp(vote_type, Literal(VT_UP))))
+        is_user_link = Branch(AndOp(is_new, EqOp(vote_type, VT_UP)))
         mseq.add_stmt(is_user_link)
         is_user_link.get_success().add_stmt(
             RedisFn("SADD", r_user_links, plink).as_stmt())

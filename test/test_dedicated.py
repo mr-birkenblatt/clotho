@@ -1,11 +1,8 @@
 from effects.dedicated import (
     AddOp,
-    Arg,
     Branch,
     CallFn,
     EqOp,
-    Literal,
-    LocalVariable,
     LtOp,
     RedisFn,
     RootValue,
@@ -37,27 +34,27 @@ return 1
 
 def test_dedicated() -> None:
     script = Script()
-    input_a = script.add_arg(Arg())
-    input_b = script.add_arg(Arg())
+    input_a = script.add_arg()
+    input_b = script.add_arg()
 
     value_a: ValueRootRedisType[str, float] = ValueRootRedisType(
         "test", lambda key: key)
     output_a: RootValue[str, float] = script.add_key(RootValue(value_a))
-    var_a = script.add_local(LocalVariable(Literal(0.0)))
-    var_b = script.add_local(LocalVariable(output_a))
+    var_a = script.add_local(0.0)
+    var_b = script.add_local(output_a)
 
-    postfix = CallFn("string.sub", var_b, Literal(-4))
-    branch_inner = Branch(EqOp(postfix, Literal(":abc")))
-    branch_inner.get_success().add_stmt(var_a.assign(Literal(-1.0)))
-    branch_inner.get_failure().add_stmt(var_a.assign(Literal(1.0)))
+    postfix = CallFn("string.sub", var_b, -4)
+    branch_inner = Branch(EqOp(postfix, ":abc"))
+    branch_inner.get_success().add_stmt(var_a.assign(-1.0))
+    branch_inner.get_failure().add_stmt(var_a.assign(1.0))
 
-    branch = Branch(LtOp(input_a, Literal(1.0)))
+    branch = Branch(LtOp(input_a, 1.0))
     branch.get_success().add_stmt(var_a.assign(AddOp(input_a, input_b)))
     branch.get_failure().add_stmt(branch_inner)
 
     script.add_stmt(branch).add_stmt(RedisFn("SET", output_a, var_a).as_stmt())
 
-    script.set_return_value(Literal(1))
+    script.set_return_value(1)
 
     assert script.compile(0) == SCRIPT_REF
 
