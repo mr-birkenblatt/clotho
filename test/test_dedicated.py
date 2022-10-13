@@ -44,15 +44,15 @@ def test_dedicated() -> None:
     var_b = script.add_local(output_a)
 
     success, failure = script.branch(LtOp(input_a, 1.0))
-    success.add_stmt(var_a.assign(AddOp(input_a, input_b)))
+    success.add(var_a.assign(AddOp(input_a, input_b)))
 
     inner_success, inner_failure = failure.branch(
         EqOp(CallFn("string.sub", var_b, -4), ":abc"))
 
-    inner_success.add_stmt(var_a.assign(-1.0))
-    inner_failure.add_stmt(var_a.assign(1.0))
+    inner_success.add(var_a.assign(-1.0))
+    inner_failure.add(var_a.assign(1.0))
 
-    script.add_stmt(RedisFn("SET", output_a, var_a).as_stmt())
+    script.add(RedisFn("SET", output_a, var_a))
 
     script.set_return_value(1)
 

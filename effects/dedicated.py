@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
     List,
     Optional,
     Set,
@@ -65,9 +66,15 @@ class Sequence(Compilable):
         self._seq: List[Compilable] = []
         self._script = script
 
-    def add_stmt(self, statement: Compilable) -> 'Sequence':
-        self._seq.append(statement)
-        return self
+    def add(self, terms: Union[
+            Compilable, Expr, Iterable[Union[Compilable, Expr]]]) -> None:
+        if isinstance(terms, Compilable):
+            self._seq.append(terms)
+        elif isinstance(terms, Expr):
+            self._seq.append(terms.as_stmt())
+        else:
+            for term in terms:
+                self.add(term)
 
     def is_empty(self) -> bool:
         return not self._seq
@@ -78,13 +85,13 @@ class Sequence(Compilable):
     def for_loop(
             self, array: Expr) -> Tuple['Sequence', 'Variable', 'Variable']:
         loop = ForLoop(self._script, array)
-        self.add_stmt(loop)
+        self.add(loop)
         return loop.get_loop(), loop.get_index(), loop.get_value()
 
     def branch(
             self, condition: MixedType) -> Tuple['Sequence', 'Sequence']:
         branch = Branch(self._script, condition)
-        self.add_stmt(branch)
+        self.add(branch)
         return branch.get_success(), branch.get_failure()
 
 
@@ -99,10 +106,6 @@ class Script(Sequence):
         self._return: Optional[Expr] = None
         self._compute: Optional[RedisFunctionBytes] = None
         self._loops: int = 0
-
-    def add_stmt(self, statement: Compilable) -> 'Script':
-        super().add_stmt(statement)
-        return self
 
     def add_arg(self, name: str) -> 'Arg':
         if name in self._anames:

@@ -230,8 +230,8 @@ class ListDependentRedisType(
 
             success, _ = script.branch(EqOp(RedisFn("LLEN", key_var), 0))
             loop, _, loop_value = success.for_loop(new_value)
-            loop.add_stmt(RedisFn("RPUSH", key_var, loop_value).as_stmt())
-            success.add_stmt(res_var.assign(1))
+            loop.add(RedisFn("RPUSH", key_var, loop_value))
+            success.add(res_var.assign(1))
 
             script.set_return_value(res_var)
             self._update_new_val = script

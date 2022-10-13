@@ -403,27 +403,27 @@ class RedisLinkStore(LinkStore):
 
         mseq, _ = script.branch(
             EqOp(RedisFn("SISMEMBER", r_voted, user_id), 0))
-        mseq.add_stmt(RedisFn("SADD", r_voted, user_id).as_stmt())
+        mseq.add(RedisFn("SADD", r_voted, user_id))
 
         total_sum = AddOp(OrOp(RedisFn("GET", r_total), 0), weighted_value)
-        mseq.add_stmt(RedisFn("SET", r_total, total_sum).as_stmt())
+        mseq.add(RedisFn("SET", r_total, total_sum))
 
         daily_sum = AddOp(OrOp(RedisFn("GET", r_daily), 0), weighted_value)
-        mseq.add_stmt(RedisFn("SET", r_daily, daily_sum).as_stmt())
+        mseq.add(RedisFn("SET", r_daily, daily_sum))
 
         user_exists, _ = mseq.branch(EqOp(RedisFn("EXISTS", r_user), 0))
-        user_exists.add_stmt(
-            RedisFn("SET", r_user, ToJSON(user_id)).as_stmt())
+        user_exists.add(RedisFn("SET", r_user, ToJSON(user_id)))
 
         fnv_seq, _ = mseq.branch(EqOp(RedisFn("EXISTS", r_first), 0))
-        fnv_seq.add_stmt(RedisFn("SET", r_first, now).as_stmt())
-        fnv_seq.add_stmt(is_new.assign(True))
+        fnv_seq.add((
+            RedisFn("SET", r_first, now),
+            is_new.assign(True),
+        ))
 
-        mseq.add_stmt(RedisFn("SET", r_last, now).as_stmt())
+        mseq.add(RedisFn("SET", r_last, now))
 
         is_user_link, _ = mseq.branch(AndOp(is_new, EqOp(vote_type, VT_UP)))
-        is_user_link.add_stmt(
-            RedisFn("SADD", r_user_links, plink).as_stmt())
+        is_user_link.add(RedisFn("SADD", r_user_links, plink))
 
         return script
 
