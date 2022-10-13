@@ -6,7 +6,6 @@ import pandas as pd
 from effects.dedicated import (
     AddOp,
     AndOp,
-    Branch,
     EqOp,
     OrOp,
     RedisFn,
@@ -402,9 +401,8 @@ class RedisLinkStore(LinkStore):
             "r_user_links", RootSet(self.r_user_links))
         is_new = script.add_local(False)
 
-        main = Branch(EqOp(RedisFn("SISMEMBER", r_voted, user_id), 0))
-        script.add_stmt(main)
-        mseq = main.get_success()
+        mseq, _ = script.branch(
+            EqOp(RedisFn("SISMEMBER", r_voted, user_id), 0))
         mseq.add_stmt(RedisFn("SADD", r_voted, user_id).as_stmt())
 
         total_sum = AddOp(OrOp(RedisFn("GET", r_total), 0), weighted_value)
@@ -413,22 +411,18 @@ class RedisLinkStore(LinkStore):
         daily_sum = AddOp(OrOp(RedisFn("GET", r_daily), 0), weighted_value)
         mseq.add_stmt(RedisFn("SET", r_daily, daily_sum).as_stmt())
 
-        user_new_value = Branch(EqOp(RedisFn("EXISTS", r_user), 0))
-        mseq.add_stmt(user_new_value)
-        user_new_value.get_success().add_stmt(
+        user_exists, _ = mseq.branch(EqOp(RedisFn("EXISTS", r_user), 0))
+        user_exists.add_stmt(
             RedisFn("SET", r_user, ToJSON(user_id)).as_stmt())
 
-        first_new_value = Branch(EqOp(RedisFn("EXISTS", r_first), 0))
-        mseq.add_stmt(first_new_value)
-        fnv_seq = first_new_value.get_success()
+        fnv_seq, _ = mseq.branch(EqOp(RedisFn("EXISTS", r_first), 0))
         fnv_seq.add_stmt(RedisFn("SET", r_first, now).as_stmt())
         fnv_seq.add_stmt(is_new.assign(True))
 
         mseq.add_stmt(RedisFn("SET", r_last, now).as_stmt())
 
-        is_user_link = Branch(AndOp(is_new, EqOp(vote_type, VT_UP)))
-        mseq.add_stmt(is_user_link)
-        is_user_link.get_success().add_stmt(
+        is_user_link, _ = mseq.branch(AndOp(is_new, EqOp(vote_type, VT_UP)))
+        is_user_link.add_stmt(
             RedisFn("SADD", r_user_links, plink).as_stmt())
 
         return script

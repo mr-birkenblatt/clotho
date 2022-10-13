@@ -1,6 +1,5 @@
 from effects.dedicated import (
     AddOp,
-    Branch,
     CallFn,
     EqOp,
     LtOp,
@@ -44,16 +43,16 @@ def test_dedicated() -> None:
     var_a = script.add_local(0.0)
     var_b = script.add_local(output_a)
 
-    postfix = CallFn("string.sub", var_b, -4)
-    branch_inner = Branch(EqOp(postfix, ":abc"))
-    branch_inner.get_success().add_stmt(var_a.assign(-1.0))
-    branch_inner.get_failure().add_stmt(var_a.assign(1.0))
+    success, failure = script.branch(LtOp(input_a, 1.0))
+    success.add_stmt(var_a.assign(AddOp(input_a, input_b)))
 
-    branch = Branch(LtOp(input_a, 1.0))
-    branch.get_success().add_stmt(var_a.assign(AddOp(input_a, input_b)))
-    branch.get_failure().add_stmt(branch_inner)
+    inner_success, inner_failure = failure.branch(
+        EqOp(CallFn("string.sub", var_b, -4), ":abc"))
 
-    script.add_stmt(branch).add_stmt(RedisFn("SET", output_a, var_a).as_stmt())
+    inner_success.add_stmt(var_a.assign(-1.0))
+    inner_failure.add_stmt(var_a.assign(1.0))
+
+    script.add_stmt(RedisFn("SET", output_a, var_a).as_stmt())
 
     script.set_return_value(1)
 

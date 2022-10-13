@@ -9,14 +9,7 @@ from typing import (
     TypeVar,
 )
 
-from effects.dedicated import (
-    Branch,
-    EqOp,
-    ForLoop,
-    LiteralKey,
-    RedisFn,
-    Script,
-)
+from effects.dedicated import EqOp, LiteralKey, RedisFn, Script
 from effects.effects import (
     EffectBase,
     EffectDependent,
@@ -235,12 +228,10 @@ class ListDependentRedisType(
             key_var = script.add_key("rkey", LiteralKey())
             res_var = script.add_local(0)
 
-            branch = Branch(EqOp(RedisFn("LLEN", key_var), 0))
-            script.add_stmt(branch)
-            loop = ForLoop(script, new_value)
-            loop.get_loop().add_stmt(RedisFn(
-                "RPUSH", key_var, loop.get_value()).as_stmt())
-            branch.get_success().add_stmt(loop).add_stmt(res_var.assign(1))
+            success, _ = script.branch(EqOp(RedisFn("LLEN", key_var), 0))
+            loop, _, loop_value = success.for_loop(new_value)
+            loop.add_stmt(RedisFn("RPUSH", key_var, loop_value).as_stmt())
+            success.add_stmt(res_var.assign(1))
 
             script.set_return_value(res_var)
             self._update_new_val = script

@@ -61,8 +61,9 @@ def lit_helper(value: MixedType) -> 'Expr':
 
 
 class Sequence(Compilable):
-    def __init__(self) -> None:
+    def __init__(self, script: 'Script') -> None:
         self._seq: List[Compilable] = []
+        self._script = script
 
     def add_stmt(self, statement: Compilable) -> 'Sequence':
         self._seq.append(statement)
@@ -74,10 +75,22 @@ class Sequence(Compilable):
     def compile(self, indent: int) -> str:
         return "\n".join((stmt.compile(indent) for stmt in self._seq))
 
+    def for_loop(
+            self, array: Expr) -> Tuple['Sequence', 'Variable', 'Variable']:
+        loop = ForLoop(self._script, array)
+        self.add_stmt(loop)
+        return loop.get_loop(), loop.get_index(), loop.get_value()
+
+    def branch(
+            self, condition: MixedType) -> Tuple['Sequence', 'Sequence']:
+        branch = Branch(self._script, condition)
+        self.add_stmt(branch)
+        return branch.get_success(), branch.get_failure()
+
 
 class Script(Sequence):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(self)
         self._args: List[Tuple[str, Arg]] = []
         self._keys: List[Tuple[str, KeyVariable]] = []
         self._anames: Set[str] = set()
@@ -319,10 +332,10 @@ class RedisFn(CallFn):  # pylint: disable=too-few-public-methods
 
 
 class Branch(Compilable):
-    def __init__(self, condition: MixedType) -> None:
+    def __init__(self, script: Script, condition: MixedType) -> None:
         self._condition = lit_helper(condition)
-        self._success = Sequence()
-        self._failure = Sequence()
+        self._success = Sequence(script)
+        self._failure = Sequence(script)
 
     def get_success(self) -> Sequence:
         return self._success
@@ -367,7 +380,7 @@ class ForLoop(Compilable):
         self._ix.set_index(loop_ix)
         self._val = ValueVariable()
         self._val.set_index(loop_ix)
-        self._loop = Sequence()
+        self._loop = Sequence(script)
         self._array = array
 
     def get_index(self) -> Variable:
