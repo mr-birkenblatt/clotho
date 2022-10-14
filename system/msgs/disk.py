@@ -1,6 +1,8 @@
 import os
 from typing import Iterable
 
+import numpy as np
+
 from misc.env import envload_path
 from misc.io import ensure_folder, open_append, open_read
 from misc.lru import LRU
@@ -88,3 +90,7 @@ class DiskStore(MessageStore):
                     yield msg
         except FileNotFoundError:
             pass
+
+    def do_get_random_messages(
+            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+        raise NotImplementedError()

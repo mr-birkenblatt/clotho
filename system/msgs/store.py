@@ -1,6 +1,6 @@
 from typing import Iterable, List, Optional
 
-from numpy.random import RandomState
+import numpy as np
 
 from misc.env import envload_str
 from system.msgs.message import Message, MHash
@@ -23,11 +23,11 @@ class MessageStore:
     def get_topics(self) -> Iterable[Message]:
         raise NotImplementedError()
 
-    def do_get_random_message(
-            self, rng: RandomState, count: int) -> Iterable[MHash]:
+    def do_get_random_messages(
+            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
         raise NotImplementedError()
 
-    def get_random_message(
+    def get_random_messages(
             self,
             ref: Optional[MHash],
             offset: int,
@@ -38,8 +38,8 @@ class MessageStore:
         res: List[MHash] = []
         cur_ix = start
         while cur_ix < end:
-            rng = RandomState(base_seed + SEED_MUL * cur_ix)
-            res.extend(self.do_get_random_message(rng, RNG_ALIGN))
+            rng = np.random.default_rng(base_seed + SEED_MUL * cur_ix)
+            res.extend(self.do_get_random_messages(rng, RNG_ALIGN))
             cur_ix += RNG_ALIGN
         rel_start = offset - start
         return res[rel_start:rel_start + limit]

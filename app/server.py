@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 import sys
 import threading
-from typing import Optional, Tuple, TypedDict
+from typing import List, Optional, Tuple, TypedDict
 
 import pandas as pd
 from quick_server import create_server, QuickServer
@@ -18,7 +18,7 @@ from app.response_types import (
 from app.token import RedisTokenHandler
 from misc.env import envload_int, envload_str
 from misc.util import now_ts, to_list
-from system.links.link import LinkResponse, parse_vote_type, VT_UP
+from system.links.link import Link, LinkResponse, parse_vote_type, VT_UP
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
 from system.msgs.message import Message, MHash
@@ -220,12 +220,42 @@ def setup(
             "limit": limit,
         }
 
+    def enrich_links(
+            other: MHash,
+            link_query: LinkQuery,
+            *,
+            is_parent: bool,
+            links: List[Link]) -> List[Link]:
+        limit = link_query["limit"]
+        if len(links) >= limit:
+            return links
+        offset = link_query["offset"]
+        cur_offset = offset + len(links)
+        cur_limit = limit - len(links)
+        ref_query = link_query.copy()
+        ref_query["offset"] = 0
+        ref_query["limit"] = 1
+        if is_parent:
+            refs = list(link_store.get_children(other, **ref_query))
+            ref = refs[0].get_child() if refs else None
+        else:
+            refs = list(link_store.get_parents(other, **ref_query))
+            ref = refs[0].get_parent() if refs else None
+        return links + [
+            link_store.get_link(
+                other if is_parent else cur,
+                cur if is_parent else other)
+            for cur in message_store.get_random_messages(
+                ref, cur_offset, cur_limit)
+        ]
+
     @server.json_post(f"{prefix}/children")
     def _post_children(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
         parent = MHash.parse(args["parent"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_children(parent, **link_query))
+        links = enrich_links(parent, link_query, is_parent=True, links=links)
         return {
             "links": [
                 link.get_response(user_store, link_query["now"])
@@ -240,6 +270,7 @@ def setup(
         child = MHash.parse(args["child"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_parents(child, **link_query))
+        links = enrich_links(child, link_query, is_parent=False, links=links)
         return {
             "links": [
                 link.get_response(user_store, link_query["now"])
