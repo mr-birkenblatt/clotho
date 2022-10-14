@@ -1,7 +1,13 @@
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
+
+from numpy.random import RandomState
 
 from misc.env import envload_str
 from system.msgs.message import Message, MHash
+
+
+RNG_ALIGN = 10
+SEED_MUL = 17
 
 
 class MessageStore:
@@ -16,6 +22,27 @@ class MessageStore:
 
     def get_topics(self) -> Iterable[Message]:
         raise NotImplementedError()
+
+    def do_get_random_message(
+            self, rng: RandomState, count: int) -> Iterable[MHash]:
+        raise NotImplementedError()
+
+    def get_random_message(
+            self,
+            ref: Optional[MHash],
+            offset: int,
+            limit: int) -> Iterable[MHash]:
+        start = offset - (offset % RNG_ALIGN)
+        end = offset + limit
+        base_seed = 1 if ref is None else hash(ref)
+        res: List[MHash] = []
+        cur_ix = start
+        while cur_ix < end:
+            rng = RandomState(base_seed + SEED_MUL * cur_ix)
+            res.extend(self.do_get_random_message(rng, RNG_ALIGN))
+            cur_ix += RNG_ALIGN
+        rel_start = offset - start
+        return res[rel_start:rel_start + limit]
 
 
 DEFAULT_MSG_STORE: Optional[MessageStore] = None
