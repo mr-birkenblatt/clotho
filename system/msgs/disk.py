@@ -4,10 +4,13 @@ from typing import Iterable
 import numpy as np
 
 from misc.env import envload_path
-from misc.io import ensure_folder, open_append, open_read
+from misc.io import ensure_folder, get_folder, open_append, open_read
 from misc.lru import LRU
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
+
+
+MSG_EXT = ".msg"
 
 
 class DiskStore(MessageStore):
@@ -39,7 +42,7 @@ class DiskStore(MessageStore):
         all_segs = list(split_hash(message_hash.to_parseable()))
         segs = all_segs[:-1]
         rest = all_segs[-1]
-        return os.path.join(self._path, *segs, f"{rest}.msg")
+        return os.path.join(self._path, *segs, f"{rest}{MSG_EXT}")
 
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()
@@ -48,12 +51,9 @@ class DiskStore(MessageStore):
             fout.write(f"{self._escape(message.get_text())}\n")
         return message.get_hash()
 
-    def read_message(self, message_hash: MHash) -> Message:
-        res = self._cache.get(message_hash)
-        if res is not None:
-            return res
+    def _load_file(self, fname: str) -> Iterable[Message]:
         try:
-            with open_read(self._compute_path(message_hash), text=True) as fin:
+            with open_read(fname, text=True) as fin:
                 for line in fin:
                     line = line.rstrip()
                     if not line:
@@ -62,10 +62,17 @@ class DiskStore(MessageStore):
                     msg = Message(msg=text)
                     mhash = msg.get_hash()
                     self._cache.set(mhash, msg)
-                    if mhash == message_hash:
-                        res = msg
+                    yield msg
         except FileNotFoundError:
             pass
+
+    def read_message(self, message_hash: MHash) -> Message:
+        res = self._cache.get(message_hash)
+        if res is not None:
+            return res
+        for msg in self._load_file(self._compute_path(message_hash)):
+            if msg.get_hash() == message_hash:
+                res = msg
         if res is None:
             raise KeyError(f"no message for the hash: {message_hash}")
         return res
@@ -93,4 +100,18 @@ class DiskStore(MessageStore):
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
-        raise NotImplementedError()
+        remain = count
+        cur_path = self._path
+        while remain > 0:
+            candidates = list(get_folder(cur_path, MSG_EXT))
+            if candidates:
+                seg, recurse = candidates[rng.integers(0, len(candidates))]
+                cur_path = os.path.join(cur_path, seg)
+                if recurse:
+                    continue
+                cur = list(set((
+                    msg.get_hash() for msg in self._load_file(cur_path))))
+                if cur:
+                    yield cur[rng.integers(0, len(cur))]
+            remain -= 1
+            cur_path = self._path

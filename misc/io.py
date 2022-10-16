@@ -11,11 +11,13 @@ from typing import (
     Callable,
     cast,
     IO,
+    Iterable,
     Iterator,
     List,
     Literal,
     Optional,
     overload,
+    Tuple,
 )
 
 
@@ -233,3 +235,23 @@ def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
                     os.remove(tname)
                 except FileNotFoundError:
                     pass
+
+
+def get_subfolders(path: str) -> List[str]:
+    return [fobj.name for fobj in os.scandir(path) if fobj.is_dir()]
+
+
+def get_files(path: str, ext: str) -> List[str]:
+    return [
+        fobj.name
+        for fobj in os.scandir(path)
+        if fobj.is_file() and fobj.name.endswith(ext)
+    ]
+
+
+def get_folder(path: str, ext: str) -> Iterable[Tuple[str, bool]]:
+    for fobj in os.scandir(path):
+        if fobj.is_dir():
+            yield fobj.name, True
+        elif fobj.is_file() and fobj.name.endswith(ext):
+            yield fobj.name, False
