@@ -161,6 +161,7 @@ jobs:
         [ -z "$(git status --porcelain)" ]
 
   coverage_pipeline:
+    name: Coverage CI Pipeline
     needs: tests_pipeline
     runs-on: ubuntu-latest
     strategy:
