@@ -62,7 +62,7 @@ class User:
 
     def get_weighted_vote(
             self,
-            owner: 'User' | None) -> float:  # pylint: disable=unused-argument
+            owner: 'User | None') -> float:  # pylint: disable=unused-argument
         # FIXME: implement ELO
         return 1.0
 

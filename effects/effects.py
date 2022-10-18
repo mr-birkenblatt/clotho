@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Callable, Generic, TYPE_CHECKING, TypeVar, Union
+from typing import Callable, Generic, TYPE_CHECKING, TypeVar
 
 
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ class EqType:
 
 
 BaseKeyType = int | str | EqType
-KeyType = Union[tuple[BaseKeyType, ...], BaseKeyType]
+KeyType = tuple[BaseKeyType, ...] | BaseKeyType
 
 
 KT = TypeVar('KT', bound=KeyType)
