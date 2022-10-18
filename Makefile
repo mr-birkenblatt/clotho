@@ -116,7 +116,7 @@ run-api:
 	python3 -m app
 
 run-web:
-	yarn start
+	cd ui && yarn start
 
 coverage-report:
 	cd coverage/reports/html_report && open index.html
