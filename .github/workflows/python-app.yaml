@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.9']
     env:
       ENV: CI
 
@@ -87,12 +87,16 @@ jobs:
       run: |
         make lint-pylint
 
+    - name: Lint Code (ts)
+      run: |
+        make lint-ts
+
   tests_pipeline:
     name: Tests CI Pipeline
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8']
+        python: ['3.9']
         ci_node_total: [3]
         ci_node_index: [0, 1, 2]
     env:
@@ -161,7 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8']
+        python: ['3.9']
     env:
       ENV: CI
 
