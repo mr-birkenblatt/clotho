@@ -2,6 +2,7 @@
 
 set -ex
 
+MAKE="${MAKE:-make}"
 PYTHON="${PYTHON:-python3}"
 RESULT_FNAME="${RESULT_FNAME:-results.xml}"
 IFS=',' read -a FILE_INFO <<< "$1"
@@ -20,13 +21,7 @@ find . -type d \( \
     -name '*.py' \
     -exec ${PYTHON} -m compileall -q -j 0 {} +
 
-if command -v redis-cli &> /dev/null; then
-    redis-cli \
-        "EVAL" \
-        "for _,k in ipairs(redis.call('keys', KEYS[1])) do redis.call('del', k) end" \
-        1 \
-        'api:salt:*'
-fi
+${MAKE} clean
 
 run_test() {
     ${PYTHON} -m pytest \

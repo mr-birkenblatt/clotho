@@ -113,8 +113,11 @@ pre-commit:
 	pre-commit install
 	isort .
 
+clean:
+	./clean.sh
+
 pytest:
-	PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
+	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
 
 run-test-redis:
 	cd test && redis-server
