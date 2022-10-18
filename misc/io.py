@@ -15,7 +15,6 @@ from typing import (
     Iterator,
     Literal,
     overload,
-    Tuple,
 )
 
 
@@ -247,7 +246,7 @@ def get_files(path: str, ext: str) -> list[str]:
     ]
 
 
-def get_folder(path: str, ext: str) -> Iterable[Tuple[str, bool]]:
+def get_folder(path: str, ext: str) -> Iterable[tuple[str, bool]]:
     for fobj in os.scandir(path):
         if fobj.is_dir():
             yield fobj.name, True

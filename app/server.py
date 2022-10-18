@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 import sys
 import threading
-from typing import Tuple, TypedDict
+from typing import TypedDict
 
 import pandas as pd
 from quick_server import create_server, QuickServer
@@ -43,7 +43,7 @@ def setup(
         addr: str,
         port: int,
         parallel: bool,
-        deploy: bool) -> Tuple[QuickServer, str]:
+        deploy: bool) -> tuple[QuickServer, str]:
     server: QuickServer = create_server(
         (addr, port),
         parallel,
@@ -300,7 +300,7 @@ def setup(
 def setup_server(
         deploy: bool,
         addr: str | None,
-        port: int | None) -> Tuple[QuickServer, str]:
+        port: int | None) -> tuple[QuickServer, str]:
     if addr is None:
         addr = envload_str("HOST", default="127.0.0.1")
     if port is None:

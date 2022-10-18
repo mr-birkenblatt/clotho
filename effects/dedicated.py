@@ -3,7 +3,6 @@ from typing import (
     Callable,
     Generic,
     Iterable,
-    Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
@@ -101,12 +100,12 @@ class Sequence(Compilable):
     def compile(self, indent: int) -> str:
         return "\n".join((stmt.compile(indent) for stmt in self._seq))
 
-    def for_(self, array: Expr) -> Tuple['Sequence', 'Variable', 'Variable']:
+    def for_(self, array: Expr) -> tuple['Sequence', 'Variable', 'Variable']:
         loop = ForLoop(self._script, array)
         self.add(loop)
         return loop.get_loop(), loop.get_index(), loop.get_value()
 
-    def if_(self, condition: MixedType) -> Tuple['Sequence', 'Sequence']:
+    def if_(self, condition: MixedType) -> tuple['Sequence', 'Sequence']:
         branch = Branch(self._script, condition)
         self.add(branch)
         return branch.get_success(), branch.get_failure()
@@ -115,8 +114,8 @@ class Sequence(Compilable):
 class Script(Sequence):
     def __init__(self) -> None:
         super().__init__(self)
-        self._args: list[Tuple[str, Arg]] = []
-        self._keys: list[Tuple[str, KeyVariable]] = []
+        self._args: list[tuple[str, Arg]] = []
+        self._keys: list[tuple[str, KeyVariable]] = []
         self._anames: set[str] = set()
         self._knames: set[str] = set()
         self._locals: list[LocalVariable] = []

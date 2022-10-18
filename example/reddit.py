@@ -2,7 +2,7 @@ import collections
 import logging
 import os
 import time
-from typing import Iterable, Tuple
+from typing import Iterable
 
 import praw
 from praw import Reddit
@@ -44,12 +44,12 @@ class RedditAccess:
             client_secret=creds["client_secret"],
             user_agent=f"testscript by u/{creds['user']}")
         self._reddit = reddit
-        self._users: dict[str, Tuple[str, str]] = {}
+        self._users: dict[str, tuple[str, str]] = {}
 
     def get_posts(self, subreddit: str) -> Iterable[Submission]:
         yield from self._reddit.subreddit(subreddit).hot()
 
-    def get_user(self, value: Submission | Comment) -> Tuple[str, str]:
+    def get_user(self, value: Submission | Comment) -> tuple[str, str]:
         if not hasattr(value, "author_fullname"):
             return ("NOUSER", "u/NOUSER")
         ref = value.author_fullname

@@ -11,7 +11,6 @@ from typing import (
     Literal,
     overload,
     Protocol,
-    Tuple,
 )
 
 from redis import StrictRedis
@@ -81,7 +80,7 @@ CONCURRENT_MODULE_CONN: int = 17
 REDIS_SERVICE_CONN: dict[str, StrictRedis | None] = {}
 DO_CACHE = True
 LOCK = threading.RLock()
-LOCKS: dict[str, Tuple[threading.RLock, Lock] | None] = {}
+LOCKS: dict[str, tuple[threading.RLock, Lock] | None] = {}
 LOCK_ID: str = uuid.uuid4().hex
 
 
@@ -119,7 +118,7 @@ class RedisWrapper:
         return res
 
     @classmethod
-    def _get_lock_pair(cls, name: str) -> Tuple[threading.RLock, Lock]:
+    def _get_lock_pair(cls, name: str) -> tuple[threading.RLock, Lock]:
         res = LOCKS.get(name)
         if res is None:
             with LOCK:
@@ -201,7 +200,7 @@ class RedisConnection:
         compute = Script(None, code.encode("utf-8"))
         context = 3
 
-        def get_error(err_msg: str) -> Tuple[str, list[str]] | None:
+        def get_error(err_msg: str) -> tuple[str, list[str]] | None:
             ustr = "user_script:"
             ix = err_msg.find(ustr)
             if ix < 0:
@@ -292,7 +291,7 @@ class RedisConnection:
         compute = Script(None, script_txt.encode("utf-8"))
         context = 2
 
-        def get_error(err_msg: str) -> Tuple[str, list[str]] | None:
+        def get_error(err_msg: str) -> tuple[str, list[str]] | None:
             ustr = "user_script:"
             ix = err_msg.find(ustr)
             if ix < 0:

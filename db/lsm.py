@@ -1,7 +1,7 @@
 import atexit
 import time
 import uuid
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from misc.lru import LRU
 
@@ -57,7 +57,7 @@ class ChunkCoordinator:
         raise NotImplementedError()
 
     def fetch_values(
-            self, key: str, lsm: 'LSM') -> Iterable[Tuple[str, VType]]:
+            self, key: str, lsm: 'LSM') -> Iterable[tuple[str, VType]]:
         raise NotImplementedError()
 
     def clear_cache(self, key_range: KeyRange) -> None:

@@ -1,6 +1,6 @@
 
 import time
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 
 from effects.effects import EffectDependent
 from effects.redis import (
@@ -28,7 +28,7 @@ def test_complex() -> None:
 
     def compute_destinations(
             obj: EffectDependent[FLink, list[int], Link],
-            parents: Tuple[ValueRootRedisType[Link, int]],
+            parents: tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: FLink) -> None:
         lks, = parents
@@ -36,7 +36,7 @@ def test_complex() -> None:
 
     def compute_sources(
             obj: EffectDependent[TLink, list[int], Link],
-            parents: Tuple[ValueRootRedisType[Link, int]],
+            parents: tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: TLink) -> None:
         lks, = parents
@@ -91,7 +91,7 @@ def test_complex_list() -> None:
 
     def compute_destinations(
             obj: EffectDependent[FLink, list[str], Link],
-            parents: Tuple[ValueRootRedisType[Link, int]],
+            parents: tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: FLink) -> None:
         lks, = parents
@@ -100,7 +100,7 @@ def test_complex_list() -> None:
 
     def compute_sources(
             obj: EffectDependent[TLink, list[str], Link],
-            parents: Tuple[ValueRootRedisType[Link, int]],
+            parents: tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: TLink) -> None:
         lks, = parents

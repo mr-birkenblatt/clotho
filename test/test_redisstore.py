@@ -1,7 +1,7 @@
 
 import time
 import uuid
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from misc.util import from_timestamp, now_ts, to_timestamp
 from system.links.link import Link, VoteType, VT_DOWN, VT_UP
@@ -17,7 +17,7 @@ def get_random_mhash() -> MHash:
     return MHash.from_message(uuid.uuid4().hex)
 
 
-PLAN: list[Tuple[int, int, int, VoteType]] = [
+PLAN: list[tuple[int, int, int, VoteType]] = [
     # parent, child, user, vote_type
     (0, 1, 0, VT_UP),
     (0, 3, 0, VT_UP),

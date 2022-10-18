@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Iterable, NamedTuple, Tuple
+from typing import Callable, Iterable, NamedTuple
 
 import pandas as pd
 
@@ -64,7 +64,7 @@ def key_children(prefix: str, link: PLink) -> str:
     return f"{prefix}:{link.vote_type}:{link.parent.to_parseable()}:"
 
 
-def key_parents(prefix: str, link: CLink) -> Tuple[str, str]:
+def key_parents(prefix: str, link: CLink) -> tuple[str, str]:
     return (
         f"{prefix}:{link.vote_type}:",
         f":{link.child.to_parseable()}",
@@ -193,7 +193,7 @@ class RedisLinkStore(LinkStore):
 
         def compute_call(
                 obj: EffectDependent[PLink, list[str], RLink],
-                parents: Tuple[ValueRootRedisType[RLink, float]],
+                parents: tuple[ValueRootRedisType[RLink, float]],
                 _: RLink,
                 key: PLink) -> None:
             last, = parents
@@ -215,7 +215,7 @@ class RedisLinkStore(LinkStore):
 
         def compute_pall(
                 obj: EffectDependent[CLink, list[str], RLink],
-                parents: Tuple[ValueRootRedisType[RLink, float]],
+                parents: tuple[ValueRootRedisType[RLink, float]],
                 _: RLink,
                 key: CLink) -> None:
             last, = parents
@@ -248,7 +248,7 @@ class RedisLinkStore(LinkStore):
 
             def compute_call_sorted(
                     obj: EffectDependent[PLink, list[str], PLink],
-                    parents: Tuple[ListDependentRedisType[PLink, RLink]],
+                    parents: tuple[ListDependentRedisType[PLink, RLink]],
                     pkey: PLink,
                     key: PLink) -> None:
                 call, = parents
@@ -275,7 +275,7 @@ class RedisLinkStore(LinkStore):
 
             def compute_pall_sorted(
                     obj: EffectDependent[CLink, list[str], CLink],
-                    parents: Tuple[ListDependentRedisType[CLink, RLink]],
+                    parents: tuple[ListDependentRedisType[CLink, RLink]],
                     pkey: CLink,
                     key: CLink) -> None:
                 pall, = parents
@@ -302,7 +302,7 @@ class RedisLinkStore(LinkStore):
 
             def compute_user_sorted(
                     obj: EffectDependent[str, list[str], str],
-                    parents: Tuple[SetRootRedisType[str]],
+                    parents: tuple[SetRootRedisType[str]],
                     pkey: str,
                     key: str) -> None:
                 user_links, = parents

@@ -1,7 +1,7 @@
 import hashlib
 import json
 import string
-from typing import Any, IO, Iterable, Tuple, TypeVar
+from typing import Any, IO, Iterable, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -45,7 +45,7 @@ def only(arr: list[RT]) -> RT:
 
 
 # time units for logging request durations
-ELAPSED_UNITS: list[Tuple[int, str]] = [
+ELAPSED_UNITS: list[tuple[int, str]] = [
     (1, "s"),
     (60, "m"),
     (60*60, "h"),

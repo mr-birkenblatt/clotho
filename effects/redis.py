@@ -1,4 +1,4 @@
-from typing import Callable, Generic, Iterable, Tuple, TypeVar
+from typing import Callable, Generic, Iterable, TypeVar
 
 from effects.dedicated import LiteralKey, RedisFn, Script
 from effects.effects import (
@@ -15,7 +15,7 @@ from misc.util import json_compact, json_read
 KT = TypeVar('KT', bound=KeyType)
 VT = TypeVar('VT')
 PT = TypeVar('PT', bound=KeyType)
-LT = TypeVar('LT', bound=Tuple[EffectBase, ...])
+LT = TypeVar('LT', bound=tuple[EffectBase, ...])
 
 
 class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
@@ -260,7 +260,7 @@ class ListDependentRedisType(
             res = conn.lrange(rkey, from_ix, to_ix)
         return [val.decode("utf-8") for val in res]
 
-    def __getitem__(self, arg: Tuple[KT, slice]) -> list[str]:
+    def __getitem__(self, arg: tuple[KT, slice]) -> list[str]:
         key, slicer = arg
         if slicer.step is None or slicer.step > 0:
             res = self.get_value_range(key, slicer.start, slicer.stop)

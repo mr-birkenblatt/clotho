@@ -1,6 +1,6 @@
 import threading
 import time
-from typing import Callable, Generic, Tuple, TYPE_CHECKING, TypeVar
+from typing import Callable, Generic, TYPE_CHECKING, TypeVar, Union
 
 
 if TYPE_CHECKING:
@@ -18,14 +18,15 @@ class EqType:
         raise NotImplementedError()
 
 
-KeyType = int | str | EqType
+BaseKeyType = int | str | EqType
+KeyType = Union[tuple[BaseKeyType, ...], BaseKeyType]
 
 
 KT = TypeVar('KT', bound=KeyType)
 VT = TypeVar('VT')
 PT = TypeVar('PT', bound=KeyType)
 AT = TypeVar('AT')
-LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
+LT = TypeVar('LT', bound=tuple['EffectBase', ...])
 
 
 class EffectBase(Generic[KT]):

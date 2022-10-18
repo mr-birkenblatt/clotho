@@ -2,7 +2,6 @@ import os
 import re
 import xml.etree.ElementTree as ET
 from collections import defaultdict
-from typing import Tuple
 
 import pandas as pd
 import pandas.testing as pd_test
@@ -83,13 +82,13 @@ def split_tests(filepath: str, total_nodes: int, cur_node: int) -> None:
                 if file not in test_time_map.keys():
                     test_time_map[file] = DEFAULT_TEST_DURATION
 
-            time_keys: list[Tuple[str, float]] = sorted(
+            time_keys: list[tuple[str, float]] = sorted(
                 test_time_map.items(), key=lambda el: el[1], reverse=True)
         except FileNotFoundError:
             time_keys = [(file, DEFAULT_TEST_DURATION) for file in test_files]
 
         def find_lowest_total_time(
-                test_sets: list[Tuple[list[str], float]]) -> int:
+                test_sets: list[tuple[list[str], float]]) -> int:
             minimum = None
             idx = -1
             for ix, val in enumerate(test_sets):
@@ -98,7 +97,7 @@ def split_tests(filepath: str, total_nodes: int, cur_node: int) -> None:
                     idx = ix
             return idx
 
-        test_sets: list[Tuple[list[str], float]] = [
+        test_sets: list[tuple[list[str], float]] = [
             ([], 0.0) for _ in range(total_nodes)]
         for key, timing in time_keys:
             ix = find_lowest_total_time(test_sets)

@@ -1,5 +1,4 @@
 import time
-from typing import Tuple
 
 from effects.effects import EffectDependent
 from effects.redis import (
@@ -20,7 +19,7 @@ def test_dependent() -> None:
 
     def update_a(
             obj: EffectDependent[str, list[str], str],
-            parents: Tuple[
+            parents: tuple[
                 ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
             pkey: str,
             key: str) -> None:
@@ -30,7 +29,7 @@ def test_dependent() -> None:
 
     def update_b(
             obj: EffectDependent[str, int, str],
-            parents: Tuple[ValueRootRedisType[str, str]],
+            parents: tuple[ValueRootRedisType[str, str]],
             pkey: str,
             key: str) -> None:
         v_a, = parents
@@ -75,7 +74,7 @@ def test_dependent() -> None:
 
     def update_a_a(
             obj: EffectDependent[str, str, str],
-            parents: Tuple[ValueDependentRedisType[str, list[str], str]],
+            parents: tuple[ValueDependentRedisType[str, list[str], str]],
             pkey: str,
             key: str) -> None:
         v_a, = parents
@@ -83,7 +82,7 @@ def test_dependent() -> None:
 
     def update_a_b(
             obj: EffectDependent[str, str, str],
-            parents: Tuple[ValueDependentRedisType[str, list[str], str]],
+            parents: tuple[ValueDependentRedisType[str, list[str], str]],
             pkey: str,
             key: str) -> None:
         v_a, = parents
@@ -96,7 +95,7 @@ def test_dependent() -> None:
 
     def update_a_c(
             obj: EffectDependent[str, str, str],
-            parents: Tuple[ValueDependentRedisType[str, list[str], str]],
+            parents: tuple[ValueDependentRedisType[str, list[str], str]],
             pkey: str,
             key: str) -> None:
         v_a, = parents
@@ -169,7 +168,7 @@ def test_dependent_list() -> None:
 
     def update_a(
             obj: EffectDependent[str, list[str], str],
-            parents: Tuple[
+            parents: tuple[
                 ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
             pkey: str,
             key: str) -> None:
@@ -181,7 +180,7 @@ def test_dependent_list() -> None:
 
     def update_b(
             obj: EffectDependent[str, list[str], str],
-            parents: Tuple[
+            parents: tuple[
                 ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
             pkey: str,
             key: str) -> None:
@@ -210,7 +209,7 @@ def test_dependent_list() -> None:
 
     def update_a_a(
             obj: EffectDependent[str, int, str],
-            parents: Tuple[ListDependentRedisType],
+            parents: tuple[ListDependentRedisType],
             pkey: str,
             key: str) -> None:
         v_a, = parents

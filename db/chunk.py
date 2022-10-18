@@ -1,5 +1,5 @@
 import os
-from typing import Iterable, Tuple
+from typing import Iterable
 
 from db.lsm import ChunkCoordinator, KeyRange, LSM, VType
 
@@ -26,7 +26,7 @@ class DiskChunk(ChunkCoordinator):
         self._children = children
         self._files = files
 
-    def read_file(self, full: str) -> Tuple[float, dict[str, VType]]:
+    def read_file(self, full: str) -> tuple[float, dict[str, VType]]:
         pass
 
     def write_values(
@@ -37,7 +37,7 @@ class DiskChunk(ChunkCoordinator):
         raise NotImplementedError()
 
     def fetch_values(
-            self, key: str, lsm: LSM) -> Iterable[Tuple[str, VType]]:
+            self, key: str, lsm: LSM) -> Iterable[tuple[str, VType]]:
         raise NotImplementedError()
 
     def clear_cache(self, key_range: KeyRange) -> None:

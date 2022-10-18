@@ -1,7 +1,7 @@
 
 import collections
 import time
-from typing import Iterable, Tuple
+from typing import Iterable
 
 import pandas as pd
 
@@ -46,7 +46,7 @@ def interpret_action(
         totals: dict[str, int],
         user_pool: list[User],
         synth_pool: list[User],
-        ) -> Tuple[str, bool] | None:
+        ) -> tuple[str, bool] | None:
     ref_id = action["ref_id"]
     if is_link_action(action):
         assert action["link"] is not None
@@ -179,7 +179,7 @@ def process_actions(
         totals: dict[str, int],
         user_pool: list[User],
         synth_pool: list[User],
-        counter: int) -> Tuple[int, pd.Timestamp]:
+        counter: int) -> tuple[int, pd.Timestamp]:
 
     def print_progress(epoch: int) -> None:
         if totals:
@@ -249,7 +249,7 @@ def process_action_file(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: set[str]) -> Tuple[int, pd.Timestamp]:
+        roots: set[str]) -> tuple[int, pd.Timestamp]:
     hash_lookup: dict[str, MHash] = {}
     lookup_buffer: Defaultdict[str, list[Action]] = \
         collections.defaultdict(list)
