@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.9']
+        python: ['3.10']
     env:
       ENV: CI
 
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.9']
+        python: ['3.10']
         ci_node_total: [3]
         ci_node_index: [0, 1, 2]
     env:
@@ -165,7 +165,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.9']
+        python: ['3.10']
     env:
       ENV: CI
 
