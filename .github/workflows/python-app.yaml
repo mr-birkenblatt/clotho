@@ -11,7 +11,39 @@ on:
     tags:
       - 'v*'
 
+
 jobs:
+  ts_pipeline:
+    name: Node CI Pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [16]
+    env:
+      ENV: CI
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install node ${{ matrix.node }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ui/node_modules/
+        key: ${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
+
+    - name: Yarn Install
+      run: yarn install
+
+    - name: Lint Code (ts)
+      run: |
+        make lint-ts
+
+
   lints_pipeline:
     name: Lints CI Pipeline
     runs-on: ubuntu-latest
@@ -87,9 +119,6 @@ jobs:
       run: |
         make lint-pylint
 
-    - name: Lint Code (ts)
-      run: |
-        make lint-ts
 
   tests_pipeline:
     name: Tests CI Pipeline
@@ -160,6 +189,7 @@ jobs:
         git status -sb --porcelain
         [ -z "$(git status --porcelain)" ]
 
+
   coverage_pipeline:
     name: Coverage CI Pipeline
     needs: tests_pipeline
@@ -198,7 +228,7 @@ jobs:
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
         python -m test merge_results --dir test-results --out-fname results.xml
 
-    - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step would save our cache.
+    - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step will save our cache.
       uses: actions/cache@v3
       with:
         path: test-results/*
