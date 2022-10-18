@@ -163,6 +163,10 @@ jobs:
       run: |
         make install PYTHON=python
 
+    - name: Show test-result Cache
+      run: |
+        ls -la test-results
+
     - name: Run test on Node ${{ matrix.ci_node_index }}
       run: |
         set -ex
@@ -224,10 +228,18 @@ jobs:
       # Downloads results-*.xml,
       uses: actions/download-artifact@v2
 
+    - name: Show test-result Cache
+      run: |
+        ls -la test-results
+
     - name: Merge results
       run: |
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
         python -m test merge_results --dir test-results --out-fname results.xml
+
+    - name: Show test-result Cache 2
+      run: |
+        ls -la test-results
 
     - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step will save our cache.
       uses: actions/cache@v3
