@@ -165,7 +165,7 @@ jobs:
 
     - name: Show test-result Cache
       run: |
-        ls -la test-results
+        tail -v -n +1 test-results/*.xml
 
     - name: Run test on Node ${{ matrix.ci_node_index }}
       run: |
@@ -176,6 +176,10 @@ jobs:
         FILES=$(echo "${OUT}" | sed -E 's/^[^,]*,//')
         echo "Selected Files are: ${FILES}"
         make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
+
+    - name: Show test-result Cache
+      run: |
+        tail -v -n +1 test-results/*.xml
 
     - name: Upload Artifact(results)
       uses: actions/upload-artifact@v3
@@ -230,7 +234,7 @@ jobs:
 
     - name: Show test-result Cache
       run: |
-        ls -la test-results
+        tail -v -n +1 test-results/*.xml
 
     - name: Merge results
       run: |
@@ -239,7 +243,7 @@ jobs:
 
     - name: Show test-result Cache 2
       run: |
-        ls -la test-results
+        tail -v -n +1 test-results/*.xml
 
     - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step will save our cache.
       uses: actions/cache@v3
