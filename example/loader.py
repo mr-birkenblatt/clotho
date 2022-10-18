@@ -1,7 +1,7 @@
 
 import collections
 import time
-from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Iterable, Tuple
 
 import pandas as pd
 
@@ -40,13 +40,13 @@ def interpret_action(
         link_store: LinkStore,
         user_store: UserStore,
         now: pd.Timestamp,
-        roots: Set[str],
-        hash_lookup: Dict[str, MHash],
-        lookup_buffer: DefaultDict[str, List[Action]],
-        totals: Dict[str, int],
-        user_pool: List[User],
-        synth_pool: List[User],
-        ) -> Optional[Tuple[str, bool]]:
+        roots: set[str],
+        hash_lookup: dict[str, MHash],
+        lookup_buffer: Defaultdict[str, list[Action]],
+        totals: dict[str, int],
+        user_pool: list[User],
+        synth_pool: list[User],
+        ) -> Tuple[str, bool] | None:
     ref_id = action["ref_id"]
     if is_link_action(action):
         assert action["link"] is not None
@@ -83,7 +83,7 @@ def interpret_action(
             prev_votes = cur_link.get_votes(vtype)
             total_votes = int(prev_votes.get_total_votes())
             casts = vcount - total_votes
-            first_users: List[User] = []
+            first_users: list[User] = []
             prev_users = prev_votes.get_voters(user_store)
             if vtype == VT_UP:
                 down_votes = link["votes"].get("down", 0)
@@ -172,13 +172,13 @@ def process_actions(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: Set[str],
-        hash_lookup: Dict[str, MHash],
-        lookup_buffer: DefaultDict[str, List[Action]],
-        topic_counts: DefaultDict[str, int],
-        totals: Dict[str, int],
-        user_pool: List[User],
-        synth_pool: List[User],
+        roots: set[str],
+        hash_lookup: dict[str, MHash],
+        lookup_buffer: Defaultdict[str, list[Action]],
+        topic_counts: Defaultdict[str, int],
+        totals: dict[str, int],
+        user_pool: list[User],
+        synth_pool: list[User],
         counter: int) -> Tuple[int, pd.Timestamp]:
 
     def print_progress(epoch: int) -> None:
@@ -193,9 +193,11 @@ def process_actions(
                 totals.pop(key, None)
 
     for action in actions:
+        counter += 1
         if counter % 10000 == 0:
             print_progress(counter // 10000)
-        counter += 1
+        if counter % 100 == 0:
+            link_store.settle_all()
         ref = interpret_action(
             action,
             message_store=message_store,
@@ -247,17 +249,17 @@ def process_action_file(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: Set[str]) -> Tuple[int, pd.Timestamp]:
-    hash_lookup: Dict[str, MHash] = {}
-    lookup_buffer: DefaultDict[str, List[Action]] = \
+        roots: set[str]) -> Tuple[int, pd.Timestamp]:
+    hash_lookup: dict[str, MHash] = {}
+    lookup_buffer: Defaultdict[str, list[Action]] = \
         collections.defaultdict(list)
-    topic_counts: DefaultDict[str, int] = \
+    topic_counts: Defaultdict[str, int] = \
         collections.defaultdict(lambda: 0)
-    totals: Dict[str, int] = collections.defaultdict(lambda: 0)
-    user_pool: List[User] = list(user_store.get_all_users())
+    totals: dict[str, int] = collections.defaultdict(lambda: 0)
+    user_pool: list[User] = list(user_store.get_all_users())
     if user_pool:
         print(f"loaded {len(user_pool)} users")
-    synth_pool: List[User] = []
+    synth_pool: list[User] = []
     counter = 0
     return process_actions(
         actions_from_file(fname),

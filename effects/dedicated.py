@@ -1,18 +1,15 @@
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
     Iterable,
-    List,
-    Optional,
-    Set,
     Tuple,
     TYPE_CHECKING,
     TypeVar,
     Union,
 )
 
+from effects.effects import KeyType
 from misc.redis import RedisConnection, RedisFunctionBytes
 from misc.util import json_compact
 
@@ -21,14 +18,14 @@ if TYPE_CHECKING:
     from effects.redis import SetRootRedisType, ValueRootRedisType
 
 
-JSONType = Union[str, int, float, List[str], List[int], List[float]]
-LiteralType = Union[str, int, float, bool]
+JSONType = str | int | float | list[str] | list[int] | list[float]
+LiteralType = str | int | float | bool
 MixedType = Union['Expr', LiteralType]
 
 
-KT = TypeVar('KT')
+KT = TypeVar('KT', bound=KeyType)
 VT = TypeVar('VT')
-PT = TypeVar('PT')
+PT = TypeVar('PT', bound=KeyType)
 KV = TypeVar('KV', bound='KeyVariable')
 
 
@@ -84,11 +81,12 @@ def lit_helper(value: MixedType) -> 'Expr':
 
 class Sequence(Compilable):
     def __init__(self, script: 'Script') -> None:
-        self._seq: List[Compilable] = []
+        self._seq: list[Compilable] = []
         self._script = script
 
-    def add(self, terms: Union[
-            Compilable, Expr, Iterable[Union[Compilable, Expr]]]) -> None:
+    def add(
+            self,
+            terms: Compilable | Expr | Iterable[Compilable | Expr]) -> None:
         if isinstance(terms, Compilable):
             self._seq.append(terms)
         elif isinstance(terms, Expr):
@@ -117,13 +115,13 @@ class Sequence(Compilable):
 class Script(Sequence):
     def __init__(self) -> None:
         super().__init__(self)
-        self._args: List[Tuple[str, Arg]] = []
-        self._keys: List[Tuple[str, KeyVariable]] = []
-        self._anames: Set[str] = set()
-        self._knames: Set[str] = set()
-        self._locals: List[LocalVariable] = []
-        self._return: Optional[Expr] = None
-        self._compute: Optional[RedisFunctionBytes] = None
+        self._args: list[Tuple[str, Arg]] = []
+        self._keys: list[Tuple[str, KeyVariable]] = []
+        self._anames: set[str] = set()
+        self._knames: set[str] = set()
+        self._locals: list[LocalVariable] = []
+        self._return: Expr | None = None
+        self._compute: RedisFunctionBytes | None = None
         self._loops: int = 0
 
     def add_arg(self, name: str) -> 'Arg':
@@ -172,8 +170,8 @@ class Script(Sequence):
     def execute(
             self,
             *,
-            args: Dict[str, JSONType],
-            keys: Dict[str, Any],
+            args: dict[str, JSONType],
+            keys: dict[str, Any],
             conn: RedisConnection) -> bytes:
         assert len(keys) == len(self._keys)
         assert len(args) == len(self._args)
@@ -197,7 +195,7 @@ class Script(Sequence):
 
 class Variable(Expr):
     def __init__(self) -> None:
-        self._index: Optional[int] = None
+        self._index: int | None = None
 
     def set_index(self, index: int) -> None:
         self._index = index
@@ -336,7 +334,7 @@ class EqOp(Op):  # pylint: disable=too-few-public-methods
 class CallFn(Expr):  # pylint: disable=too-few-public-methods
     def __init__(self, fname: str, *args: MixedType) -> None:
         self._fname = fname
-        self._args: List[Expr] = [lit_helper(arg) for arg in args]
+        self._args: list[Expr] = [lit_helper(arg) for arg in args]
 
     def compile(self) -> str:
         argstr = ", ".join((arg.compile() for arg in self._args))

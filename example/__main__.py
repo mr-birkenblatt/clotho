@@ -1,7 +1,6 @@
 import argparse
 import os
 import time
-from typing import List, Set
 
 import pandas as pd
 
@@ -18,8 +17,8 @@ REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
 ROOTS = ["politics", "news", "worldnews", "conservative"]
 
 
-def process_reddit(reddit: RedditAccess, fname: str, subs: List[str]) -> None:
-    dups: Set[str] = set()
+def process_reddit(reddit: RedditAccess, fname: str, subs: list[str]) -> None:
+    dups: set[str] = set()
     with open_append(fname, text=True) as fout:
         for sub in subs:
             for doc in reddit.get_posts(sub):

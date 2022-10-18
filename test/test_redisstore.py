@@ -1,7 +1,7 @@
 
 import time
 import uuid
-from typing import Iterable, List, Tuple
+from typing import Iterable, Tuple
 
 from misc.util import from_timestamp, now_ts, to_timestamp
 from system.links.link import Link, VoteType, VT_DOWN, VT_UP
@@ -17,7 +17,7 @@ def get_random_mhash() -> MHash:
     return MHash.from_message(uuid.uuid4().hex)
 
 
-PLAN: List[Tuple[int, int, int, VoteType]] = [
+PLAN: list[Tuple[int, int, int, VoteType]] = [
     # parent, child, user, vote_type
     (0, 1, 0, VT_UP),
     (0, 3, 0, VT_UP),
@@ -84,10 +84,10 @@ def test_scenario() -> None:
     time.sleep(4.0 * dmul)  # update tier 1
     # (all parents, all children)
 
-    def get_children(links: Iterable[Link]) -> List[MHash]:
+    def get_children(links: Iterable[Link]) -> list[MHash]:
         return [link.get_child() for link in links]
 
-    def get_parents(links: Iterable[Link]) -> List[MHash]:
+    def get_parents(links: Iterable[Link]) -> list[MHash]:
         return [link.get_parent() for link in links]
 
     assert set(get_children(store.get_all_children(msgs[0]))) == {
@@ -124,7 +124,7 @@ def test_scenario() -> None:
             scorer_name: ScorerName,
             *,
             is_children: bool,
-            full: bool) -> List[MHash]:
+            full: bool) -> list[MHash]:
         scorer = get_scorer(scorer_name)
         sfn = store.get_children if is_children else store.get_parents
         ofn = get_children if is_children else get_parents
@@ -207,7 +207,7 @@ def test_scenario() -> None:
             scorer_name: ScorerName,
             *,
             is_children: bool,
-            full: bool) -> List[MHash]:
+            full: bool) -> list[MHash]:
         scorer = get_scorer(scorer_name)
         ofn = get_children if is_children else get_parents
         if full:

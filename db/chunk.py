@@ -1,5 +1,5 @@
 import os
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Iterable, Tuple
 
 from db.lsm import ChunkCoordinator, KeyRange, LSM, VType
 
@@ -11,12 +11,12 @@ class DiskChunk(ChunkCoordinator):
     def __init__(self, prefix: str, root: str) -> None:
         self._prefix = prefix
         self._root = root
-        self._children: Optional[Dict[str, DiskChunk]] = None
-        self._files: Optional[List[str]] = None
+        self._children: dict[str, DiskChunk] | None = None
+        self._files: list[str] | None = None
 
     def load_dir(self) -> None:
-        children: Dict[str, DiskChunk] = {}
-        files: List[str] = []
+        children: dict[str, DiskChunk] = {}
+        files: list[str] = []
         for fname in os.listdir(self._root):
             full = os.path.join(self._root, fname)
             if os.path.isdir(full):
@@ -26,13 +26,13 @@ class DiskChunk(ChunkCoordinator):
         self._children = children
         self._files = files
 
-    def read_file(self, full: str) -> Tuple[float, Dict[str, VType]]:
+    def read_file(self, full: str) -> Tuple[float, dict[str, VType]]:
         pass
 
     def write_values(
             self,
             cur_time: float,
-            values: Dict[str, VType],
+            values: dict[str, VType],
             lsm: LSM) -> None:
         raise NotImplementedError()
 

@@ -37,7 +37,7 @@ ArrayLike = TypeVar('ArrayLike', ABCExtensionArray, np.ndarray)
 DatetimeLikeScalar = TypeVar(
     'DatetimeLikeScalar', Period, Timestamp, Timedelta)
 Dtype: Any
-FilePathOrBuffer = Union[str, Path, IO[AnyStr]]
+FilePathOrBuffer = str | Path | IO[AnyStr]
 FrameOrSeries = TypeVar('FrameOrSeries', ABCSeries, ABCDataFrame)
-Scalar = Union[str, int, float]
-Axis = Union[str, int]
+Scalar = str | int | float
+Axis = str | int

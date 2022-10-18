@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional
+from typing import Iterable
 
 import numpy as np
 
@@ -29,13 +29,13 @@ class MessageStore:
 
     def get_random_messages(
             self,
-            ref: Optional[MHash],
+            ref: MHash | None,
             offset: int,
             limit: int) -> Iterable[MHash]:
         start = offset - (offset % RNG_ALIGN)
         end = offset + limit
         base_seed = 1 if ref is None else hash(ref)
-        res: List[MHash] = []
+        res: list[MHash] = []
         cur_ix = start
         while cur_ix < end:
             rng = np.random.default_rng(base_seed + SEED_MUL * cur_ix)
@@ -45,7 +45,7 @@ class MessageStore:
         return res[rel_start:rel_start + limit]
 
 
-DEFAULT_MSG_STORE: Optional[MessageStore] = None
+DEFAULT_MSG_STORE: MessageStore | None = None
 
 
 def get_default_message_store() -> MessageStore:

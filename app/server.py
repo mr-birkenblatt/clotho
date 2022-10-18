@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 import sys
 import threading
-from typing import List, Optional, Tuple, TypedDict
+from typing import Tuple, TypedDict
 
 import pandas as pd
 from quick_server import create_server, QuickServer
@@ -225,7 +225,7 @@ def setup(
             link_query: LinkQuery,
             *,
             is_parent: bool,
-            links: List[Link]) -> List[Link]:
+            links: list[Link]) -> list[Link]:
         limit = link_query["limit"]
         if len(links) >= limit:
             return links
@@ -299,8 +299,8 @@ def setup(
 
 def setup_server(
         deploy: bool,
-        addr: Optional[str],
-        port: Optional[int]) -> Tuple[QuickServer, str]:
+        addr: str | None,
+        port: int | None) -> Tuple[QuickServer, str]:
     if addr is None:
         addr = envload_str("HOST", default="127.0.0.1")
     if port is None:

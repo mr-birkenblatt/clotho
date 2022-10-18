@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
+from typing import Callable, Iterable, NamedTuple, Tuple
 
 import pandas as pd
 
@@ -111,7 +111,7 @@ class RedisLink(Link):
         self._s = store
         self._parent = parent
         self._child = child
-        self._user: Optional[User] = None
+        self._user: User | None = None
 
     def get_parent(self) -> MHash:
         return self._parent
@@ -119,7 +119,7 @@ class RedisLink(Link):
     def get_child(self) -> MHash:
         return self._child
 
-    def get_user(self, user_store: UserStore) -> Optional[User]:
+    def get_user(self, user_store: UserStore) -> User | None:
         if self._user is not None:
             return self._user
         store = self._s
@@ -192,7 +192,7 @@ class RedisLinkStore(LinkStore):
         # all children for a given parent
 
         def compute_call(
-                obj: EffectDependent[PLink, List[str], RLink],
+                obj: EffectDependent[PLink, list[str], RLink],
                 parents: Tuple[ValueRootRedisType[RLink, float]],
                 _: RLink,
                 key: PLink) -> None:
@@ -214,7 +214,7 @@ class RedisLinkStore(LinkStore):
         # all parents for a given child
 
         def compute_pall(
-                obj: EffectDependent[CLink, List[str], RLink],
+                obj: EffectDependent[CLink, list[str], RLink],
                 parents: Tuple[ValueRootRedisType[RLink, float]],
                 _: RLink,
                 key: CLink) -> None:
@@ -234,11 +234,11 @@ class RedisLinkStore(LinkStore):
 
         # sorted lists by score
 
-        self.r_call_sorted: Dict[
+        self.r_call_sorted: dict[
             ScorerName, ListDependentRedisType[PLink, PLink]] = {}
-        self.r_pall_sorted: Dict[
+        self.r_pall_sorted: dict[
             ScorerName, ListDependentRedisType[CLink, CLink]] = {}
-        self.r_user_sorted: Dict[
+        self.r_user_sorted: dict[
             ScorerName, ListDependentRedisType[str, str]] = {}
 
         def add_scorer_dependent_types(scorer: Scorer) -> None:
@@ -247,7 +247,7 @@ class RedisLinkStore(LinkStore):
             # all children for a given parent sorted with score
 
             def compute_call_sorted(
-                    obj: EffectDependent[PLink, List[str], PLink],
+                    obj: EffectDependent[PLink, list[str], PLink],
                     parents: Tuple[ListDependentRedisType[PLink, RLink]],
                     pkey: PLink,
                     key: PLink) -> None:
@@ -274,7 +274,7 @@ class RedisLinkStore(LinkStore):
             # all parents for a given child sorted with score
 
             def compute_pall_sorted(
-                    obj: EffectDependent[CLink, List[str], CLink],
+                    obj: EffectDependent[CLink, list[str], CLink],
                     parents: Tuple[ListDependentRedisType[CLink, RLink]],
                     pkey: CLink,
                     key: CLink) -> None:
@@ -301,7 +301,7 @@ class RedisLinkStore(LinkStore):
             # all links created by a user sorted with score
 
             def compute_user_sorted(
-                    obj: EffectDependent[str, List[str], str],
+                    obj: EffectDependent[str, list[str], str],
                     parents: Tuple[SetRootRedisType[str]],
                     pkey: str,
                     key: str) -> None:
@@ -375,7 +375,7 @@ class RedisLinkStore(LinkStore):
         vote_type = script.add_arg("vote_type")
         now = script.add_arg("now")
         plink = script.add_arg("plink")
-        r_voted: RootSet[RLink] = script.add_key(
+        r_voted: Rootset[RLink] = script.add_key(
             "r_voted", RootSet(self.r_voted))
         r_total: RootValue[RLink, float] = script.add_key(
             "r_total", RootValue(self.r_total))
@@ -387,7 +387,7 @@ class RedisLinkStore(LinkStore):
             "r_first", RootValue(self.r_first))
         r_last: RootValue[RLink, float] = script.add_key(
             "r_last", RootValue(self.r_last))
-        r_user_links: RootSet[str] = script.add_key(
+        r_user_links: Rootset[str] = script.add_key(
             "r_user_links", RootSet(self.r_user_links))
         is_new = script.add_local(False)
 
@@ -429,7 +429,7 @@ class RedisLinkStore(LinkStore):
         return time.monotonic() - start_time
 
     @staticmethod
-    def valid_scorers() -> List[Scorer]:
+    def valid_scorers() -> list[Scorer]:
         return [
             get_scorer("best"),
             get_scorer("top"),

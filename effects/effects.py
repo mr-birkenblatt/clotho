@@ -1,32 +1,36 @@
 import threading
 import time
-from typing import (
-    Callable,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    TYPE_CHECKING,
-    TypeVar,
-)
+from typing import Callable, Generic, Tuple, TYPE_CHECKING, TypeVar
 
 
 if TYPE_CHECKING:
     from typing import Any
 
 
-KT = TypeVar('KT')
+class EqType:
+    def __eq__(self, other: object) -> bool:
+        raise NotImplementedError()
+
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        raise NotImplementedError()
+
+
+KeyType = int | str | EqType
+
+
+KT = TypeVar('KT', bound=KeyType)
 VT = TypeVar('VT')
-PT = TypeVar('PT')
+PT = TypeVar('PT', bound=KeyType)
 AT = TypeVar('AT')
 LT = TypeVar('LT', bound=Tuple['EffectBase', ...])
 
 
 class EffectBase(Generic[KT]):
     def __init__(self) -> None:
-        self._dependents: List['EffectDependent[Any, Any, KT]'] = []
+        self._dependents: list['EffectDependent[KeyType, Any, KT]'] = []
 
     def add_dependent(
             self, dependent: 'EffectDependent[Any, Any, KT]') -> None:
@@ -57,15 +61,15 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
             return default
         return res
 
-    def maybe_get_value(self, key: KT) -> Optional[VT]:
+    def maybe_get_value(self, key: KT) -> VT | None:
         raise NotImplementedError()
 
 
 class ValueRootType(Generic[KT, VT], EffectRoot[KT, VT]):
-    def do_update_value(self, key: KT, value: VT) -> Optional[VT]:
+    def do_update_value(self, key: KT, value: VT) -> VT | None:
         raise NotImplementedError()
 
-    def update_value(self, key: KT, value: VT) -> Optional[VT]:
+    def update_value(self, key: KT, value: VT) -> VT | None:
         res = self.do_update_value(key, value)
         self.on_update(key)
         return res
@@ -87,7 +91,7 @@ class ValueRootType(Generic[KT, VT], EffectRoot[KT, VT]):
         return was_set
 
 
-class SetRootType(Generic[KT, VT], EffectRoot[KT, Set[VT]]):
+class SetRootType(Generic[KT, VT], EffectRoot[KT, set[VT]]):
     def do_add_value(self, key: KT, value: VT) -> bool:
         raise NotImplementedError()
 
@@ -114,12 +118,12 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
             conversion: Callable[[PT], KT],
             delay: float) -> None:
         super().__init__()
-        self._pending: Dict[PT, float] = {}
+        self._pending: dict[PT, float] = {}
         self._parents = parents
         self._effect = effect
         self._conversion = conversion
         self._delay = delay
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
         for parent in self._parents:
             parent.add_dependent(self)
 
@@ -151,9 +155,9 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
             self._pending[key] = end_time
         self.init_thread()
 
-    def poll_update(self, cur_time: float) -> Optional[float]:
-        next_time: Optional[float] = None
-        to_update: List[PT] = []
+    def poll_update(self, cur_time: float) -> float | None:
+        next_time: float | None = None
+        to_update: list[PT] = []
         for (key, update_time) in list(self._pending.items()):
             if update_time > cur_time:
                 if next_time is None or update_time < next_time:
@@ -175,7 +179,7 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
 
         for parent in self._parents:
             parent.do_settle(key, pconvert)
-        to_update: List[PT] = []
+        to_update: list[PT] = []
         for pkey in list(self._pending.keys()):
             if key != pconvert(pkey):
                 continue
@@ -187,7 +191,7 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
     def settle_all(self) -> None:
         for parent in self._parents:
             parent.settle_all()
-        to_update: List[PT] = []
+        to_update: list[PT] = []
         for pkey in list(self._pending.keys()):
             self._pending.pop(pkey, None)
             to_update.append(pkey)
@@ -197,7 +201,7 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
     def execute_update(self, key: PT) -> None:
         self._effect(self, self._parents, key, self._conversion(key))
 
-    def retrieve_value(self, key: KT) -> Optional[VT]:
+    def retrieve_value(self, key: KT) -> VT | None:
         raise NotImplementedError()
 
     def get_value(self, key: KT, default: VT) -> VT:
@@ -206,7 +210,7 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
             return default
         return res
 
-    def maybe_get_value(self, key: KT) -> Optional[VT]:
+    def maybe_get_value(self, key: KT) -> VT | None:
         return self.retrieve_value(key)
 
     def do_set_value(self, key: KT, value: VT) -> None:
@@ -216,10 +220,10 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
         self.do_set_value(key, value)
         self.on_update(key)
 
-    def do_update_value(self, key: KT, value: VT) -> Optional[VT]:
+    def do_update_value(self, key: KT, value: VT) -> VT | None:
         raise NotImplementedError()
 
-    def update_value(self, key: KT, value: VT) -> Optional[VT]:
+    def update_value(self, key: KT, value: VT) -> VT | None:
         res = self.do_update_value(key, value)
         self.on_update(key)
         return res

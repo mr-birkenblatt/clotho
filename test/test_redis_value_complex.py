@@ -1,6 +1,6 @@
 
 import time
-from typing import List, NamedTuple, Tuple
+from typing import NamedTuple, Tuple
 
 from effects.effects import EffectDependent
 from effects.redis import (
@@ -27,7 +27,7 @@ def test_complex() -> None:
         "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
     def compute_destinations(
-            obj: EffectDependent[FLink, List[int], Link],
+            obj: EffectDependent[FLink, list[int], Link],
             parents: Tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: FLink) -> None:
@@ -35,14 +35,14 @@ def test_complex() -> None:
         obj.set_value(key, sorted(lks.get_range(f"link:{pkey.l_from}:")))
 
     def compute_sources(
-            obj: EffectDependent[TLink, List[int], Link],
+            obj: EffectDependent[TLink, list[int], Link],
             parents: Tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: TLink) -> None:
         lks, = parents
         obj.set_value(key, sorted(lks.get_range("link:", f":{pkey.l_to}")))
 
-    dests: ValueDependentRedisType[FLink, List[int], Link] = \
+    dests: ValueDependentRedisType[FLink, list[int], Link] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
@@ -50,7 +50,7 @@ def test_complex() -> None:
             compute_destinations,
             lambda pkey: FLink(l_from=pkey.l_from),
             0.1)
-    srcs: ValueDependentRedisType[TLink, List[int], Link] = \
+    srcs: ValueDependentRedisType[TLink, list[int], Link] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
@@ -90,7 +90,7 @@ def test_complex_list() -> None:
         "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
     def compute_destinations(
-            obj: EffectDependent[FLink, List[str], Link],
+            obj: EffectDependent[FLink, list[str], Link],
             parents: Tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: FLink) -> None:
@@ -99,7 +99,7 @@ def test_complex_list() -> None:
             f"{val}" for val in lks.get_range(f"link:{pkey.l_from}:"))))
 
     def compute_sources(
-            obj: EffectDependent[TLink, List[str], Link],
+            obj: EffectDependent[TLink, list[str], Link],
             parents: Tuple[ValueRootRedisType[Link, int]],
             pkey: Link,
             key: TLink) -> None:

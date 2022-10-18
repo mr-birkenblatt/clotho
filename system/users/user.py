@@ -1,5 +1,5 @@
 import re
-from typing import Any, cast, Optional, TypedDict
+from typing import Any, cast, TypedDict
 
 
 VALID_NAME = re.compile(r"^\S+$")
@@ -29,7 +29,7 @@ class User:
             permissions: Permissions) -> None:
         if VALID_NAME.search(name) is None:
             raise ValueError(f"invalid user name {name}")
-        self._user_id: Optional[str] = None
+        self._user_id: str | None = None
         self._name = name
         self._permissions = permissions
 
@@ -62,8 +62,7 @@ class User:
 
     def get_weighted_vote(
             self,
-            owner: Optional['User'],  # pylint: disable=unused-argument
-            ) -> float:
+            owner: 'User') -> float:  # pylint: disable=unused-argument
         # FIXME: implement ELO
         return 1.0
 

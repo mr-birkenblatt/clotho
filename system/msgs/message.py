@@ -1,5 +1,5 @@
 import re
-from typing import Callable, Optional
+from typing import Callable
 
 from misc.util import get_text_hash, is_hex
 
@@ -59,7 +59,7 @@ def set_mhash_print_hook(hook: Callable[[MHash], str]) -> None:
 
 
 class Message:
-    def __init__(self, *, msg: str, msg_hash: Optional[MHash] = None) -> None:
+    def __init__(self, *, msg: str, msg_hash: MHash | None = None) -> None:
         if not msg:
             raise ValueError("messages cannot be empty")
         self._msg = msg

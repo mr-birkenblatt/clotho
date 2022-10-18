@@ -1,5 +1,4 @@
 import time
-from typing import Dict, List, Optional, Set
 
 import pandas as pd
 
@@ -16,10 +15,10 @@ def get_all_children(
         link_store: LinkStore,
         scorer: Scorer,
         now: pd.Timestamp,
-        parent: MHash) -> List[Link]:
+        parent: MHash) -> list[Link]:
     offset = 0
     limit = 10
-    res: List[Link] = []
+    res: list[Link] = []
     while True:
         cur = list(link_store.get_children(
             parent,
@@ -40,7 +39,7 @@ def print_links(
         scorer: Scorer,
         now: pd.Timestamp,
         parent: MHash,
-        already: Set[MHash]) -> None:
+        already: set[MHash]) -> None:
     already.add(parent)
     links = get_all_children(link_store, scorer, now, parent)
     for link in links:
@@ -114,22 +113,22 @@ def test_loader() -> None:
     def match_link(
             parent: MHash,
             child: MHash,
-            uname: Optional[str],
-            votes: Dict[VoteType, int],
-            voters: Optional[Dict[VoteType, Set[str]]] = None) -> None:
+            uname: str | None,
+            votes: dict[VoteType, int],
+            voters: dict[VoteType, set[str]] | None = None) -> None:
         match_cfg(link_store.get_link(parent, child), uname, votes, voters)
 
     def match_cfg(
             link: Link,
-            uname: Optional[str],
-            votes: Dict[VoteType, int],
-            voters: Optional[Dict[VoteType, Set[str]]] = None) -> None:
+            uname: str | None,
+            votes: dict[VoteType, int],
+            voters: dict[VoteType, set[str]] | None = None) -> None:
         user = link.get_user(user_store)
         if user is None:
             assert uname is None
         else:
             assert user.get_name() == uname
-        vtypes: List[VoteType] = ["up", "down", "honor"]
+        vtypes: list[VoteType] = ["up", "down", "honor"]
         for vtype in vtypes:
             assert int(link.get_votes(vtype).get_total_votes()) == \
                 votes.get(vtype, 0)

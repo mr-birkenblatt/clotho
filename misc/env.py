@@ -1,5 +1,5 @@
 import os
-from typing import Literal, Optional
+from typing import Literal
 
 
 EnvPath = Literal[
@@ -21,7 +21,7 @@ EnvInt = Literal[
 ]
 
 
-def _envload(key: str, default: Optional[str]) -> str:
+def _envload(key: str, default: str | None) -> str:
     res = os.environ.get(key)
     if res is not None:
         return res
@@ -30,13 +30,13 @@ def _envload(key: str, default: Optional[str]) -> str:
     raise ValueError(f"env {key} must be set!")
 
 
-def envload_str(key: EnvStr, *, default: Optional[str] = None) -> str:
+def envload_str(key: EnvStr, *, default: str | None = None) -> str:
     return _envload(key, default)
 
 
-def envload_path(key: EnvPath, *, default: Optional[str] = None) -> str:
+def envload_path(key: EnvPath, *, default: str | None = None) -> str:
     return _envload(key, default)
 
 
-def envload_int(key: EnvInt, *, default: Optional[int] = None) -> int:
+def envload_int(key: EnvInt, *, default: int | None = None) -> int:
     return int(_envload(key, f"{default}"))

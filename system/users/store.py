@@ -1,4 +1,4 @@
-from typing import Iterable, Optional
+from typing import Iterable
 
 from misc.env import envload_str
 from misc.util import get_short_hash
@@ -20,7 +20,7 @@ class UserStore:
         return get_short_hash(user_name)
 
 
-DEFAULT_USER_STORE: Optional[UserStore] = None
+DEFAULT_USER_STORE: UserStore | None = None
 
 
 def get_default_user_store() -> UserStore:

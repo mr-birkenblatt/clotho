@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, List
+from typing import Iterable
 
 import numpy as np
 
@@ -8,8 +8,8 @@ from system.msgs.store import MessageStore
 
 class RamMessageStore(MessageStore):
     def __init__(self) -> None:
-        self._msgs: Dict[MHash, Message] = {}
-        self._topics: List[Message] = []
+        self._msgs: dict[MHash, Message] = {}
+        self._topics: list[Message] = []
 
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()

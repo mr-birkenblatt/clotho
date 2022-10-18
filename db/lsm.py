@@ -1,13 +1,13 @@
 import atexit
 import time
 import uuid
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Iterable, Tuple
 
 from misc.lru import LRU
 
 
 class KeyRange:
-    def __init__(self, shortest: str, longest: Optional[str]) -> None:
+    def __init__(self, shortest: str, longest: str | None) -> None:
         if longest is not None:
             if len(shortest) > len(longest):
                 raise ValueError(f"{shortest} > {longest}")
@@ -33,7 +33,7 @@ class MissingKey:  # pylint: disable=too-few-public-methods
 MISSING_KEY = MissingKey()
 
 
-VType = Union[MissingKey, str, int, float, List[Union[str, int, float]]]
+VType = MissingKey | str | int | float | list[str | int | float]
 
 
 def is_missing_key(value: VType) -> bool:
@@ -52,7 +52,7 @@ class ChunkCoordinator:
     def write_values(
             self,
             cur_time: float,
-            values: Dict[str, VType],
+            values: dict[str, VType],
             lsm: 'LSM') -> None:
         raise NotImplementedError()
 
@@ -73,7 +73,7 @@ class LSM:
             write_cache_freq: float = 5 * 60,
             write_cache_size: int = 10000,
             chunk_coordinator: ChunkCoordinator) -> None:
-        self._write_cache: Dict[str, VType] = {}
+        self._write_cache: dict[str, VType] = {}
         self._cache: LRU[str, VType] = LRU(cache_size)
         self._pid = uuid.uuid4().hex
         self._cache_coordinator = cache_coordinator
@@ -125,10 +125,10 @@ class LSM:
     def get(
             self,
             key: str,
-            default: Optional[VType] = None) -> Optional[VType]:
+            default: VType | None = None) -> VType | None:
         res = self._write_cache.get(key, None)
 
-        def prepare(res: VType) -> Optional[VType]:
+        def prepare(res: VType) -> VType | None:
             return default if is_missing_key(res) else res
 
         if res is not None:

@@ -13,16 +13,14 @@ from typing import (
     IO,
     Iterable,
     Iterator,
-    List,
     Literal,
-    Optional,
     overload,
     Tuple,
 )
 
 
 MAIN_LOCK = threading.RLock()
-STALE_FILE_RETRIES: List[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]
+STALE_FILE_RETRIES: list[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]
 TMP_POSTFIX = ".tmp~"
 
 
@@ -101,7 +99,7 @@ def ensure_folder(folder: None) -> None:
     ...
 
 
-def ensure_folder(folder: Optional[str]) -> Optional[str]:
+def ensure_folder(folder: str | None) -> str | None:
     if folder is not None and not os.path.exists(folder):
         a_folder: str = folder
         when_ready(lambda: os.makedirs(a_folder, mode=0o777, exist_ok=True))
@@ -208,7 +206,7 @@ def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
     mode = get_mode("w", text)
     tname = None
     tfd = None
-    sfile: Optional[IO[Any]] = None
+    sfile: IO[Any] | None = None
     writeback = False
     try:
         tfd, tname = tempfile.mkstemp(
@@ -237,11 +235,11 @@ def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
                     pass
 
 
-def get_subfolders(path: str) -> List[str]:
+def get_subfolders(path: str) -> list[str]:
     return [fobj.name for fobj in os.scandir(path) if fobj.is_dir()]
 
 
-def get_files(path: str, ext: str) -> List[str]:
+def get_files(path: str, ext: str) -> list[str]:
     return [
         fobj.name
         for fobj in os.scandir(path)

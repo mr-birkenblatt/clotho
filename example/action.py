@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional, TypedDict
+from typing import Any, Literal, TypedDict
 
 
 MessageAction = TypedDict('MessageAction', {
@@ -6,17 +6,17 @@ MessageAction = TypedDict('MessageAction', {
 })
 LinkAction = TypedDict('LinkAction', {
     "parent_ref": str,
-    "user_ref": Optional[str],
-    "user_name": Optional[str],
+    "user_ref": str | None,
+    "user_name": str | None,
     "created_utc": float,
-    "votes": Dict[str, int],
+    "votes": dict[str, int],
     "depth": int,
 })
 Action = TypedDict('Action', {
     "kind": Literal["message", "link"],
     "ref_id": str,
-    "message": Optional[MessageAction],
-    "link": Optional[LinkAction],
+    "message": MessageAction | None,
+    "link": LinkAction | None,
 }, total=False)
 
 
@@ -34,10 +34,10 @@ def create_link_action(
         ref_id: str,
         parent_ref: str,
         depth: int,
-        user_ref: Optional[str],
-        user_name: Optional[str],
+        user_ref: str | None,
+        user_name: str | None,
         created_utc: float,
-        votes: Dict[str, int]) -> Action:
+        votes: dict[str, int]) -> Action:
     return {
         "kind": "link",
         "ref_id": ref_id,
@@ -52,7 +52,7 @@ def create_link_action(
     }
 
 
-def maybe_to_string(text: Any) -> Optional[str]:
+def maybe_to_string(text: Any) -> str | None:
     if text is None:
         return None
     return f"{text}"
@@ -66,7 +66,7 @@ def is_message_action(action: Action) -> bool:
     return action["kind"] == "message"
 
 
-def parse_action(obj: Dict[str, Any]) -> Action:
+def parse_action(obj: dict[str, Any]) -> Action:
     kind = obj["kind"]
     if kind == "link":
         link = obj["link"]

@@ -2,7 +2,7 @@ import collections
 import logging
 import os
 import time
-from typing import Deque, Dict, Iterable, List, Set, Tuple, Union
+from typing import Iterable, Tuple
 
 import praw
 from praw import Reddit
@@ -17,8 +17,8 @@ from misc.io import open_read
 from misc.util import json_load, json_pretty
 
 
-MaybeComment = Union[Comment, MoreComments]
-CommentsOrForest = Union[CommentForest, List[MaybeComment]]
+MaybeComment = Comment | MoreComments
+CommentsOrForest = CommentForest | list[MaybeComment]
 
 
 CRED_FILE = os.path.join(os.path.dirname(__file__), "creds.json")
@@ -44,12 +44,12 @@ class RedditAccess:
             client_secret=creds["client_secret"],
             user_agent=f"testscript by u/{creds['user']}")
         self._reddit = reddit
-        self._users: Dict[str, Tuple[str, str]] = {}
+        self._users: dict[str, Tuple[str, str]] = {}
 
     def get_posts(self, subreddit: str) -> Iterable[Submission]:
         yield from self._reddit.subreddit(subreddit).hot()
 
-    def get_user(self, value: Union[Submission, Comment]) -> Tuple[str, str]:
+    def get_user(self, value: Submission | Comment) -> Tuple[str, str]:
         if not hasattr(value, "author_fullname"):
             return ("NOUSER", "u/NOUSER")
         ref = value.author_fullname
@@ -66,7 +66,7 @@ class RedditAccess:
             self,
             parent_id: str,
             depth: int,
-            value: Union[Submission, Comment]) -> Action:
+            value: Submission | Comment) -> Action:
         user_ref = getattr(value, "author_fullname", None)
         if user_ref is not None:
             user = value.author
@@ -96,7 +96,7 @@ class RedditAccess:
 
     @staticmethod
     def create_message_action(
-            value: Union[Subreddit, Submission, Comment]) -> Action:
+            value: Subreddit | Submission | Comment) -> Action:
         if isinstance(value, Subreddit):
             sub: Subreddit = value
             return create_message_action(sub.fullname, f"r/{sub.display_name}")
@@ -112,7 +112,7 @@ class RedditAccess:
             return create_message_action(comment.fullname, comment.body)
         raise TypeError(f"invalid type of {value}: {type(value)}")
 
-    def get_comments(self, sid: Union[str, Submission]) -> Iterable[Action]:
+    def get_comments(self, sid: str | Submission) -> Iterable[Action]:
         if isinstance(sid, str):
             doc: Submission = self._reddit.submission(id=sid)
         else:
@@ -124,13 +124,13 @@ class RedditAccess:
         yield self.create_link_action(sub.fullname, -1, doc)
 
         timing_start = time.monotonic()
-        already: Set[str] = set()
+        already: set[str] = set()
 
-        queue: Deque[CommentsOrForest] = collections.deque()
+        queue: collections.deque[CommentsOrForest] = collections.deque()
         queue.append(doc.comments)
 
         def process(curs: CommentsOrForest) -> Iterable[Action]:
-            mores: List[MoreComments] = []
+            mores: list[MoreComments] = []
             if isinstance(curs, CommentForest):
                 try:
                     curs.replace_more(limit=None)
