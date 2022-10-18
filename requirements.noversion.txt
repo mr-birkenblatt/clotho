@@ -1,12 +1,12 @@
 flake8
 flake8-commas
 flake8-isort
-isort
 mypy
 numpy
 pandas
 praw
 pre-commit
+pycodestyle
 pylint
 pytest
 pytest-cov
