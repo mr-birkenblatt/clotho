@@ -77,7 +77,6 @@ from pandas.core.computation.api import eval as eval
 from pandas.core.reshape.api import concat as concat
 from pandas.core.reshape.api import crosstab as crosstab
 from pandas.core.reshape.api import cut as cut
-from pandas.core.reshape.api import get_dummies as get_dummies
 from pandas.core.reshape.api import lreshape as lreshape
 from pandas.core.reshape.api import melt as melt
 from pandas.core.reshape.api import merge as merge
