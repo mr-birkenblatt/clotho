@@ -69,7 +69,7 @@ def merge_results(base_folder: str, out_filename: str) -> None:
 def split_tests(filepath: str, total_nodes: int, cur_node: int) -> None:
     _, fname = os.path.split(filepath)
     if XML_FILE_PATTERN.match(fname):
-        test_files = find_tests("test")
+        test_files = sorted(find_tests("test"))
         try:
             tree = ET.parse(filepath)
             test_time_map: Dict[str, float] = defaultdict(int)

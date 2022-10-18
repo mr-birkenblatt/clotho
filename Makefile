@@ -15,6 +15,7 @@ help:
 	@echo "lint-ts	run typescript linting"
 	@echo "lint-ts-fix	run typescript linting with fix"
 	@echo "pre-commit 	sort python package imports using isort"
+	@echo "clean	clean test data"
 	@echo "pytest	run all test with pytest (requires a running test redis server)"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
