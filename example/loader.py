@@ -42,7 +42,7 @@ def interpret_action(
         now: pd.Timestamp,
         roots: set[str],
         hash_lookup: dict[str, MHash],
-        lookup_buffer: Defaultdict[str, list[Action]],
+        lookup_buffer: collections.defaultdict[str, list[Action]],
         totals: dict[str, int],
         user_pool: list[User],
         synth_pool: list[User],
@@ -174,8 +174,8 @@ def process_actions(
         reference_time: float,
         roots: set[str],
         hash_lookup: dict[str, MHash],
-        lookup_buffer: Defaultdict[str, list[Action]],
-        topic_counts: Defaultdict[str, int],
+        lookup_buffer: collections.defaultdict[str, list[Action]],
+        topic_counts: collections.defaultdict[str, int],
         totals: dict[str, int],
         user_pool: list[User],
         synth_pool: list[User],
@@ -251,9 +251,9 @@ def process_action_file(
         reference_time: float,
         roots: set[str]) -> tuple[int, pd.Timestamp]:
     hash_lookup: dict[str, MHash] = {}
-    lookup_buffer: Defaultdict[str, list[Action]] = \
+    lookup_buffer: collections.defaultdict[str, list[Action]] = \
         collections.defaultdict(list)
-    topic_counts: Defaultdict[str, int] = \
+    topic_counts: collections.defaultdict[str, int] = \
         collections.defaultdict(lambda: 0)
     totals: dict[str, int] = collections.defaultdict(lambda: 0)
     user_pool: list[User] = list(user_store.get_all_users())

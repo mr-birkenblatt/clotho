@@ -1,6 +1,7 @@
 import re
 from typing import Callable
 
+from effects.effects import EqType
 from misc.util import get_text_hash, is_hex
 
 
@@ -8,7 +9,7 @@ TOPIC_START = "t/"
 VALID_TOPIC = re.compile(r"^t\/[a-z0-9_]+$")
 
 
-class MHash:
+class MHash(EqType):
     def __init__(self, msg_hash: str) -> None:
         self._hash = msg_hash
 
@@ -34,9 +35,6 @@ class MHash:
         if self is other:
             return True
         return self.to_parseable() == other.to_parseable()
-
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
 
     def __str__(self) -> str:
         return PRINT_HOOK(self)

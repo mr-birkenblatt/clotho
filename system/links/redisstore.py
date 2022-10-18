@@ -375,7 +375,7 @@ class RedisLinkStore(LinkStore):
         vote_type = script.add_arg("vote_type")
         now = script.add_arg("now")
         plink = script.add_arg("plink")
-        r_voted: Rootset[RLink] = script.add_key(
+        r_voted: RootSet[RLink] = script.add_key(
             "r_voted", RootSet(self.r_voted))
         r_total: RootValue[RLink, float] = script.add_key(
             "r_total", RootValue(self.r_total))
@@ -387,7 +387,7 @@ class RedisLinkStore(LinkStore):
             "r_first", RootValue(self.r_first))
         r_last: RootValue[RLink, float] = script.add_key(
             "r_last", RootValue(self.r_last))
-        r_user_links: Rootset[str] = script.add_key(
+        r_user_links: RootSet[str] = script.add_key(
             "r_user_links", RootSet(self.r_user_links))
         is_new = script.add_local(False)
 
