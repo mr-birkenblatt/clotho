@@ -1,6 +1,7 @@
 help:
 	@echo "The following make targets are available:"
-	@echo "install	install all dependencies"
+	@echo "install	install all python dependencies"
+	@echo "install-ts	install all typescript dependencies"
 	@echo "lint-emptyinit	main inits must be empty"
 	@echo "lint-flake8	run flake8 checker to deteck missing trailing comma"
 	@echo "lint-forgottenformat	ensures format strings are used"
@@ -97,6 +98,9 @@ lint-all: \
 
 install:
 	PYTHON=$(PYTHON) && ./install.sh
+
+install-ts:
+	cd ui && yarn install
 
 requirements-check:
 	PYTHON=$(PYTHON) && ./requirements_check.sh $(FILE)

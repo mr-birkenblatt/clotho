@@ -37,7 +37,8 @@ jobs:
         key: ${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
 
     - name: Yarn Install
-      run: yarn install
+      run: |
+        make install-ts
 
     - name: Lint Code (ts)
       run: |
