@@ -1,6 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with
-# multiple version of Python
-name: Python Checks
+name: Python and TypeScript Checks
 
 on:
   pull_request:
@@ -222,8 +220,17 @@ jobs:
         make install PYTHON=python
         mkdir -p test-results/parts
 
-    - name: Download all results
-      # Downloads results-*.xml,
+    - name: Restore test-result Cache
+      uses: actions/cache@v3
+      with:
+        path: test-results/*
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test_*.py') }}-${{ hashFiles('test/data*') }}
+
+    - name: Clean test-result Cache
+      run: |
+        rm -r test-results
+
+    - name: Download all results and coverage
       uses: actions/download-artifact@v2
 
     - name: Merge results
@@ -231,12 +238,6 @@ jobs:
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
         python -m test merge_results --dir test-results --out-fname results.xml
         tail -v -n +1 test-results/*.xml
-
-    - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step will save our cache.
-      uses: actions/cache@v3
-      with:
-        path: test-results/*
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/_test*.py') }}-${{ hashFiles('test/data*') }}
 
     - name: Download all coverage reports
       uses: actions/download-artifact@v2
