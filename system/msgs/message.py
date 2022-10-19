@@ -1,6 +1,7 @@
 import re
-from typing import Optional
+from typing import Callable
 
+from effects.effects import EqType
 from misc.util import get_text_hash, is_hex
 
 
@@ -8,7 +9,7 @@ TOPIC_START = "t/"
 VALID_TOPIC = re.compile(r"^t\/[a-z0-9_]+$")
 
 
-class MHash:
+class MHash(EqType):
     def __init__(self, msg_hash: str) -> None:
         self._hash = msg_hash
 
@@ -35,18 +36,28 @@ class MHash:
             return True
         return self.to_parseable() == other.to_parseable()
 
-    def __ne__(self, other: object) -> bool:
-        return not self.__eq__(other)
-
     def __str__(self) -> str:
-        return self.to_parseable()
+        return PRINT_HOOK(self)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}[{self.to_parseable()}]"
+        return f"{self.__class__.__name__}[{PRINT_HOOK(self)}]"
+
+
+def default_print_hook(mhash: MHash) -> str:
+    return mhash.to_parseable()
+
+
+PRINT_HOOK: Callable[[MHash], str] = default_print_hook
+
+
+def set_mhash_print_hook(hook: Callable[[MHash], str]) -> None:
+    global PRINT_HOOK
+
+    PRINT_HOOK = hook
 
 
 class Message:
-    def __init__(self, *, msg: str, msg_hash: Optional[MHash] = None) -> None:
+    def __init__(self, *, msg: str, msg_hash: MHash | None = None) -> None:
         if not msg:
             raise ValueError("messages cannot be empty")
         self._msg = msg

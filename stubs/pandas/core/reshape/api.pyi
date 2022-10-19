@@ -13,6 +13,5 @@ from pandas.core.reshape.merge import merge_ordered as merge_ordered
 from pandas.core.reshape.pivot import crosstab as crosstab
 from pandas.core.reshape.pivot import pivot as pivot
 from pandas.core.reshape.pivot import pivot_table as pivot_table
-from pandas.core.reshape.reshape import get_dummies as get_dummies
 from pandas.core.reshape.tile import cut as cut
 from pandas.core.reshape.tile import qcut as qcut

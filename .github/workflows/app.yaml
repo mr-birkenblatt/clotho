@@ -1,6 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with
-# multiple version of Python
-name: Python Checks
+name: Python and TypeScript Checks
 
 on:
   pull_request:
@@ -11,13 +9,46 @@ on:
     tags:
       - 'v*'
 
+
 jobs:
+  ts_pipeline:
+    name: Node CI Pipeline
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [16]
+    env:
+      ENV: CI
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install node ${{ matrix.node }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node }}
+
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: ui/node_modules/
+        key: ${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
+
+    - name: Yarn Install
+      run: |
+        make install-ts
+
+    - name: Lint Code (ts)
+      run: |
+        make lint-ts
+
+
   lints_pipeline:
     name: Lints CI Pipeline
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8', '3.9']
+        python: ['3.10']
     env:
       ENV: CI
 
@@ -87,12 +118,13 @@ jobs:
       run: |
         make lint-pylint
 
+
   tests_pipeline:
     name: Tests CI Pipeline
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8']
+        python: ['3.10']
         ci_node_total: [3]
         ci_node_index: [0, 1, 2]
     env:
@@ -115,9 +147,10 @@ jobs:
       uses: actions/cache@v3
       with:
         path: test-results/*
-        key:  v1-test-results-${{ matrix.python }}-${{ hashFiles('test/test*.py')}}-${{ hashFiles('test/data*') }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/*.py') }}-${{ hashFiles('test/data/*') }}-${{ github.sha }}-${{ matrix.ci_node_index }}
         restore-keys: |
-          test-results-${{ matrix.python }}-
+          test-results-v1-${{ matrix.python }}-${{ hashFiles('test/*.py') }}-${{ hashFiles('test/data/*') }}
+          test-results-v1-${{ matrix.python }}-
 
     - name: Cache python modules
       uses: actions/cache@v3
@@ -132,12 +165,15 @@ jobs:
     - name: Run test on Node ${{ matrix.ci_node_index }}
       run: |
         set -ex
+        rm -f test-results/results-*.xml
         OUT=$(python -m test split_tests --filepath test-results/results.xml --total-nodes ${{ matrix.ci_node_total }} --node-id ${{ matrix.ci_node_index }})
         IFS=',' read -a FILE_INFO <<< "$OUT"
-        FILES=("${FILE_INFO[@]:1}")
-        echo "Selected Files are: " ${FILES[@]}
         echo "Previous timings are: ${FILE_INFO[0]}"
-        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE=${FILES[@]}
+        FILES=$(echo "${OUT}" | sed -E 's/^[^,]*,//')
+        echo "Selected Files are: ${FILES}"
+        rm -r test-results
+        make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
+        tail -v -n +1 test-results/*.xml
 
     - name: Upload Artifact(results)
       uses: actions/upload-artifact@v3
@@ -156,12 +192,14 @@ jobs:
         git status -sb --porcelain
         [ -z "$(git status --porcelain)" ]
 
+
   coverage_pipeline:
+    name: Coverage CI Pipeline
     needs: tests_pipeline
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python: ['3.8']
+        python: ['3.10']
     env:
       ENV: CI
 
@@ -184,23 +222,25 @@ jobs:
         make install PYTHON=python
         mkdir -p test-results/parts
 
-    - name: Download all results
-      # Downloads results-*.xml,
+    - name: Restore test-result Cache
+      uses: actions/cache@v3
+      with:
+        path: test-results/*
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/*.py') }}-${{ hashFiles('test/data/*') }}
+
+    - name: Clean test-result Cache
+      run: |
+        rm -r test-results
+        mkdir -p test-results/parts/
+
+    - name: Download all results and coverage
       uses: actions/download-artifact@v2
 
     - name: Merge results
       run: |
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
         python -m test merge_results --dir test-results --out-fname results.xml
-
-    - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step would save our cache.
-      uses: actions/cache@v3
-      with:
-        path: test-results/*
-        key:  v1-test-results-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
-
-    - name: Download all coverage reports
-      uses: actions/download-artifact@v2
+        tail -v -n +1 test-results/*.xml
 
     - name: Merge coverage reports
       run: |

@@ -6,17 +6,11 @@ from typing import (
     Any,
     Callable,
     ContextManager,
-    Dict,
     Iterable,
     Iterator,
-    List,
     Literal,
-    Optional,
     overload,
     Protocol,
-    Set,
-    Tuple,
-    Union,
 )
 
 from redis import StrictRedis
@@ -30,10 +24,15 @@ from misc.util import json_compact, json_read
 
 
 REDIS_SALT_LOCK = threading.RLock()
-REDIS_SALT: Dict[str, str] = {}
+REDIS_SALT: dict[str, str] = {}
 
 
-def get_salt() -> Optional[str]:
+def is_test() -> bool:
+    test_id = os.getenv("PYTEST_CURRENT_TEST")
+    return test_id is not None
+
+
+def get_salt() -> str | None:
     test_id = os.getenv("PYTEST_CURRENT_TEST")
     if test_id is None:
         return None
@@ -42,7 +41,7 @@ def get_salt() -> Optional[str]:
         with REDIS_SALT_LOCK:
             res = REDIS_SALT.get(test_id)
             if res is None:
-                res = uuid.uuid4().hex
+                res = f"salt:{uuid.uuid4().hex}"
                 REDIS_SALT[test_id] = res
     return res
 
@@ -50,18 +49,18 @@ def get_salt() -> Optional[str]:
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods
     def __call__(
             self,
-            keys: List[str],
-            args: List[Any],
-            client: Optional[StrictRedis] = None) -> bytes:
+            keys: list[str],
+            args: list[Any],
+            client: StrictRedis | None = None) -> bytes:
         ...
 
 
 class RedisFunctionList(Protocol):  # pylint: disable=too-few-public-methods
     def __call__(
             self,
-            keys: List[str],
-            args: List[Any],
-            client: Optional[StrictRedis] = None) -> List[bytes]:
+            keys: list[str],
+            args: list[Any],
+            client: StrictRedis | None = None) -> list[bytes]:
         ...
 
 
@@ -74,13 +73,14 @@ RedisModule = Literal[
 LOCK_MODULE: RedisModule = "locks"
 
 
-SCRIPT_CACHE: Dict[str, str] = {}
+SCRIPT_CACHE: dict[str, str] = {}
 SCRIPT_UTILS_CACHE: str = ""
 SCRIPT_UTILS_LINES: int = 0
-REDIS_SERVICE_CONN: Dict[RedisModule, Optional[StrictRedis]] = {}
+CONCURRENT_MODULE_CONN: int = 17
+REDIS_SERVICE_CONN: dict[str, StrictRedis | None] = {}
 DO_CACHE = True
 LOCK = threading.RLock()
-LOCKS: Dict[str, Optional[Tuple[threading.RLock, Lock]]] = {}
+LOCKS: dict[str, tuple[threading.RLock, Lock] | None] = {}
 LOCK_ID: str = uuid.uuid4().hex
 
 
@@ -108,17 +108,17 @@ class RedisWrapper:
         if not DO_CACHE:
             return cls._create_connection()
 
-        res = REDIS_SERVICE_CONN.get(module)
+        key = f"{module}-{threading.get_ident() % CONCURRENT_MODULE_CONN}"
+        res = REDIS_SERVICE_CONN.get(key)
         if res is None:
             with LOCK:
-                res = REDIS_SERVICE_CONN.get(module)
                 if res is None:
                     res = cls._create_connection()
-                    REDIS_SERVICE_CONN[module] = res
+                    REDIS_SERVICE_CONN[key] = res
         return res
 
     @classmethod
-    def _get_lock_pair(cls, name: str) -> Tuple[threading.RLock, Lock]:
+    def _get_lock_pair(cls, name: str) -> tuple[threading.RLock, Lock]:
         res = LOCKS.get(name)
         if res is None:
             with LOCK:
@@ -162,7 +162,8 @@ class RedisWrapper:
     @staticmethod
     def _invalidate_connection(module: RedisModule) -> None:
         with LOCK:
-            REDIS_SERVICE_CONN[module] = None
+            key = f"{module}-{threading.get_ident() % CONCURRENT_MODULE_CONN}"
+            REDIS_SERVICE_CONN[key] = None
 
     @classmethod
     @contextlib.contextmanager
@@ -185,11 +186,67 @@ class RedisConnection:
     def __init__(self, module: RedisModule) -> None:
         self._conn = RedisWrapper(module)
         salt = get_salt()
-        salt_str = "" if salt is None else f":{salt}"
-        self._module = f"{module}{salt_str}"
+        salt_str = "" if salt is None else f"{salt}:"
+        self._module = f"{salt_str}{module}"
 
     def get_connection(self) -> ContextManager[StrictRedis]:
         return self._conn.get_connection()
+
+    def get_dynamic_script(self, code: str) -> RedisFunctionBytes:
+        if is_test():
+            print(
+                "Compiled script:\n-- SCRIPT START\n"
+                f"{code.rstrip()}\n-- SCRIPT END")
+        compute = Script(None, code.encode("utf-8"))
+        context = 3
+
+        def get_error(err_msg: str) -> tuple[str, list[str]] | None:
+            ustr = "user_script:"
+            ix = err_msg.find(ustr)
+            if ix < 0:
+                return None
+            eix = err_msg.find(":", ix + len(ustr))
+            if eix < 0:
+                return None
+            num = int(err_msg[ix + len(ustr):eix])
+            rel_line = num
+
+            new_msg = f"{err_msg[:ix]}:{rel_line}{err_msg[eix:]}"
+            ctx = code.splitlines()
+            return new_msg, ctx[max(num - context - 1, 0):num + context]
+
+        @contextlib.contextmanager
+        def get_client(client: StrictRedis | None) -> Iterator[StrictRedis]:
+            try:
+                if client is None:
+                    with self.get_connection() as res:
+                        yield res
+                else:
+                    yield client
+            except ResponseError as e:
+                handle_err(e)
+                raise e
+
+        def handle_err(exc: ResponseError) -> None:
+            if exc.args:
+                msg = exc.args[0]
+                res = get_error(msg)
+                if res is not None:
+                    ctx = "\n".join((
+                        f"{'>' if ix == context else ' '} {line}"
+                        for (ix, line) in enumerate(res[1])))
+                    exc.args = (
+                        f"{res[0].rstrip()}\nCode:\n{code}\nContext:\n{ctx}",
+                    )
+
+        def execute_bytes_result(
+                keys: list[str],
+                args: list[bytes | str | int],
+                client: StrictRedis | None = None) -> bytes:
+            with get_client(client) as inner:
+                return compute(keys=keys, args=args, client=inner)
+
+        return execute_bytes_result
 
     @overload
     def get_script(
@@ -208,8 +265,7 @@ class RedisConnection:
     def get_script(
             self,
             filename: str,
-            return_list: bool) -> Union[
-                RedisFunctionBytes, RedisFunctionList]:
+            return_list: bool) -> RedisFunctionBytes | RedisFunctionList:
         global SCRIPT_UTILS_CACHE, SCRIPT_UTILS_LINES
 
         script_root = os.path.abspath(
@@ -235,7 +291,7 @@ class RedisConnection:
         compute = Script(None, script_txt.encode("utf-8"))
         context = 2
 
-        def get_error(err_msg: str) -> Optional[Tuple[str, List[str]]]:
+        def get_error(err_msg: str) -> tuple[str, list[str]] | None:
             ustr = "user_script:"
             ix = err_msg.find(ustr)
             if ix < 0:
@@ -255,7 +311,7 @@ class RedisConnection:
             return new_msg, ctx[max(num - context - 1, 0):num + context]
 
         @contextlib.contextmanager
-        def get_client(client: Optional[StrictRedis]) -> Iterator[StrictRedis]:
+        def get_client(client: StrictRedis | None) -> Iterator[StrictRedis]:
             try:
                 if client is None:
                     with self.get_connection() as res:
@@ -277,18 +333,18 @@ class RedisConnection:
                     exc.args = (f"{res[0].rstrip()}\nContext:\n{ctx}",)
 
         def execute_list_result(
-                keys: List[str],
-                args: List[Union[bytes, str, int]],
-                client: Optional[StrictRedis] = None) -> List[bytes]:
+                keys: list[str],
+                args: list[bytes | str | int],
+                client: StrictRedis | None = None) -> list[bytes]:
             with get_client(client) as inner:
                 res = compute(keys=keys, args=args, client=inner)
                 assert isinstance(res, list)
                 return res
 
         def execute_bytes_result(
-                keys: List[str],
-                args: List[Union[bytes, str, int]],
-                client: Optional[StrictRedis] = None) -> bytes:
+                keys: list[str],
+                args: list[bytes | str | int],
+                client: StrictRedis | None = None) -> bytes:
             with get_client(client) as inner:
                 return compute(keys=keys, args=args, client=inner)
 
@@ -336,7 +392,7 @@ class RedisConnection:
 
     def keys_count(self, prefix: str) -> int:
         full_prefix = f"{prefix}*"
-        vals: Set[bytes] = set()
+        vals: set[bytes] = set()
         cursor = 0
         count = 10
         with self.get_connection() as conn:
@@ -354,7 +410,7 @@ class RedisConnection:
 
     def keys_str(self, prefix: str) -> Iterable[str]:
         full_prefix = f"{prefix}*"
-        vals: Set[bytes] = set()
+        vals: set[bytes] = set()
         cursor = 0
         count = 10
         with self.get_connection() as conn:
@@ -399,7 +455,7 @@ class ObjectRedis(RedisConnection):
     def compute_name(self, name: str, key: str = "*") -> str:
         return f"{self._objs}:{name}:{key}"
 
-    def obj_flush_keys(self, patterns: List[str], skip: List[str]) -> None:
+    def obj_flush_keys(self, patterns: list[str], skip: list[str]) -> None:
         self._flush_keys(keys=[], args=[json_compact(patterns), *skip])
 
     def obj_put(
@@ -435,7 +491,7 @@ class ObjectRedis(RedisConnection):
             name: str,
             key: str,
             value: Any,
-            expire: Optional[float]) -> None:
+            expire: float | None) -> None:
         path = self.compute_name(name, key)
         with self.get_connection() as conn:
             conn.set(
@@ -456,7 +512,7 @@ class ObjectRedis(RedisConnection):
             self,
             name: str,
             key: str,
-            expire: Optional[float],
+            expire: float | None,
             default: Any = None) -> Any:
         path = self.compute_name(name, key)
         with self.get_connection() as conn:
@@ -466,7 +522,7 @@ class ObjectRedis(RedisConnection):
             res = conn.get(path)
         return json_read(res) if res is not None else default
 
-    def obj_ttl(self, name: str, key: str) -> Optional[float]:
+    def obj_ttl(self, name: str, key: str) -> float | None:
         # pylint: disable=unbalanced-tuple-unpacking
 
         path = self.compute_name(name, key)
@@ -483,14 +539,14 @@ class ObjectRedis(RedisConnection):
         with self.get_connection() as conn:
             return conn.get(self.compute_name(name, key)) is not None
 
-    def obj_keys(self, name: str) -> List[str]:
+    def obj_keys(self, name: str) -> list[str]:
         path = self.compute_name(name, key="")
         return [
             key[len(path):]
             for key in self.keys_str(path)
         ]
 
-    def obj_dict(self, name: str) -> Dict[str, Any]:
+    def obj_dict(self, name: str) -> dict[str, Any]:
         path = self.compute_name(name, key="")
         keys = list(self.keys_str(path))
         with self.get_connection() as conn:
@@ -504,7 +560,7 @@ class ObjectRedis(RedisConnection):
         path = self.compute_name(name, key="")
         return self.keys_count(path)
 
-    def obj_partial_keys(self, partial: str) -> List[str]:
+    def obj_partial_keys(self, partial: str) -> list[str]:
         path = f"{self._objs}:{partial}"
         return [
             key[len(path):]
@@ -515,12 +571,12 @@ class ObjectRedis(RedisConnection):
         with self.get_connection() as conn:
             conn.delete(self.compute_name(name, key))
 
-    def obj_remove_all(self, name: str, keys: List[str]) -> None:
+    def obj_remove_all(self, name: str, keys: list[str]) -> None:
         with self.get_connection() as conn:
             for key in keys:
                 conn.delete(self.compute_name(name, key))
 
-    def obj_pop_raw(self, name: str, key: str) -> Optional[bytes]:
+    def obj_pop_raw(self, name: str, key: str) -> bytes | None:
         path = self.compute_name(name, key)
         with self.get_connection() as conn:
             with conn.pipeline() as pipe:

@@ -2,9 +2,11 @@
 
 set -ex
 
+MAKE="${MAKE:-make}"
 PYTHON="${PYTHON:-python3}"
 RESULT_FNAME="${RESULT_FNAME:-results.xml}"
-FILES=($@)
+IFS=',' read -a FILE_INFO <<< "$1"
+FILES=("${FILE_INFO[@]}")
 export USER_FILEPATH=./userdata
 
 coverage erase
@@ -19,13 +21,7 @@ find . -type d \( \
     -name '*.py' \
     -exec ${PYTHON} -m compileall -q -j 0 {} +
 
-if command -v redis-cli &> /dev/null; then
-    redis-cli \
-        "EVAL" \
-        "for _,k in ipairs(redis.call('keys', KEYS[1])) do redis.call('del', k) end" \
-        1 \
-        'api:test:*'
-fi
+${MAKE} clean
 
 run_test() {
     ${PYTHON} -m pytest \
@@ -36,9 +32,10 @@ run_test() {
 }
 export -f run_test
 
-if ! [ -z ${FILES} ]; then
+if ! [ -z "${FILES}" ]; then
     IDX=0
-    for CUR_TEST in ${FILES[@]}; do
+    echo "${FILES[@]}"
+    for CUR_TEST in "${FILES[@]}"; do
         run_test $CUR_TEST $IDX
         IDX=$((IDX+1))
     done

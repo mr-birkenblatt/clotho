@@ -1,4 +1,4 @@
-from typing import cast, Dict, get_args, Literal
+from typing import cast, get_args, Literal
 
 import pandas as pd
 
@@ -58,7 +58,7 @@ class BestScorer(Scorer):
         return max(v_up + 0.5 * v_ack, 0.5 * (v_down + 0.5 * v_skip))
 
 
-SCORERS: Dict[ScorerName, Scorer] = {
+SCORERS: dict[ScorerName, Scorer] = {
     NewScorer.name(): NewScorer(),
     TopScorer.name(): TopScorer(),
     BestScorer.name(): BestScorer(),

@@ -1,7 +1,7 @@
 import hashlib
 import json
 import string
-from typing import Any, IO, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing import Any, IO, Iterable, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -10,7 +10,7 @@ import pandas as pd
 CT = TypeVar('CT')
 RT = TypeVar('RT')
 VT = TypeVar('VT')
-DT = TypeVar('DT', bound=Union[pd.DataFrame, pd.Series])
+DT = TypeVar('DT', bound=pd.DataFrame | pd.Series)
 
 
 def get_text_hash(text: str) -> str:
@@ -38,14 +38,14 @@ def fillnonnum(df: DT, val: float) -> DT:
     return df.replace([-np.inf, np.inf], np.nan).fillna(val)
 
 
-def only(arr: List[RT]) -> RT:
+def only(arr: list[RT]) -> RT:
     if len(arr) != 1:
         raise ValueError(f"array must have exactly one element: {arr}")
     return arr[0]
 
 
 # time units for logging request durations
-ELAPSED_UNITS: List[Tuple[int, str]] = [
+ELAPSED_UNITS: list[tuple[int, str]] = [
     (1, "s"),
     (60, "m"),
     (60*60, "h"),
@@ -64,7 +64,7 @@ def elapsed_time_string(elapsed: float) -> str:
     return cur
 
 
-def to_bool(value: Union[bool, float, int, str]) -> bool:
+def to_bool(value: bool | float | int | str) -> bool:
     value = f"{value}".lower()
     if value == "true":
         return True
@@ -77,7 +77,7 @@ def to_bool(value: Union[bool, float, int, str]) -> bool:
     raise ValueError(f"{value} cannot be interpreted as bool")
 
 
-def to_list(value: Any) -> List[Any]:
+def to_list(value: Any) -> list[Any]:
     if not isinstance(value, list):
         raise ValueError(f"{value} is not a list")
     return value
@@ -113,7 +113,7 @@ def report_json_error(err: json.JSONDecodeError) -> None:
         f"{repr(err.doc)}") from err
 
 
-def json_maybe_read(data: str) -> Optional[Any]:
+def json_maybe_read(data: str) -> Any | None:
     try:
         return json.loads(data)
     except json.JSONDecodeError:

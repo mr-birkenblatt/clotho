@@ -5,6 +5,8 @@ mypy
 numpy
 pandas
 praw
+pre-commit
+pycodestyle
 pylint
 pytest
 pytest-cov

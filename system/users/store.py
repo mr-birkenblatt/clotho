@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Iterable
 
 from misc.env import envload_str
 from misc.util import get_short_hash
@@ -12,12 +12,15 @@ class UserStore:
     def store_user(self, user: User) -> None:
         raise NotImplementedError()
 
+    def get_all_users(self) -> Iterable[User]:
+        raise NotImplementedError()
+
     @staticmethod
     def get_id_from_name(user_name: str) -> str:
         return get_short_hash(user_name)
 
 
-DEFAULT_USER_STORE: Optional[UserStore] = None
+DEFAULT_USER_STORE: UserStore | None = None
 
 
 def get_default_user_store() -> UserStore:

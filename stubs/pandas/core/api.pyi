@@ -49,7 +49,6 @@ from pandas.core.indexes.timedeltas import timedelta_range as timedelta_range
 from pandas.core.indexing import IndexSlice as IndexSlice
 
 # TODO: Remove import when statsmodels updates #18264
-from pandas.core.reshape.reshape import get_dummies as get_dummies
 from pandas.core.series import Series as Series
 from pandas.core.tools.datetimes import to_datetime as to_datetime
 from pandas.core.tools.numeric import to_numeric as to_numeric
