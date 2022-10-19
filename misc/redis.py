@@ -27,7 +27,7 @@ from misc.util import get_relative_function_info, json_compact, json_read
 REDIS_SALT_LOCK = threading.RLock()
 REDIS_SALT: dict[str, str] = {}
 
-REDIS_SLOW = 5.0
+REDIS_SLOW = 0.5
 REDIS_SLOW_CONTEXT = 3
 NL = "\n"
 
