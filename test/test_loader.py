@@ -102,8 +102,6 @@ def test_loader() -> None:
         roots={"news"})
 
     print(f"total actions: {count}")
-    settle_elapsed = link_store.settle_all()
-    print(f"settle: {settle_elapsed}s")
 
     scorer_new = get_scorer("new")
     root = list(message_store.get_topics())[0].get_hash()

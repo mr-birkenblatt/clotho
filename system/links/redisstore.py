@@ -416,17 +416,18 @@ class RedisLinkStore(LinkStore):
 
         return script
 
-    def settle_all(self) -> float:
+    def settle_all(self) -> tuple[int, float]:
         start_time = time.monotonic()
-        self.r_call.settle_all()
-        self.r_pall.settle_all()
+        count = 0
+        count += self.r_call.settle_all()
+        count += self.r_pall.settle_all()
         for scall in self.r_call_sorted.values():
-            scall.settle_all()
+            count += scall.settle_all()
         for spall in self.r_pall_sorted.values():
-            spall.settle_all()
+            count += spall.settle_all()
         for suser in self.r_user_sorted.values():
-            suser.settle_all()
-        return time.monotonic() - start_time
+            count += suser.settle_all()
+        return count, time.monotonic() - start_time
 
     @staticmethod
     def valid_scorers() -> list[Scorer]:

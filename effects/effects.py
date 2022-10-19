@@ -45,7 +45,7 @@ class EffectBase(Generic[KT]):
     def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
         raise NotImplementedError()
 
-    def settle_all(self) -> None:
+    def settle_all(self) -> int:
         raise NotImplementedError()
 
 
@@ -53,8 +53,8 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
     def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
         pass
 
-    def settle_all(self) -> None:
-        pass
+    def settle_all(self) -> int:
+        return 0
 
     def get_value(self, key: KT, default: VT) -> VT:
         res = self.maybe_get_value(key)
@@ -189,15 +189,17 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
         for pkey in to_update:
             self.execute_update(pkey)
 
-    def settle_all(self) -> None:
+    def settle_all(self) -> int:
+        count = 0
         for parent in self._parents:
-            parent.settle_all()
+            count += parent.settle_all()
         to_update: list[PT] = []
         for pkey in list(self._pending.keys()):
             self._pending.pop(pkey, None)
             to_update.append(pkey)
         for pkey in to_update:
             self.execute_update(pkey)
+        return count + len(to_update)
 
     def execute_update(self, key: PT) -> None:
         self._effect(self, self._parents, key, self._conversion(key))

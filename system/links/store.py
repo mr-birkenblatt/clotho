@@ -26,7 +26,7 @@ class LinkStore:
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         raise NotImplementedError()
 
-    def settle_all(self) -> float:
+    def settle_all(self) -> tuple[int, float]:
         raise NotImplementedError()
 
     def limit_results(
