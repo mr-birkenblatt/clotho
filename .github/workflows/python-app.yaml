@@ -173,7 +173,7 @@ jobs:
         FILES=$(echo "${OUT}" | sed -E 's/^[^,]*,//')
         echo "Selected Files are: ${FILES}"
         make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
-        tail -v -n +1 test-results/*
+        tail -v -n +1 test-results/*.xml
 
     - name: Upload Artifact(results)
       uses: actions/upload-artifact@v3
@@ -229,8 +229,9 @@ jobs:
     - name: Merge results
       run: |
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
+        tail -v -n +1 test-results/parts/*.xml
         python -m test merge_results --dir test-results --out-fname results.xml
-        tail -v -n +1 test-results/*
+        tail -v -n +1 test-results/*.xml
 
     - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step will save our cache.
       uses: actions/cache@v3
