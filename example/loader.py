@@ -181,9 +181,9 @@ def process_actions(
         synth_pool: list[User],
         counter: int) -> tuple[int, pd.Timestamp]:
 
-    def print_progress(epoch: int) -> None:
+    def print_progress(epoch: int, total: int) -> None:
         if totals:
-            print(f"---{epoch}---")
+            print(f"---{epoch}--- ({total})")
             for key, count in sorted(totals.items()):
                 print(f"{key}: {count}")
             print(f"elapsed: {time.monotonic() - reference_time:.2f}s")
@@ -191,15 +191,14 @@ def process_actions(
                 if not key.startswith("new_"):
                     continue
                 totals.pop(key, None)
+        settled, settle_timing = link_store.settle_all()
+        if settled:
+            print(f"settled {settled} variables in {settle_timing:.2f}s")
 
     for action in actions:
         counter += 1
         if counter % 10000 == 0:
-            print_progress(counter // 10000)
-        if counter % 100 == 0:
-            settled, settle_timing = link_store.settle_all()
-            if settled:
-                print(f"settled {settled} variables in {settle_timing:.2f}s")
+            print_progress(counter // 10000, counter)
         ref = interpret_action(
             action,
             message_store=message_store,
@@ -239,10 +238,7 @@ def process_actions(
                     user_pool=user_pool,
                     synth_pool=synth_pool,
                     counter=counter)
-    print_progress(counter // 10000)
-    settled, settle_timing = link_store.settle_all()
-    if settled:
-        print(f"finally settled {settled} variables in {settle_timing:.2f}s")
+    print_progress(counter // 10000, counter)
     return (counter, now)
 
 
