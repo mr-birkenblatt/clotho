@@ -70,10 +70,16 @@ def split_tests(filepath: str, total_nodes: int, cur_node: int) -> None:
         test_files = sorted(find_tests(base))
         try:
             tree = ET.parse(filepath)
+            already: set[str] = set()
             test_time_map: dict[str, float] = collections.defaultdict(float)
             for testcases in tree.getroot()[0]:
+                cur_key = \
+                    f"testcases.attrib['file']#{testcases.attrib['name']}"
+                if cur_key in already:
+                    continue
                 fname = os.path.normpath(testcases.attrib["file"])
                 test_time_map[fname] += float(testcases.attrib["time"])
+                already.add(cur_key)
 
             for file in test_files:
                 fname = os.path.normpath(file)

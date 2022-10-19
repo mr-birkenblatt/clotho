@@ -148,9 +148,9 @@ jobs:
       with:
         path: test-results/*
         # alternatively we can use `matrix.ci_node_index` at the end
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test_*.py') }}-${{ hashFiles('test/data*') }}-${{ github.sha }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/*.py') }}-${{ hashFiles('test/data/*') }}-${{ github.sha }}
         restore-keys: |
-          test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test_*.py') }}-${{ hashFiles('test/data*') }}
+          test-results-v1-${{ matrix.python }}-${{ hashFiles('test/*.py') }}-${{ hashFiles('test/data/*') }}
           test-results-v1-${{ matrix.python }}-
 
     - name: Cache python modules
@@ -225,7 +225,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: test-results/*
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test_*.py') }}-${{ hashFiles('test/data*') }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/*.py') }}-${{ hashFiles('test/data/*') }}
 
     - name: Clean test-result Cache
       run: |
