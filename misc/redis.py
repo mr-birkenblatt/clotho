@@ -158,7 +158,7 @@ class RedisWrapper:
             raise
         finally:
             conn_time = time.monotonic() - conn_start
-            if conn_time > 5.0:
+            if conn_time > REDIS_SLOW:
                 fun_fname, fun_line, fun_name = get_relative_function_info(
                     depth=depth + 1)
                 context = []
