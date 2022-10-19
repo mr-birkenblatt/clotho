@@ -229,6 +229,7 @@ jobs:
     - name: Clean test-result Cache
       run: |
         rm -r test-results
+        mkdir -p test-results/parts/
 
     - name: Download all results and coverage
       uses: actions/download-artifact@v2
