@@ -197,9 +197,9 @@ def process_actions(
         if counter % 10000 == 0:
             print_progress(counter // 10000)
         if counter % 100 == 0:
-            print("starting to settle")
-            settle_timing, settled = link_store.settle_all()
-            print(f"settled {settled} variables in {settle_timing}s")
+            settled, settle_timing = link_store.settle_all()
+            if settled:
+                print(f"settled {settled} variables in {settle_timing:.2f}s")
         ref = interpret_action(
             action,
             message_store=message_store,
@@ -240,9 +240,9 @@ def process_actions(
                     synth_pool=synth_pool,
                     counter=counter)
     print_progress(counter // 10000)
-    print("starting final settle")
-    settle_timing, settled = link_store.settle_all()
-    print(f"settled {settled} variables in {settle_timing}s")
+    settled, settle_timing = link_store.settle_all()
+    if settled:
+        print(f"finally settled {settled} variables in {settle_timing:.2f}s")
     return (counter, now)
 
 
