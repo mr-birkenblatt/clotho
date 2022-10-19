@@ -171,7 +171,7 @@ jobs:
         echo "Previous timings are: ${FILE_INFO[0]}"
         FILES=$(echo "${OUT}" | sed -E 's/^[^,]*,//')
         echo "Selected Files are: ${FILES}"
-        rm -f test-results/results.xml
+        rm -r test-results
         make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
         tail -v -n +1 test-results/*.xml
 
