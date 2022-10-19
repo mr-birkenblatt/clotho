@@ -149,7 +149,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: test-results/*
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}-${{ github.sha }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}-${{ matrix.ci_node_index }}
         restore-keys: |
           test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
           test-results-v1-${{ matrix.python }}-
@@ -229,7 +229,6 @@ jobs:
     - name: Merge results
       run: |
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
-        tail -v -n +1 test-results/parts/*.xml
         python -m test merge_results --dir test-results --out-fname results.xml
         tail -v -n +1 test-results/*.xml
 
