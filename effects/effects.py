@@ -158,16 +158,19 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
 
     def poll_update(self, cur_time: float) -> float | None:
         next_time: float | None = None
-        to_update: list[PT] = []
         for (key, update_time) in list(self._pending.items()):
             if update_time > cur_time:
                 if next_time is None or update_time < next_time:
                     next_time = update_time
                 continue
-            self._pending.pop(key, None)
-            to_update.append(key)
-        for key in to_update:
-            self.execute_update(key)
+            kval = self._pending.pop(key, None)
+            success = False
+            try:
+                self.execute_update(key)
+                success = True
+            finally:
+                if not success and kval is not None:
+                    self._pending[key] = kval
         return next_time
 
     def settle(self, key: KT) -> None:
@@ -180,26 +183,33 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
 
         for parent in self._parents:
             parent.do_settle(key, pconvert)
-        to_update: list[PT] = []
         for pkey in list(self._pending.keys()):
             if key != pconvert(pkey):
                 continue
-            self._pending.pop(pkey, None)
-            to_update.append(pkey)
-        for pkey in to_update:
-            self.execute_update(pkey)
+            pkval = self._pending.pop(pkey, None)
+            success = False
+            try:
+                self.execute_update(pkey)
+                success = True
+            finally:
+                if not success and pkval is not None:
+                    self._pending[pkey] = pkval
 
     def settle_all(self) -> int:
         count = 0
         for parent in self._parents:
             count += parent.settle_all()
-        to_update: list[PT] = []
         for pkey in list(self._pending.keys()):
-            self._pending.pop(pkey, None)
-            to_update.append(pkey)
-        for pkey in to_update:
-            self.execute_update(pkey)
-        return count + len(to_update)
+            pkval = self._pending.pop(pkey, None)
+            success = False
+            try:
+                self.execute_update(pkey)
+                count += 1
+                success = True
+            finally:
+                if not success and pkval is not None:
+                    self._pending[pkey] = pkval
+        return count
 
     def execute_update(self, key: PT) -> None:
         self._effect(self, self._parents, key, self._conversion(key))
