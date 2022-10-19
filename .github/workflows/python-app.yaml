@@ -149,9 +149,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: test-results/*
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}-${{ matrix.ci_node_index }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test_*.py') }}-${{ hashFiles('test/data*') }}-${{ matrix.ci_node_index }}
         restore-keys: |
-          test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
+          test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test_*.py') }}-${{ hashFiles('test/data*') }}
           test-results-v1-${{ matrix.python }}-
 
     - name: Cache python modules
@@ -236,7 +236,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: test-results/*
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/_test*.py') }}-${{ hashFiles('test/data*') }}
 
     - name: Download all coverage reports
       uses: actions/download-artifact@v2

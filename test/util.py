@@ -1,7 +1,8 @@
+import collections
 import os
 import re
 import xml.etree.ElementTree as ET
-from collections import defaultdict
+from typing import Iterable
 
 import pandas as pd
 import pandas.testing as pd_test
@@ -10,20 +11,17 @@ import pandas.testing as pd_test
 XML_FILE_PATTERN = re.compile(r".*\.xml")
 TEST_FILE_PATTERN = re.compile(r"^test_.*\.py$")
 DEFAULT_TEST_DURATION = 10.0
-PY_EXT = ".py"
 
 
 def check_equal(a: pd.DataFrame, b: pd.DataFrame) -> None:
     pd_test.assert_frame_equal(a[sorted(a.columns)], b[sorted(b.columns)])
 
 
-def find_tests(directory: str) -> list[str]:
-    items = os.listdir(directory)
-    test_files = []
+def find_tests(folder: str) -> Iterable[str]:
+    items = os.listdir(folder)
     for item in items:
         if not os.path.isdir(item) and TEST_FILE_PATTERN.match(item):
-            test_files.append(os.path.join(directory, item))
-    return test_files
+            yield os.path.join(folder, item)
 
 
 def merge_results(base_folder: str, out_filename: str) -> None:
@@ -67,35 +65,41 @@ def merge_results(base_folder: str, out_filename: str) -> None:
 
 def split_tests(filepath: str, total_nodes: int, cur_node: int) -> None:
     _, fname = os.path.split(filepath)
+    base = "test"
     if XML_FILE_PATTERN.match(fname):
-        test_files = sorted(find_tests("test"))
+        test_files = sorted(find_tests(base))
         try:
             tree = ET.parse(filepath)
-            test_time_map: dict[str, float] = defaultdict(int)
+            test_time_map: dict[str, float] = collections.defaultdict(float)
             for testcases in tree.getroot()[0]:
-                classname = testcases.attrib["classname"].replace(
-                    ".", os.path.sep)
-                test_time_map[f"{classname}{PY_EXT}"] += float(
-                    testcases.attrib["time"])
+                fname = os.path.normpath(testcases.attrib["file"])
+                test_time_map[fname] += float(testcases.attrib["time"])
 
             for file in test_files:
-                if file not in test_time_map.keys():
-                    test_time_map[file] = DEFAULT_TEST_DURATION
+                fname = os.path.normpath(os.path.join(base, file))
+                if fname not in test_time_map:
+                    test_time_map[fname] = DEFAULT_TEST_DURATION
 
             time_keys: list[tuple[str, float]] = sorted(
                 test_time_map.items(), key=lambda el: el[1], reverse=True)
         except FileNotFoundError:
-            time_keys = [(file, DEFAULT_TEST_DURATION) for file in test_files]
+            time_keys = [
+                (
+                    os.path.normpath(os.path.join(base, file)),
+                    DEFAULT_TEST_DURATION,
+                )
+                for file in test_files
+            ]
 
         def find_lowest_total_time(
                 test_sets: list[tuple[list[str], float]]) -> int:
             minimum = None
-            idx = -1
+            ret = -1
             for ix, val in enumerate(test_sets):
                 if minimum is None or val[1] < minimum:
                     minimum = val[1]
-                    idx = ix
-            return idx
+                    ret = ix
+            return ret
 
         test_sets: list[tuple[list[str], float]] = [
             ([], 0.0) for _ in range(total_nodes)]
