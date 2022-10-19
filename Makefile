@@ -128,7 +128,7 @@ run-test-redis:
 	cd test && redis-server
 
 run-redis:
-	cd userdata && redis-server redis.conf
+	cd userdata && redis-server ../redis.main.conf
 
 run-api:
 	python3 -m app
