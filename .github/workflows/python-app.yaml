@@ -232,13 +232,10 @@ jobs:
       # Downloads results-*.xml,
       uses: actions/download-artifact@v2
 
-    - name: Show test-result Cache
-      run: |
-        tail -v -n +1 results*
-
     - name: Merge results
       run: |
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
+        tail -v -n +1 results*
         python -m test merge_results --dir test-results --out-fname results.xml
 
     - name: Show test-result Cache 2
