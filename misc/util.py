@@ -202,10 +202,11 @@ def get_function_info(*, clazz: Type) -> tuple[str, int, str]:
     return frame.filename, frame.lineno, frame.function
 
 
-def get_relative_function_info(depth: int) -> tuple[str, int, str]:
+def get_relative_function_info(
+        depth: int) -> tuple[str, int, str, dict[str, Any]]:
     depth += 1
     stack = inspect.stack()
     if depth >= len(stack):
-        return "unknown", -1, "unknown"
+        return "unknown", -1, "unknown", {}
     frame = stack[depth]
-    return frame.filename, frame.lineno, frame.function
+    return frame.filename, frame.lineno, frame.function, frame.frame.f_locals

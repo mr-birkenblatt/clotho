@@ -29,6 +29,7 @@ REDIS_SALT: dict[str, str] = {}
 
 REDIS_SLOW = 0.5
 REDIS_SLOW_CONTEXT = 3
+REDIS_UNIQUE: set[tuple[str, int, str]] = set()
 NL = "\n"
 
 
@@ -159,26 +160,29 @@ class RedisWrapper:
         finally:
             conn_time = time.monotonic() - conn_start
             if conn_time > REDIS_SLOW:
-                fun_fname, fun_line, fun_name = get_relative_function_info(
-                    depth=depth + 1)
-                context = []
-                try:
-                    with open_read(fun_fname, text=True) as fin:
-                        for lineno, line in enumerate(fin):
-                            if lineno < fun_line - REDIS_SLOW_CONTEXT:
-                                continue
-                            if lineno > fun_line + REDIS_SLOW_CONTEXT:
-                                break
-                            if lineno == fun_line:
-                                context.append(f"> {line.rstrip()}")
-                            else:
-                                context.append(f"  {line.rstrip()}")
-                except FileNotFoundError:
-                    context.append("## not available ##")
-                print(
-                    f"slow redis call ({conn_time:.2f}s) "
-                    f"at {fun_name} ({fun_fname}:{fun_line})\n"
-                    f"{NL.join(context)}")
+                fun_info = get_relative_function_info(depth=depth + 1)
+                fun_key = fun_info[:3]
+                if fun_key not in REDIS_UNIQUE:
+                    fun_fname, fun_line, fun_name, fun_locals = fun_info
+                    context = []
+                    try:
+                        with open_read(fun_fname, text=True) as fin:
+                            for lineno, line in enumerate(fin):
+                                if lineno < fun_line - REDIS_SLOW_CONTEXT:
+                                    continue
+                                if lineno > fun_line + REDIS_SLOW_CONTEXT:
+                                    break
+                                if lineno == fun_line:
+                                    context.append(f"> {line.rstrip()}")
+                                else:
+                                    context.append(f"  {line.rstrip()}")
+                    except FileNotFoundError:
+                        context.append("## not available ##")
+                    print(
+                        f"slow redis call ({conn_time:.2f}s) "
+                        f"at {fun_name} ({fun_fname}:{fun_line})\n"
+                        f"{NL.join(context)}\nlocals:\n{fun_locals}")
+                    REDIS_UNIQUE.add(fun_key)
 
     def reset(self) -> None:
         conn = self._conn
