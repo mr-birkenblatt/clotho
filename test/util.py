@@ -76,18 +76,17 @@ def split_tests(filepath: str, total_nodes: int, cur_node: int) -> None:
                 test_time_map[fname] += float(testcases.attrib["time"])
 
             for file in test_files:
-                fname = os.path.normpath(os.path.join(base, file))
+                fname = os.path.normpath(file)
                 if fname not in test_time_map:
                     test_time_map[fname] = DEFAULT_TEST_DURATION
 
             time_keys: list[tuple[str, float]] = sorted(
-                test_time_map.items(), key=lambda el: el[1], reverse=True)
+                test_time_map.items(),
+                key=lambda el: (el[1], el[0]),
+                reverse=True)
         except FileNotFoundError:
             time_keys = [
-                (
-                    os.path.normpath(os.path.join(base, file)),
-                    DEFAULT_TEST_DURATION,
-                )
+                (os.path.normpath(file), DEFAULT_TEST_DURATION)
                 for file in test_files
             ]
 
