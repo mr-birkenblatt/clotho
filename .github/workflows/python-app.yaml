@@ -235,7 +235,7 @@ jobs:
     - name: Merge results
       run: |
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
-        tail -v -n +1 results*
+        tail -v -n +1 test-results/parts/*
         python -m test merge_results --dir test-results --out-fname results.xml
 
     - name: Show test-result Cache 2
