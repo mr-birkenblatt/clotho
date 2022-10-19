@@ -149,8 +149,9 @@ jobs:
       uses: actions/cache@v3
       with:
         path: test-results/*
-        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
+        key:  test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}-${{ github.sha }}
         restore-keys: |
+          test-results-v1-${{ matrix.python }}-${{ hashFiles('test/test*.py') }}-${{ hashFiles('test/data*') }}
           test-results-v1-${{ matrix.python }}-
 
     - name: Cache python modules
@@ -163,10 +164,6 @@ jobs:
       run: |
         make install PYTHON=python
 
-    - name: Show test-result Cache
-      run: |
-        tail -v -n +1 test-results/*.xml
-
     - name: Run test on Node ${{ matrix.ci_node_index }}
       run: |
         set -ex
@@ -176,10 +173,7 @@ jobs:
         FILES=$(echo "${OUT}" | sed -E 's/^[^,]*,//')
         echo "Selected Files are: ${FILES}"
         make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
-
-    - name: Show test-result Cache
-      run: |
-        tail -v -n +1 test-results/*.xml
+        tail -v -n +1 test-results/*
 
     - name: Upload Artifact(results)
       uses: actions/upload-artifact@v3
@@ -237,10 +231,7 @@ jobs:
         mv results-${{ matrix.python }}-*/results-${{ matrix.python }}-* test-results/parts/
         tail -v -n +1 test-results/parts/*
         python -m test merge_results --dir test-results --out-fname results.xml
-
-    - name: Show test-result Cache 2
-      run: |
-        tail -v -n +1 test-results/*.xml
+        tail -v -n +1 test-results/*
 
     - name: Restore test-result Cache (Dummy step)  # This is a dummy step, i.e., we don't want to restore cache here. The post counterpart of this step will save our cache.
       uses: actions/cache@v3
