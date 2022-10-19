@@ -1,4 +1,4 @@
-from typing import Iterable, List, Optional
+from typing import Iterable
 
 import pandas as pd
 
@@ -11,7 +11,7 @@ from system.users.user import User
 
 class LinkStore:
     @staticmethod
-    def valid_scorers() -> List[Scorer]:
+    def valid_scorers() -> list[Scorer]:
         raise NotImplementedError()
 
     def get_link(self, parent: MHash, child: MHash) -> Link:
@@ -26,13 +26,16 @@ class LinkStore:
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         raise NotImplementedError()
 
+    def settle_all(self) -> tuple[int, float]:
+        raise NotImplementedError()
+
     def limit_results(
             self,
             links: Iterable[Link],
             scorer: Scorer,
             now: pd.Timestamp,
             offset: int,
-            limit: int) -> List[Link]:
+            limit: int) -> list[Link]:
         res = sorted(
             links, key=lambda link: scorer.get_score(link, now), reverse=True)
         return res[offset:offset + limit]
@@ -71,7 +74,7 @@ class LinkStore:
             self.get_all_user_links(user), scorer, now, offset, limit)
 
 
-DEFAULT_LINK_STORE: Optional[LinkStore] = None
+DEFAULT_LINK_STORE: LinkStore | None = None
 
 
 def get_default_link_store() -> LinkStore:

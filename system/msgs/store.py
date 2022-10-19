@@ -1,7 +1,13 @@
-from typing import Iterable, Optional
+from typing import Iterable
+
+import numpy as np
 
 from misc.env import envload_str
 from system.msgs.message import Message, MHash
+
+
+RNG_ALIGN = 10
+SEED_MUL = 17
 
 
 class MessageStore:
@@ -17,8 +23,29 @@ class MessageStore:
     def get_topics(self) -> Iterable[Message]:
         raise NotImplementedError()
 
+    def do_get_random_messages(
+            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+        raise NotImplementedError()
 
-DEFAULT_MSG_STORE: Optional[MessageStore] = None
+    def get_random_messages(
+            self,
+            ref: MHash | None,
+            offset: int,
+            limit: int) -> Iterable[MHash]:
+        start = offset - (offset % RNG_ALIGN)
+        end = offset + limit
+        base_seed = 1 if ref is None else hash(ref)
+        res: list[MHash] = []
+        cur_ix = start
+        while cur_ix < end:
+            rng = np.random.default_rng(base_seed + SEED_MUL * cur_ix)
+            res.extend(self.do_get_random_messages(rng, RNG_ALIGN))
+            cur_ix += RNG_ALIGN
+        rel_start = offset - start
+        return res[rel_start:rel_start + limit]
+
+
+DEFAULT_MSG_STORE: MessageStore | None = None
 
 
 def get_default_message_store() -> MessageStore:
@@ -34,4 +61,7 @@ def get_message_store(name: str) -> MessageStore:
     if name == "disk":
         from system.msgs.disk import DiskStore
         return DiskStore()
+    if name == "ram":
+        from system.msgs.ram import RamMessageStore
+        return RamMessageStore()
     raise ValueError(f"unknown message store: {name}")

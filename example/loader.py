@@ -1,7 +1,7 @@
 
 import collections
 import time
-from typing import DefaultDict, Dict, Iterable, List, Optional, Set, Tuple
+from typing import Iterable
 
 import pandas as pd
 
@@ -13,7 +13,7 @@ from example.action import (
 )
 from misc.io import open_read
 from misc.util import from_timestamp, read_jsonl
-from system.links.link import parse_vote_type
+from system.links.link import parse_vote_type, VT_DOWN, VT_UP
 from system.links.store import LinkStore
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
@@ -40,11 +40,13 @@ def interpret_action(
         link_store: LinkStore,
         user_store: UserStore,
         now: pd.Timestamp,
-        roots: Set[str],
-        hash_lookup: Dict[str, MHash],
-        lookup_buffer: DefaultDict[str, List[Action]],
-        totals: Dict[str, int],
-        ) -> Optional[Tuple[str, bool]]:
+        roots: set[str],
+        hash_lookup: dict[str, MHash],
+        lookup_buffer: collections.defaultdict[str, list[Action]],
+        totals: dict[str, int],
+        user_pool: list[User],
+        synth_pool: list[User],
+        ) -> tuple[str, bool] | None:
     ref_id = action["ref_id"]
     if is_link_action(action):
         assert action["link"] is not None
@@ -70,23 +72,60 @@ def interpret_action(
                 "can_create_topic": False,
             })
             user_store.store_user(user)
+            user_pool.append(user)
             totals["users"] += 1
         created_ts = from_timestamp(link["created_utc"])
         any_new = False
+        if "up" not in link["votes"]:
+            link["votes"]["up"] = 0
         for vname, vcount in link["votes"].items():
             vtype = parse_vote_type(TYPE_CONVERTER.get(vname, "honor"))
             prev_votes = cur_link.get_votes(vtype)
             total_votes = int(prev_votes.get_total_votes())
             casts = vcount - total_votes
+            first_users: list[User] = []
+            prev_users = prev_votes.get_voters(user_store)
+            if vtype == VT_UP:
+                down_votes = link["votes"].get("down", 0)
+                if down_votes > 0:
+                    casts = 1 + vcount - total_votes
+                first_users = [] if user in prev_users else [user]
+            elif vtype == VT_DOWN:
+                if casts > 0:
+                    casts += 1
+                    prev_users.add(user)
             if casts <= 0:
                 continue
             any_new = True
+            pigeon_count = casts + len(first_users) + len(prev_users)
+            if casts > len(first_users):
+                cur_user_pool = set(
+                    user_pool[:pigeon_count]) - set(first_users) - prev_users
+            else:
+                cur_user_pool = set()
+            if casts > len(cur_user_pool) + len(first_users):
+                cur_synth_pool = set(
+                    synth_pool[:pigeon_count]) - set(first_users) - prev_users
+            else:
+                cur_synth_pool = set()
             for _ in range(casts):
-                # FIXME use a user pool
+                if first_users:
+                    vote_user = first_users.pop(0)
+                elif cur_user_pool:
+                    vote_user = cur_user_pool.pop()
+                elif cur_synth_pool:
+                    vote_user = cur_synth_pool.pop()
+                else:
+                    vote_user = User(f"s/{totals.get('users_synth', 0)}", {
+                        "can_create_topic": False,
+                    })
+                    user_store.store_user(vote_user)
+                    synth_pool.append(vote_user)
+                    totals["users_synth"] += 1
                 cur_link.add_vote(
                     user_store,
                     vtype,
-                    user,
+                    vote_user,
                     now if total_votes > 0 else created_ts)
             totals[vtype] += casts
         if any_new:
@@ -133,12 +172,14 @@ def process_actions(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: Set[str],
-        hash_lookup: Dict[str, MHash],
-        lookup_buffer: DefaultDict[str, List[Action]],
-        topic_counts: DefaultDict[str, int]) -> pd.Timestamp:
-    totals: Dict[str, int] = collections.defaultdict(lambda: 0)
-    counter = 0
+        roots: set[str],
+        hash_lookup: dict[str, MHash],
+        lookup_buffer: collections.defaultdict[str, list[Action]],
+        topic_counts: collections.defaultdict[str, int],
+        totals: dict[str, int],
+        user_pool: list[User],
+        synth_pool: list[User],
+        counter: int) -> tuple[int, pd.Timestamp]:
 
     def print_progress(epoch: int) -> None:
         if totals:
@@ -152,9 +193,13 @@ def process_actions(
                 totals.pop(key, None)
 
     for action in actions:
+        counter += 1
         if counter % 10000 == 0:
             print_progress(counter // 10000)
-        counter += 1
+        if counter % 100 == 0:
+            print("starting to settle")
+            settle_timing, settled = link_store.settle_all()
+            print(f"settled {settled} variables in {settle_timing}s")
         ref = interpret_action(
             action,
             message_store=message_store,
@@ -164,7 +209,9 @@ def process_actions(
             roots=roots,
             hash_lookup=hash_lookup,
             lookup_buffer=lookup_buffer,
-            totals=totals)
+            totals=totals,
+            user_pool=user_pool,
+            synth_pool=synth_pool)
         if ref is not None:
             ref_id, is_topic = ref
             if is_topic:
@@ -177,7 +224,7 @@ def process_actions(
             lb_actions = lookup_buffer.pop(ref_id, None)
             if lb_actions is not None and lb_actions:
                 print(f"processing delayed actions ({len(lb_actions)})")
-                now = process_actions(
+                counter, now = process_actions(
                     lb_actions,
                     message_store=message_store,
                     link_store=link_store,
@@ -187,9 +234,16 @@ def process_actions(
                     roots=roots,
                     hash_lookup=hash_lookup,
                     lookup_buffer=lookup_buffer,
-                    topic_counts=topic_counts)
+                    topic_counts=topic_counts,
+                    totals=totals,
+                    user_pool=user_pool,
+                    synth_pool=synth_pool,
+                    counter=counter)
     print_progress(counter // 10000)
-    return now
+    print("starting final settle")
+    settle_timing, settled = link_store.settle_all()
+    print(f"settled {settled} variables in {settle_timing}s")
+    return (counter, now)
 
 
 def process_action_file(
@@ -200,13 +254,19 @@ def process_action_file(
         user_store: UserStore,
         now: pd.Timestamp,
         reference_time: float,
-        roots: Set[str]) -> None:
-    hash_lookup: Dict[str, MHash] = {}
-    lookup_buffer: DefaultDict[str, List[Action]] = \
+        roots: set[str]) -> tuple[int, pd.Timestamp]:
+    hash_lookup: dict[str, MHash] = {}
+    lookup_buffer: collections.defaultdict[str, list[Action]] = \
         collections.defaultdict(list)
-    topic_counts: DefaultDict[str, int] = \
+    topic_counts: collections.defaultdict[str, int] = \
         collections.defaultdict(lambda: 0)
-    process_actions(
+    totals: dict[str, int] = collections.defaultdict(lambda: 0)
+    user_pool: list[User] = list(user_store.get_all_users())
+    if user_pool:
+        print(f"loaded {len(user_pool)} users")
+    synth_pool: list[User] = []
+    counter = 0
+    return process_actions(
         actions_from_file(fname),
         message_store=message_store,
         link_store=link_store,
@@ -216,4 +276,8 @@ def process_action_file(
         roots=roots,
         hash_lookup=hash_lookup,
         lookup_buffer=lookup_buffer,
-        topic_counts=topic_counts)
+        topic_counts=topic_counts,
+        totals=totals,
+        user_pool=user_pool,
+        synth_pool=synth_pool,
+        counter=counter)

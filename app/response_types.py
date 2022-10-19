@@ -1,4 +1,4 @@
-from typing import Dict, List, TypedDict
+from typing import TypedDict
 
 from system.links.link import LinkResponse
 from system.users.user import Permissions
@@ -14,13 +14,13 @@ TopicResponse = TypedDict('TopicResponse', {
     "hash": str,
 })
 TopicListResponse = TypedDict('TopicListResponse', {
-    "topics": Dict[str, str],
+    "topics": dict[str, str],
 })
 MessageResponse = TypedDict('MessageResponse', {
-    "messages": Dict[str, str],
-    "skipped": List[str],
+    "messages": dict[str, str],
+    "skipped": list[str],
 })
 LinkListResponse = TypedDict('LinkListResponse', {
-    "links": List[LinkResponse],
+    "links": list[LinkResponse],
     "next": int,
 })

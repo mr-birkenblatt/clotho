@@ -1,14 +1,14 @@
 
 import time
 import uuid
-from typing import Iterable, List, Tuple
+from typing import Iterable
 
 from misc.util import from_timestamp, now_ts, to_timestamp
 from system.links.link import Link, VoteType, VT_DOWN, VT_UP
 from system.links.redisstore import set_delay_multiplier
 from system.links.scorer import get_scorer, ScorerName
 from system.links.store import get_link_store
-from system.msgs.message import MHash
+from system.msgs.message import MHash, set_mhash_print_hook
 from system.users.store import get_user_store
 from system.users.user import User
 
@@ -17,7 +17,7 @@ def get_random_mhash() -> MHash:
     return MHash.from_message(uuid.uuid4().hex)
 
 
-PLAN: List[Tuple[int, int, int, VoteType]] = [
+PLAN: list[tuple[int, int, int, VoteType]] = [
     # parent, child, user, vote_type
     (0, 1, 0, VT_UP),
     (0, 3, 0, VT_UP),
@@ -47,9 +47,9 @@ DMUL = 0.05
 
 def test_scenario() -> None:
     msgs = [get_random_mhash() for _ in range(10)]
-
-    for mix, msg in enumerate(msgs):
-        print(f"msg {mix}: {msg}")
+    mlookup = {mhash: f"msgs[{ix}]" for (ix, mhash) in enumerate(msgs)}
+    set_mhash_print_hook(
+        lambda mhash: mlookup.get(mhash, mhash.to_parseable()))
 
     users = [
         User(f"u{uid}", {
@@ -81,13 +81,13 @@ def test_scenario() -> None:
     assert int(get_link(0, 1).get_votes(VT_UP).get_total_votes()) == 3
     assert int(get_link(0, 1).get_votes(VT_DOWN).get_total_votes()) == 1
 
-    time.sleep(3.0 * dmul)  # update tier 1
+    time.sleep(4.0 * dmul)  # update tier 1
     # (all parents, all children)
 
-    def get_children(links: Iterable[Link]) -> List[MHash]:
+    def get_children(links: Iterable[Link]) -> list[MHash]:
         return [link.get_child() for link in links]
 
-    def get_parents(links: Iterable[Link]) -> List[MHash]:
+    def get_parents(links: Iterable[Link]) -> list[MHash]:
         return [link.get_parent() for link in links]
 
     assert set(get_children(store.get_all_children(msgs[0]))) == {
@@ -116,7 +116,7 @@ def test_scenario() -> None:
     assert set(get_parents(store.get_all_parents(msgs[9]))) == {msgs[7]}
     assert len(get_parents(store.get_all_parents(msgs[4]))) == 0
 
-    time.sleep(3.0 * dmul)  # update tier 2
+    time.sleep(5.0 * dmul)  # update tier 2
     # (sorted parents, sorted children, first user, user list)
 
     def get_sorted(
@@ -124,7 +124,7 @@ def test_scenario() -> None:
             scorer_name: ScorerName,
             *,
             is_children: bool,
-            full: bool) -> List[MHash]:
+            full: bool) -> list[MHash]:
         scorer = get_scorer(scorer_name)
         sfn = store.get_children if is_children else store.get_parents
         ofn = get_children if is_children else get_parents
@@ -175,8 +175,7 @@ def test_scenario() -> None:
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[1].to_parseable()
     assert resp["user"] == users[0].get_id()
-    # FIXME "first" is not guaranteed to be set for some reasom
-    # assert int(resp["first"]) == int(first_s)
+    assert int(resp["first"]) == int(first_s)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
     assert int(rvotes[VT_UP]) == 3
@@ -186,18 +185,21 @@ def test_scenario() -> None:
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[3].to_parseable()
     assert resp["user"] == users[0].get_id()
-    # assert int(resp["first"]) == int(first_s + 10.0 * 2)
+    assert int(resp["first"]) == int(first_s + 10.0)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
     assert int(rvotes[VT_UP]) == 1
     assert int(rvotes[VT_DOWN]) == 4
+
+    assert get_link(0, 3).get_votes(VT_DOWN).get_voters(user_store) == {
+        users[0], users[1], users[2], users[4]}
 
     assert set(store.get_all_user_links(users[0])) == \
         set(store.get_all_children(msgs[0]))
     assert set(store.get_all_user_links(users[2])) == \
         set(store.get_all_children(msgs[3]))
 
-    time.sleep(3.0 * dmul)  # update tier 3
+    time.sleep(4.0 * dmul)  # update tier 3
     # (sorted user list)
 
     def get_sorted_user(
@@ -205,7 +207,7 @@ def test_scenario() -> None:
             scorer_name: ScorerName,
             *,
             is_children: bool,
-            full: bool) -> List[MHash]:
+            full: bool) -> list[MHash]:
         scorer = get_scorer(scorer_name)
         ofn = get_children if is_children else get_parents
         if full:

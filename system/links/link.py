@@ -1,4 +1,4 @@
-from typing import cast, Dict, get_args, Literal, Optional, Set, TypedDict
+from typing import Callable, cast, get_args, Iterable, Literal, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -16,7 +16,7 @@ from system.users.user import User
 # skip == moving to next link on same level
 # honor == honors
 VoteType = Literal["view", "up", "down", "ack", "skip", "honor"]
-VOTE_TYPES: Set[VoteType] = set(get_args(VoteType))
+VOTE_TYPES: set[VoteType] = set(get_args(VoteType))
 VT_VIEW: VoteType = "view"
 VT_UP: VoteType = "up"
 VT_DOWN: VoteType = "down"
@@ -27,9 +27,9 @@ VT_HONOR: VoteType = "honor"
 LinkResponse = TypedDict('LinkResponse', {
     "parent": str,
     "child": str,
-    "user": Optional[str],
+    "user": str | None,
     "first": float,
-    "votes": Dict[VoteType, float],
+    "votes": dict[VoteType, float],
 })
 
 
@@ -45,8 +45,9 @@ class Votes:
             vote_type: VoteType,
             daily: float,
             total: float,
-            first: Optional[pd.Timestamp],
-            last: Optional[pd.Timestamp]) -> None:
+            first: pd.Timestamp | None,
+            last: pd.Timestamp | None,
+            voters_fn: Callable[[UserStore], Iterable[User]]) -> None:
         assert daily >= 0
         assert total >= 0
         self._type = vote_type
@@ -54,6 +55,8 @@ class Votes:
         self._total = total
         self._first = first
         self._last = last
+        self._voters: set[User] | None = None
+        self._voters_fn = voters_fn
 
     def get_daily_votes(self) -> float:
         return self._daily
@@ -61,7 +64,7 @@ class Votes:
     def get_first_vote_time(self, now: pd.Timestamp) -> pd.Timestamp:
         return now if self._first is None else self._first
 
-    def get_last_vote_time(self) -> Optional[pd.Timestamp]:
+    def get_last_vote_time(self) -> pd.Timestamp | None:
         return self._last
 
     def get_total_votes(self) -> float:
@@ -76,10 +79,17 @@ class Votes:
         diff = (now - self._last) / pd.Timedelta("1d")
         return self._daily * np.exp(-diff)
 
+    def get_voters(self, user_store: UserStore) -> set[User]:
+        voters = self._voters
+        if voters is None:
+            voters = set(self._voters_fn(user_store))
+            self._voters = voters
+        return voters
+
 
 class Link:
     @staticmethod
-    def get_vote_types() -> Set[VoteType]:
+    def get_vote_types() -> set[VoteType]:
         return VOTE_TYPES
 
     def get_parent(self) -> MHash:
@@ -88,7 +98,7 @@ class Link:
     def get_child(self) -> MHash:
         raise NotImplementedError()
 
-    def get_user(self, user_store: UserStore) -> Optional[User]:
+    def get_user(self, user_store: UserStore) -> User | None:
         raise NotImplementedError()
 
     def get_votes(self, vote_type: VoteType) -> Votes:
@@ -107,7 +117,7 @@ class Link:
         user = self.get_user(user_store)
         user_str = None if user is None else user.get_id()
         first = now
-        votes: Dict[VoteType, float] = {}
+        votes: dict[VoteType, float] = {}
         for vtype in self.get_vote_types():
             cur_vote = self.get_votes(vtype)
             cur_total = cur_vote.get_total_votes()
@@ -120,7 +130,7 @@ class Link:
             "parent": self.get_parent().to_parseable(),
             "child": self.get_child().to_parseable(),
             "user": user_str,
-            "first": to_timestamp(cur_first),
+            "first": to_timestamp(first),
             "votes": votes,
         }
 
