@@ -457,8 +457,9 @@ class RedisConnection:
     def keys_count_approx(self, prefix: str) -> int:
         return self.keys_count(prefix)
 
-    def keys_str(self, prefix: str) -> Iterable[str]:
-        full_prefix = f"{prefix}*"
+    def keys_str(
+            self, prefix: str, postfix: str | None = None) -> Iterable[str]:
+        full_prefix = f"{prefix}*{'' if postfix is None else postfix}"
         vals: set[bytes] = set()
         cursor = 0
         count = 10
@@ -472,8 +473,9 @@ class RedisConnection:
                     count = min(4000, count * 2)
         return (val.decode("utf-8") for val in vals)
 
-    def prefix_exists(self, prefix: str) -> bool:
-        full_prefix = f"{prefix}*"
+    def prefix_exists(
+            self, prefix: str, postfix: str | None = None) -> bool:
+        full_prefix = f"{prefix}*{'' if postfix is None else postfix}"
         cursor = 0
         count = 10
         with self.get_connection(depth=1) as conn:

@@ -59,14 +59,7 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             prefix: str,
             postfix: str | None = None) -> Iterable[VT]:
         prefix = f"{self._redis.get_prefix()}:{prefix}"
-        if postfix is None:
-            keys = list(self._redis.keys_str(prefix))
-        else:
-            keys = [
-                key
-                for key in self._redis.keys_str(prefix)
-                if key.endswith(postfix)
-            ]
+        keys = list(self._redis.keys_str(prefix, postfix))
         with self._redis.get_connection(depth=1) as conn:
             for res in conn.mget(keys):
                 if res is not None:
@@ -79,14 +72,7 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
         prefix = f"{self._redis.get_prefix()}:{prefix}"
         fromix = len(prefix)
         toix = None if not postfix else -len(postfix)
-        if postfix is None:
-            keys = list(self._redis.keys_str(prefix))
-        else:
-            keys = [
-                key
-                for key in self._redis.keys_str(prefix)
-                if key.endswith(postfix)
-            ]
+        keys = list(self._redis.keys_str(prefix, postfix))
         for key in keys:
             yield key[fromix:toix]
 
