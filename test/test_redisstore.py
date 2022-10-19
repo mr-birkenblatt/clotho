@@ -116,7 +116,7 @@ def test_scenario() -> None:
     assert set(get_parents(store.get_all_parents(msgs[9]))) == {msgs[7]}
     assert len(get_parents(store.get_all_parents(msgs[4]))) == 0
 
-    time.sleep(4.0 * dmul)  # update tier 2
+    time.sleep(5.0 * dmul)  # update tier 2
     # (sorted parents, sorted children, first user, user list)
 
     def get_sorted(
