@@ -7,7 +7,6 @@ from typing import (
     Any,
     Callable,
     ContextManager,
-    Iterable,
     Iterator,
     Literal,
     overload,
@@ -458,7 +457,7 @@ class RedisConnection:
         return self.keys_count(prefix)
 
     def keys_str(
-            self, prefix: str, postfix: str | None = None) -> Iterable[str]:
+            self, prefix: str, postfix: str | None = None) -> list[str]:
         full_prefix = f"{prefix}*{'' if postfix is None else postfix}"
         vals: set[bytes] = set()
         cursor = 0
@@ -471,7 +470,7 @@ class RedisConnection:
                     break
                 if count < 4000:
                     count = min(4000, count * 2)
-        return (val.decode("utf-8") for val in vals)
+        return [val.decode("utf-8") for val in vals]
 
     def prefix_exists(
             self, prefix: str, postfix: str | None = None) -> bool:
@@ -605,7 +604,7 @@ class ObjectRedis(RedisConnection):
 
     def obj_dict(self, name: str) -> dict[str, Any]:
         path = self.compute_name(name, key="")
-        keys = list(self.keys_str(path))
+        keys = self.keys_str(path)
         with self.get_connection(depth=1) as conn:
             return {
                 key[len(path):]: json_read(res)

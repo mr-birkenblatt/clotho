@@ -199,7 +199,7 @@ class RedisLinkStore(LinkStore):
             last, = parents
             obj.set_value(
                 key,
-                list(last.get_range_keys(key_children("vlast", key))))
+                last.get_range_keys(key_children("vlast", key)))
 
         self.r_call: ListDependentRedisType[PLink, RLink] = \
             ListDependentRedisType(
@@ -221,7 +221,7 @@ class RedisLinkStore(LinkStore):
             last, = parents
             obj.set_value(
                 key,
-                list(last.get_range_keys(*key_parents("vlast", key))))
+                last.get_range_keys(*key_parents("vlast", key)))
 
         self.r_pall: ListDependentRedisType[CLink, RLink] = \
             ListDependentRedisType(
