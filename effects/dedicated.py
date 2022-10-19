@@ -171,7 +171,8 @@ class Script(Sequence):
             *,
             args: dict[str, JSONType],
             keys: dict[str, Any],
-            conn: RedisConnection) -> bytes:
+            conn: RedisConnection,
+            depth: int) -> bytes:
         assert len(keys) == len(self._keys)
         assert len(args) == len(self._args)
         argv = [
@@ -185,8 +186,9 @@ class Script(Sequence):
         if self._compute is None:
             code = self.compile(0)
             self._compute = conn.get_dynamic_script(code)
-        with conn.get_connection() as client:
-            res = self._compute(keys=keyv, args=argv, client=client)
+        with conn.get_connection(depth=depth + 1) as client:
+            res = self._compute(
+                keys=keyv, args=argv, client=client, depth=depth + 1)
         for kname, key_var in self._keys:
             key_var.post_completion(keys[kname])
         return res

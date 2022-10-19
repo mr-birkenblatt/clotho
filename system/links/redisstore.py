@@ -366,7 +366,8 @@ class RedisLinkStore(LinkStore):
                 "r_last": link,
                 "r_user_links": user_id,
             },
-            conn=self._conn)
+            conn=self._conn,
+            depth=1)
 
     def create_add_vote_script(self) -> Script:
         script = Script()

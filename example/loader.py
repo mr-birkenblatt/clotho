@@ -195,50 +195,52 @@ def process_actions(
         if settled:
             print(f"settled {settled} variables in {settle_timing:.2f}s")
 
-    for action in actions:
-        counter += 1
-        if counter % 10000 == 0:
-            print_progress(counter // 10000, counter)
-        ref = interpret_action(
-            action,
-            message_store=message_store,
-            link_store=link_store,
-            user_store=user_store,
-            now=now,
-            roots=roots,
-            hash_lookup=hash_lookup,
-            lookup_buffer=lookup_buffer,
-            totals=totals,
-            user_pool=user_pool,
-            synth_pool=synth_pool)
-        if ref is not None:
-            ref_id, is_topic = ref
-            if is_topic:
-                prev_counts = max(topic_counts.values(), default=0)
-                topic_counts[ref_id] += 1
-                # NOTE: time hack!
-                if topic_counts[ref_id] // 100 > prev_counts // 100:
-                    now += pd.Timedelta("1d")
-                    print(f"advance date to {now}")
-            lb_actions = lookup_buffer.pop(ref_id, None)
-            if lb_actions is not None and lb_actions:
-                print(f"processing delayed actions ({len(lb_actions)})")
-                counter, now = process_actions(
-                    lb_actions,
-                    message_store=message_store,
-                    link_store=link_store,
-                    user_store=user_store,
-                    now=now,
-                    reference_time=reference_time,
-                    roots=roots,
-                    hash_lookup=hash_lookup,
-                    lookup_buffer=lookup_buffer,
-                    topic_counts=topic_counts,
-                    totals=totals,
-                    user_pool=user_pool,
-                    synth_pool=synth_pool,
-                    counter=counter)
-    print_progress(counter // 10000, counter)
+    try:
+        for action in actions:
+            counter += 1
+            if counter % 10000 == 0:
+                print_progress(counter // 10000, counter)
+            ref = interpret_action(
+                action,
+                message_store=message_store,
+                link_store=link_store,
+                user_store=user_store,
+                now=now,
+                roots=roots,
+                hash_lookup=hash_lookup,
+                lookup_buffer=lookup_buffer,
+                totals=totals,
+                user_pool=user_pool,
+                synth_pool=synth_pool)
+            if ref is not None:
+                ref_id, is_topic = ref
+                if is_topic:
+                    prev_counts = max(topic_counts.values(), default=0)
+                    topic_counts[ref_id] += 1
+                    # NOTE: time hack!
+                    if topic_counts[ref_id] // 100 > prev_counts // 100:
+                        now += pd.Timedelta("1d")
+                        print(f"advance date to {now}")
+                lb_actions = lookup_buffer.pop(ref_id, None)
+                if lb_actions is not None and lb_actions:
+                    print(f"processing delayed actions ({len(lb_actions)})")
+                    counter, now = process_actions(
+                        lb_actions,
+                        message_store=message_store,
+                        link_store=link_store,
+                        user_store=user_store,
+                        now=now,
+                        reference_time=reference_time,
+                        roots=roots,
+                        hash_lookup=hash_lookup,
+                        lookup_buffer=lookup_buffer,
+                        topic_counts=topic_counts,
+                        totals=totals,
+                        user_pool=user_pool,
+                        synth_pool=synth_pool,
+                        counter=counter)
+    finally:
+        print_progress(counter // 10000, counter)
     return (counter, now)
 
 

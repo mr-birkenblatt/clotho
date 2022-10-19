@@ -1,7 +1,9 @@
 import hashlib
+import inspect
 import json
+import os
 import string
-from typing import Any, IO, Iterable, TypeVar
+from typing import Any, IO, Iterable, Type, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -177,3 +179,33 @@ def to_timestamp(time: pd.Timestamp) -> float:
 
 def now_ts() -> pd.Timestamp:
     return pd.Timestamp("now", tz="UTC")
+
+
+def get_function_info(*, clazz: Type) -> tuple[str, int, str]:
+    stack = inspect.stack()
+
+    def get_method(cur_clazz: Type) -> tuple[str, int, str] | None:
+        class_filename = inspect.getfile(cur_clazz)
+        for level in stack:
+            if os.path.samefile(level.filename, class_filename):
+                return level.filename, level.lineno, level.function
+        return None
+
+    queue = [clazz]
+    while queue:
+        cur = queue.pop(0)
+        res = get_method(cur)
+        if res is not None:
+            return res
+        queue.extend(cur.__bases__)
+    frame = stack[1]
+    return frame.filename, frame.lineno, frame.function
+
+
+def get_relative_function_info(depth: int) -> tuple[str, int, str]:
+    depth += 1
+    stack = inspect.stack()
+    if depth >= len(stack):
+        return "unknown", -1, "unknown"
+    frame = stack[depth]
+    return frame.filename, frame.lineno, frame.function

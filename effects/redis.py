@@ -30,12 +30,12 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
 
     def do_set_value(self, key: KT, value: VT) -> None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             conn.set(rkey, json_compact(value))
 
     def do_update_value(self, key: KT, value: VT) -> VT | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.get(rkey)
                 pipe.set(rkey, json_compact(value))
@@ -44,13 +44,13 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
 
     def do_set_new_value(self, key: KT, value: VT) -> bool:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             res = conn.setnx(rkey, json_compact(value))
             return bool(res)
 
     def maybe_get_value(self, key: KT) -> VT | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             res = conn.get(rkey)
         return json_read(res) if res is not None else None
 
@@ -67,7 +67,7 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
                 for key in self._redis.keys_str(prefix)
                 if key.endswith(postfix)
             ]
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             for res in conn.mget(keys):
                 if res is not None:
                     yield json_read(res)
@@ -103,7 +103,7 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
 
     def do_add_value(self, key: KT, value: str) -> bool:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 val = value.encode("utf-8")
                 pipe.sismember(rkey, val)
@@ -112,7 +112,7 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
 
     def do_remove_value(self, key: KT, value: str) -> bool:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 val = value.encode("utf-8")
                 pipe.sismember(rkey, val)
@@ -121,7 +121,7 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
 
     def maybe_get_value(self, key: KT) -> set[str] | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             return set(mem.decode("utf-8") for mem in conn.smembers(rkey))
 
 
@@ -144,12 +144,12 @@ class ValueDependentRedisType(
 
     def do_set_value(self, key: KT, value: VT) -> None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             conn.set(rkey, json_compact(value))
 
     def do_update_value(self, key: KT, value: VT) -> VT | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.get(rkey)
                 pipe.set(rkey, json_compact(value))
@@ -158,13 +158,13 @@ class ValueDependentRedisType(
 
     def do_set_new_value(self, key: KT, value: VT) -> bool:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             res = conn.setnx(rkey, json_compact(value))
             return bool(res)
 
     def retrieve_value(self, key: KT) -> VT | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             res = conn.get(rkey)
         return json_read(res) if res is not None else None
 
@@ -190,7 +190,7 @@ class ListDependentRedisType(
 
     def do_set_value(self, key: KT, value: list[str]) -> None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.delete(rkey)
                 if value:
@@ -199,7 +199,7 @@ class ListDependentRedisType(
 
     def do_update_value(self, key: KT, value: list[str]) -> list[VT] | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.exists(rkey)
                 pipe.lrange(rkey, 0, -1)
@@ -228,12 +228,16 @@ class ListDependentRedisType(
             script.set_return_value(res_var)
             self._update_new_val = script
         rkey = self.get_redis_key(key)
-        return int(self._update_new_val.execute(
-            args={"value": value}, keys={"rkey": rkey}, conn=self._redis)) != 0
+        res = self._update_new_val.execute(
+            args={"value": value},
+            keys={"rkey": rkey},
+            conn=self._redis,
+            depth=1)
+        return int(res) != 0
 
     def retrieve_value(self, key: KT) -> list[str] | None:
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.exists(rkey)
                 pipe.lrange(rkey, 0, -1)
@@ -256,7 +260,7 @@ class ListDependentRedisType(
         else:
             to_ix -= 1
         rkey = self.get_redis_key(key)
-        with self._redis.get_connection() as conn:
+        with self._redis.get_connection(depth=1) as conn:
             res = conn.lrange(rkey, from_ix, to_ix)
         return [val.decode("utf-8") for val in res]
 
