@@ -234,7 +234,7 @@ jobs:
 
     - name: Show test-result Cache
       run: |
-        tail -v -n +1 test-results/*.xml
+        tail -v -n +1 *.xml
 
     - name: Merge results
       run: |
