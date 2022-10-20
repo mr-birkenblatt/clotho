@@ -114,17 +114,18 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
             return set(mem.decode("utf-8") for mem in conn.smembers(rkey))
 
 
-class ValueDependentRedisType(
-        Generic[KT, VT, PT], EffectDependent[KT, VT, PT]):
+class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
     def __init__(
             self,
             module: RedisModule,
             key_fn: Callable[[KT], str],
-            parents: LT,
-            effect: Callable[[EffectDependent[KT, VT, PT], LT, PT, KT], None],
-            conversion: Callable[[PT], KT],
+            *,
+            parents: tuple[EffectBase[PT], ...],
+            convert: Callable[[PT], KT],
+            effect: Callable[[KT], None],
             delay: float) -> None:
-        super().__init__(parents, effect, conversion, delay)
+        super().__init__(
+            parents=parents, effect=effect, convert=convert, delay=delay)
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
 
@@ -158,18 +159,18 @@ class ValueDependentRedisType(
         return json_read(res) if res is not None else None
 
 
-class ListDependentRedisType(
-        Generic[KT, PT], EffectDependent[KT, list[str], PT]):
+class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
     def __init__(
             self,
             module: RedisModule,
             key_fn: Callable[[KT], str],
-            parents: LT,
-            effect: Callable[
-                [EffectDependent[KT, list[str], PT], LT, PT, KT], None],
-            conversion: Callable[[PT], KT],
+            *,
+            parents: tuple[EffectBase[PT], ...],
+            convert: Callable[[PT], KT],
+            effect: Callable[[KT], None],
             delay: float) -> None:
-        super().__init__(parents, effect, conversion, delay)
+        super().__init__(
+            parents=parents, effect=effect, convert=convert, delay=delay)
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
         self._update_new_val: Script | None = None

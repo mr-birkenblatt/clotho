@@ -25,16 +25,30 @@ KeyType = tuple[BaseKeyType, ...] | BaseKeyType
 KT = TypeVar('KT', bound=KeyType)
 VT = TypeVar('VT')
 PT = TypeVar('PT', bound=KeyType)
+CT = TypeVar('CT', bound=KeyType)
 AT = TypeVar('AT')
-LT = TypeVar('LT', bound=tuple['EffectBase', ...])
+
+
+class Dependent(Generic[KT, CT]):
+    def __init__(
+            self,
+            dependent: 'EffectDependent[CT, Any]',
+            convert: Callable[[KT], CT]) -> None:
+        self._dependent = dependent
+        self._convert = convert
+
+    def trigger_update(self, key: KT, cur_time: float) -> None:
+        self._dependent.trigger_update(self._convert(key), cur_time)
+
+    def convert(self, key: KT) -> CT:
+        return self._convert(key)
 
 
 class EffectBase(Generic[KT]):
     def __init__(self) -> None:
-        self._dependents: list['EffectDependent[KeyType, Any, KT]'] = []
+        self._dependents: list[Dependent[KT, KeyType]] = []
 
-    def add_dependent(
-            self, dependent: 'EffectDependent[Any, Any, KT]') -> None:
+    def add_dependent(self, dependent: Dependent[KT, KeyType]) -> None:
         self._dependents.append(dependent)
 
     def on_update(self, key: KT) -> None:
@@ -42,17 +56,11 @@ class EffectBase(Generic[KT]):
         for dependent in self._dependents:
             dependent.trigger_update(key, cur_time)
 
-    def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
-        raise NotImplementedError()
-
     def settle_all(self) -> int:
         raise NotImplementedError()
 
 
 class EffectRoot(Generic[KT, VT], EffectBase[KT]):
-    def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
-        pass
-
     def settle_all(self) -> int:
         return 0
 
@@ -110,23 +118,22 @@ class SetRootType(Generic[KT, VT], EffectRoot[KT, set[VT]]):
         return res
 
 
-class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
+class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def __init__(
             self,
-            parents: LT,
-            effect: Callable[
-                ['EffectDependent[KT, VT, PT]', LT, PT, KT], None],
-            conversion: Callable[[PT], KT],
+            *,
+            parents: tuple[EffectBase[PT], ...],
+            convert: Callable[[PT], KT],
+            effect: Callable[[KT], None],
             delay: float) -> None:
         super().__init__()
-        self._pending: dict[PT, float] = {}
+        self._pending: dict[KT, float] = {}
         self._parents = parents
         self._effect = effect
-        self._conversion = conversion
         self._delay = delay
         self._thread: threading.Thread | None = None
         for parent in self._parents:
-            parent.add_dependent(self)
+            parent.add_dependent(Dependent(self, convert))  # type: ignore
 
     def init_thread(self) -> None:
         if self._thread is None:
@@ -149,7 +156,7 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
         finally:
             self._thread = None
 
-    def trigger_update(self, key: PT, cur_time: float) -> None:
+    def trigger_update(self, key: KT, cur_time: float) -> None:
         prev_time = self._pending.get(key)
         end_time = self._delay + cur_time
         if prev_time is None or prev_time > end_time:
@@ -174,29 +181,6 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
                         self._pending[pkey] = pkval
         return next_time
 
-    def settle(self, key: KT) -> None:
-        self.do_settle(key, lambda kkey: kkey)
-
-    def do_settle(self, key: AT, convert: Callable[[KT], AT]) -> None:
-
-        def pconvert(pkey: PT) -> AT:
-            return convert(self._conversion(pkey))
-
-        for parent in self._parents:
-            parent.do_settle(key, pconvert)
-        for pkey in list(self._pending.keys()):
-            if key != pconvert(pkey):
-                continue
-            pkval = self._pending.pop(pkey, None)
-            if pkval is not None:
-                success = False
-                try:
-                    self.execute_update(pkey)
-                    success = True
-                finally:
-                    if not success:
-                        self._pending[pkey] = pkval
-
     def settle_all(self) -> int:
         count = 0
         for parent in self._parents:
@@ -214,8 +198,8 @@ class EffectDependent(Generic[KT, VT, PT], EffectBase[KT]):
                         self._pending[pkey] = pkval
         return count
 
-    def execute_update(self, key: PT) -> None:
-        self._effect(self, self._parents, key, self._conversion(key))
+    def execute_update(self, key: KT) -> None:
+        self._effect(key)
 
     def retrieve_value(self, key: KT) -> VT | None:
         raise NotImplementedError()

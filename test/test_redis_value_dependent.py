@@ -1,6 +1,5 @@
 import time
 
-from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
     ValueDependentRedisType,
@@ -14,45 +13,35 @@ def test_dependent() -> None:
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
         "test", lambda key: f"name:{key}")
 
-    def key_id(pkey: str) -> str:
-        return pkey
+    def key_id(key: str) -> str:
+        return key
 
-    def update_a(
-            obj: EffectDependent[str, list[str], str],
-            parents: tuple[
-                ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, v_b = parents
-        obj.set_value(
-            key, [v_b.get_value(pkey, "MISSING")] * v_a.get_value(pkey, 0))
+    def update_a(key: str) -> None:
+        dep_a.set_value(
+            key,
+            [value_b.get_value(key, "MISSING")] * value_a.get_value(key, 0))
 
-    def update_b(
-            obj: EffectDependent[str, int, str],
-            parents: tuple[ValueRootRedisType[str, str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, = parents
-        ref = obj.retrieve_value(key)
-        old = obj.update_value(key, len(v_a.get_value(pkey, "MISSING")))
+    def update_b(key: str) -> None:
+        ref = dep_b.retrieve_value(key)
+        old = dep_b.update_value(key, len(value_b.get_value(key, "MISSING")))
         assert (old is None and ref is None) or old == ref
 
-    dep_a: ValueDependentRedisType[str, list[str], str] = \
+    dep_a: ValueDependentRedisType[str, list[str]] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"list:{key}",
-            (value_a, value_b),
-            update_a,
-            key_id,
-            0.1)
-    dep_b: ValueDependentRedisType[str, int, str] = \
+            parents=(value_a, value_b),
+            convert=key_id,
+            effect=update_a,
+            delay=0.1)
+    dep_b: ValueDependentRedisType[str, int] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"len:{key}",
-            (value_b,),
-            update_b,
-            key_id,
-            0.1)
+            parents=(value_b,),
+            convert=key_id,
+            effect=update_b,
+            delay=0.1)
 
     assert value_a.maybe_get_value("a") is None
     value_a.set_value("a", 2)
@@ -72,58 +61,43 @@ def test_dependent() -> None:
     assert dep_a.maybe_get_value("b") == ["defg", "defg"]
     assert dep_b.maybe_get_value("b") == 4
 
-    def update_a_a(
-            obj: EffectDependent[str, str, str],
-            parents: tuple[ValueDependentRedisType[str, list[str], str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, = parents
-        obj.set_value(key, "-".join(v_a.get_value(pkey, [])))
+    def update_a_a(key: str) -> None:
+        dep_a_a.set_value(key, "-".join(dep_a.get_value(key, [])))
 
-    def update_a_b(
-            obj: EffectDependent[str, str, str],
-            parents: tuple[ValueDependentRedisType[str, list[str], str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, = parents
-        new = "-".join(v_a.get_value(pkey, []))
-        old = obj.maybe_get_value(key)
-        if obj.set_new_value(key, new):
-            assert obj.maybe_get_value(key) == new
+    def update_a_b(key: str) -> None:
+        new = "-".join(dep_a.get_value(key, []))
+        old = dep_a_b.maybe_get_value(key)
+        if dep_a_b.set_new_value(key, new):
+            assert dep_a_b.maybe_get_value(key) == new
         else:
-            assert obj.maybe_get_value(key) == old
+            assert dep_a_b.maybe_get_value(key) == old
 
-    def update_a_c(
-            obj: EffectDependent[str, str, str],
-            parents: tuple[ValueDependentRedisType[str, list[str], str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, = parents
-        val = v_a.get_value(pkey, [])
+    def update_a_c(key: str) -> None:
+        val = dep_a.get_value(key, [])
         if val:
-            obj.set_value(key, "-".join(val))
+            dep_a_c.set_value(key, "-".join(val))
 
-    dep_a_a: ValueDependentRedisType[str, str, str] = ValueDependentRedisType(
+    dep_a_a: ValueDependentRedisType[str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"concat:{key}",
-        (dep_a,),
-        update_a_a,
-        key_id,
-        0.1)
-    dep_a_b: ValueDependentRedisType[str, str, str] = ValueDependentRedisType(
+        parents=(dep_a,),
+        convert=key_id,
+        effect=update_a_a,
+        delay=0.1)
+    dep_a_b: ValueDependentRedisType[str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"first:{key}",
-        (dep_a,),
-        update_a_b,
-        key_id,
-        0.1)
-    dep_a_c: ValueDependentRedisType[str, str, str] = ValueDependentRedisType(
+        parents=(dep_a,),
+        convert=key_id,
+        effect=update_a_b,
+        delay=0.1)
+    dep_a_c: ValueDependentRedisType[str, str] = ValueDependentRedisType(
         "test",
         lambda key: f"never:{key}",
-        (dep_a,),
-        update_a_c,
-        key_id,
-        0.1)
+        parents=(dep_a,),
+        convert=key_id,
+        effect=update_a_c,
+        delay=0.1)
 
     dep_a.on_update("a")
     dep_a.on_update("b")
@@ -163,65 +137,49 @@ def test_dependent_list() -> None:
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
         "test", lambda key: f"name:{key}")
 
-    def key_id(pkey: str) -> str:
-        return pkey
+    def key_id(key: str) -> str:
+        return key
 
-    def update_a(
-            obj: EffectDependent[str, list[str], str],
-            parents: tuple[
-                ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, v_b = parents
-        ref = obj.retrieve_value(key)
-        old = obj.update_value(
-            key, [v_b.get_value(pkey, "MISSING")] * v_a.get_value(pkey, 0))
+    def update_a(key: str) -> None:
+        ref = dep_a.retrieve_value(key)
+        old = dep_a.update_value(
+            key,
+            [value_b.get_value(key, "MISSING")] * value_a.get_value(key, 0))
         assert (old == [] and ref is None) or old == ref
 
-    def update_b(
-            obj: EffectDependent[str, list[str], str],
-            parents: tuple[
-                ValueRootRedisType[str, int], ValueRootRedisType[str, str]],
-            pkey: str,
-            key: str) -> None:
-        v_a, v_b = parents
-        arr = [v_b.get_value(pkey, "MISSING")] * v_a.get_value(pkey, 0)
-        old = obj.maybe_get_value(key)
-        if obj.set_new_value(key, arr):
-            assert obj.maybe_get_value(key) == arr
+    def update_b(key: str) -> None:
+        arr = [value_b.get_value(key, "MISSING")] * value_a.get_value(key, 0)
+        old = dep_b.maybe_get_value(key)
+        if dep_b.set_new_value(key, arr):
+            assert dep_b.maybe_get_value(key) == arr
         else:
-            assert obj.maybe_get_value(key) == old
+            assert dep_b.maybe_get_value(key) == old
 
     dep_a = ListDependentRedisType(
         "test",
         lambda key: f"slista:{key}",
-        (value_a, value_b),
-        update_a,
-        key_id,
-        0.1)
+        parents=(value_a, value_b),
+        convert=key_id,
+        effect=update_a,
+        delay=0.1)
     dep_b = ListDependentRedisType(
         "test",
         lambda key: f"slistb:{key}",
-        (value_a, value_b),
-        update_b,
-        key_id,
-        0.1)
+        parents=(value_a, value_b),
+        convert=key_id,
+        effect=update_b,
+        delay=0.1)
 
-    def update_a_a(
-            obj: EffectDependent[str, int, str],
-            parents: tuple[ListDependentRedisType],
-            pkey: str,
-            key: str) -> None:
-        v_a, = parents
-        obj.set_value(key, len(v_a.get_value(pkey, [])))
+    def update_a_a(key: str) -> None:
+        dep_a_a.set_value(key, len(dep_a.get_value(key, [])))
 
-    dep_a_a = ValueDependentRedisType(
+    dep_a_a: ValueDependentRedisType[str, int] = ValueDependentRedisType(
         "test",
         lambda key: f"counta:{key}",
-        (dep_a,),
-        update_a_a,
-        key_id,
-        0.1)
+        parents=(dep_a,),
+        convert=key_id,
+        effect=update_a_a,
+        delay=0.1)
 
     value_a.set_value("a", 5)
     value_b.set_value("a", ".")
@@ -231,22 +189,21 @@ def test_dependent_list() -> None:
     assert dep_a_a.maybe_get_value("b") is None  # time sensitive
     assert dep_a.maybe_get_value("b") is None  # time sensitive
     assert dep_b.maybe_get_value("b") is None  # time sensitive
-    dep_b.settle("a")
-    assert dep_b.maybe_get_value("b") is None  # time sensitive
+    dep_b.settle_all()
 
     value_a.set_value("a", 3)
 
     assert dep_a_a.maybe_get_value("a") is None  # time sensitive
     assert dep_b.maybe_get_value("a") == [".", ".", ".", ".", "."]
 
-    dep_a_a.settle("a")
+    dep_a_a.settle_all()
 
     assert dep_b.maybe_get_value("a") == [".", ".", ".", ".", "."]
 
     assert dep_a_a.maybe_get_value("a") == 3
     assert dep_a.maybe_get_value("a") == [".", ".", "."]
 
-    dep_b.settle("a")
+    dep_b.settle_all()
 
     assert dep_b.maybe_get_value("a") == [".", ".", ".", ".", "."]
 
@@ -255,22 +212,21 @@ def test_dependent_list() -> None:
     assert dep_a_a.maybe_get_value("b") is None  # time sensitive
     assert dep_a.maybe_get_value("b") is None  # time sensitive
     assert dep_b.maybe_get_value("b") is None  # time sensitive
-    dep_a.settle("b")
-    dep_b.settle("b")
-    assert dep_a_a.maybe_get_value("b") is None  # time sensitive
+    dep_a.settle_all()
+    dep_b.settle_all()
     assert dep_a.maybe_get_value("b") == [":", ":", ":"]
     assert dep_b.maybe_get_value("b") == [":", ":", ":"]
 
     assert dep_a_a.maybe_get_value("a") == 3  # time sensitive
     assert dep_a.maybe_get_value("a") == [".", ".", "."]  # time sensitive
 
-    dep_a.settle("a")
-    dep_b.settle("b")
+    dep_a.settle_all()
+    dep_b.settle_all()
 
     assert dep_a_a.maybe_get_value("a") == 3  # time sensitive
     assert dep_a.maybe_get_value("a") == [".", ".", ".", "."]
     assert dep_b.maybe_get_value("a") == [".", ".", ".", ".", "."]
 
-    dep_a_a.settle("a")
+    dep_a_a.settle_all()
 
     assert dep_a_a.maybe_get_value("a") == 4
