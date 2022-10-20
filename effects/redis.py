@@ -57,15 +57,15 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def get_range(
             self,
             prefix: str,
-            postfix: str | None = None) -> list[VT]:
+            postfix: str | None = None) -> Iterable[VT]:
         prefix = f"{self._redis.get_prefix()}:{prefix}"
         keys = list(self._redis.keys_str(prefix, postfix))
         with self._redis.get_connection(depth=1) as conn:
-            return [
+            return (
                 json_read(res)
                 for res in conn.mget(keys)
                 if res is not None
-            ]
+            )
 
     def get_range_keys(
             self,
