@@ -209,11 +209,6 @@ def test_dependent_list() -> None:
 
     value_a.set_value("a", 4)
 
-    assert dep_a_a.maybe_get_value("b") is None  # time sensitive
-    assert dep_a.maybe_get_value("b") is None  # time sensitive
-    assert dep_b.maybe_get_value("b") is None  # time sensitive
-    dep_a.settle_all()
-    dep_b.settle_all()
     assert dep_a.maybe_get_value("b") == [":", ":", ":"]
     assert dep_b.maybe_get_value("b") == [":", ":", ":"]
 
