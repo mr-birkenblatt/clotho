@@ -175,7 +175,7 @@ class RedisWrapper:
                                     context.append(f"> {line.rstrip()}")
                                 else:
                                     context.append(f"  {line.rstrip()}")
-                    except FileNotFoundError:
+                    except (OSError, FileNotFoundError):
                         context.append("## not available ##")
                     print(
                         f"slow redis call ({conn_time:.2f}s) "
