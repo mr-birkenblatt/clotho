@@ -7,6 +7,7 @@ from typing import (
     Any,
     Callable,
     ContextManager,
+    Iterable,
     Iterator,
     Literal,
     overload,
@@ -457,7 +458,7 @@ class RedisConnection:
         return self.keys_count(prefix)
 
     def keys_str(
-            self, prefix: str, postfix: str | None = None) -> list[str]:
+            self, prefix: str, postfix: str | None = None) -> Iterable[str]:
         full_prefix = f"{prefix}*{'' if postfix is None else postfix}"
         vals: set[bytes] = set()
         cursor = 0
@@ -470,7 +471,7 @@ class RedisConnection:
                     break
                 if count < 4000:
                     count = min(4000, count * 2)
-        return [val.decode("utf-8") for val in vals]
+        return (val.decode("utf-8") for val in vals)
 
     def prefix_exists(
             self, prefix: str, postfix: str | None = None) -> bool:
@@ -595,16 +596,13 @@ class ObjectRedis(RedisConnection):
         with self.get_connection(depth=1) as conn:
             return conn.get(self.compute_name(name, key)) is not None
 
-    def obj_keys(self, name: str) -> list[str]:
+    def obj_keys(self, name: str) -> Iterable[str]:
         path = self.compute_name(name, key="")
-        return [
-            key[len(path):]
-            for key in self.keys_str(path)
-        ]
+        return (key[len(path):] for key in self.keys_str(path))
 
     def obj_dict(self, name: str) -> dict[str, Any]:
         path = self.compute_name(name, key="")
-        keys = self.keys_str(path)
+        keys = list(self.keys_str(path))
         with self.get_connection(depth=1) as conn:
             return {
                 key[len(path):]: json_read(res)
@@ -616,12 +614,9 @@ class ObjectRedis(RedisConnection):
         path = self.compute_name(name, key="")
         return self.keys_count(path)
 
-    def obj_partial_keys(self, partial: str) -> list[str]:
+    def obj_partial_keys(self, partial: str) -> Iterable[str]:
         path = f"{self._objs}:{partial}"
-        return [
-            key[len(path):]
-            for key in self.keys_str(path)
-        ]
+        return (key[len(path):] for key in self.keys_str(path))
 
     def obj_remove(self, name: str, key: str = "*") -> None:
         with self.get_connection(depth=1) as conn:

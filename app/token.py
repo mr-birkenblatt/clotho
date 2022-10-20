@@ -35,4 +35,4 @@ class RedisTokenHandler(TokenHandler):
         self._r.obj_remove("token", key)
 
     def get_tokens(self) -> list[str]:
-        return self._r.obj_keys("token")
+        return list(self._r.obj_keys("token"))

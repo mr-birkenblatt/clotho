@@ -193,7 +193,7 @@ class RedisLinkStore(LinkStore):
         def compute_call(key: PLink) -> None:
             self.r_call.set_value(
                 key,
-                self.r_last.get_range_keys(key_children("vlast", key)))
+                list(self.r_last.get_range_keys(key_children("vlast", key))))
 
         self.r_call: ListDependentRedisType[PLink] = \
             ListDependentRedisType(
@@ -210,7 +210,7 @@ class RedisLinkStore(LinkStore):
         def compute_pall(key: CLink) -> None:
             self.r_pall.set_value(
                 key,
-                self.r_last.get_range_keys(*key_parents("vlast", key)))
+                list(self.r_last.get_range_keys(*key_parents("vlast", key))))
 
         self.r_pall: ListDependentRedisType[CLink] = \
             ListDependentRedisType(

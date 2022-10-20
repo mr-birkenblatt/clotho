@@ -1,4 +1,4 @@
-from typing import Callable, Generic, TypeVar
+from typing import Callable, Generic, Iterable, TypeVar
 
 from effects.dedicated import LiteralKey, RedisFn, Script
 from effects.effects import (
@@ -59,7 +59,7 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             prefix: str,
             postfix: str | None = None) -> list[VT]:
         prefix = f"{self._redis.get_prefix()}:{prefix}"
-        keys = self._redis.keys_str(prefix, postfix)
+        keys = list(self._redis.keys_str(prefix, postfix))
         with self._redis.get_connection(depth=1) as conn:
             return [
                 json_read(res)
@@ -70,14 +70,14 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def get_range_keys(
             self,
             prefix: str,
-            postfix: str | None = None) -> list[str]:
+            postfix: str | None = None) -> Iterable[str]:
         prefix = f"{self._redis.get_prefix()}:{prefix}"
         fromix = len(prefix)
         toix = None if not postfix else -len(postfix)
-        return [
+        return (
             key[fromix:toix]
             for key in self._redis.keys_str(prefix, postfix)
-        ]
+        )
 
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
