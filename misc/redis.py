@@ -166,6 +166,7 @@ class RedisWrapper:
                     fun_fname, fun_line, fun_name, fun_locals = fun_info
                     context = []
                     try:
+                        fun_line -= 1
                         with open_read(fun_fname, text=True) as fin:
                             for lineno, line in enumerate(fin):
                                 if lineno < fun_line - REDIS_SLOW_CONTEXT:

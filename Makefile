@@ -18,6 +18,7 @@ help:
 	@echo "pre-commit 	sort python package imports using isort"
 	@echo "clean	clean test data"
 	@echo "pytest	run all test with pytest (requires a running test redis server)"
+	@echo "test-ts	run all typescript tests"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
 	@echo "run-test-redis	start redis server for pytest"
@@ -123,6 +124,9 @@ clean:
 
 pytest:
 	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
+
+test-ts:
+	cd ui && yarn test --all --coverage
 
 run-test-redis:
 	cd test && redis-server
