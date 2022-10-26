@@ -66,7 +66,8 @@ export default class LRU<K, V> {
     if (entry === undefined) {
       return undefined;
     }
-    const head = this.head as LRUEntry<K, V>;
+    assert.ok(this.head !== undefined);
+    const head = this.head;
     assert.equal(head.prev, head);
     if (head !== entry) {
       const prev = entry.prev;
