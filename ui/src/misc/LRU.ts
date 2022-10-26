@@ -90,6 +90,47 @@ export default class LRU<K, V> {
     return entry.item;
   }
 
+  has(key: K): boolean {
+    return this.objs.has(key);
+  }
+
+  delete(key: K): void {
+    const entry = this.objs.get(key);
+    if (entry === undefined) {
+      return;
+    }
+    if (this.head === entry && this.tail === entry) {
+      assert.equal(entry.prev, entry);
+      assert.equal(entry.next, entry);
+      this.head = undefined;
+      this.tail = undefined;
+    } else if (this.head === entry) {
+      assert.equal(entry.prev, entry);
+      assert.notEqual(entry.next, entry);
+      const next = entry.next;
+      assert.equal(next.prev, entry);
+      next.prev = next;
+      this.head = next;
+    } else if (this.tail === entry) {
+      assert.equal(entry.next, entry);
+      assert.notEqual(entry.prev, entry);
+      const prev = entry.prev;
+      assert.equal(prev.next, entry);
+      prev.next = prev;
+      this.tail = prev;
+    } else {
+      assert.notEqual(entry.next, entry);
+      assert.notEqual(entry.prev, entry);
+      const next = entry.next;
+      const prev = entry.prev;
+      prev.next = next;
+      next.prev = prev;
+      entry.next = entry;
+      entry.prev = entry;
+    }
+    this.objs.delete(key);
+  }
+
   keys(): K[] {
     let cur = this.head;
     if (cur === undefined) {
