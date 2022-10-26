@@ -2,6 +2,7 @@ help:
 	@echo "The following make targets are available:"
 	@echo "install	install all python dependencies"
 	@echo "install-ts	install all typescript dependencies"
+	@echo "lint-comment	ensures fixme comments are grepable"
 	@echo "lint-emptyinit	main inits must be empty"
 	@echo "lint-flake8	run flake8 checker to deteck missing trailing comma"
 	@echo "lint-forgottenformat	ensures format strings are used"
@@ -15,10 +16,14 @@ help:
 	@echo "lint-type-check	run type check"
 	@echo "lint-ts	run typescript linting"
 	@echo "lint-ts-fix	run typescript linting with fix"
+	@echo "lint-all	run all lints"
 	@echo "pre-commit 	sort python package imports using isort"
+	@echo "name	generate a unique permanent name for the current commit"
+	@echo "git-check	ensures no git visible files have been altered"
 	@echo "clean	clean test data"
 	@echo "pytest	run all test with pytest (requires a running test redis server)"
 	@echo "test-ts	run all typescript tests"
+	@echo "ts-build	build the ui code"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
 	@echo "run-test-redis	start redis server for pytest"
@@ -129,6 +134,9 @@ pytest:
 
 test-ts:
 	cd ui && yarn test --all --coverage
+
+ts-build:
+	cd ui && yarn build
 
 run-test-redis:
 	cd test && redis-server

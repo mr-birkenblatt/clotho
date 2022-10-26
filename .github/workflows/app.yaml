@@ -46,6 +46,10 @@ jobs:
       run: |
         make test-ts
 
+    - name: Test Build (ts)
+      run: |
+        make ts-build
+
 
   lints_pipeline:
     name: Lints CI Pipeline
