@@ -4,7 +4,7 @@ import os
 import time
 from typing import Iterable
 
-import praw--------------
+import praw
 from praw import Reddit
 from praw.models.comment_forest import CommentForest
 from praw.models.reddit.comment import Comment
