@@ -23,7 +23,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
-    "_postinstall": "husky install"
+    "_postinstall": "cd .. && husky install"
   },
   "eslintConfig": {
     "extends": [
