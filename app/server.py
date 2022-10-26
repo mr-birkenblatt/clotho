@@ -193,7 +193,7 @@ def setup(
         hashes = to_list(args["hashes"])
         cur_length = 0
         msgs = {}
-        skipped = []
+        skipped: list[str] = []
         for mhash in hashes:
             if cur_length > MAX_RESPONSE:
                 skipped.append(MHash.parse(mhash).to_parseable())

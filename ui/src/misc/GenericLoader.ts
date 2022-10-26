@@ -1,8 +1,8 @@
 import LRU from './LRU.js';
 
-type ResultCB<V> = (arr: Map<number, V>) => void;
-type ContentCB<V> = (ready: boolean, content: V | undefined) => void;
-type ReadyCB = () => void;
+export type ResultCB<V> = (arr: Map<number, V>) => void;
+export type ContentCB<V> = (ready: boolean, content: V | undefined) => void;
+export type ReadyCB = () => void;
 type LoadCB<V> = (
     name: string,
     offset: number,
