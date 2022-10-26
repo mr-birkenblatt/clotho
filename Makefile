@@ -25,6 +25,8 @@ help:
 	@echo "run-redis	start redis server"
 	@echo "run-api	start api server"
 	@echo "run-web	start web server"
+	@echo "coverage-report	show the coverage report for python"
+	@echo "coverage-report-ts	show the coverage report for typescript"
 
 export LC_ALL=C
 export LANG=C
@@ -142,3 +144,6 @@ run-web:
 
 coverage-report:
 	cd coverage/reports/html_report && open index.html
+
+coverage-report-ts:
+	cd ui/coverage/lcov-report && open index.html

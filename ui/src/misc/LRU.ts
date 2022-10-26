@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { strict as assert } from "node:assert";
 
 class LRUEntry<K, V> {
   parent: LRU<K, V>;
@@ -15,7 +15,6 @@ class LRUEntry<K, V> {
     this.item = item;
   }
 } // LRUEntry
-
 
 export default class LRU<K, V> {
   head: LRUEntry<K, V> | undefined;
