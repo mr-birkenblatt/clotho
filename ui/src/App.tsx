@@ -57,10 +57,13 @@ type ItemMidContentProps = {
   radius: number;
 };
 
-export default class App extends PureComponent<{}, {}> {
+type AppProps = Record<string, never>;
+type AppState = Record<string, never>;
+
+export default class App extends PureComponent<AppProps, AppState> {
   loader: ContentLoader;
 
-  constructor(props: {}) {
+  constructor(props: AppProps) {
     super(props);
     this.state = {};
     this.loader = new ContentLoader();
