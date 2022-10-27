@@ -1,5 +1,5 @@
-import LRU from './LRU.js';
-import { assertTrue } from './util.js';
+import LRU from './LRU';
+import { assertTrue } from './util';
 
 export type ResultCB<V> = (arr: Map<number, V>) => void;
 export type ContentCB<V, R> = (ready: boolean, content: V | undefined) => R;

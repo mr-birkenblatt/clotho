@@ -1,5 +1,3 @@
-import { AssertionError } from 'assert';
-
 export function range(from: number, to?: number): number[] {
   if (to === undefined) {
     to = from;
@@ -24,7 +22,7 @@ export function json(resp: Response): Promise<any> {
 
 export function assertTrue(value: boolean): asserts value {
   if (!value) {
-    throw new AssertionError({ message: 'assertion was not true' });
+    throw new Error('assertion was not true');
   }
 }
 
@@ -33,20 +31,12 @@ export function assertEqual<T>(
   expected: T,
 ): asserts actual is T {
   if (actual !== expected) {
-    throw new AssertionError({
-      message: `${actual} !== ${expected}`,
-      actual,
-      expected,
-    });
+    throw new Error(`actual:${actual} !== expected:${expected}`);
   }
 }
 
 export function assertNotEqual(actual: unknown, expected: unknown): void {
   if (actual === expected) {
-    throw new AssertionError({
-      message: `${actual} === ${expected}`,
-      actual,
-      expected,
-    });
+    throw new Error(`actual:${actual} === expected:${expected}`);
   }
 }
