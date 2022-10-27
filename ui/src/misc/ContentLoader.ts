@@ -297,6 +297,11 @@ export default class ContentLoader {
     readyCb: ReadyCB,
   ): Link | undefined => {
     const loader = isGetParent ? this.parentLines : this.childLines;
-    return loader.get(name, index, (ready, content) => (ready ? content : undefined), readyCb);
+    return loader.get(
+      name,
+      index,
+      (ready, content) => (ready ? content : undefined),
+      readyCb,
+    );
   };
 } // ContentLoader

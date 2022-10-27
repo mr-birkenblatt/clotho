@@ -120,10 +120,7 @@ export default class App extends PureComponent<AppProps, AppState> {
     index: number,
     readyCb: ReadyCB,
   ): Link | undefined => {
-    return this.loader.getLink(
-      isParent, name, index,
-      readyCb,
-    );
+    return this.loader.getLink(isParent, name, index, readyCb);
   };
 
   renderLink = (
