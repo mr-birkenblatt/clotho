@@ -81,7 +81,7 @@ export default class App extends PureComponent {
       parentLineName,
       childLineName,
       parentIndex,
-      childIndex
+      childIndex,
     );
   };
 

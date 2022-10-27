@@ -11,6 +11,12 @@
       "error",
       "always",
       { "exceptAfterSingleLine": true }
+    ],
+    "@typescript-eslint/no-this-alias": [
+      "error",
+      {
+        "allowedNames": ["that"]
+      }
     ]
   },
   "extends": [

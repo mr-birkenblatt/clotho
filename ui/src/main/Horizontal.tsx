@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import { connect } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from '../misc/ContentLoader';
-import { ContentCB, ItemCB } from '../misc/GenericLoader';
+import { ItemCB } from '../misc/GenericLoader';
 import { range } from '../misc/util';
 import { AppDispatch, RootState } from '../store';
 import {
@@ -162,7 +162,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   componentDidMount(): void {
     this.componentDidUpdate(
       { currentLineIxs: undefined, currentLineFocus: undefined },
-      { offset: undefined, itemCount: undefined }
+      { offset: undefined, itemCount: undefined },
     );
   }
 
@@ -202,7 +202,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
 
   componentDidUpdate(
     prevProps: HorizontalProps | EmptyHorizontalProps,
-    prevState: HorizontalState | EmptyHorizontalState
+    prevState: HorizontalState | EmptyHorizontalState,
   ): void {
     const { lineName, currentLineIxs, currentLineFocus, itemWidth } =
       this.props;
@@ -307,10 +307,9 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const that = this;
 
     function createObserver(
-      ref: React.RefObject<HTMLDivElement>,
       index: number,
       current: HTMLDivElement,
-      currentRoot: HTMLDivElement
+      currentRoot: HTMLDivElement,
     ): IntersectionObserver {
       const observer = new IntersectionObserver(
         (entries) => {
@@ -326,7 +325,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           root: currentRoot,
           rootMargin: '0px',
           threshold: 1.0,
-        }
+        },
       );
       observer.observe(current);
       return observer;
@@ -340,12 +339,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           if (!this.activeView.has(realIx)) {
             this.activeView.set(
               realIx,
-              createObserver(
-                curRef,
-                realIx,
-                curRef.current,
-                this.rootBox.current
-              )
+              createObserver(realIx, curRef.current, this.rootBox.current),
             );
           }
         }
@@ -353,10 +347,9 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     }
     if (!this.lockedView && this.lockedRef.current && this.rootBox.current) {
       this.lockedView = createObserver(
-        this.lockedRef,
         -1,
         this.lockedRef.current,
-        this.rootBox.current
+        this.rootBox.current,
       );
     }
     return needViewsNew;
@@ -376,7 +369,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   getContent(
     isParent: boolean,
     lineName: string,
-    index: number
+    index: number,
   ): string | JSX.Element {
     const { getItem, locks } = this.props;
     const locked = locks[constructKey(lineName)];
@@ -393,7 +386,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
         }
         return `loading [${index}]`;
       },
-      this.requestRedraw
+      this.requestRedraw,
     );
   }
 
@@ -442,24 +435,31 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const locked = locks[constructKey(lineName)];
     const offShift = offset < 0 ? -offset : 0;
     return (
-      <Outer itemHeight={itemHeight} ref={this.rootBox}>
+      <Outer
+        itemHeight={itemHeight}
+        ref={this.rootBox}>
         <Overlay>
-          <NavButton buttonSize={buttonSize} onClick={this.handleLeft}>
+          <NavButton
+            buttonSize={buttonSize}
+            onClick={this.handleLeft}>
             &lt;
           </NavButton>
-          <NavButton buttonSize={buttonSize} onClick={this.handleRight}>
+          <NavButton
+            buttonSize={buttonSize}
+            onClick={this.handleRight}>
             &gt;
           </NavButton>
         </Overlay>
-        <Band itemWidth={itemWidth} ref={this.bandRef}>
+        <Band
+          itemWidth={itemWidth}
+          ref={this.bandRef}>
           {locked ? (
             <Item itemWidth={itemWidth}>
               <ItemContent
                 itemPadding={itemPadding}
                 itemWidth={itemWidth}
                 itemRadius={itemRadius}
-                ref={this.lockedRef}
-              >
+                ref={this.lockedRef}>
                 {this.getContent(isParent, lineName, -1)}
               </ItemContent>
             </Item>
@@ -468,17 +468,18 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           {range(itemCount - offShift).map((ix) => {
             const realIx = offset + ix + offShift;
             return (
-              <Item key={realIx} itemWidth={itemWidth}>
+              <Item
+                key={realIx}
+                itemWidth={itemWidth}>
                 <ItemContent
                   itemPadding={itemPadding}
                   itemWidth={itemWidth}
                   itemRadius={itemRadius}
-                  ref={this.activeRefs.get(realIx)}
-                >
+                  ref={this.activeRefs.get(realIx)}>
                   {this.getContent(
                     isParent,
                     lineName,
-                    this.adjustIndex(realIx)
+                    this.adjustIndex(realIx),
                   )}
                 </ItemContent>
               </Item>

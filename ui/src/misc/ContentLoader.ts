@@ -64,7 +64,7 @@ export default class ContentLoader {
     name: string,
     offset: number,
     limit: number,
-    resultCb: ResultCB<Link>
+    resultCb: ResultCB<Link>,
   ): void => {
     this.fetchLine(true, name, offset, limit, resultCb);
   };
@@ -73,7 +73,7 @@ export default class ContentLoader {
     name: string,
     offset: number,
     limit: number,
-    resultCb: ResultCB<Link>
+    resultCb: ResultCB<Link>,
   ): void => {
     this.fetchLine(false, name, offset, limit, resultCb);
   };
@@ -111,14 +111,14 @@ export default class ContentLoader {
               const entry = mapping.get(cur);
               if (entry === undefined) {
                 console.warn(
-                  `skipped contains superfluous elements: ${skipped}`
+                  `skipped contains superfluous elements: ${skipped}`,
                 );
               } else {
                 res.push(entry);
               }
               return res;
             }, []),
-            readyCb
+            readyCb,
           );
         } else {
           readyCb();
@@ -132,7 +132,7 @@ export default class ContentLoader {
     name: string,
     offset: number,
     limit: number,
-    resultCb: ResultCB<Link>
+    resultCb: ResultCB<Link>,
   ): void {
     const isHash = name[0] !== '!';
     const lineNum = isHash ? 0 : Math.floor(+name.slice(1) / 1000);
@@ -179,9 +179,9 @@ export default class ContentLoader {
                         votes: {},
                       },
                     ];
-                  })
-                )
-              )
+                  }),
+                ),
+              ),
             );
           }
         }
@@ -223,7 +223,7 @@ export default class ContentLoader {
               votes: link.votes,
             };
             return [ix + offset, res];
-          })
+          }),
         );
         const finalize = () => {
           if (links.length < limit && next > 0 && links.length > 0) {
@@ -234,7 +234,7 @@ export default class ContentLoader {
               limit - links.length,
               (rec: Map<number, Link>) => {
                 resultCb(padResult(union(res, rec)));
-              }
+              },
             );
           } else {
             resultCb(padResult(res));
@@ -261,7 +261,7 @@ export default class ContentLoader {
     name: string,
     index: number,
     contentCb: ContentCB<Link, R>,
-    readyCb: ReadyCB
+    readyCb: ReadyCB,
   ): R {
     const loader = isGetParent ? this.parentLines : this.childLines;
     return loader.get(name, index, contentCb, readyCb);

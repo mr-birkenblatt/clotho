@@ -8,7 +8,7 @@ export function range(from: number, to?: number): number[] {
 
 export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
   return new Map(
-    Array.from(left.entries()).concat(Array.from(right.entries()))
+    Array.from(left.entries()).concat(Array.from(right.entries())),
   );
 }
 

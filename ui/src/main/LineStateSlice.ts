@@ -75,7 +75,7 @@ function lockLine(
   isParent: boolean,
   lineName: string,
   adjustedIndex: number,
-  skipItem: boolean
+  skipItem: boolean,
 ) {
   const key = constructKey(lineName);
   const { currentLineIxs, currentLineFocus, locks } = state;

@@ -55,9 +55,16 @@ export default class RequireLogin extends PureComponent<
           <form onSubmit={this.handleSubmit}>
             <label>
               Name:&nbsp;
-              <input type="text" value={value} onChange={this.handleChange} />
+              <input
+                type="text"
+                value={value}
+                onChange={this.handleChange}
+              />
             </label>
-            <input type="submit" value="Submit" />
+            <input
+              type="submit"
+              value="Submit"
+            />
           </form>
         ) : (
           <p>

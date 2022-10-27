@@ -8,13 +8,13 @@ export type ItemCB<V, R> = (
   name: string,
   index: number,
   contentCb: ContentCB<V, R>,
-  readyCb: ReadyCB
+  readyCb: ReadyCB,
 ) => R;
 type LoadCB<V> = (
   name: string,
   offset: number,
   size: number,
-  resultCb: ResultCB<V>
+  resultCb: ResultCB<V>,
 ) => void;
 
 export default class GenericLoader<V> {
@@ -43,7 +43,7 @@ export default class GenericLoader<V> {
     name: string,
     index: number,
     contentCb: ContentCB<V, R>,
-    readyCb: ReadyCB
+    readyCb: ReadyCB,
   ): R {
     const line = this.getLine(name);
     const res = line.get(index);

@@ -257,7 +257,7 @@ class Horizontal extends PureComponent {
           root: that.rootBox.current,
           rootMargin: '0px',
           threshold: 1.0,
-        }
+        },
       );
       observer.observe(ref.current);
       return observer;
@@ -307,7 +307,7 @@ class Horizontal extends PureComponent {
         }
         return `loading [${index}]`;
       },
-      this.requestRedraw
+      this.requestRedraw,
     );
   }
 
@@ -356,24 +356,31 @@ class Horizontal extends PureComponent {
     const locked = locks[constructKey(lineName)];
     const offShift = offset < 0 ? -offset : 0;
     return (
-      <Outer itemHeight={itemHeight} ref={this.rootBox}>
+      <Outer
+        itemHeight={itemHeight}
+        ref={this.rootBox}>
         <Overlay>
-          <NavButton buttonSize={buttonSize} onClick={this.handleLeft}>
+          <NavButton
+            buttonSize={buttonSize}
+            onClick={this.handleLeft}>
             &lt;
           </NavButton>
-          <NavButton buttonSize={buttonSize} onClick={this.handleRight}>
+          <NavButton
+            buttonSize={buttonSize}
+            onClick={this.handleRight}>
             &gt;
           </NavButton>
         </Overlay>
-        <Band itemWidth={itemWidth} ref={this.bandRef}>
+        <Band
+          itemWidth={itemWidth}
+          ref={this.bandRef}>
           {locked ? (
             <Item itemWidth={itemWidth}>
               <ItemContent
                 itemPadding={itemPadding}
                 itemWidth={itemWidth}
                 itemRadius={itemRadius}
-                ref={this.lockedRef}
-              >
+                ref={this.lockedRef}>
                 {this.getContent(isParent, lineName, -1)}
               </ItemContent>
             </Item>
@@ -382,17 +389,18 @@ class Horizontal extends PureComponent {
           {[...Array(itemCount - offShift).keys()].map((ix) => {
             const realIx = offset + ix + offShift;
             return (
-              <Item key={realIx} itemWidth={itemWidth}>
+              <Item
+                key={realIx}
+                itemWidth={itemWidth}>
                 <ItemContent
                   itemPadding={itemPadding}
                   itemWidth={itemWidth}
                   itemRadius={itemRadius}
-                  ref={this.activeRefs[realIx]}
-                >
+                  ref={this.activeRefs[realIx]}>
                   {this.getContent(
                     isParent,
                     lineName,
-                    this.adjustIndex(realIx)
+                    this.adjustIndex(realIx),
                   )}
                 </ItemContent>
               </Item>

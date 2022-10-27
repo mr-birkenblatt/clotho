@@ -6,9 +6,11 @@
   "singleQuote": true,
   "quoteProps": "consistent",
   "jsxSingleQuote": false,
-  "trailingComma": "es5",
+  "trailingComma": "all",
   "bracketSpacing": true,
-  "jsxBracketSameLine": true,
+  "bracketSameLine": true,
   "arrowParens": "always",
-  "embeddedLanguageFormatting": "auto"
+  "embeddedLanguageFormatting": "auto",
+  "endOfLine": "lf",
+  "singleAttributePerLine": true
 }
