@@ -1,15 +1,15 @@
-import React, { PureComponent } from "react";
+import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { connect } from "react-redux";
-import styled from "styled-components";
-import { constructKey, focusAt, setHCurrentIx } from "./LineStateSlice";
+import { connect } from 'react-redux';
+import styled from 'styled-components';
+import { constructKey, focusAt, setHCurrentIx } from './LineStateSlice';
 
 const Outer = styled.div`
   position: relative;
   top: 0;
   left: 0;
   width: 100%;
-  height: ${props => props.itemHeight}px;
+  height: ${(props) => props.itemHeight}px;
   // background-color: red;
 `;
 
@@ -28,7 +28,7 @@ const Overlay = styled.div`
 `;
 
 const NavButton = styled.button`
-  width: ${props => props.buttonSize}px;
+  width: ${(props) => props.buttonSize}px;
   height: 100%;
   pointer-events: auto;
 `;
@@ -36,7 +36,7 @@ const NavButton = styled.button`
 const Band = styled.div`
   display: inline-block;
   height: 100%;
-  width: ${props => props.itemWidth}px;
+  width: ${(props) => props.itemWidth}px;
   // background-color: green;
   white-space: nowrap;
   overflow-x: scroll;
@@ -53,7 +53,7 @@ const Band = styled.div`
 
 const Item = styled.span`
   display: inline-block;
-  width: ${props => props.itemWidth}px;
+  width: ${(props) => props.itemWidth}px;
   height: 100%;
   scroll-snap-align: center;
   // background-color: cornflowerblue;
@@ -65,17 +65,17 @@ const ItemContent = styled.div`
   align-items: center;
   justify-content: center;
   text-align: center;
-  width: ${props => props.itemWidth - 2 * props.itemPadding}px;
-  height: calc(100% - ${props => 2 * props.itemPadding}px);
-  margin: ${props => props.itemPadding}px auto;
-  border-radius: ${props => props.itemRadius}px;
-  padding: ${props => -props.itemPadding}px;
+  width: ${(props) => props.itemWidth - 2 * props.itemPadding}px;
+  height: calc(100% - ${(props) => 2 * props.itemPadding}px);
+  margin: ${(props) => props.itemPadding}px auto;
+  border-radius: ${(props) => props.itemRadius}px;
+  padding: ${(props) => -props.itemPadding}px;
   // background-color: pink;
 `;
 
 const Pad = styled.div`
   display: inline-block;
-  width: ${props => props.padSize}px;
+  width: ${(props) => props.padSize}px;
   height: 1px;
 `;
 
@@ -107,7 +107,7 @@ class Horizontal extends PureComponent {
 
   componentWillUnmount() {
     if (this.bandRef.current) {
-      this.bandRef.current.removeEventListener("scroll", this.handleScroll);
+      this.bandRef.current.removeEventListener('scroll', this.handleScroll);
     }
   }
 
@@ -117,7 +117,7 @@ class Horizontal extends PureComponent {
       return;
     }
     let startTime = null;
-    let startScroll = band.scrollLeft;
+    const startScroll = band.scrollLeft;
     const that = this;
 
     function checkScroll(time) {
@@ -136,15 +136,11 @@ class Horizontal extends PureComponent {
     }
 
     requestAnimationFrame(checkScroll);
-  }
+  };
 
   componentDidUpdate(prevProps, prevState) {
-    const {
-      lineName,
-      currentLineIxs,
-      currentLineFocus,
-      itemWidth,
-    } = this.props;
+    const { lineName, currentLineIxs, currentLineFocus, itemWidth } =
+      this.props;
     const key = constructKey(lineName);
     const currentIx = currentLineIxs[key];
     const lineFocus = currentLineFocus[key];
@@ -163,8 +159,9 @@ class Horizontal extends PureComponent {
     } = this.state;
 
     if (!scrollInit && this.bandRef.current) {
-      this.bandRef.current.addEventListener(
-        "scroll", this.handleScroll, { passive: true });
+      this.bandRef.current.addEventListener('scroll', this.handleScroll, {
+        passive: true,
+      });
       this.setState({
         scrollInit: true,
       });
@@ -219,7 +216,8 @@ class Horizontal extends PureComponent {
     const { offset, itemCount, needViews } = this.state;
     let needViewsNew = needViews;
     if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
-      Object.keys(this.activeView).forEach(realIx => {  // make map
+      Object.keys(this.activeView).forEach((realIx) => {
+        // make map
         if (realIx < offset || realIx >= offset + itemCount) {
           if (this.activeView[realIx]) {
             this.activeView[realIx].disconnect();
@@ -227,12 +225,13 @@ class Horizontal extends PureComponent {
           delete this.activeView[realIx];
         }
       });
-      Object.keys(this.activeRefs).forEach(realIx => {  // make map
+      Object.keys(this.activeRefs).forEach((realIx) => {
+        // make map
         if (realIx < offset || realIx >= offset + itemCount) {
           delete this.activeRefs[realIx];
         }
       });
-      [...Array(itemCount).keys()].forEach(ix => {
+      [...Array(itemCount).keys()].forEach((ix) => {
         const realIx = offset + ix;
         if (!this.activeRefs[realIx]) {
           this.activeRefs[realIx] = React.createRef();
@@ -244,25 +243,28 @@ class Horizontal extends PureComponent {
     const that = this;
 
     function createObserver(ref, index) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) {
-            return;
-          }
-          const { isParent, lineName, dispatch } = that.props;
-          dispatch(setHCurrentIx({isParent, lineName, index}));
-        });
-      }, {
-        root: that.rootBox.current,
-        rootMargin: "0px",
-        threshold: 1.0,
-      });
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) {
+              return;
+            }
+            const { isParent, lineName, dispatch } = that.props;
+            dispatch(setHCurrentIx({ isParent, lineName, index }));
+          });
+        },
+        {
+          root: that.rootBox.current,
+          rootMargin: '0px',
+          threshold: 1.0,
+        }
+      );
       observer.observe(ref.current);
       return observer;
     }
 
     if (needViews) {
-      [...Array(itemCount).keys()].forEach(ix => {
+      [...Array(itemCount).keys()].forEach((ix) => {
         const realIx = offset + ix;
         const curRef = this.activeRefs[realIx];
         if (curRef.current && this.rootBox.current) {
@@ -282,9 +284,9 @@ class Horizontal extends PureComponent {
     const item = focusIx < 0 ? this.lockedRef : this.activeRefs[focusIx];
     if (item && item.current) {
       item.current.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "nearest",
-        inline: "center",
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'nearest',
+        inline: 'center',
       });
     }
   }
@@ -295,20 +297,26 @@ class Horizontal extends PureComponent {
     if (locked && index < 0) {
       return this.getContent(locked.isParent, locked.lineName, locked.index);
     }
-    return getItem(isParent, lineName, index, (hasItem, content) => {
-      if (hasItem) {
-        return (<ReactMarkdown>{content}</ReactMarkdown>);
-      }
-      return `loading [${index}]`;
-    }, this.requestRedraw);
+    return getItem(
+      isParent,
+      lineName,
+      index,
+      (hasItem, content) => {
+        if (hasItem) {
+          return <ReactMarkdown>{content}</ReactMarkdown>;
+        }
+        return `loading [${index}]`;
+      },
+      this.requestRedraw
+    );
   }
 
   adjustIndex(index) {
     const { lineName, locks } = this.props;
     const { offset, itemCount } = this.state;
     const locked = locks[constructKey(lineName)];
-    const lockedIx = locked && locked.skipItem
-      ? locked.index : offset + itemCount;
+    const lockedIx =
+      locked && locked.skipItem ? locked.index : offset + itemCount;
     return index + (lockedIx > index ? 0 : 1);
   }
 
@@ -317,21 +325,21 @@ class Horizontal extends PureComponent {
     this.setState({
       redraw: !redraw,
     });
-  }
+  };
 
   handleLeft = (event) => {
     const { isParent, lineName, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineName)];
     dispatch(focusAt({ isParent, lineName, index: currentIx - 1 }));
     event.preventDefault();
-  }
+  };
 
   handleRight = (event) => {
     const { isParent, lineName, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineName)];
     dispatch(focusAt({ isParent, lineName, index: currentIx + 1 }));
     event.preventDefault();
-  }
+  };
 
   render() {
     const {
@@ -358,40 +366,38 @@ class Horizontal extends PureComponent {
           </NavButton>
         </Overlay>
         <Band itemWidth={itemWidth} ref={this.bandRef}>
-          { locked ? (
-            <Item
-                itemWidth={itemWidth}>
+          {locked ? (
+            <Item itemWidth={itemWidth}>
               <ItemContent
                 itemPadding={itemPadding}
                 itemWidth={itemWidth}
                 itemRadius={itemRadius}
-                ref={this.lockedRef}>
-              {this.getContent(isParent, lineName, -1)}
+                ref={this.lockedRef}
+              >
+                {this.getContent(isParent, lineName, -1)}
               </ItemContent>
             </Item>
-          ) : null }
+          ) : null}
           <Pad padSize={padSize} />
-          {
-            [...Array(itemCount - offShift).keys()].map(ix => {
-              const realIx = offset + ix + offShift;
-              return (
-                <Item
-                    key={realIx}
-                    itemWidth={itemWidth}>
-                  <ItemContent
-                    itemPadding={itemPadding}
-                    itemWidth={itemWidth}
-                    itemRadius={itemRadius}
-                    ref={this.activeRefs[realIx]}>
-                  {
-                    this.getContent(
-                      isParent, lineName, this.adjustIndex(realIx))
-                  }
-                  </ItemContent>
-                </Item>
-              );
-            })
-          }
+          {[...Array(itemCount - offShift).keys()].map((ix) => {
+            const realIx = offset + ix + offShift;
+            return (
+              <Item key={realIx} itemWidth={itemWidth}>
+                <ItemContent
+                  itemPadding={itemPadding}
+                  itemWidth={itemWidth}
+                  itemRadius={itemRadius}
+                  ref={this.activeRefs[realIx]}
+                >
+                  {this.getContent(
+                    isParent,
+                    lineName,
+                    this.adjustIndex(realIx)
+                  )}
+                </ItemContent>
+              </Item>
+            );
+          })}
         </Band>
       </Outer>
     );

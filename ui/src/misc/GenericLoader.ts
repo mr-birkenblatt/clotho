@@ -3,7 +3,13 @@ import LRU from './LRU.js';
 export type ResultCB<V> = (arr: Map<number, V>) => void;
 export type ContentCB<V, R> = (ready: boolean, content: V | undefined) => R;
 export type ReadyCB = () => void;
-export type ItemCB<V, R> = (isGetParent: boolean, name: string, index: number, contentCb: ContentCB<V, R>, readyCb: ReadyCB) => R;
+export type ItemCB<V, R> = (
+  isGetParent: boolean,
+  name: string,
+  index: number,
+  contentCb: ContentCB<V, R>,
+  readyCb: ReadyCB
+) => R;
 type LoadCB<V> = (
   name: string,
   offset: number,

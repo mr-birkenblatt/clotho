@@ -23,14 +23,14 @@ type AddAction = {
   payload: {
     lineName: string;
     isBack: boolean;
-  }
+  };
 };
 
 type IndexAction = {
   payload: {
     lineName: string;
     index: number;
-  }
+  };
 };
 
 type LockAction = {
@@ -70,7 +70,13 @@ export function constructKey(lineName: string): string {
   return `${lineName}`;
 }
 
-function lockLine(state: LineState, isParent: boolean, lineName: string, adjustedIndex: number, skipItem: boolean) {
+function lockLine(
+  state: LineState,
+  isParent: boolean,
+  lineName: string,
+  adjustedIndex: number,
+  skipItem: boolean
+) {
   const key = constructKey(lineName);
   const { currentLineIxs, currentLineFocus, locks } = state;
   if (currentLineIxs[key] < 0) {
@@ -94,8 +100,8 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
     currentLineFocus: {},
     locks: {},
     vOrder: [
-      "!0",
-      "9709aa3742acc01b0247eac2968ae4e4605ef0814c541c1df418309b76fce89d",
+      '!0',
+      '9709aa3742acc01b0247eac2968ae4e4605ef0814c541c1df418309b76fce89d',
     ],
     vCurrentIx: 1,
     vCorrection: 0,

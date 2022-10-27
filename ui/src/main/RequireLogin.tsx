@@ -1,4 +1,4 @@
-import React, { PureComponent } from "react";
+import React, { PureComponent } from 'react';
 
 type RequireLoginProps = {
   value: string;
@@ -6,56 +6,56 @@ type RequireLoginProps = {
 };
 
 type RequireLoginState = {
-  value: string,
-  user: string | null,
-  token: string | null,
+  value: string;
+  user: string | null;
+  token: string | null;
 };
 
-export default class RequireLogin extends PureComponent<RequireLoginProps, RequireLoginState> {
+export default class RequireLogin extends PureComponent<
+  RequireLoginProps,
+  RequireLoginState
+> {
   constructor(props: RequireLoginProps) {
     super(props);
     this.state = {
-      value: "",
-      user: localStorage.getItem("user"),
-      token: localStorage.getItem("token"),
+      value: '',
+      user: localStorage.getItem('user'),
+      token: localStorage.getItem('token'),
     };
   }
 
   logout = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     this.setState({
       user: null,
       token: null,
     });
     event.preventDefault();
-  }
+  };
 
   handleChange = (event: React.FormEvent<HTMLInputElement>) => {
-    this.setState({value: event.currentTarget.value});
-  }
+    this.setState({ value: event.currentTarget.value });
+  };
 
   handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     const { value } = this.state;
     this.setState({
       user: value,
-    })
-    localStorage.setItem("user", value);
+    });
+    localStorage.setItem('user', value);
     event.preventDefault();
-  }
+  };
 
   render() {
     const { value, user } = this.state;
     return (
       <div>
-        { !user ? (
+        {!user ? (
           <form onSubmit={this.handleSubmit}>
             <label>
               Name:&nbsp;
-              <input
-                type="text"
-                value={value}
-                onChange={this.handleChange} />
+              <input type="text" value={value} onChange={this.handleChange} />
             </label>
             <input type="submit" value="Submit" />
           </form>
@@ -64,7 +64,7 @@ export default class RequireLogin extends PureComponent<RequireLoginProps, Requi
             Hello {user}
             <button onClick={this.logout}>Logout</button>
           </p>
-        ) }
+        )}
       </div>
     );
   }

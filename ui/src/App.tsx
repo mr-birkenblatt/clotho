@@ -40,7 +40,6 @@ const MainColumn = styled.div`
   overflow: hidden;
 `;
 
-
 export default class App extends PureComponent {
   loader: ContentLoader;
 
@@ -52,7 +51,7 @@ export default class App extends PureComponent {
 
   getItem = (isParent, name, index, contentCb, readyCb) => {
     return this.loader.getItem(isParent, name, index, contentCb, readyCb);
-  }
+  };
 
   getVItem = (isParent, lineName, height) => {
     return (
@@ -64,31 +63,35 @@ export default class App extends PureComponent {
         buttonSize={50}
         isParent={isParent}
         lineName={lineName}
-        getItem={this.getItem} />
+        getItem={this.getItem}
+      />
     );
-  }
+  };
 
   getChildLine = (lineName, cb) => {
     this.loader.getChild(lineName, cb);
-  }
+  };
 
   getParentLine = (lineName, cb) => {
     this.loader.getParent(lineName, cb);
-  }
+  };
 
   getLinkItems = (parentLineName, childLineName, parentIndex, childIndex) => {
     return this.loader.getLinkInfo(
       parentLineName,
       childLineName,
       parentIndex,
-      childIndex);
-  }
+      childIndex
+    );
+  };
 
   renderLinkItem = (link) => {
     return (
-      <span>{link.key}: {link.count}</span>
+      <span>
+        {link.key}: {link.count}
+      </span>
     );
-  }
+  };
 
   render() {
     return (
@@ -105,7 +108,8 @@ export default class App extends PureComponent {
             renderLinkItem={this.renderLinkItem}
             height={450}
             radius={10}
-            buttonSize={50} />
+            buttonSize={50}
+          />
         </MainColumn>
       </Main>
     );

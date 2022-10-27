@@ -1,19 +1,24 @@
-import React, { PureComponent } from "react";
+import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { connect } from "react-redux";
-import styled from "styled-components";
-import { Link } from "../misc/ContentLoader";
-import { ContentCB, ItemCB } from "../misc/GenericLoader";
-import { range } from "../misc/util";
-import { AppDispatch, RootState } from "../store";
-import { constructKey, focusAt, LineLock, setHCurrentIx } from "./LineStateSlice";
+import { connect } from 'react-redux';
+import styled from 'styled-components';
+import { Link } from '../misc/ContentLoader';
+import { ContentCB, ItemCB } from '../misc/GenericLoader';
+import { range } from '../misc/util';
+import { AppDispatch, RootState } from '../store';
+import {
+  constructKey,
+  focusAt,
+  LineLock,
+  setHCurrentIx,
+} from './LineStateSlice';
 
 const Outer = styled.div`
   position: relative;
   top: 0;
   left: 0;
   width: 100%;
-  height: ${(props: {itemHeight: number}) => props.itemHeight}px;
+  height: ${(props: { itemHeight: number }) => props.itemHeight}px;
   // background-color: red;
 `;
 
@@ -32,7 +37,7 @@ const Overlay = styled.div`
 `;
 
 const NavButton = styled.button`
-  width: ${(props: {buttonSize: number}) => props.buttonSize}px;
+  width: ${(props: { buttonSize: number }) => props.buttonSize}px;
   height: 100%;
   pointer-events: auto;
 `;
@@ -40,7 +45,7 @@ const NavButton = styled.button`
 const Band = styled.div`
   display: inline-block;
   height: 100%;
-  width: ${(props: {itemWidth: number}) => props.itemWidth}px;
+  width: ${(props: { itemWidth: number }) => props.itemWidth}px;
   // background-color: green;
   white-space: nowrap;
   overflow-x: scroll;
@@ -57,7 +62,7 @@ const Band = styled.div`
 
 const Item = styled.span`
   display: inline-block;
-  width: ${(props: {itemWidth: number}) => props.itemWidth}px;
+  width: ${(props: { itemWidth: number }) => props.itemWidth}px;
   height: 100%;
   scroll-snap-align: center;
   // background-color: cornflowerblue;
@@ -69,17 +74,17 @@ const ItemContent = styled.div<ItemContentProps>`
   align-items: center;
   justify-content: center;
   text-align: center;
-  width: ${props => props.itemWidth - 2 * props.itemPadding}px;
-  height: calc(100% - ${props => 2 * props.itemPadding}px);
-  margin: ${props => props.itemPadding}px auto;
-  border-radius: ${props => props.itemRadius}px;
-  padding: ${props => -props.itemPadding}px;
+  width: ${(props) => props.itemWidth - 2 * props.itemPadding}px;
+  height: calc(100% - ${(props) => 2 * props.itemPadding}px);
+  margin: ${(props) => props.itemPadding}px auto;
+  border-radius: ${(props) => props.itemRadius}px;
+  padding: ${(props) => -props.itemPadding}px;
   // background-color: pink;
 `;
 
 const Pad = styled.div`
   display: inline-block;
-  width: ${(props: {padSize: number}) => props.padSize}px;
+  width: ${(props: { padSize: number }) => props.padSize}px;
   height: 1px;
 `;
 
@@ -151,16 +156,19 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     this.lockedView = null;
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
-    this.updateViews({offset: undefined, itemCount: undefined});
+    this.updateViews({ offset: undefined, itemCount: undefined });
   }
 
   componentDidMount(): void {
-    this.componentDidUpdate({currentLineIxs: undefined, currentLineFocus: undefined}, {offset: undefined, itemCount: undefined});
+    this.componentDidUpdate(
+      { currentLineIxs: undefined, currentLineFocus: undefined },
+      { offset: undefined, itemCount: undefined }
+    );
   }
 
   componentWillUnmount(): void {
     if (this.bandRef.current) {
-      this.bandRef.current.removeEventListener("scroll", this.handleScroll);
+      this.bandRef.current.removeEventListener('scroll', this.handleScroll);
     }
   }
 
@@ -171,7 +179,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     }
     const band = maybeBand;
     let startTime: number | undefined = undefined;
-    let startScroll = band.scrollLeft;
+    const startScroll = band.scrollLeft;
     const that = this;
 
     function checkScroll(time: number) {
@@ -190,15 +198,14 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     }
 
     requestAnimationFrame(checkScroll);
-  }
+  };
 
-  componentDidUpdate(prevProps: HorizontalProps | EmptyHorizontalProps, prevState: HorizontalState | EmptyHorizontalState): void {
-    const {
-      lineName,
-      currentLineIxs,
-      currentLineFocus,
-      itemWidth,
-    } = this.props;
+  componentDidUpdate(
+    prevProps: HorizontalProps | EmptyHorizontalProps,
+    prevState: HorizontalState | EmptyHorizontalState
+  ): void {
+    const { lineName, currentLineIxs, currentLineFocus, itemWidth } =
+      this.props;
     const key = constructKey(lineName);
     const currentIx = currentLineIxs[key];
     const lineFocus = currentLineFocus[key];
@@ -217,8 +224,9 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     } = this.state;
 
     if (!scrollInit && this.bandRef.current) {
-      this.bandRef.current.addEventListener(
-        "scroll", this.handleScroll, { passive: true });
+      this.bandRef.current.addEventListener('scroll', this.handleScroll, {
+        passive: true,
+      });
       this.setState({
         scrollInit: true,
       });
@@ -273,7 +281,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const { offset, itemCount, needViews } = this.state;
     let needViewsNew = needViews;
     if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
-      Array.from(this.activeView.keys()).forEach(realIx => {
+      Array.from(this.activeView.keys()).forEach((realIx) => {
         if (realIx < offset || realIx >= offset + itemCount) {
           const obs = this.activeView.get(realIx);
           if (obs) {
@@ -282,12 +290,12 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           this.activeView.delete(realIx);
         }
       });
-      Array.from(this.activeRefs.keys()).forEach(realIx => {
+      Array.from(this.activeRefs.keys()).forEach((realIx) => {
         if (realIx < offset || realIx >= offset + itemCount) {
           this.activeRefs.delete(realIx);
         }
       });
-      range(itemCount).forEach(ix => {
+      range(itemCount).forEach((ix) => {
         const realIx = offset + ix;
         if (!this.activeRefs.has(realIx)) {
           this.activeRefs.set(realIx, React.createRef());
@@ -298,37 +306,58 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
 
     const that = this;
 
-    function createObserver(ref: React.RefObject<HTMLDivElement>, index: number, current: HTMLDivElement, currentRoot: HTMLDivElement): IntersectionObserver {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) {
-            return;
-          }
-          const { lineName, dispatch } = that.props;
-          dispatch(setHCurrentIx({lineName, index}));
-        });
-      }, {
-        root: currentRoot,
-        rootMargin: "0px",
-        threshold: 1.0,
-      });
+    function createObserver(
+      ref: React.RefObject<HTMLDivElement>,
+      index: number,
+      current: HTMLDivElement,
+      currentRoot: HTMLDivElement
+    ): IntersectionObserver {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) {
+              return;
+            }
+            const { lineName, dispatch } = that.props;
+            dispatch(setHCurrentIx({ lineName, index }));
+          });
+        },
+        {
+          root: currentRoot,
+          rootMargin: '0px',
+          threshold: 1.0,
+        }
+      );
       observer.observe(current);
       return observer;
     }
 
     if (needViews) {
-      range(itemCount).forEach(ix => {
+      range(itemCount).forEach((ix) => {
         const realIx = offset + ix;
         const curRef = this.activeRefs.get(realIx);
         if (curRef && curRef.current && this.rootBox.current) {
           if (!this.activeView.has(realIx)) {
-            this.activeView.set(realIx, createObserver(curRef, realIx, curRef.current, this.rootBox.current));
+            this.activeView.set(
+              realIx,
+              createObserver(
+                curRef,
+                realIx,
+                curRef.current,
+                this.rootBox.current
+              )
+            );
           }
         }
       });
     }
     if (!this.lockedView && this.lockedRef.current && this.rootBox.current) {
-      this.lockedView = createObserver(this.lockedRef, -1, this.lockedRef.current, this.rootBox.current);
+      this.lockedView = createObserver(
+        this.lockedRef,
+        -1,
+        this.lockedRef.current,
+        this.rootBox.current
+      );
     }
     return needViewsNew;
   }
@@ -337,33 +366,43 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const item = focusIx < 0 ? this.lockedRef : this.activeRefs.get(focusIx);
     if (item && item.current) {
       item.current.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "nearest",
-        inline: "center",
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'nearest',
+        inline: 'center',
       });
     }
   }
 
-  getContent(isParent: boolean, lineName: string, index: number): string | JSX.Element {
+  getContent(
+    isParent: boolean,
+    lineName: string,
+    index: number
+  ): string | JSX.Element {
     const { getItem, locks } = this.props;
     const locked = locks[constructKey(lineName)];
     if (locked && index < 0) {
       return this.getContent(locked.isParent, locked.lineName, locked.index);
     }
-    return getItem(isParent, lineName, index, (hasItem, content) => {
-      if (hasItem && content !== undefined && content.msg !== undefined) {
-        return (<ReactMarkdown>{content.msg}</ReactMarkdown>);
-      }
-      return `loading [${index}]`;
-    }, this.requestRedraw);
+    return getItem(
+      isParent,
+      lineName,
+      index,
+      (hasItem, content) => {
+        if (hasItem && content !== undefined && content.msg !== undefined) {
+          return <ReactMarkdown>{content.msg}</ReactMarkdown>;
+        }
+        return `loading [${index}]`;
+      },
+      this.requestRedraw
+    );
   }
 
   adjustIndex(index: number): number {
     const { lineName, locks } = this.props;
     const { offset, itemCount } = this.state;
     const locked = locks[constructKey(lineName)];
-    const lockedIx = locked && locked.skipItem
-      ? locked.index : offset + itemCount;
+    const lockedIx =
+      locked && locked.skipItem ? locked.index : offset + itemCount;
     return index + (lockedIx > index ? 0 : 1);
   }
 
@@ -372,21 +411,21 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     this.setState({
       redraw: !redraw,
     });
-  }
+  };
 
   handleLeft = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { lineName, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineName)];
     dispatch(focusAt({ lineName, index: currentIx - 1 }));
     event.preventDefault();
-  }
+  };
 
   handleRight = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { lineName, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineName)];
     dispatch(focusAt({ lineName, index: currentIx + 1 }));
     event.preventDefault();
-  }
+  };
 
   render() {
     const {
@@ -413,40 +452,38 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           </NavButton>
         </Overlay>
         <Band itemWidth={itemWidth} ref={this.bandRef}>
-          { locked ? (
-            <Item
-                itemWidth={itemWidth}>
+          {locked ? (
+            <Item itemWidth={itemWidth}>
               <ItemContent
                 itemPadding={itemPadding}
                 itemWidth={itemWidth}
                 itemRadius={itemRadius}
-                ref={this.lockedRef}>
-              {this.getContent(isParent, lineName, -1)}
+                ref={this.lockedRef}
+              >
+                {this.getContent(isParent, lineName, -1)}
               </ItemContent>
             </Item>
-          ) : null }
+          ) : null}
           <Pad padSize={padSize} />
-          {
-            range(itemCount - offShift).map(ix => {
-              const realIx = offset + ix + offShift;
-              return (
-                <Item
-                    key={realIx}
-                    itemWidth={itemWidth}>
-                  <ItemContent
-                    itemPadding={itemPadding}
-                    itemWidth={itemWidth}
-                    itemRadius={itemRadius}
-                    ref={this.activeRefs.get(realIx)}>
-                  {
-                    this.getContent(
-                      isParent, lineName, this.adjustIndex(realIx))
-                  }
-                  </ItemContent>
-                </Item>
-              );
-            })
-          }
+          {range(itemCount - offShift).map((ix) => {
+            const realIx = offset + ix + offShift;
+            return (
+              <Item key={realIx} itemWidth={itemWidth}>
+                <ItemContent
+                  itemPadding={itemPadding}
+                  itemWidth={itemWidth}
+                  itemRadius={itemRadius}
+                  ref={this.activeRefs.get(realIx)}
+                >
+                  {this.getContent(
+                    isParent,
+                    lineName,
+                    this.adjustIndex(realIx)
+                  )}
+                </ItemContent>
+              </Item>
+            );
+          })}
         </Band>
       </Outer>
     );
