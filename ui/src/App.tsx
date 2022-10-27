@@ -1,9 +1,10 @@
 import React, { PureComponent } from 'react';
 // import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
-import ContentLoader from './misc/ContentLoader';
+import ContentLoader, { Link } from './misc/ContentLoader';
 import Horizontal from './main/Horizontal';
 import Vertical from './main/Vertical';
+import { ContentCB, ReadyCB } from './misc/GenericLoader';
 
 const Main = styled.div`
   text-align: center;
@@ -40,20 +41,36 @@ const MainColumn = styled.div`
   overflow: hidden;
 `;
 
-export default class App extends PureComponent {
+const ItemMidContent = styled.div<ItemMidContentProps>`
+  display: flex;
+  height: ${props => props.buttonSize}px;
+  background-color: green;
+  padding: ${props => props.radius}px;
+  border-radius: ${props => props.radius}px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+`;
+
+type ItemMidContentProps = {
+  buttonSize: number;
+  radius: number;
+};
+
+export default class App extends PureComponent<{}, {}> {
   loader: ContentLoader;
 
-  constructor(props) {
+  constructor(props: {}) {
     super(props);
     this.state = {};
     this.loader = new ContentLoader();
   }
 
-  getItem = (isParent, name, index, contentCb, readyCb) => {
+  getItem = (isParent: boolean, name: string, index: number, contentCb: ContentCB<Link, string | JSX.Element>, readyCb: ReadyCB): string | JSX.Element => {
     return this.loader.getItem(isParent, name, index, contentCb, readyCb);
   };
 
-  getVItem = (isParent, lineName, height) => {
+  getVItem = (isParent: boolean, lineName: string, height: number): JSX.Element => {
     return (
       <Horizontal
         itemWidth={450}
@@ -68,28 +85,38 @@ export default class App extends PureComponent {
     );
   };
 
-  getChildLine = (lineName, cb) => {
-    this.loader.getChild(lineName, cb);
+  getChildLine = (lineName: string, callback: (child: string) => void): void => {
+    this.loader.getChildLine(lineName, callback);
   };
 
-  getParentLine = (lineName, cb) => {
-    this.loader.getParent(lineName, cb);
+  getParentLine = (lineName: string, callback: (parent: string) => void): void => {
+    this.loader.getParentLine(lineName, callback);
   };
 
-  getLinkItems = (parentLineName, childLineName, parentIndex, childIndex) => {
-    return this.loader.getLinkInfo(
+  getLink = (parentLineName: string, childLineName: string, parentIndex: number, childIndex: number, readyCb: ReadyCB): Link | undefined => {
+    return this.loader.getLink(
       parentLineName,
       childLineName,
       parentIndex,
       childIndex,
+      readyCb,
     );
   };
 
-  renderLinkItem = (link) => {
+  renderLink = (link: Link, buttonSize: number, radius: number): JSX.Element => {
     return (
-      <span>
-        {link.key}: {link.count}
-      </span>
+      <div>
+        <div>{link.user}: {link.first}</div>
+      <div>{
+        Object.keys(link.votes).map((voteName) => (
+          <ItemMidContent buttonSize={buttonSize}
+          radius={radius} key={voteName}>
+        <span >
+          {voteName}: {link.votes[voteName]}
+        </span>
+        </ItemMidContent>))
+        }</div>
+      </div>
     );
   };
 
@@ -104,8 +131,8 @@ export default class App extends PureComponent {
             getItem={this.getVItem}
             getChildLine={this.getChildLine}
             getParentLine={this.getParentLine}
-            getLinkItems={this.getLinkItems}
-            renderLinkItem={this.renderLinkItem}
+            getLink={this.getLink}
+            renderLink={this.renderLink}
             height={450}
             radius={10}
             buttonSize={50}

@@ -1,46 +1,53 @@
-import React, { PureComponent } from 'react';
-import ReactMarkdown from 'react-markdown';
-import { connect } from 'react-redux';
-import styled from 'styled-components';
-import { constructKey, focusAt, setHCurrentIx } from './LineStateSlice';
+import React, { PureComponent } from "react";
+import { connect } from "react-redux";
+import styled from "styled-components";
+import { Link } from "../misc/ContentLoader";
+import { ReadyCB } from "../misc/GenericLoader";
+import { range } from "../misc/util";
+import { AppDispatch, RootState } from "../store";
+import {
+  constructKey,
+  setVCurrentIx,
+  addLine,
+  focusV,
+  LineLock,
+} from "./LineStateSlice";
 
 const Outer = styled.div`
   position: relative;
   top: 0;
   left: 0;
   width: 100%;
-  height: ${(props) => props.itemHeight}px;
-  // background-color: red;
+  height: 100%;
 `;
 
-const Overlay = styled.div`
-  height: 100%;
-  position: absolute;
-  left: 0;
+const NavButtonUp = styled.button<ButtonProps>`
+  position: fixed;
   top: 0;
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  width: 100%;
-  pointer-events: none;
+  right: 0;
+  width: ${props => props.buttonSize}px;
+  height: ${props => props.buttonSize}px;
+  pointer-events: auto;
   opacity: 0.8;
 `;
 
-const NavButton = styled.button`
-  width: ${(props) => props.buttonSize}px;
-  height: 100%;
+const NavButtonDown = styled.button<ButtonProps>`
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: ${props => props.buttonSize}px;
+  height: ${props => props.buttonSize}px;
   pointer-events: auto;
+  opacity: 0.8;
 `;
 
 const Band = styled.div`
-  display: inline-block;
+  width: 100%;
   height: 100%;
-  width: ${(props) => props.itemWidth}px;
-  // background-color: green;
+  background-color: green;
   white-space: nowrap;
-  overflow-x: scroll;
-  overflow-y: hidden;
+  overflow-x: hidden;
+  overflow-y: scroll;
 
   &::-webkit-scrollbar {
     display: none;
@@ -48,81 +55,124 @@ const Band = styled.div`
 
   -ms-overflow-style: none;
   scrollbar-width: none;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: y mandatory;
 `;
 
-const Item = styled.span`
-  display: inline-block;
-  width: ${(props) => props.itemWidth}px;
-  height: 100%;
-  scroll-snap-align: center;
-  // background-color: cornflowerblue;
+const Item = styled.div`
+  width: 100%;
+  height: auto;
+  scroll-snap-align: start;
+  background-color: ${(props: {isCurrent: boolean}) => props.isCurrent ? "blue" : "cornflowerblue"};
 `;
 
-const ItemContent = styled.div`
+const ItemMid = styled.div`
   display: flex;
-  flex-direction: column;
+  width: 100%;
+  height: 0;
+  position: relative;
+  top: 0;
+  left: 0;
   align-items: center;
   justify-content: center;
   text-align: center;
-  width: ${(props) => props.itemWidth - 2 * props.itemPadding}px;
-  height: calc(100% - ${(props) => 2 * props.itemPadding}px);
-  margin: ${(props) => props.itemPadding}px auto;
-  border-radius: ${(props) => props.itemRadius}px;
-  padding: ${(props) => -props.itemPadding}px;
-  // background-color: pink;
+  opacity: 0.8;
 `;
 
-const Pad = styled.div`
-  display: inline-block;
-  width: ${(props) => props.padSize}px;
-  height: 1px;
-`;
+type ButtonProps = {
+  buttonSize: number;
+};
 
-class Horizontal extends PureComponent {
-  constructor(props) {
+type VerticalProps = {
+  height: number;
+  buttonSize: number;
+  radius: number;
+  offset: number;
+  order: string[];
+  currentIx: number;
+  correction: number;
+  focus: number;
+  focusSmooth: boolean;
+  currentLineIxs: {[key: string]: number};
+  locks: { [key: string]: LineLock };
+  getChildLine: (lineName: string, callback: (child: string) => void) => void;
+  getParentLine: (lineName: string, callback: (parent: string) => void) => void;
+  getItem: (isParent: boolean, lineName: string, height: number) => JSX.Element;
+  getLink: (parentLineName: string, childLineName: string, parentIndex: number, childIndex: number, readyCb: ReadyCB) => Link | undefined;
+  renderLink: (link: Link, buttonSize: number, radius: number) => JSX.Element;
+  dispatch: AppDispatch;
+};
+
+type EmptyVerticalProps = {
+  offset: undefined;
+  order: undefined;
+  currentIx: undefined;
+  correction: undefined;
+};
+
+type VerticalState = {
+  itemCount: number;
+  redraw: boolean;
+  scrollInit: boolean;
+  isScrolling: boolean;
+  focusIx: number;
+  viewUpdate: boolean;
+};
+
+type EmptyVerticalState = {
+  itemCount: undefined;
+};
+
+class Vertical extends PureComponent<VerticalProps, VerticalState> {
+  rootBox: React.RefObject<HTMLDivElement>;
+  bandRef: React.RefObject<HTMLDivElement>;
+  activeRefs: Map<number, React.RefObject<HTMLDivElement>>;
+  awaitOrderChange: string[] | undefined;
+  awaitCurrentChange: number | undefined;
+
+  constructor(props: VerticalProps) {
     super(props);
     this.state = {
-      offset: 0,
-      itemCount: 5,
-      padSize: 0,
-      needViews: true,
+      itemCount: 4,
       redraw: false,
       scrollInit: false,
-      pendingPad: false,
       isScrolling: false,
+      focusIx: 0,
+      viewUpdate: false,
     };
-    this.activeRefs = {};
-    this.activeView = {};
-    this.lockedRef = React.createRef();
-    this.lockedView = null;
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
-    this.updateViews({});
+    this.activeRefs = new Map();
+    this.awaitOrderChange = undefined;
+    this.awaitCurrentChange = undefined;
   }
 
-  componentDidMount() {
-    this.componentDidUpdate({}, {});
+  componentDidMount(): void {
+    this.componentDidUpdate({
+      offset: undefined,
+      order: undefined,
+      currentIx: undefined,
+      correction: undefined,}, {itemCount: undefined});
   }
 
-  componentWillUnmount() {
+  componentWillUnmount(): void {
     if (this.bandRef.current) {
-      this.bandRef.current.removeEventListener('scroll', this.handleScroll);
+      this.bandRef.current.removeEventListener("scroll", this.handleScroll);
     }
   }
 
-  handleScroll = () => {
-    const band = this.bandRef.current;
-    if (!band) {
+  handleScroll = (): void => {
+    const maybeBand = this.bandRef.current;
+    if (maybeBand === null) {
       return;
     }
-    let startTime = null;
-    const startScroll = band.scrollLeft;
+    const band = maybeBand;
+    let startTime: number | undefined = undefined;
+    let startScroll = band.scrollTop;
     const that = this;
 
-    function checkScroll(time) {
-      const isScrolling = band.scrollLeft !== startScroll;
-      if (startTime === null) {
+    function checkScroll(time: number) {
+      const isScrolling = band.scrollTop !== startScroll;
+      if (startTime === undefined) {
         startTime = time;
       }
       const update = time - startTime >= 100 || isScrolling;
@@ -136,284 +186,339 @@ class Horizontal extends PureComponent {
     }
 
     requestAnimationFrame(checkScroll);
-  };
+  }
 
-  componentDidUpdate(prevProps, prevState) {
-    const { lineName, currentLineIxs, currentLineFocus, itemWidth } =
-      this.props;
-    const key = constructKey(lineName);
-    const currentIx = currentLineIxs[key];
-    const lineFocus = currentLineFocus[key];
-    const prevCurrentIx =
-      prevProps.currentLineIxs && prevProps.currentLineIxs[key];
-    const prevLineFocus =
-      prevProps.currentLineFocus && prevProps.currentLineFocus[key];
+  debugString(): void {
+    const { offset, order, currentIx, correction } = this.props;
+    const { itemCount } = this.state;
+    const rangeOrder = [0, order.length];
+    const rangeArray = [correction + offset, correction + offset + itemCount];
+    const adjIndex = correction + currentIx;
+    const minIx = Math.min(rangeOrder[0], rangeArray[0], adjIndex);
+    const maxIx = Math.max(rangeOrder[1], rangeArray[1], adjIndex);
+    // FIXME double check all range usages
+    const ord = range(maxIx - minIx).reduce((cur, val) => {
+      const isOrd = val + minIx >= rangeOrder[0] && val + minIx < rangeOrder[1];
+      return `${cur}${isOrd ? '#' : '_'}`;
+    }, '');
+    const arr = range(maxIx - minIx).reduce((cur, val) => {
+      const isArr = val + minIx >= rangeArray[0] && val + minIx < rangeArray[1];
+      return `${cur}${isArr ? '#' : '_'}`;
+    }, '');
+    const cur = range(maxIx - minIx).reduce((cur, val) => {
+      const isCur = val + minIx === adjIndex;
+      return `${cur}${isCur ? 'X' : '_'}`;
+    }, '');
+    console.group("VState");
+    console.log(`ORD ${ord}`);
+    console.log(`ARR ${arr}`);
+    console.log(`CUR ${cur}`);
+    console.groupEnd();
+  }
+
+  computeIx(): number | undefined {
+    const { itemCount } = this.state;
+    const out = range(itemCount).reduce((res: undefined[] | number[], ix: number) => {
+      const realIx = this.getRealIndex(ix);
+      const curRef = this.activeRefs.get(realIx);
+      if (curRef === undefined) {
+        return res;
+      }
+      const cur = curRef.current;
+      if (cur === null) {
+        return res;
+      }
+      const bounds = cur.getBoundingClientRect();
+      if (bounds.top <= -50) {
+        return res;
+      }
+      const top = bounds.top;
+      if (res[0] === undefined || res[0] >= top) {
+        return [top, realIx];
+      }
+      return res;
+    }, [undefined, undefined]);
+    return out[1];
+  }
+
+  componentDidUpdate(prevProps: VerticalProps | EmptyVerticalProps, prevState: VerticalState | EmptyVerticalState): void {
     const {
-      itemCount,
-      needViews,
+      correction,
+      currentIx,
+      dispatch,
+      focus,
+      focusSmooth,
+      getChildLine,
+      getParentLine,
+      order,
       offset,
-      padSize,
-      scrollInit,
-      pendingPad,
+    } = this.props;
+    const {
+      focusIx,
       isScrolling,
+      scrollInit,
+      itemCount,
     } = this.state;
+    let viewUpdate = this.state.viewUpdate;
+
+    if (prevProps.currentIx !== currentIx
+        || prevProps.offset !== offset
+        || prevProps.order !== order
+        || prevProps.correction !== correction
+        || prevState.itemCount !== itemCount) {
+      this.debugString();
+    }
 
     if (!scrollInit && this.bandRef.current) {
-      this.bandRef.current.addEventListener('scroll', this.handleScroll, {
-        passive: true,
-      });
+      this.bandRef.current.addEventListener(
+        "scroll", this.handleScroll, { passive: true });
       this.setState({
         scrollInit: true,
       });
     }
 
-    if (pendingPad || prevCurrentIx !== currentIx) {
-      if (isScrolling) {
-        if (!pendingPad) {
-          this.setState({
-            pendingPad: true,
-          });
-        }
-      } else {
-        let newOffset = offset;
-        let newPadSize = padSize;
-        while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
-          newOffset -= 1;
-          newPadSize -= itemWidth;
-        }
-        while (currentIx > newOffset + itemCount * 0.5) {
-          newOffset += 1;
-          newPadSize += itemWidth;
-        }
-        this.setState({
-          offset: newOffset,
-          padSize: newPadSize,
-          pendingPad: false,
+    if (this.awaitOrderChange === null) {
+      if (currentIx + correction >= order.length - 2) {
+        getChildLine(order[order.length - 1], (child) => {
+          dispatch(addLine({
+            lineName: child,
+            isBack: true,
+          }));
+        })
+        this.awaitOrderChange = order;
+      } else if (currentIx + correction <= 0) {
+        getParentLine(order[0], (parent) => {
+          dispatch(addLine({
+            lineName: parent,
+            isBack: false,
+          }));
         });
+        this.awaitOrderChange = order;
       }
     }
+    if (this.awaitOrderChange !== undefined && this.awaitOrderChange !== order) {
+      this.awaitOrderChange = undefined;
+    }
 
-    const needViewsNew = this.updateViews(prevState);
-    if (needViews !== needViewsNew) {
+    if (!isScrolling
+        && !viewUpdate
+        && this.awaitCurrentChange === undefined
+        && this.awaitOrderChange === undefined
+        && focus === focusIx) {
+      const computedIx = this.computeIx();
+      if (computedIx !== undefined && computedIx !== currentIx) {
+        dispatch(setVCurrentIx({
+          vIndex: computedIx,
+          hIndex: this.getHIndex(computedIx, false),
+          isParent: this.isParent(computedIx),
+          lineName: this.lineName(computedIx),
+        }));
+        this.awaitCurrentChange = currentIx;
+        this.setState({
+          viewUpdate: true,
+        });
+        viewUpdate = true;
+      }
+    }
+    if (this.awaitCurrentChange !== undefined
+        && this.awaitCurrentChange !== currentIx) {
+      this.awaitCurrentChange = undefined;
+    }
+
+    this.updateViews(prevProps, prevState);
+
+    if (this.awaitCurrentChange === undefined
+        && this.awaitOrderChange === undefined
+        && focus !== focusIx
+        && !viewUpdate) {
+      this.focus(focus, focusSmooth);
+    }
+  }
+
+  updateViews(prevProps: VerticalProps | EmptyVerticalProps, prevState: VerticalState | EmptyVerticalState): void {
+    const { offset, order, currentIx } = this.props;
+    const { itemCount, viewUpdate } = this.state;
+
+    let newViewUpdate = false;
+    if (prevProps.offset !== offset || prevState.itemCount !== itemCount
+        || prevProps.order !== order || prevProps.currentIx !== currentIx) {
+      Array.from(this.activeRefs.keys()).forEach(realIx => {
+        if (realIx < offset || realIx >= offset + itemCount) {
+          this.activeRefs.delete(realIx);
+          newViewUpdate = true;
+        }
+      });
+      range(itemCount).forEach(ix => {
+        const realIx = this.getRealIndex(ix);
+        if (!this.activeRefs.has(realIx)) {
+          this.activeRefs.set(realIx, React.createRef());
+          newViewUpdate = true;
+        }
+      });
+    }
+    if (newViewUpdate && !viewUpdate) {
       this.setState({
-        needViews: needViewsNew,
+        viewUpdate: true,
       });
-    }
-    if (prevLineFocus !== lineFocus) {
-      const isInstant = lineFocus < 0 && currentIx < 0;
-      if (isInstant) {
+    } else if (viewUpdate) {
+      const allReady = Array.from(this.activeRefs.values()).reduce((cur, val) => {
+        return cur && val.current !== null;
+      }, true);
+      if (allReady) {
+        // NOTE: for debugging
+        console.log(
+          Array.from(this.activeRefs.values()).map((val) => val.current));
         this.setState({
-          padSize: 0,
-          offset: 0,
-          needViews: false,
+          viewUpdate: false,
         });
+      } else {
+        // NOTE: careful! can end in an infinite loop if elements are not
+        // filled up correctly.
+        setTimeout(() => {
+          this.requestRedraw();
+        }, 100);
       }
-      this.focus(lineFocus, !isInstant);
     }
   }
 
-  updateViews(prevState) {
-    const { offset, itemCount, needViews } = this.state;
-    let needViewsNew = needViews;
-    if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
-      Object.keys(this.activeView).forEach((realIx) => {
-        // make map
-        if (realIx < offset || realIx >= offset + itemCount) {
-          if (this.activeView[realIx]) {
-            this.activeView[realIx].disconnect();
-          }
-          delete this.activeView[realIx];
-        }
-      });
-      Object.keys(this.activeRefs).forEach((realIx) => {
-        // make map
-        if (realIx < offset || realIx >= offset + itemCount) {
-          delete this.activeRefs[realIx];
-        }
-      });
-      [...Array(itemCount).keys()].forEach((ix) => {
-        const realIx = offset + ix;
-        if (!this.activeRefs[realIx]) {
-          this.activeRefs[realIx] = React.createRef();
-          needViewsNew = true;
-        }
-      });
-    }
-
-    const that = this;
-
-    function createObserver(ref, index) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) {
-              return;
-            }
-            const { isParent, lineName, dispatch } = that.props;
-            dispatch(setHCurrentIx({ isParent, lineName, index }));
-          });
-        },
-        {
-          root: that.rootBox.current,
-          rootMargin: '0px',
-          threshold: 1.0,
-        },
-      );
-      observer.observe(ref.current);
-      return observer;
-    }
-
-    if (needViews) {
-      [...Array(itemCount).keys()].forEach((ix) => {
-        const realIx = offset + ix;
-        const curRef = this.activeRefs[realIx];
-        if (curRef.current && this.rootBox.current) {
-          if (!this.activeView[realIx]) {
-            this.activeView[realIx] = createObserver(curRef, realIx);
-          }
-        }
-      });
-    }
-    if (!this.lockedView && this.lockedRef.current && this.rootBox.current) {
-      this.lockedView = createObserver(this.lockedRef, -1);
-    }
-    return needViewsNew;
-  }
-
-  focus(focusIx, smooth) {
-    const item = focusIx < 0 ? this.lockedRef : this.activeRefs[focusIx];
+  focus(focusIx: number, smooth: boolean): void {
+    const item = this.activeRefs.get(focusIx);
     if (item && item.current) {
-      item.current.scrollIntoView({
-        behavior: smooth ? 'smooth' : 'auto',
-        block: 'nearest',
-        inline: 'center',
+      const curItem = item.current;
+      curItem.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "start",
+        inline: "nearest",
       });
+      this.setState({ focusIx });
     }
   }
 
-  getContent(isParent, lineName, index) {
-    const { getItem, locks } = this.props;
-    const locked = locks[constructKey(lineName)];
-    if (locked && index < 0) {
-      return this.getContent(locked.isParent, locked.lineName, locked.index);
+  getRealIndex(index: number): number {
+    return this.props.offset + index;
+  }
+
+  isParent(index: number): boolean {
+    return index <= this.props.currentIx;
+  }
+
+  lineName(index: number): string {
+    return this.props.order[index + this.props.correction];
+  }
+
+  getHIndex(index: number, adjust: boolean): number {
+    const { locks, currentLineIxs } = this.props;
+    const key = constructKey(this.lineName(index));
+    const res = currentLineIxs[key];
+    if (res === undefined) {
+      return 0;
     }
-    return getItem(
-      isParent,
-      lineName,
-      index,
-      (hasItem, content) => {
-        if (hasItem) {
-          return <ReactMarkdown>{content}</ReactMarkdown>;
-        }
-        return `loading [${index}]`;
-      },
-      this.requestRedraw,
-    );
+    if (!adjust) {
+      return res;
+    }
+    const locked = locks[key];
+    if (locked && res < 0) {
+      return locked.index;
+    }
+    const lockedIx = locked && locked.skipItem ? locked.index : res + 1;
+    return res + (lockedIx > res ? 0 : 1);
   }
 
-  adjustIndex(index) {
-    const { lineName, locks } = this.props;
-    const { offset, itemCount } = this.state;
-    const locked = locks[constructKey(lineName)];
-    const lockedIx =
-      locked && locked.skipItem ? locked.index : offset + itemCount;
-    return index + (lockedIx > index ? 0 : 1);
+  handleUp = (event: React.MouseEvent<HTMLButtonElement>): void => {
+    const { currentIx, dispatch } = this.props;
+    dispatch(focusV({ focus: currentIx - 1 }));
+    event.preventDefault();
   }
 
-  requestRedraw = () => {
+  handleDown = (event: React.MouseEvent<HTMLButtonElement>): void => {
+    const { currentIx, dispatch } = this.props;
+    dispatch(focusV({ focus: currentIx + 1 }));
+    event.preventDefault();
+  }
+
+  requestRedraw = (): void => {
     const { redraw } = this.state;
     this.setState({
       redraw: !redraw,
     });
-  };
-
-  handleLeft = (event) => {
-    const { isParent, lineName, currentLineIxs, dispatch } = this.props;
-    const currentIx = currentLineIxs[constructKey(lineName)];
-    dispatch(focusAt({ isParent, lineName, index: currentIx - 1 }));
-    event.preventDefault();
-  };
-
-  handleRight = (event) => {
-    const { isParent, lineName, currentLineIxs, dispatch } = this.props;
-    const currentIx = currentLineIxs[constructKey(lineName)];
-    dispatch(focusAt({ isParent, lineName, index: currentIx + 1 }));
-    event.preventDefault();
-  };
+  }
 
   render() {
     const {
-      itemWidth,
-      itemHeight,
-      itemRadius,
       buttonSize,
-      itemPadding,
-      isParent,
-      lineName,
-      locks,
+      correction,
+      currentIx,
+      getItem,
+      getLink,
+      height,
+      order,
+      radius,
+      renderLink,
     } = this.props;
-    const { offset, itemCount, padSize } = this.state;
-    const locked = locks[constructKey(lineName)];
-    const offShift = offset < 0 ? -offset : 0;
+    const { itemCount } = this.state;
+
+    const render = (realIx: number): JSX.Element | string => {
+      const link = getLink(
+        this.lineName(realIx - 1),
+        this.lineName(realIx),
+        this.getHIndex(realIx - 1, true),
+        this.getHIndex(realIx, true),
+        this.requestRedraw);
+      if (link === undefined) {
+        return '...';
+      }
+      return renderLink(link, buttonSize, radius);
+    };
+
     return (
-      <Outer
-        itemHeight={itemHeight}
-        ref={this.rootBox}>
-        <Overlay>
-          <NavButton
-            buttonSize={buttonSize}
-            onClick={this.handleLeft}>
-            &lt;
-          </NavButton>
-          <NavButton
-            buttonSize={buttonSize}
-            onClick={this.handleRight}>
-            &gt;
-          </NavButton>
-        </Overlay>
-        <Band
-          itemWidth={itemWidth}
-          ref={this.bandRef}>
-          {locked ? (
-            <Item itemWidth={itemWidth}>
-              <ItemContent
-                itemPadding={itemPadding}
-                itemWidth={itemWidth}
-                itemRadius={itemRadius}
-                ref={this.lockedRef}>
-                {this.getContent(isParent, lineName, -1)}
-              </ItemContent>
-            </Item>
-          ) : null}
-          <Pad padSize={padSize} />
-          {[...Array(itemCount - offShift).keys()].map((ix) => {
-            const realIx = offset + ix + offShift;
-            return (
-              <Item
-                key={realIx}
-                itemWidth={itemWidth}>
-                <ItemContent
-                  itemPadding={itemPadding}
-                  itemWidth={itemWidth}
-                  itemRadius={itemRadius}
-                  ref={this.activeRefs[realIx]}>
-                  {this.getContent(
-                    isParent,
-                    lineName,
-                    this.adjustIndex(realIx),
-                  )}
-                </ItemContent>
-              </Item>
-            );
-          })}
+      <Outer ref={this.rootBox}>
+        <Band ref={this.bandRef}>
+          {
+            range(itemCount).map(ix => {
+              const realIx = this.getRealIndex(ix);
+              if (realIx + correction >= order.length
+                  || realIx + correction < 0) {
+                return null;
+              }
+              return (
+                <Item
+                    key={realIx}
+                    ref={this.activeRefs.get(realIx)}
+                    isCurrent={currentIx === realIx}>
+                  {
+                    ix > 0 ? (
+                      <ItemMid>
+                        {render(realIx)}
+                      </ItemMid>
+                    ) : null
+                  }
+                  {
+                    getItem(
+                      this.isParent(realIx), this.lineName(realIx), height)
+                  }
+                </Item>
+              );
+            })
+          }
         </Band>
+        <NavButtonUp buttonSize={buttonSize} onClick={this.handleUp}>
+          ^
+        </NavButtonUp>
+        <NavButtonDown buttonSize={buttonSize} onClick={this.handleDown}>
+          v
+        </NavButtonDown>
       </Outer>
     );
   }
-} // Horizontal
+} // Vertical
 
-export default connect((state) => ({
+export default connect((state: RootState) => ({
+  correction: state.lineState.vCorrection,
+  currentIx: state.lineState.vCurrentIx,
   currentLineIxs: state.lineState.currentLineIxs,
-  currentLineFocus: state.lineState.currentLineFocus,
+  focus: state.lineState.vFocus,
+  focusSmooth: state.lineState.vFocusSmooth,
+  offset: state.lineState.vOffset,
+  order: state.lineState.vOrder,
   locks: state.lineState.locks,
-}))(Horizontal);
+}))(Vertical);

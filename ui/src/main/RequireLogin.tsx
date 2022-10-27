@@ -24,7 +24,7 @@ export default class RequireLogin extends PureComponent<
     };
   }
 
-  logout = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  logout = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>): void => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
     this.setState({
@@ -34,11 +34,11 @@ export default class RequireLogin extends PureComponent<
     event.preventDefault();
   };
 
-  handleChange = (event: React.FormEvent<HTMLInputElement>) => {
+  handleChange = (event: React.FormEvent<HTMLInputElement>): void => {
     this.setState({ value: event.currentTarget.value });
   };
 
-  handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
     const { value } = this.state;
     this.setState({
       user: value,

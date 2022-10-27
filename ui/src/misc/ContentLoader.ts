@@ -29,6 +29,9 @@ type ApiLinkList = {
 export type Votes = { [key: string]: number };
 
 export type Link = {
+  // FIXME actually figure out the hashes
+  // parent: string;
+  // child: string;
   mhash: string;
   first: number;
   msg: string | undefined;
@@ -267,19 +270,16 @@ export default class ContentLoader {
     return loader.get(name, index, contentCb, readyCb);
   }
 
-  // getChild(lineName, cb) {
-  //   this.childLines.get()
-  // }
+  getChildLine = (lineName: string, callback: (child: string) => void): void => {
+    // TODO
+  };
 
-  // getParent(lineName, cb) {
+  getParentLine = (lineName: string, callback: (parent: string) => void): void => {
+    // TODO
+  };
 
-  // }
-
-  // getLinkInfo(
-  //     parentLineName, childLineName, parentIndex, childIndex, readyCb) {
-  //   return [
-  //     {key: 'up', count: 2},
-  //     {key: 'down', count: 1},
-  //   ];
-  // }
+  getLink = (parentLineName: string, childLineName: string, parentIndex: number, childIndex: number, readyCb: ReadyCB): Link | undefined => {
+    // TODO
+    return undefined;
+  };
 } // ContentLoader
