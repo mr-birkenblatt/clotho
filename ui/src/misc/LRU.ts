@@ -1,4 +1,4 @@
-import { strict as assert } from 'node:assert';
+import { assertEqual, assertNotEqual, assertTrue } from './util';
 
 class LRUEntry<K, V> {
   parent: LRU<K, V>;
@@ -44,16 +44,16 @@ export default class LRU<K, V> {
       elem.next = head;
       head.prev = elem;
     } else {
-      assert.equal(this.tail, undefined);
+      assertEqual(this.tail, undefined);
       this.tail = elem;
     }
     const tail = this.tail;
     if (tail !== undefined && this.objs.size > this.maxSize) {
-      assert.equal(tail.next, tail);
-      assert.notEqual(tail.prev, tail);
+      assertEqual(tail.next, tail);
+      assertNotEqual(tail.prev, tail);
       this.tail = tail.prev;
       tail.prev = tail;
-      assert.equal(this.tail.next, tail);
+      assertEqual(this.tail.next, tail);
       this.tail.next = this.tail;
       this.objs.delete(tail.key);
     }
@@ -65,20 +65,20 @@ export default class LRU<K, V> {
     if (entry === undefined) {
       return undefined;
     }
-    assert.ok(this.head !== undefined);
+    assertTrue(this.head !== undefined);
     const head = this.head;
-    assert.equal(head.prev, head);
+    assertEqual(head.prev, head);
     if (head !== entry) {
       const prev = entry.prev;
-      assert.notEqual(prev, entry);
-      assert.equal(prev.next, entry);
+      assertNotEqual(prev, entry);
+      assertEqual(prev.next, entry);
       const next = entry.next;
       if (next === entry) {
-        assert.equal(this.tail, entry);
+        assertEqual(this.tail, entry);
         this.tail = prev;
         prev.next = prev;
       } else {
-        assert.equal(next.prev, entry);
+        assertEqual(next.prev, entry);
         prev.next = next;
         next.prev = prev;
       }
@@ -100,27 +100,27 @@ export default class LRU<K, V> {
       return;
     }
     if (this.head === entry && this.tail === entry) {
-      assert.equal(entry.prev, entry);
-      assert.equal(entry.next, entry);
+      assertEqual(entry.prev, entry);
+      assertEqual(entry.next, entry);
       this.head = undefined;
       this.tail = undefined;
     } else if (this.head === entry) {
-      assert.equal(entry.prev, entry);
-      assert.notEqual(entry.next, entry);
+      assertEqual(entry.prev, entry);
+      assertNotEqual(entry.next, entry);
       const next = entry.next;
-      assert.equal(next.prev, entry);
+      assertEqual(next.prev, entry);
       next.prev = next;
       this.head = next;
     } else if (this.tail === entry) {
-      assert.equal(entry.next, entry);
-      assert.notEqual(entry.prev, entry);
+      assertEqual(entry.next, entry);
+      assertNotEqual(entry.prev, entry);
       const prev = entry.prev;
-      assert.equal(prev.next, entry);
+      assertEqual(prev.next, entry);
       prev.next = prev;
       this.tail = prev;
     } else {
-      assert.notEqual(entry.next, entry);
-      assert.notEqual(entry.prev, entry);
+      assertNotEqual(entry.next, entry);
+      assertNotEqual(entry.prev, entry);
       const next = entry.next;
       const prev = entry.prev;
       prev.next = next;
@@ -140,7 +140,7 @@ export default class LRU<K, V> {
     while (cur.next !== cur) {
       arr.push(cur.key);
       cur = cur.next;
-      assert.ok(arr.length <= this.objs.size);
+      assertTrue(arr.length <= this.objs.size);
     }
     arr.push(cur.key);
     return arr;
@@ -155,7 +155,7 @@ export default class LRU<K, V> {
     while (cur.next !== cur) {
       arr.push(cur.item);
       cur = cur.next;
-      assert.ok(arr.length <= this.objs.size);
+      assertTrue(arr.length <= this.objs.size);
     }
     arr.push(cur.item);
     return arr;

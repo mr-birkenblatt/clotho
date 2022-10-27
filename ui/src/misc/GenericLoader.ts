@@ -1,5 +1,5 @@
-import { strict as assert } from 'node:assert';
 import LRU from './LRU.js';
+import { assertTrue } from './util.js';
 
 export type ResultCB<V> = (arr: Map<number, V>) => void;
 export type ContentCB<V, R> = (ready: boolean, content: V | undefined) => R;
@@ -88,7 +88,7 @@ export default class GenericLoader<V> {
           });
           this.activeLoads.delete(blockName);
           const res = line.get(index);
-          assert.ok(res !== undefined);
+          assertTrue(res !== undefined);
           valueCb(res);
         });
       }, 0);
