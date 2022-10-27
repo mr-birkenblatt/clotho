@@ -115,17 +115,13 @@ export default class App extends PureComponent<AppProps, AppState> {
   };
 
   getLink = (
-    parentLineName: string,
-    childLineName: string,
-    parentIndex: number,
-    childIndex: number,
+    isParent: boolean,
+    name: string,
+    index: number,
     readyCb: ReadyCB,
   ): Link | undefined => {
     return this.loader.getLink(
-      parentLineName,
-      childLineName,
-      parentIndex,
-      childIndex,
+      isParent, name, index,
       readyCb,
     );
   };

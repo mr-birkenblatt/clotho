@@ -111,10 +111,9 @@ type VerticalProps = {
     height: number,
   ) => JSX.Element;
   getLink: (
-    parentLineName: string,
-    childLineName: string,
-    parentIndex: number,
-    childIndex: number,
+    isParent: boolean,
+    lineName: string,
+    index: number,
     readyCb: ReadyCB,
   ) => Link | undefined;
   renderLink: (link: Link, buttonSize: number, radius: number) => JSX.Element;
@@ -518,9 +517,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
     const render = (realIx: number): JSX.Element | string => {
       const link = getLink(
-        this.lineName(realIx - 1),
+        this.isParent(realIx),
         this.lineName(realIx),
-        this.getHIndex(realIx - 1, true),
         this.getHIndex(realIx, true),
         this.requestRedraw,
       );

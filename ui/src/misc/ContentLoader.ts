@@ -291,15 +291,12 @@ export default class ContentLoader {
   };
 
   getLink = (
-    parentLineName: string,
-    childLineName: string,
-    parentIndex: number,
-    childIndex: number,
-    // eslint-disable-next-line
+    isGetParent: boolean,
+    name: string,
+    index: number,
     readyCb: ReadyCB,
   ): Link | undefined => {
-    console.log(parentLineName, parentIndex, childLineName, childIndex);
-    // TODO
-    return undefined;
+    const loader = isGetParent ? this.parentLines : this.childLines;
+    return loader.get(name, index, (ready, content) => (ready ? content : undefined), readyCb);
   };
 } // ContentLoader
