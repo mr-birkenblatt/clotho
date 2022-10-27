@@ -1,4 +1,4 @@
-import assert from 'assert';
+import { strict as assert } from 'node:assert';
 import LRU from './LRU.js';
 
 export type ResultCB<V> = (arr: Map<number, V>) => void;
