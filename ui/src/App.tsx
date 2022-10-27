@@ -97,16 +97,18 @@ export default class App extends PureComponent<{}, {}> {
 
   getChildLine = (
     lineName: string,
+    index: number,
     callback: (child: string) => void,
   ): void => {
-    this.loader.getChildLine(lineName, callback);
+    this.loader.getChildLine(lineName, index, callback);
   };
 
   getParentLine = (
     lineName: string,
+    index: number,
     callback: (parent: string) => void,
   ): void => {
-    this.loader.getParentLine(lineName, callback);
+    this.loader.getParentLine(lineName, index, callback);
   };
 
   getLink = (

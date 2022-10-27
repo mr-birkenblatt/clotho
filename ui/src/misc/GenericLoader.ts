@@ -1,7 +1,9 @@
+import assert from 'assert';
 import LRU from './LRU.js';
 
 export type ResultCB<V> = (arr: Map<number, V>) => void;
 export type ContentCB<V, R> = (ready: boolean, content: V | undefined) => R;
+export type ValueCB<V> = (content: V) => void;
 export type ReadyCB = () => void;
 export type ItemCB<V, R> = (
   isGetParent: boolean,
@@ -47,7 +49,7 @@ export default class GenericLoader<V> {
   ): R {
     const line = this.getLine(name);
     const res = line.get(index);
-    if (res) {
+    if (res !== undefined) {
       return contentCb(true, res);
     }
     const block = Math.floor(index / this.blockSize);
@@ -66,6 +68,32 @@ export default class GenericLoader<V> {
       this.activeLoads.add(blockName);
     }
     return contentCb(false, undefined);
+  }
+
+  with(name: string, index: number, valueCb: ValueCB<V>) {
+    const line = this.getLine(name);
+    const res = line.get(index);
+    if (res !== undefined) {
+      valueCb(res);
+      return;
+    }
+    const block = Math.floor(index / this.blockSize);
+    const blockName = `${name}-${block}`;
+    if (!this.activeLoads.has(blockName)) {
+      setTimeout(() => {
+        const offset = block * this.blockSize;
+        this.loadCb(name, offset, this.blockSize, (arr) => {
+          arr.forEach((v, ix) => {
+            line.set(ix, v);
+          });
+          this.activeLoads.delete(blockName);
+          const res = line.get(index);
+          assert.ok(res !== undefined);
+          valueCb(res);
+        });
+      }, 0);
+      this.activeLoads.add(blockName);
+    }
   }
 
   unloadLine(name: string): void {

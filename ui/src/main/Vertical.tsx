@@ -95,9 +95,14 @@ type VerticalProps = {
   focusSmooth: boolean;
   currentLineIxs: { [key: string]: number };
   locks: { [key: string]: LineLock };
-  getChildLine: (lineName: string, callback: (child: string) => void) => void;
+  getChildLine: (
+    lineName: string,
+    index: number,
+    callback: (child: string) => void,
+  ) => void;
   getParentLine: (
     lineName: string,
+    index: number,
     callback: (parent: string) => void,
   ) => void;
   getItem: (
@@ -185,7 +190,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
     const band = maybeBand;
     let startTime: number | undefined = undefined;
-    let startScroll = band.scrollTop;
+    const startScroll = band.scrollTop;
     const that = this;
 
     function checkScroll(time: number) {
@@ -303,17 +308,21 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
-        getChildLine(order[order.length - 1], (child) => {
-          dispatch(
-            addLine({
-              lineName: child,
-              isBack: true,
-            }),
-          );
-        });
+        getChildLine(
+          order[order.length - 1],
+          this.getHIndex(order.length - 1, true),
+          (child) => {
+            dispatch(
+              addLine({
+                lineName: child,
+                isBack: true,
+              }),
+            );
+          },
+        );
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
-        getParentLine(order[0], (parent) => {
+        getParentLine(order[0], this.getHIndex(0, true), (parent) => {
           dispatch(
             addLine({
               lineName: parent,

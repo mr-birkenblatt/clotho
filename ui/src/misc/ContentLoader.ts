@@ -271,17 +271,23 @@ export default class ContentLoader {
   }
 
   getChildLine = (
-    lineName: string,
+    name: string,
+    index: number,
     callback: (child: string) => void,
   ): void => {
-    // TODO
+    this.childLines.with(name, index, (link) => {
+      callback(link.mhash);
+    });
   };
 
   getParentLine = (
-    lineName: string,
+    name: string,
+    index: number,
     callback: (parent: string) => void,
   ): void => {
-    // TODO
+    this.parentLines.with(name, index, (link) => {
+      callback(link.mhash);
+    });
   };
 
   getLink = (
@@ -289,8 +295,10 @@ export default class ContentLoader {
     childLineName: string,
     parentIndex: number,
     childIndex: number,
+    // eslint-disable-next-line
     readyCb: ReadyCB,
   ): Link | undefined => {
+    console.log(parentLineName, parentIndex, childLineName, childIndex);
     // TODO
     return undefined;
   };
