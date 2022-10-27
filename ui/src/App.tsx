@@ -43,10 +43,10 @@ const MainColumn = styled.div`
 
 const ItemMidContent = styled.div<ItemMidContentProps>`
   display: flex;
-  height: ${props => props.buttonSize}px;
+  height: ${(props) => props.buttonSize}px;
   background-color: green;
-  padding: ${props => props.radius}px;
-  border-radius: ${props => props.radius}px;
+  padding: ${(props) => props.radius}px;
+  border-radius: ${(props) => props.radius}px;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -66,11 +66,21 @@ export default class App extends PureComponent<{}, {}> {
     this.loader = new ContentLoader();
   }
 
-  getItem = (isParent: boolean, name: string, index: number, contentCb: ContentCB<Link, string | JSX.Element>, readyCb: ReadyCB): string | JSX.Element => {
+  getItem = (
+    isParent: boolean,
+    name: string,
+    index: number,
+    contentCb: ContentCB<Link, string | JSX.Element>,
+    readyCb: ReadyCB,
+  ): string | JSX.Element => {
     return this.loader.getItem(isParent, name, index, contentCb, readyCb);
   };
 
-  getVItem = (isParent: boolean, lineName: string, height: number): JSX.Element => {
+  getVItem = (
+    isParent: boolean,
+    lineName: string,
+    height: number,
+  ): JSX.Element => {
     return (
       <Horizontal
         itemWidth={450}
@@ -85,15 +95,27 @@ export default class App extends PureComponent<{}, {}> {
     );
   };
 
-  getChildLine = (lineName: string, callback: (child: string) => void): void => {
+  getChildLine = (
+    lineName: string,
+    callback: (child: string) => void,
+  ): void => {
     this.loader.getChildLine(lineName, callback);
   };
 
-  getParentLine = (lineName: string, callback: (parent: string) => void): void => {
+  getParentLine = (
+    lineName: string,
+    callback: (parent: string) => void,
+  ): void => {
     this.loader.getParentLine(lineName, callback);
   };
 
-  getLink = (parentLineName: string, childLineName: string, parentIndex: number, childIndex: number, readyCb: ReadyCB): Link | undefined => {
+  getLink = (
+    parentLineName: string,
+    childLineName: string,
+    parentIndex: number,
+    childIndex: number,
+    readyCb: ReadyCB,
+  ): Link | undefined => {
     return this.loader.getLink(
       parentLineName,
       childLineName,
@@ -103,19 +125,28 @@ export default class App extends PureComponent<{}, {}> {
     );
   };
 
-  renderLink = (link: Link, buttonSize: number, radius: number): JSX.Element => {
+  renderLink = (
+    link: Link,
+    buttonSize: number,
+    radius: number,
+  ): JSX.Element => {
     return (
       <div>
-        <div>{link.user}: {link.first}</div>
-      <div>{
-        Object.keys(link.votes).map((voteName) => (
-          <ItemMidContent buttonSize={buttonSize}
-          radius={radius} key={voteName}>
-        <span >
-          {voteName}: {link.votes[voteName]}
-        </span>
-        </ItemMidContent>))
-        }</div>
+        <div>
+          {link.user}: {link.first}
+        </div>
+        <div>
+          {Object.keys(link.votes).map((voteName) => (
+            <ItemMidContent
+              buttonSize={buttonSize}
+              radius={radius}
+              key={voteName}>
+              <span>
+                {voteName}: {link.votes[voteName]}
+              </span>
+            </ItemMidContent>
+          ))}
+        </div>
       </div>
     );
   };

@@ -270,15 +270,27 @@ export default class ContentLoader {
     return loader.get(name, index, contentCb, readyCb);
   }
 
-  getChildLine = (lineName: string, callback: (child: string) => void): void => {
+  getChildLine = (
+    lineName: string,
+    callback: (child: string) => void,
+  ): void => {
     // TODO
   };
 
-  getParentLine = (lineName: string, callback: (parent: string) => void): void => {
+  getParentLine = (
+    lineName: string,
+    callback: (parent: string) => void,
+  ): void => {
     // TODO
   };
 
-  getLink = (parentLineName: string, childLineName: string, parentIndex: number, childIndex: number, readyCb: ReadyCB): Link | undefined => {
+  getLink = (
+    parentLineName: string,
+    childLineName: string,
+    parentIndex: number,
+    childIndex: number,
+    readyCb: ReadyCB,
+  ): Link | undefined => {
     // TODO
     return undefined;
   };

@@ -1,17 +1,17 @@
-import React, { PureComponent } from "react";
-import { connect } from "react-redux";
-import styled from "styled-components";
-import { Link } from "../misc/ContentLoader";
-import { ReadyCB } from "../misc/GenericLoader";
-import { range } from "../misc/util";
-import { AppDispatch, RootState } from "../store";
+import React, { PureComponent } from 'react';
+import { connect } from 'react-redux';
+import styled from 'styled-components';
+import { Link } from '../misc/ContentLoader';
+import { ReadyCB } from '../misc/GenericLoader';
+import { range } from '../misc/util';
+import { AppDispatch, RootState } from '../store';
 import {
   constructKey,
   setVCurrentIx,
   addLine,
   focusV,
   LineLock,
-} from "./LineStateSlice";
+} from './LineStateSlice';
 
 const Outer = styled.div`
   position: relative;
@@ -25,8 +25,8 @@ const NavButtonUp = styled.button<ButtonProps>`
   position: fixed;
   top: 0;
   right: 0;
-  width: ${props => props.buttonSize}px;
-  height: ${props => props.buttonSize}px;
+  width: ${(props) => props.buttonSize}px;
+  height: ${(props) => props.buttonSize}px;
   pointer-events: auto;
   opacity: 0.8;
 `;
@@ -35,8 +35,8 @@ const NavButtonDown = styled.button<ButtonProps>`
   position: fixed;
   bottom: 0;
   right: 0;
-  width: ${props => props.buttonSize}px;
-  height: ${props => props.buttonSize}px;
+  width: ${(props) => props.buttonSize}px;
+  height: ${(props) => props.buttonSize}px;
   pointer-events: auto;
   opacity: 0.8;
 `;
@@ -62,7 +62,8 @@ const Item = styled.div`
   width: 100%;
   height: auto;
   scroll-snap-align: start;
-  background-color: ${(props: {isCurrent: boolean}) => props.isCurrent ? "blue" : "cornflowerblue"};
+  background-color: ${(props: { isCurrent: boolean }) =>
+    props.isCurrent ? 'blue' : 'cornflowerblue'};
 `;
 
 const ItemMid = styled.div`
@@ -92,12 +93,25 @@ type VerticalProps = {
   correction: number;
   focus: number;
   focusSmooth: boolean;
-  currentLineIxs: {[key: string]: number};
+  currentLineIxs: { [key: string]: number };
   locks: { [key: string]: LineLock };
   getChildLine: (lineName: string, callback: (child: string) => void) => void;
-  getParentLine: (lineName: string, callback: (parent: string) => void) => void;
-  getItem: (isParent: boolean, lineName: string, height: number) => JSX.Element;
-  getLink: (parentLineName: string, childLineName: string, parentIndex: number, childIndex: number, readyCb: ReadyCB) => Link | undefined;
+  getParentLine: (
+    lineName: string,
+    callback: (parent: string) => void,
+  ) => void;
+  getItem: (
+    isParent: boolean,
+    lineName: string,
+    height: number,
+  ) => JSX.Element;
+  getLink: (
+    parentLineName: string,
+    childLineName: string,
+    parentIndex: number,
+    childIndex: number,
+    readyCb: ReadyCB,
+  ) => Link | undefined;
   renderLink: (link: Link, buttonSize: number, radius: number) => JSX.Element;
   dispatch: AppDispatch;
 };
@@ -147,16 +161,20 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   }
 
   componentDidMount(): void {
-    this.componentDidUpdate({
-      offset: undefined,
-      order: undefined,
-      currentIx: undefined,
-      correction: undefined,}, {itemCount: undefined});
+    this.componentDidUpdate(
+      {
+        offset: undefined,
+        order: undefined,
+        currentIx: undefined,
+        correction: undefined,
+      },
+      { itemCount: undefined },
+    );
   }
 
   componentWillUnmount(): void {
     if (this.bandRef.current) {
-      this.bandRef.current.removeEventListener("scroll", this.handleScroll);
+      this.bandRef.current.removeEventListener('scroll', this.handleScroll);
     }
   }
 
@@ -186,7 +204,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
 
     requestAnimationFrame(checkScroll);
-  }
+  };
 
   debugString(): void {
     const { offset, order, currentIx, correction } = this.props;
@@ -198,18 +216,20 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const maxIx = Math.max(rangeOrder[1], rangeArray[1], adjIndex);
     // FIXME double check all range usages
     const ord = range(maxIx - minIx).reduce((cur, val) => {
-      const isOrd = val + minIx >= rangeOrder[0] && val + minIx < rangeOrder[1];
+      const isOrd =
+        val + minIx >= rangeOrder[0] && val + minIx < rangeOrder[1];
       return `${cur}${isOrd ? '#' : '_'}`;
     }, '');
     const arr = range(maxIx - minIx).reduce((cur, val) => {
-      const isArr = val + minIx >= rangeArray[0] && val + minIx < rangeArray[1];
+      const isArr =
+        val + minIx >= rangeArray[0] && val + minIx < rangeArray[1];
       return `${cur}${isArr ? '#' : '_'}`;
     }, '');
     const cur = range(maxIx - minIx).reduce((cur, val) => {
       const isCur = val + minIx === adjIndex;
       return `${cur}${isCur ? 'X' : '_'}`;
     }, '');
-    console.group("VState");
+    console.group('VState');
     console.log(`ORD ${ord}`);
     console.log(`ARR ${arr}`);
     console.log(`CUR ${cur}`);
@@ -218,30 +238,36 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
   computeIx(): number | undefined {
     const { itemCount } = this.state;
-    const out = range(itemCount).reduce((res: undefined[] | number[], ix: number) => {
-      const realIx = this.getRealIndex(ix);
-      const curRef = this.activeRefs.get(realIx);
-      if (curRef === undefined) {
+    const out = range(itemCount).reduce(
+      (res: undefined[] | number[], ix: number) => {
+        const realIx = this.getRealIndex(ix);
+        const curRef = this.activeRefs.get(realIx);
+        if (curRef === undefined) {
+          return res;
+        }
+        const cur = curRef.current;
+        if (cur === null) {
+          return res;
+        }
+        const bounds = cur.getBoundingClientRect();
+        if (bounds.top <= -50) {
+          return res;
+        }
+        const top = bounds.top;
+        if (res[0] === undefined || res[0] >= top) {
+          return [top, realIx];
+        }
         return res;
-      }
-      const cur = curRef.current;
-      if (cur === null) {
-        return res;
-      }
-      const bounds = cur.getBoundingClientRect();
-      if (bounds.top <= -50) {
-        return res;
-      }
-      const top = bounds.top;
-      if (res[0] === undefined || res[0] >= top) {
-        return [top, realIx];
-      }
-      return res;
-    }, [undefined, undefined]);
+      },
+      [undefined, undefined],
+    );
     return out[1];
   }
 
-  componentDidUpdate(prevProps: VerticalProps | EmptyVerticalProps, prevState: VerticalState | EmptyVerticalState): void {
+  componentDidUpdate(
+    prevProps: VerticalProps | EmptyVerticalProps,
+    prevState: VerticalState | EmptyVerticalState,
+  ): void {
     const {
       correction,
       currentIx,
@@ -253,25 +279,23 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       order,
       offset,
     } = this.props;
-    const {
-      focusIx,
-      isScrolling,
-      scrollInit,
-      itemCount,
-    } = this.state;
+    const { focusIx, isScrolling, scrollInit, itemCount } = this.state;
     let viewUpdate = this.state.viewUpdate;
 
-    if (prevProps.currentIx !== currentIx
-        || prevProps.offset !== offset
-        || prevProps.order !== order
-        || prevProps.correction !== correction
-        || prevState.itemCount !== itemCount) {
+    if (
+      prevProps.currentIx !== currentIx ||
+      prevProps.offset !== offset ||
+      prevProps.order !== order ||
+      prevProps.correction !== correction ||
+      prevState.itemCount !== itemCount
+    ) {
       this.debugString();
     }
 
     if (!scrollInit && this.bandRef.current) {
-      this.bandRef.current.addEventListener(
-        "scroll", this.handleScroll, { passive: true });
+      this.bandRef.current.addEventListener('scroll', this.handleScroll, {
+        passive: true,
+      });
       this.setState({
         scrollInit: true,
       });
@@ -280,39 +304,50 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
         getChildLine(order[order.length - 1], (child) => {
-          dispatch(addLine({
-            lineName: child,
-            isBack: true,
-          }));
-        })
+          dispatch(
+            addLine({
+              lineName: child,
+              isBack: true,
+            }),
+          );
+        });
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
         getParentLine(order[0], (parent) => {
-          dispatch(addLine({
-            lineName: parent,
-            isBack: false,
-          }));
+          dispatch(
+            addLine({
+              lineName: parent,
+              isBack: false,
+            }),
+          );
         });
         this.awaitOrderChange = order;
       }
     }
-    if (this.awaitOrderChange !== undefined && this.awaitOrderChange !== order) {
+    if (
+      this.awaitOrderChange !== undefined &&
+      this.awaitOrderChange !== order
+    ) {
       this.awaitOrderChange = undefined;
     }
 
-    if (!isScrolling
-        && !viewUpdate
-        && this.awaitCurrentChange === undefined
-        && this.awaitOrderChange === undefined
-        && focus === focusIx) {
+    if (
+      !isScrolling &&
+      !viewUpdate &&
+      this.awaitCurrentChange === undefined &&
+      this.awaitOrderChange === undefined &&
+      focus === focusIx
+    ) {
       const computedIx = this.computeIx();
       if (computedIx !== undefined && computedIx !== currentIx) {
-        dispatch(setVCurrentIx({
-          vIndex: computedIx,
-          hIndex: this.getHIndex(computedIx, false),
-          isParent: this.isParent(computedIx),
-          lineName: this.lineName(computedIx),
-        }));
+        dispatch(
+          setVCurrentIx({
+            vIndex: computedIx,
+            hIndex: this.getHIndex(computedIx, false),
+            isParent: this.isParent(computedIx),
+            lineName: this.lineName(computedIx),
+          }),
+        );
         this.awaitCurrentChange = currentIx;
         this.setState({
           viewUpdate: true,
@@ -320,35 +355,46 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         viewUpdate = true;
       }
     }
-    if (this.awaitCurrentChange !== undefined
-        && this.awaitCurrentChange !== currentIx) {
+    if (
+      this.awaitCurrentChange !== undefined &&
+      this.awaitCurrentChange !== currentIx
+    ) {
       this.awaitCurrentChange = undefined;
     }
 
     this.updateViews(prevProps, prevState);
 
-    if (this.awaitCurrentChange === undefined
-        && this.awaitOrderChange === undefined
-        && focus !== focusIx
-        && !viewUpdate) {
+    if (
+      this.awaitCurrentChange === undefined &&
+      this.awaitOrderChange === undefined &&
+      focus !== focusIx &&
+      !viewUpdate
+    ) {
       this.focus(focus, focusSmooth);
     }
   }
 
-  updateViews(prevProps: VerticalProps | EmptyVerticalProps, prevState: VerticalState | EmptyVerticalState): void {
+  updateViews(
+    prevProps: VerticalProps | EmptyVerticalProps,
+    prevState: VerticalState | EmptyVerticalState,
+  ): void {
     const { offset, order, currentIx } = this.props;
     const { itemCount, viewUpdate } = this.state;
 
     let newViewUpdate = false;
-    if (prevProps.offset !== offset || prevState.itemCount !== itemCount
-        || prevProps.order !== order || prevProps.currentIx !== currentIx) {
-      Array.from(this.activeRefs.keys()).forEach(realIx => {
+    if (
+      prevProps.offset !== offset ||
+      prevState.itemCount !== itemCount ||
+      prevProps.order !== order ||
+      prevProps.currentIx !== currentIx
+    ) {
+      Array.from(this.activeRefs.keys()).forEach((realIx) => {
         if (realIx < offset || realIx >= offset + itemCount) {
           this.activeRefs.delete(realIx);
           newViewUpdate = true;
         }
       });
-      range(itemCount).forEach(ix => {
+      range(itemCount).forEach((ix) => {
         const realIx = this.getRealIndex(ix);
         if (!this.activeRefs.has(realIx)) {
           this.activeRefs.set(realIx, React.createRef());
@@ -361,13 +407,17 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         viewUpdate: true,
       });
     } else if (viewUpdate) {
-      const allReady = Array.from(this.activeRefs.values()).reduce((cur, val) => {
-        return cur && val.current !== null;
-      }, true);
+      const allReady = Array.from(this.activeRefs.values()).reduce(
+        (cur, val) => {
+          return cur && val.current !== null;
+        },
+        true,
+      );
       if (allReady) {
         // NOTE: for debugging
         console.log(
-          Array.from(this.activeRefs.values()).map((val) => val.current));
+          Array.from(this.activeRefs.values()).map((val) => val.current),
+        );
         this.setState({
           viewUpdate: false,
         });
@@ -386,9 +436,9 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (item && item.current) {
       const curItem = item.current;
       curItem.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "start",
-        inline: "nearest",
+        behavior: smooth ? 'smooth' : 'auto',
+        block: 'start',
+        inline: 'nearest',
       });
       this.setState({ focusIx });
     }
@@ -428,20 +478,20 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const { currentIx, dispatch } = this.props;
     dispatch(focusV({ focus: currentIx - 1 }));
     event.preventDefault();
-  }
+  };
 
   handleDown = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
     dispatch(focusV({ focus: currentIx + 1 }));
     event.preventDefault();
-  }
+  };
 
   requestRedraw = (): void => {
     const { redraw } = this.state;
     this.setState({
       redraw: !redraw,
     });
-  }
+  };
 
   render() {
     const {
@@ -463,7 +513,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         this.lineName(realIx),
         this.getHIndex(realIx - 1, true),
         this.getHIndex(realIx, true),
-        this.requestRedraw);
+        this.requestRedraw,
+      );
       if (link === undefined) {
         return '...';
       }
@@ -473,38 +524,33 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return (
       <Outer ref={this.rootBox}>
         <Band ref={this.bandRef}>
-          {
-            range(itemCount).map(ix => {
-              const realIx = this.getRealIndex(ix);
-              if (realIx + correction >= order.length
-                  || realIx + correction < 0) {
-                return null;
-              }
-              return (
-                <Item
-                    key={realIx}
-                    ref={this.activeRefs.get(realIx)}
-                    isCurrent={currentIx === realIx}>
-                  {
-                    ix > 0 ? (
-                      <ItemMid>
-                        {render(realIx)}
-                      </ItemMid>
-                    ) : null
-                  }
-                  {
-                    getItem(
-                      this.isParent(realIx), this.lineName(realIx), height)
-                  }
-                </Item>
-              );
-            })
-          }
+          {range(itemCount).map((ix) => {
+            const realIx = this.getRealIndex(ix);
+            if (
+              realIx + correction >= order.length ||
+              realIx + correction < 0
+            ) {
+              return null;
+            }
+            return (
+              <Item
+                key={realIx}
+                ref={this.activeRefs.get(realIx)}
+                isCurrent={currentIx === realIx}>
+                {ix > 0 ? <ItemMid>{render(realIx)}</ItemMid> : null}
+                {getItem(this.isParent(realIx), this.lineName(realIx), height)}
+              </Item>
+            );
+          })}
         </Band>
-        <NavButtonUp buttonSize={buttonSize} onClick={this.handleUp}>
+        <NavButtonUp
+          buttonSize={buttonSize}
+          onClick={this.handleUp}>
           ^
         </NavButtonUp>
-        <NavButtonDown buttonSize={buttonSize} onClick={this.handleDown}>
+        <NavButtonDown
+          buttonSize={buttonSize}
+          onClick={this.handleDown}>
           v
         </NavButtonDown>
       </Outer>
