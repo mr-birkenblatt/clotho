@@ -1,9 +1,9 @@
 import React, { PureComponent } from 'react';
 // import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
-import ContentLoader from './contentLoader.js';
-import Horizontal from './Horizontal.js';
-import Vertical from './Vertical.js';
+import ContentLoader from './misc/ContentLoader';
+import Horizontal from './main/Horizontal';
+import Vertical from './main/Vertical';
 
 const Main = styled.div`
   text-align: center;
@@ -42,6 +42,8 @@ const MainColumn = styled.div`
 
 
 export default class App extends PureComponent {
+  loader: ContentLoader;
+
   constructor(props) {
     super(props);
     this.state = {};

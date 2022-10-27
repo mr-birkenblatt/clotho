@@ -26,9 +26,9 @@ type ApiLinkList = {
   next: number;
 };
 
-type Votes = { [key: string]: number };
+export type Votes = { [key: string]: number };
 
-type Link = {
+export type Link = {
   mhash: string;
   first: number;
   msg: string | undefined;
@@ -214,9 +214,9 @@ export default class ContentLoader {
     }).catch(errHnd);
   }
 
-  getItem(isGetParent: boolean, name: string, index: number, contentCb: ContentCB<Link>, readyCb: ReadyCB): void {
+  getItem<R>(isGetParent: boolean, name: string, index: number, contentCb: ContentCB<Link, R>, readyCb: ReadyCB): R {
     const loader = isGetParent ? this.parentLines : this.childLines;
-    loader.get(name, index, contentCb, readyCb);
+    return loader.get(name, index, contentCb, readyCb);
   }
 
   // getChild(lineName, cb) {

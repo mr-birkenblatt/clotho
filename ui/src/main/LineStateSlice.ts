@@ -1,16 +1,82 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-export function constructKey(lineName) {
+export type LineLock = {
+  isParent: boolean;
+  lineName: string;
+  index: number;
+  skipItem: boolean;
+};
+
+type LineState = {
+  currentLineIxs: { [key: string]: number };
+  currentLineFocus: { [key: string]: number };
+  locks: { [key: string]: LineLock };
+  vOrder: string[];
+  vCurrentIx: number;
+  vCorrection: number;
+  vOffset: number;
+  vFocus: number;
+  vFocusSmooth: boolean;
+};
+
+type AddAction = {
+  payload: {
+    lineName: string;
+    isBack: boolean;
+  }
+};
+
+type IndexAction = {
+  payload: {
+    lineName: string;
+    index: number;
+  }
+};
+
+type LockAction = {
+  payload: {
+    isParent: boolean;
+    lineName: string;
+    adjustedIndex: number;
+    skipItem: boolean;
+  };
+};
+
+type SetVAction = {
+  payload: {
+    vIndex: number;
+    hIndex: number;
+    isParent: boolean;
+    lineName: string;
+  };
+};
+
+type FocusVAction = {
+  payload: {
+    focus: number;
+  };
+};
+
+type LineReducers = {
+  addLine: (state: LineState, action: AddAction) => void;
+  focusAt: (state: LineState, action: IndexAction) => void;
+  focusV: (state: LineState, action: FocusVAction) => void;
+  lockCurrent: (state: LineState, action: LockAction) => void;
+  setHCurrentIx: (state: LineState, action: IndexAction) => void;
+  setVCurrentIx: (state: LineState, action: SetVAction) => void;
+};
+
+export function constructKey(lineName: string): string {
   return `${lineName}`;
 }
 
-function lockLine(state, isParent, lineName, adjustedIndex, skipItem) {
+function lockLine(state: LineState, isParent: boolean, lineName: string, adjustedIndex: number, skipItem: boolean) {
   const key = constructKey(lineName);
   const { currentLineIxs, currentLineFocus, locks } = state;
   if (currentLineIxs[key] < 0) {
     return;
   }
-  const locked = {
+  const locked: LineLock = {
     isParent,
     lineName,
     index: adjustedIndex,
@@ -21,7 +87,7 @@ function lockLine(state, isParent, lineName, adjustedIndex, skipItem) {
   currentLineFocus[key] = -1;
 }
 
-export const lineStateSlice = createSlice({
+export const lineStateSlice = createSlice<LineState, LineReducers, string>({
   name: 'lineState',
   initialState: {
     currentLineIxs: {},

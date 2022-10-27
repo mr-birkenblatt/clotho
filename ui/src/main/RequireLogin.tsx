@@ -1,7 +1,18 @@
 import React, { PureComponent } from "react";
 
-export default class RequireLogin extends PureComponent {
-  constructor(props) {
+type RequireLoginProps = {
+  value: string;
+  user: string;
+};
+
+type RequireLoginState = {
+  value: string,
+  user: string | null,
+  token: string | null,
+};
+
+export default class RequireLogin extends PureComponent<RequireLoginProps, RequireLoginState> {
+  constructor(props: RequireLoginProps) {
     super(props);
     this.state = {
       value: "",
@@ -10,7 +21,7 @@ export default class RequireLogin extends PureComponent {
     };
   }
 
-  logout = (event) => {
+  logout = (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");
     this.setState({
@@ -20,11 +31,11 @@ export default class RequireLogin extends PureComponent {
     event.preventDefault();
   }
 
-  handleChange = (event) => {
-    this.setState({value: event.target.value});
+  handleChange = (event: React.FormEvent<HTMLInputElement>) => {
+    this.setState({value: event.currentTarget.value});
   }
 
-  handleSubmit = (event) => {
+  handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     const { value } = this.state;
     this.setState({
       user: value,
@@ -34,7 +45,7 @@ export default class RequireLogin extends PureComponent {
   }
 
   render() {
-    const {value, user} = this.state;
+    const { value, user } = this.state;
     return (
       <div>
         { !user ? (

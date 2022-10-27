@@ -2,7 +2,7 @@ import React, { PureComponent } from "react";
 import ReactMarkdown from 'react-markdown';
 import { connect } from "react-redux";
 import styled from "styled-components";
-import { constructKey, focusAt, setHCurrentIx } from "./lineStateSlice";
+import { constructKey, focusAt, setHCurrentIx } from "./LineStateSlice";
 
 const Outer = styled.div`
   position: relative;
@@ -219,7 +219,7 @@ class Horizontal extends PureComponent {
     const { offset, itemCount, needViews } = this.state;
     let needViewsNew = needViews;
     if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
-      Object.keys(this.activeView).forEach(realIx => {
+      Object.keys(this.activeView).forEach(realIx => {  // make map
         if (realIx < offset || realIx >= offset + itemCount) {
           if (this.activeView[realIx]) {
             this.activeView[realIx].disconnect();
@@ -227,7 +227,7 @@ class Horizontal extends PureComponent {
           delete this.activeView[realIx];
         }
       });
-      Object.keys(this.activeRefs).forEach(realIx => {
+      Object.keys(this.activeRefs).forEach(realIx => {  // make map
         if (realIx < offset || realIx >= offset + itemCount) {
           delete this.activeRefs[realIx];
         }
