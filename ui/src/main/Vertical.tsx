@@ -415,9 +415,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         viewUpdate: true,
       });
     } else if (viewUpdate) {
-      const allReady = Array.from(this.activeRefs.values()).reduce(
+      const allReady = Array.from(this.activeRefs.entries()).reduce(
         (cur, val) => {
-          return cur && val.current !== null;
+          val[1].current === null && console.log('ref missing', val);
+          return cur && val[1].current !== null;
         },
         true,
       );
@@ -433,7 +434,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         // NOTE: careful! can end in an infinite loop if elements are not
         // filled up correctly.
         setTimeout(() => {
-          this.requestRedraw();
+          // this.requestRedraw();
         }, 100);
       }
     }
@@ -495,6 +496,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   };
 
   requestRedraw = (): void => {
+    console.groupCollapsed('V');
+    console.log('request redraw V');
+    console.trace();
+    console.groupEnd();
     const { redraw } = this.state;
     this.setState({
       redraw: !redraw,

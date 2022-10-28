@@ -76,6 +76,7 @@ export default class App extends PureComponent<AppProps, AppState> {
     contentCb: ContentCB<Link, string | JSX.Element>,
     readyCb: ReadyCB,
   ): string | JSX.Element => {
+    console.log('item', isParent, name, index);
     return this.loader.getItem(isParent, name, index, contentCb, readyCb);
   };
 
@@ -120,6 +121,7 @@ export default class App extends PureComponent<AppProps, AppState> {
     index: number,
     readyCb: ReadyCB,
   ): Link | undefined => {
+    console.log('link', isParent, name, index);
     return this.loader.getLink(isParent, name, index, readyCb);
   };
 

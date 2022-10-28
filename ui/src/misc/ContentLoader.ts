@@ -54,11 +54,13 @@ export default class ContentLoader {
   }
 
   fetchTopics(): void {
+    console.log('topic');
     fetch(`${URL_PREFIX}/topic`)
       .then(json)
       .then((obj: ApiTopic) => {
         const { topics } = obj;
         this.topics = new Map(Object.entries(topics));
+        console.log('topic done');
       })
       .catch(errHnd);
   }
@@ -86,6 +88,7 @@ export default class ContentLoader {
     objs.forEach((obj) => {
       mapping.set(obj.mhash, obj);
     });
+    console.log('read', objs);
     fetch(`${URL_PREFIX}/read`, {
       method: 'POST',
       headers: {
@@ -124,6 +127,7 @@ export default class ContentLoader {
             readyCb,
           );
         } else {
+          console.log('read done', objs);
           readyCb();
         }
       })
@@ -200,6 +204,7 @@ export default class ContentLoader {
       : {
           parent: name,
         };
+    console.log(isGetParent ? 'parents' : 'children', name, offset, limit);
     fetch(`${URL_PREFIX}/${isGetParent ? 'parents' : 'children'}`, {
       method: 'POST',
       headers: {
@@ -207,8 +212,8 @@ export default class ContentLoader {
       },
       body: JSON.stringify({
         ...query,
-        offset: offset,
-        limit: limit,
+        offset,
+        limit,
         scorer: 'best',
       }),
     })

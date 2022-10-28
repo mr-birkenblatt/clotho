@@ -381,6 +381,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
       lineName,
       index,
       (hasItem, content) => {
+        !hasItem && console.log('item', isParent, lineName, index, content);
         if (hasItem && content !== undefined && content.msg !== undefined) {
           return <ReactMarkdown>{content.msg}</ReactMarkdown>;
         }
@@ -400,6 +401,10 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   }
 
   requestRedraw = (): void => {
+    console.groupCollapsed('H');
+    console.log('request redraw H');
+    console.trace();
+    console.groupEnd();
     const { redraw } = this.state;
     this.setState({
       redraw: !redraw,

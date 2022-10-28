@@ -28,14 +28,14 @@ export default class GenericLoader<V> {
   constructor(blockSize: number, loadCb: LoadCB<V>) {
     this.blockSize = blockSize;
     this.loadCb = loadCb;
-    this.lines = new LRU(10);
+    this.lines = new LRU(100);
     this.activeLoads = new Set<string>();
   }
 
   getLine(name: string): LRU<number, V> {
     let res = this.lines.get(name);
     if (res === undefined) {
-      res = new LRU<number, V>(100);
+      res = new LRU<number, V>(1000);
       this.lines.set(name, res);
     }
     return res;
@@ -52,16 +52,21 @@ export default class GenericLoader<V> {
     if (res !== undefined) {
       return contentCb(true, res);
     }
+    console.log('lineget', name, index);
     const block = Math.floor(index / this.blockSize);
     const blockName = `${name}-${block}`;
+    console.log(`get ${blockName}`);
     if (!this.activeLoads.has(blockName)) {
       setTimeout(() => {
+        console.log(`get_inner ${blockName}`);
         const offset = block * this.blockSize;
         this.loadCb(name, offset, this.blockSize, (arr) => {
           arr.forEach((v, ix) => {
+            console.log('lineset', ix, index, v);
             line.set(ix, v);
           });
           this.activeLoads.delete(blockName);
+          console.log(`get_inner_inner ${blockName}`);
           readyCb();
         });
       }, 0);
