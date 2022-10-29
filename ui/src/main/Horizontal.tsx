@@ -1,17 +1,12 @@
 import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { connect } from 'react-redux';
+import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from '../misc/ContentLoader';
 import { ItemCB } from '../misc/GenericLoader';
 import { range } from '../misc/util';
-import { AppDispatch, RootState } from '../store';
-import {
-  constructKey,
-  focusAt,
-  LineLock,
-  setHCurrentIx,
-} from './LineStateSlice';
+import { RootState } from '../store';
+import { constructKey, focusAt, setHCurrentIx } from './LineStateSlice';
 
 const Outer = styled.div`
   position: relative;
@@ -94,7 +89,7 @@ type ItemContentProps = {
   itemPadding: number;
 };
 
-type HorizontalProps = {
+interface HorizontalProps extends ConnectHorizontal {
   itemWidth: number;
   itemHeight: number;
   itemRadius: number;
@@ -102,12 +97,8 @@ type HorizontalProps = {
   itemPadding: number;
   isParent: boolean;
   lineName: string;
-  locks: { [key: string]: LineLock };
-  currentLineIxs: { [key: string]: number };
-  currentLineFocus: { [key: string]: number };
   getItem: ItemCB<Link, string | JSX.Element>;
-  dispatch: AppDispatch;
-};
+}
 
 type EmptyHorizontalProps = {
   currentLineIxs: undefined;
@@ -496,8 +487,12 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   }
 } // Horizontal
 
-export default connect((state: RootState) => ({
+const connector = connect((state: RootState) => ({
   currentLineIxs: state.lineState.currentLineIxs,
   currentLineFocus: state.lineState.currentLineFocus,
   locks: state.lineState.locks,
-}))(Horizontal);
+}));
+
+export default connector(Horizontal);
+
+type ConnectHorizontal = ConnectedProps<typeof connector>;

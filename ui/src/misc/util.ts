@@ -20,6 +20,15 @@ export function json(resp: Response): Promise<any> {
   return resp.json();
 }
 
+export function toJson(obj: any): string {
+  return JSON.stringify(obj, (_key, value) => {
+    if (value instanceof Set) {
+      value = Array.from(value.keys());
+    }
+    return value;
+  });
+}
+
 export function assertTrue(value: boolean): asserts value {
   if (!value) {
     throw new Error('assertion was not true');

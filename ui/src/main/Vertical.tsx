@@ -1,16 +1,15 @@
 import React, { PureComponent } from 'react';
-import { connect } from 'react-redux';
+import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
 import { Link } from '../misc/ContentLoader';
 import { ReadyCB } from '../misc/GenericLoader';
 import { range } from '../misc/util';
-import { AppDispatch, RootState } from '../store';
+import { RootState } from '../store';
 import {
   constructKey,
   setVCurrentIx,
   addLine,
   focusV,
-  LineLock,
 } from './LineStateSlice';
 
 const Outer = styled.div`
@@ -83,18 +82,10 @@ type ButtonProps = {
   buttonSize: number;
 };
 
-type VerticalProps = {
+interface VerticalProps extends ConnectVertical {
   height: number;
   buttonSize: number;
   radius: number;
-  offset: number;
-  order: string[];
-  currentIx: number;
-  correction: number;
-  focus: number;
-  focusSmooth: boolean;
-  currentLineIxs: { [key: string]: number };
-  locks: { [key: string]: LineLock };
   getChildLine: (
     lineName: string,
     index: number,
@@ -117,8 +108,7 @@ type VerticalProps = {
     readyCb: ReadyCB,
   ) => Link | undefined;
   renderLink: (link: Link, buttonSize: number, radius: number) => JSX.Element;
-  dispatch: AppDispatch;
-};
+}
 
 type EmptyVerticalProps = {
   offset: undefined;
@@ -570,7 +560,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   }
 } // Vertical
 
-export default connect((state: RootState) => ({
+const connector = connect((state: RootState) => ({
   correction: state.lineState.vCorrection,
   currentIx: state.lineState.vCurrentIx,
   currentLineIxs: state.lineState.currentLineIxs,
@@ -579,4 +569,7 @@ export default connect((state: RootState) => ({
   offset: state.lineState.vOffset,
   order: state.lineState.vOrder,
   locks: state.lineState.locks,
-}))(Vertical);
+}));
+export default connector(Vertical);
+
+type ConnectVertical = ConnectedProps<typeof connector>;

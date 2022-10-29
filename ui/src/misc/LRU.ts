@@ -17,10 +17,10 @@ class LRUEntry<K, V> {
 } // LRUEntry
 
 export default class LRU<K, V> {
-  head: LRUEntry<K, V> | undefined;
-  tail: LRUEntry<K, V> | undefined;
-  objs: Map<K, LRUEntry<K, V>>;
-  maxSize: number;
+  private head: LRUEntry<K, V> | undefined;
+  private tail: LRUEntry<K, V> | undefined;
+  private readonly objs: Map<K, LRUEntry<K, V>>;
+  private readonly maxSize: number;
 
   constructor(maxSize: number) {
     this.maxSize = Math.max(maxSize, 3);
