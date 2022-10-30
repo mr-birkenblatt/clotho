@@ -37,11 +37,11 @@ export interface FullLinkKey {
   mhash: MHash;
   isGetParent: boolean;
   index: AdjustedLineIndex;
-};
+}
 export interface TopicKey {
   topic: true;
   index: AdjustedLineIndex;
-};
+}
 export type FullKey = FullLinkKey | TopicKey;
 
 export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {

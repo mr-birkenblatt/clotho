@@ -82,7 +82,10 @@ const Pad = styled.div`
   height: 1px;
 `;
 
-export type ItemCB = (fullLinkKey: FullKey, readyCb: ReadyCB) => string | undefined;
+export type ItemCB = (
+  fullLinkKey: FullKey,
+  readyCb: ReadyCB,
+) => string | undefined;
 
 type ItemContentProps = {
   itemWidth: number;
