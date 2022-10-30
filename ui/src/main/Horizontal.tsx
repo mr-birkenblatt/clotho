@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
+import { FullKey, FullLinkKey, ReadyCB } from '../misc/CommentGraph';
 import { range } from '../misc/util';
 import { RootState } from '../store';
 import { constructKey, focusAt, setHCurrentIx } from './LineStateSlice';
@@ -81,6 +82,8 @@ const Pad = styled.div`
   height: 1px;
 `;
 
+export type ItemCB = (fullLinkKey: FullKey, readyCb: ReadyCB) => string | undefined;
+
 type ItemContentProps = {
   itemWidth: number;
   itemRadius: number;
@@ -95,7 +98,7 @@ interface HorizontalProps extends ConnectHorizontal {
   itemPadding: number;
   isParent: boolean;
   lineName: string;
-  getItem: ItemCB<Link, string | JSX.Element>;
+  getItem: ItemCB;
 }
 
 type EmptyHorizontalProps = {
@@ -365,19 +368,16 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     if (locked && index < 0) {
       return this.getContent(locked.isParent, locked.lineName, locked.index);
     }
-    return getItem(
-      isParent,
-      lineName,
-      index,
-      (hasItem, content) => {
-        !hasItem && console.log('item', isParent, lineName, index, content);
-        if (hasItem && content !== undefined && content.msg !== undefined) {
-          return <ReactMarkdown>{content.msg}</ReactMarkdown>;
-        }
-        return `loading [${index}]`;
-      },
-      this.requestRedraw,
-    );
+    const fullLinkKey: FullLinkKey = {
+      // isParent,
+      // lineName,
+      // index,
+    };
+    const msg = getItem(fullLinkKey, this.requestRedraw);
+    if (msg !== undefined) {
+      return <ReactMarkdown>{msg}</ReactMarkdown>;
+    }
+    return `loading [${index}]`;
   }
 
   adjustIndex(index: number): number {

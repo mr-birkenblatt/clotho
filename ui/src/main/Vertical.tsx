@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
+import { AdjustedLineIndex, FullKey, Link, ReadyCB } from '../misc/CommentGraph';
 import { range } from '../misc/util';
 import { RootState } from '../store';
 import {
@@ -80,6 +81,8 @@ type ButtonProps = {
   buttonSize: number;
 };
 
+export type LinkCB = (fullLinkKey: FullKey, parentIndex: AdjustedLineIndex, readyCb: ReadyCB) => Link | undefined;
+
 interface VerticalProps extends ConnectVertical {
   height: number;
   buttonSize: number;
@@ -99,12 +102,7 @@ interface VerticalProps extends ConnectVertical {
     lineName: string,
     height: number,
   ) => JSX.Element;
-  getLink: (
-    isParent: boolean,
-    lineName: string,
-    index: number,
-    readyCb: ReadyCB,
-  ) => Link | undefined;
+  getLink: LinkCB;
   renderLink: (link: Link, buttonSize: number, radius: number) => JSX.Element;
 }
 

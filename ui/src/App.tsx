@@ -1,8 +1,9 @@
 import React, { PureComponent } from 'react';
 // import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
-import Horizontal from './main/Horizontal';
-import Vertical from './main/Vertical';
+import Horizontal, { ItemCB } from './main/Horizontal';
+import Vertical, { LinkCB } from './main/Vertical';
+import CommentGraph, { Link } from './misc/CommentGraph';
 
 const Main = styled.div`
   text-align: center;
@@ -59,23 +60,16 @@ type AppProps = Record<string, never>;
 type AppState = Record<string, never>;
 
 export default class App extends PureComponent<AppProps, AppState> {
-  loader: ContentLoader;
+  graph: CommentGraph;
 
   constructor(props: AppProps) {
     super(props);
     this.state = {};
-    this.loader = new ContentLoader();
+    this.graph = new CommentGraph();
   }
 
-  getItem = (
-    isParent: boolean,
-    name: string,
-    index: number,
-    contentCb: ContentCB<Link, string | JSX.Element>,
-    readyCb: ReadyCB,
-  ): string | JSX.Element => {
-    console.log('item', isParent, name, index);
-    return this.loader.getItem(isParent, name, index, contentCb, readyCb);
+  getItem: ItemCB = (fullLinkKey, readyCb) => {
+    return this.graph.getMessage(fullLinkKey, () => readyCb());
   };
 
   getVItem = (
@@ -113,14 +107,8 @@ export default class App extends PureComponent<AppProps, AppState> {
     this.loader.getParentLine(lineName, index, callback);
   };
 
-  getLink = (
-    isParent: boolean,
-    name: string,
-    index: number,
-    readyCb: ReadyCB,
-  ): Link | undefined => {
-    console.log('link', isParent, name, index);
-    return this.loader.getLink(isParent, name, index, readyCb);
+  getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {
+    return this.graph.getTopLink(fullLinkKey, parentIndex, () => readyCb());
   };
 
   renderLink = (
@@ -128,6 +116,9 @@ export default class App extends PureComponent<AppProps, AppState> {
     buttonSize: number,
     radius: number,
   ): JSX.Element => {
+    if (!link.valid) {
+      return <div>[missing]</div>;
+    }
     return (
       <div>
         <div>

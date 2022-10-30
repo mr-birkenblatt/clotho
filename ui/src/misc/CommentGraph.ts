@@ -32,16 +32,17 @@ export type LineIndex = number & { _lineIndex: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
 export type LinkKey = { mhash: MHash; isGetParent: boolean };
-export type FullLinkKey = {
+export interface FullLinkKey {
   topic?: false;
   mhash: MHash;
   isGetParent: boolean;
   index: AdjustedLineIndex;
 };
-export type TopicKey = {
+export interface TopicKey {
   topic: true;
   index: AdjustedLineIndex;
 };
+export type FullKey = FullLinkKey | TopicKey;
 
 export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
   const { mhash, isGetParent } = fullLinkKey;
@@ -75,6 +76,7 @@ export type Link =
       valid?: false;
     };
 
+export type ReadyCB = () => void;
 export type NotifyContentCB = (
   mhash: MHash | undefined,
   content: string,
@@ -451,7 +453,7 @@ export default class CommentGraph {
     return getMessage(fullLinkKey, link, false);
   }
 
-  getMessage(fullLinkKey: FullLinkKey | TopicKey, notify: NotifyContentCB) {
+  getMessage(fullLinkKey: FullKey, notify: NotifyContentCB) {
     if (!fullLinkKey.topic) {
       return this.getFullLinkMessage(fullLinkKey, notify);
     }
@@ -512,7 +514,7 @@ export default class CommentGraph {
   }
 
   getTopLink(
-    fullLinkKey: FullLinkKey | TopicKey,
+    fullLinkKey: FullKey,
     parentIndex: AdjustedLineIndex,
     notify: NotifyLinkCB,
   ): Link | undefined {
