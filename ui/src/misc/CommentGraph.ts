@@ -1,4 +1,3 @@
-import { link } from 'fs';
 import { Set } from 'typescript';
 import LRU from './LRU';
 import { errHnd, json, range, toJson } from './util';
