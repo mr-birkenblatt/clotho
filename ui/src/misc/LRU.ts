@@ -1,4 +1,4 @@
-import { assertEqual, assertNotEqual, assertTrue } from './util';
+import { assertEqual, assertNotEqual, assertTrue, SafeMap } from './util';
 
 class LRUEntry<K, V> {
   parent: LRU<K, V>;
@@ -19,14 +19,14 @@ class LRUEntry<K, V> {
 export default class LRU<K, V> {
   private head: LRUEntry<K, V> | undefined;
   private tail: LRUEntry<K, V> | undefined;
-  private readonly objs: Map<K, LRUEntry<K, V>>;
+  private readonly objs: SafeMap<K, LRUEntry<K, V>>;
   private readonly maxSize: number;
 
   constructor(maxSize: number) {
     this.maxSize = Math.max(maxSize, 3);
     this.head = undefined;
     this.tail = undefined;
-    this.objs = new Map();
+    this.objs = new SafeMap();
   }
 
   set(key: K, value: V): V | undefined {
@@ -34,6 +34,7 @@ export default class LRU<K, V> {
     if (entry !== undefined) {
       const res = entry.item;
       entry.item = value;
+      this.get(key); // NOTE: this brings the item to the front
       return res;
     }
     const elem = new LRUEntry(this, key, value);

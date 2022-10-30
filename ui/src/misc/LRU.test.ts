@@ -91,3 +91,30 @@ test('LRU manipulations', () => {
   expect(lru.keys()).toEqual([]);
   expect(lru.values()).toEqual([]);
 });
+
+type Complex = {re: number, im: number};
+
+test('complex keys', () => {
+  const lru: LRU<Complex, number> = new LRU(5);
+  expect(lru.get({re: 1, im: -1})).toBe(undefined);
+  expect(lru.get({im: 0, re: 2})).toBe(undefined);
+  expect(lru.keys()).toEqual([]);
+  expect(lru.values()).toEqual([]);
+  lru.set({re: 1, im: -1}, 1);
+  lru.set({re: 2, im: 0}, 2);
+  lru.set({im: -1, re: 1}, 3);
+  lru.set({im: 3, re: 5}, 4);
+  lru.set({re: 0, im: 1}, 5);
+  lru.set({re: 4, im: 0}, 6);
+  lru.set({re: -1, im: -1}, 7);
+  expect(lru.get({re: 1, im: -1})).toBe(3);
+  expect(lru.get({im: -1, re: 1})).toBe(3);
+  expect(lru.get({im: 0, re: 2})).toBe(undefined);
+  expect(lru.get({re: 2, im: 0})).toBe(undefined);
+  expect(lru.keys()).toEqual([{re: 1, im: -1}, {re: -1, im: -1}, {re: 4, im: 0}, {re: 0, im: 1}, {re: 5, im: 3}]);
+  expect(lru.values()).toEqual([3, 7, 6, 5, 4]);
+  expect(lru.get({re: -1, im: -1})).toBe(7);
+  expect(lru.get({im: -1, re: -1})).toBe(7);
+  expect(lru.get({re: 5, im: 3})).toBe(4);
+  expect(lru.get({im: 3, re: 5})).toBe(4);
+});
