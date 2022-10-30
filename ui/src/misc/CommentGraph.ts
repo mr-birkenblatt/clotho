@@ -70,7 +70,10 @@ export type Link =
       valid?: false;
     };
 
-export type NotifyContentCB = (mhash: MHash, content: string) => void;
+export type NotifyContentCB = (
+  mhash: MHash | undefined,
+  content: string,
+) => void;
 export type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
 export type TopicsCB = (topics: Readonly<Map<MHash, string>>) => void;
 
@@ -363,3 +366,95 @@ export class LinkPool {
     return line.getLink(fullLinkKey.index, notify);
   }
 } // LinkPool
+
+export default class CommentGraph {
+  private readonly msgPool: CommentPool;
+  private readonly linkPool: LinkPool;
+
+  constructor() {
+    this.msgPool = new CommentPool();
+    this.linkPool = new LinkPool();
+  }
+
+  getMessage(
+    fullLinkKey: FullLinkKey,
+    notify: NotifyContentCB,
+  ): string | undefined {
+    const getMessage = (
+      key: FullLinkKey,
+      link: Link,
+      notifyOnHit: boolean,
+    ): string | undefined => {
+      if (!link.valid) {
+        const res = '[deleted]';
+        if (notifyOnHit) {
+          notify(undefined, res);
+        }
+        return res;
+      }
+      const mhash = key.isGetParent ? link.parent : link.child;
+      const res = this.msgPool.getMessage(mhash, notify);
+      if (notifyOnHit && res !== undefined) {
+        notify(mhash, res);
+      }
+      return res;
+    };
+
+    const notifyLink: NotifyLinkCB = (key, link) => {
+      getMessage(key, link, true);
+    };
+
+    const link = this.linkPool.getLink(fullLinkKey, notifyLink);
+    if (link === undefined) {
+      return undefined;
+    }
+    return getMessage(fullLinkKey, link, false);
+  }
+
+  getTopLink(
+    fullLinkKey: FullLinkKey,
+    parentIndex: AdjustedLineIndex,
+    notify: NotifyLinkCB,
+  ): Link | undefined {
+    const getLink = (
+      key: FullLinkKey,
+      link: Link,
+      notifyOnHit: boolean,
+    ): Link | undefined => {
+      if (!key.isGetParent) {
+        if (notifyOnHit) {
+          notify(key, link);
+        }
+        return link;
+      }
+      if (!link.valid) {
+        if (notifyOnHit) {
+          notify(key, link);
+        }
+        return link;
+      }
+      const topKey: FullLinkKey = {
+        mhash: link.parent,
+        isGetParent: true,
+        index: parentIndex,
+      };
+      const res = this.linkPool.getLink(topKey, (_, topLink) => {
+        notify(key, topLink);
+      });
+      if (notifyOnHit && res !== undefined) {
+        notify(key, res);
+      }
+      return res;
+    };
+
+    const notifyLink: NotifyLinkCB = (key, link) => {
+      getLink(key, link, true);
+    };
+
+    const link = this.linkPool.getLink(fullLinkKey, notifyLink);
+    if (link === undefined) {
+      return undefined;
+    }
+    return getLink(fullLinkKey, link, false);
+  }
+} // CommentGraph
