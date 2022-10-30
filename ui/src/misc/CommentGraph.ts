@@ -1,6 +1,6 @@
 import { Set } from 'typescript';
 import LRU from './LRU';
-import { errHnd, json, range, toJson } from './util';
+import { assertTrue, errHnd, json, range, toJson } from './util';
 
 const URL_PREFIX = `${window.location.origin}/api`;
 const BATCH_DELAY = 10;
@@ -33,10 +33,15 @@ export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
 export type LinkKey = { mhash: MHash; isGetParent: boolean };
 export type FullLinkKey = {
+  topic?: false;
   mhash: MHash;
   isGetParent: boolean;
   index: AdjustedLineIndex;
 };
+export type TopicKey = {
+  topic: true;
+  index: AdjustedLineIndex;
+}
 
 export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
   const { mhash, isGetParent } = fullLinkKey;
@@ -75,14 +80,14 @@ export type NotifyContentCB = (
   content: string,
 ) => void;
 export type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
-export type TopicsCB = (topics: Readonly<Map<MHash, string>>) => void;
+type TopicsCB = (topics: Readonly<[MHash, string][]>) => void;
 
 export class CommentPool {
   private readonly pool: LRU<MHash, string>;
   private readonly hashQueue: Set<MHash>;
   private readonly inFlight: Set<MHash>;
   private readonly listeners: Map<MHash, NotifyContentCB[]>;
-  private topics: Map<MHash, string> | undefined;
+  private topics: [MHash, string][] | undefined;
   private active: boolean;
 
   constructor(maxSize?: number) {
@@ -175,20 +180,26 @@ export class CommentPool {
     return undefined;
   }
 
-  getTopics(notify: TopicsCB): void {
+  getTopics(notify: TopicsCB): Readonly<[MHash, string][]> | undefined {
     if (this.topics) {
-      notify(this.topics);
-      return;
+      return this.topics;
     }
     fetch(`${URL_PREFIX}/topic`)
       .then(json)
       .then((obj: ApiTopic) => {
         const { topics } = obj;
         const entries = Object.entries(topics) as [MHash, string][];
-        this.topics = new Map(entries);
-        notify(this.topics);
+        const topicMap = new Map(entries);
+        const res: [MHash, string][] = Array.from(topicMap.keys()).sort().map((mhash) => {
+          const topic = topicMap.get(mhash);
+          assertTrue(topic !== undefined);
+          return [mhash, topic];
+        });
+        this.topics = res;
+        notify(res);
       })
       .catch(errHnd);
+    return undefined;
   }
 } // CommentPool
 
@@ -376,7 +387,32 @@ export default class CommentGraph {
     this.linkPool = new LinkPool();
   }
 
-  getMessage(
+  private getTopicMessage(
+    topicKey: TopicKey,
+    notify: NotifyContentCB,
+  ): string | undefined {
+    const { index } = topicKey;
+
+    const getTopicMessage = (topics: Readonly<[MHash, string][]>): Readonly<[MHash | undefined, string]> => {
+      if (index < 0 || index >= topics.length) {
+        return [undefined, '[unavailable]'];
+      }
+      return topics[index];
+    };
+
+    const notifyTopics: TopicsCB = (topics) => {
+      const [mhash, topic] = getTopicMessage(topics);
+      notify(mhash, topic);
+    };
+
+    const order = this.msgPool.getTopics(notifyTopics);
+    if (order === undefined) {
+      return undefined;
+    }
+    return getTopicMessage(order)[1];
+  }
+
+  private getFullLinkMessage(
     fullLinkKey: FullLinkKey,
     notify: NotifyContentCB,
   ): string | undefined {
@@ -411,7 +447,20 @@ export default class CommentGraph {
     return getMessage(fullLinkKey, link, false);
   }
 
-  getTopLink(
+  getMessage(fullLinkKey: FullLinkKey | TopicKey, notify: NotifyContentCB) {
+    if (!fullLinkKey.topic) {
+      return this.getFullLinkMessage(fullLinkKey, notify);
+    }
+    return this.getTopicMessage(fullLinkKey, notify);
+  }
+
+  private getTopicTopLink(topicKey: TopicKey): Link {
+    return {
+      valid: false,
+    };
+  }
+
+  private getFullTopLink(
     fullLinkKey: FullLinkKey,
     parentIndex: AdjustedLineIndex,
     notify: NotifyLinkCB,
@@ -456,5 +505,16 @@ export default class CommentGraph {
       return undefined;
     }
     return getLink(fullLinkKey, link, false);
+  }
+
+  getTopLink(
+    fullLinkKey: FullLinkKey | TopicKey,
+    parentIndex: AdjustedLineIndex,
+    notify: NotifyLinkCB,
+  ): Link | undefined {
+    if (!fullLinkKey.topic) {
+      return this.getFullTopLink(fullLinkKey, parentIndex, notify);
+    }
+    return this.getTopicTopLink(fullLinkKey);
   }
 } // CommentGraph

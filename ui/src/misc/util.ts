@@ -63,7 +63,7 @@ function safeStringify(obj: any): string {
         value = Object.fromEntries(
           Object.keys(value)
             .sort()
-            .map((k) => [k, value[k]]),
+            .map((k) => [k, value[k]]).filter((([_k, val]) => (val !== undefined))),
         );
       }
       return value;
