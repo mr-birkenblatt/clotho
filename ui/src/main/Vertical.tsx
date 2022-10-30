@@ -1,8 +1,6 @@
 import React, { PureComponent } from 'react';
 import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
-import { Link } from '../misc/ContentLoader';
-import { ReadyCB } from '../misc/GenericLoader';
 import { range } from '../misc/util';
 import { RootState } from '../store';
 import {

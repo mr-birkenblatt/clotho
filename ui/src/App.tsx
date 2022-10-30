@@ -1,10 +1,8 @@
 import React, { PureComponent } from 'react';
 // import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
-import ContentLoader, { Link } from './misc/ContentLoader';
 import Horizontal from './main/Horizontal';
 import Vertical from './main/Vertical';
-import { ContentCB, ReadyCB } from './misc/GenericLoader';
 
 const Main = styled.div`
   text-align: center;
