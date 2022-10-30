@@ -41,7 +41,7 @@ export type FullLinkKey = {
 export type TopicKey = {
   topic: true;
   index: AdjustedLineIndex;
-}
+};
 
 export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
   const { mhash, isGetParent } = fullLinkKey;
@@ -190,11 +190,13 @@ export class CommentPool {
         const { topics } = obj;
         const entries = Object.entries(topics) as [MHash, string][];
         const topicMap = new Map(entries);
-        const res: [MHash, string][] = Array.from(topicMap.keys()).sort().map((mhash) => {
-          const topic = topicMap.get(mhash);
-          assertTrue(topic !== undefined);
-          return [mhash, topic];
-        });
+        const res: [MHash, string][] = Array.from(topicMap.keys())
+          .sort()
+          .map((mhash) => {
+            const topic = topicMap.get(mhash);
+            assertTrue(topic !== undefined);
+            return [mhash, topic];
+          });
         this.topics = res;
         notify(res);
       })
@@ -393,7 +395,9 @@ export default class CommentGraph {
   ): string | undefined {
     const { index } = topicKey;
 
-    const getTopicMessage = (topics: Readonly<[MHash, string][]>): Readonly<[MHash | undefined, string]> => {
+    const getTopicMessage = (
+      topics: Readonly<[MHash, string][]>,
+    ): Readonly<[MHash | undefined, string]> => {
       if (index < 0 || index >= topics.length) {
         return [undefined, '[unavailable]'];
       }
