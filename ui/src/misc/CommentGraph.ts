@@ -34,31 +34,42 @@ export type LineIndex = number & { _lineIndex: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 type LineBlock = number & { _lineBlock: void };
 export type MHash = string & { _mHash: void };
-export type LinkKey = {mhash: MHash, isGetParent: boolean};
-export type FullLinkKey = {mhash: MHash, isGetParent: boolean, index: AdjustedLineIndex };
+export type LinkKey = { mhash: MHash; isGetParent: boolean };
+export type FullLinkKey = {
+  mhash: MHash;
+  isGetParent: boolean;
+  index: AdjustedLineIndex;
+};
 
 export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
-  const {mhash, isGetParent} = fullLinkKey;
-  return {mhash, isGetParent};
+  const { mhash, isGetParent } = fullLinkKey;
+  return { mhash, isGetParent };
 }
 
-export function toFullLinkKey(linkKey: LinkKey, index: AdjustedLineIndex): FullLinkKey {
-  const {mhash, isGetParent} = linkKey;
+export function toFullLinkKey(
+  linkKey: LinkKey,
+  index: AdjustedLineIndex,
+): FullLinkKey {
+  const { mhash, isGetParent } = linkKey;
   return {
-    mhash, isGetParent, index,
+    mhash,
+    isGetParent,
+    index,
   };
 }
 
-export type Link = {
-  valid: true;
-  parent: MHash;
-  child: MHash;
-  user: string;
-  first: number;
-  votes: Votes;
-} | {
-  valid?: false;
-};
+export type Link =
+  | {
+      valid: true;
+      parent: MHash;
+      child: MHash;
+      user: string;
+      first: number;
+      votes: Votes;
+    }
+  | {
+      valid?: false;
+    };
 
 type NotifyContentCB = (mhash: MHash, content: string) => void;
 type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
@@ -207,7 +218,7 @@ class LinkLookup {
   }
 
   private toIndex(offset: number, block: LineBlock): AdjustedLineIndex {
-    return block * this.blockSize + offset as AdjustedLineIndex;
+    return (block * this.blockSize + offset) as AdjustedLineIndex;
   }
 
   private requestIndex(index: AdjustedLineIndex): void {
@@ -219,8 +230,8 @@ class LinkLookup {
       return;
     }
     this.activeBlocks.add(block);
-    const {mhash, isGetParent} = this.linkKey;
-    const query = isGetParent ? {child: mhash} : {parent: mhash};
+    const { mhash, isGetParent } = this.linkKey;
+    const query = isGetParent ? { child: mhash } : { parent: mhash };
     const url = `${URL_PREFIX}/${isGetParent ? 'parents' : 'children'}`;
 
     const finish = () => {
@@ -241,39 +252,42 @@ class LinkLookup {
           limit: remainCount,
           scorer: 'best',
         }),
-      }).then(json).then((obj: ApiLinkList) => {
-        const { links, next } = obj;
-        const curCount = next - fromOffset;
-        const count = curCount > 0 ? curCount : remainCount;
-        range(count).forEach((curOffset) => {
-          const adjIndex = fromOffset + curOffset as AdjustedLineIndex;
-          const curLink = links[curOffset];
-          let res: Link;
-          if (curLink !== undefined) {
-            const {child, parent, first, user, votes} = curLink;
-            res = {
-              valid: true,
-              child,
-              parent,
-              first,
-              user: user || '[nouser]',
-              votes,
-            };
+      })
+        .then(json)
+        .then((obj: ApiLinkList) => {
+          const { links, next } = obj;
+          const curCount = next - fromOffset;
+          const count = curCount > 0 ? curCount : remainCount;
+          range(count).forEach((curOffset) => {
+            const adjIndex = (fromOffset + curOffset) as AdjustedLineIndex;
+            const curLink = links[curOffset];
+            let res: Link;
+            if (curLink !== undefined) {
+              const { child, parent, first, user, votes } = curLink;
+              res = {
+                valid: true,
+                child,
+                parent,
+                first,
+                user: user || '[nouser]',
+                votes,
+              };
+            } else {
+              res = { valid: false };
+            }
+            this.line.set(adjIndex, res);
+            this.note(adjIndex);
+          });
+          if (count < remainCount) {
+            fetchRange(blockOffset + count);
           } else {
-            res = {valid: false};
+            finish();
           }
-          this.line.set(adjIndex, res);
-          this.note(adjIndex);
+        })
+        .catch((e) => {
+          this.activeBlocks.delete(block);
+          errHnd(e);
         });
-        if (count < remainCount) {
-          fetchRange(blockOffset + count);
-        } else {
-          finish();
-        }
-      }).catch((e) => {
-        this.activeBlocks.delete(block);
-        errHnd(e);
-      });
     };
 
     setTimeout(() => {

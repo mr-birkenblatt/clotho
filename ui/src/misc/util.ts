@@ -51,19 +51,34 @@ export function assertNotEqual(actual: unknown, expected: unknown): void {
 }
 
 function safeStringify(obj: any): string {
-  return JSON.stringify(obj, (_k, value) => {
-    if (value instanceof Object && !(value instanceof Array) && !(value instanceof Date) && !(value instanceof Function)) {
-      value = Object.fromEntries(Object.keys(value).sort().map((k) => [k, value[k]]));
-    }
-    return value;
-  }, '');
+  return JSON.stringify(
+    obj,
+    (_k, value) => {
+      if (
+        value instanceof Object &&
+        !(value instanceof Array) &&
+        !(value instanceof Date) &&
+        !(value instanceof Function)
+      ) {
+        value = Object.fromEntries(
+          Object.keys(value)
+            .sort()
+            .map((k) => [k, value[k]]),
+        );
+      }
+      return value;
+    },
+    '',
+  );
 }
 
 export class SafeMap<K, V> {
   private readonly mapValues: Map<string, V>;
   private readonly mapKeys: Map<string, K>;
 
-  constructor(entries?: Iterable<readonly [K, V]> | ArrayLike<readonly [K, V]>) {
+  constructor(
+    entries?: Iterable<readonly [K, V]> | ArrayLike<readonly [K, V]>,
+  ) {
     if (entries !== undefined) {
       const es: (readonly [K, V])[] = Array.from(entries);
       this.mapValues = new Map(es.map((e) => [this.key(e[0]), e[1]]));
@@ -89,7 +104,10 @@ export class SafeMap<K, V> {
     return this.mapValues.delete(k);
   }
 
-  forEach(callbackfn: (value: V, key: K, map: this) => void, thisArg?: any): void {
+  forEach(
+    callbackfn: (value: V, key: K, map: this) => void,
+    thisArg?: any,
+  ): void {
     this.mapValues.forEach((value, key) => {
       const k = this.mapKeys.get(key);
       assertTrue(k !== undefined);
@@ -162,7 +180,10 @@ export class SafeSet<V> {
     return this.setValues.delete(v);
   }
 
-  forEach(callbackfn: (value: V, value2: V, set: this) => void, thisArg?: any): void {
+  forEach(
+    callbackfn: (value: V, value2: V, set: this) => void,
+    thisArg?: any,
+  ): void {
     this.setValues.forEach((value) => {
       callbackfn.call(thisArg, value, value, this);
     }, this);
