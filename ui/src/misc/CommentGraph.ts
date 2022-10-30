@@ -46,29 +46,29 @@ export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
 export function toFullLinkKey(
   linkKey: LinkKey,
   index: AdjustedLineIndex,
-  ): FullLinkKey {
-    const { mhash, isGetParent } = linkKey;
-    return {
-      mhash,
-      isGetParent,
-      index,
-    };
-  }
+): FullLinkKey {
+  const { mhash, isGetParent } = linkKey;
+  return {
+    mhash,
+    isGetParent,
+    index,
+  };
+}
 
 export type Votes = { [key: string]: number };
 
 export type Link =
-| {
-  valid: true;
-  parent: MHash;
-  child: MHash;
-  user: string;
-  first: number;
-  votes: Votes;
-  }
-| {
-    valid?: false;
-  };
+  | {
+      valid: true;
+      parent: MHash;
+      child: MHash;
+      user: string;
+      first: number;
+      votes: Votes;
+    }
+  | {
+      valid?: false;
+    };
 
 export type NotifyContentCB = (mhash: MHash, content: string) => void;
 export type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
