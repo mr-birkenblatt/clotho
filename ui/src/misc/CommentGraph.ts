@@ -14,8 +14,6 @@ type ApiRead = {
   skipped: MHash[];
 };
 
-export type Votes = { [key: string]: number };
-
 type LinkResponse = {
   parent: MHash;
   child: MHash;
@@ -29,9 +27,9 @@ type ApiLinkList = {
   next: number;
 };
 
+type LineBlock = number & { _lineBlock: void };
 export type LineIndex = number & { _lineIndex: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
-type LineBlock = number & { _lineBlock: void };
 export type MHash = string & { _mHash: void };
 export type LinkKey = { mhash: MHash; isGetParent: boolean };
 export type FullLinkKey = {
@@ -48,31 +46,33 @@ export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
 export function toFullLinkKey(
   linkKey: LinkKey,
   index: AdjustedLineIndex,
-): FullLinkKey {
-  const { mhash, isGetParent } = linkKey;
-  return {
-    mhash,
-    isGetParent,
-    index,
-  };
-}
+  ): FullLinkKey {
+    const { mhash, isGetParent } = linkKey;
+    return {
+      mhash,
+      isGetParent,
+      index,
+    };
+  }
+
+export type Votes = { [key: string]: number };
 
 export type Link =
-  | {
-      valid: true;
-      parent: MHash;
-      child: MHash;
-      user: string;
-      first: number;
-      votes: Votes;
-    }
-  | {
-      valid?: false;
-    };
+| {
+  valid: true;
+  parent: MHash;
+  child: MHash;
+  user: string;
+  first: number;
+  votes: Votes;
+  }
+| {
+    valid?: false;
+  };
 
-type NotifyContentCB = (mhash: MHash, content: string) => void;
-type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
-type TopicsCB = (topics: Readonly<Map<MHash, string>>) => void;
+export type NotifyContentCB = (mhash: MHash, content: string) => void;
+export type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
+export type TopicsCB = (topics: Readonly<Map<MHash, string>>) => void;
 
 export class CommentPool {
   private readonly pool: LRU<MHash, string>;
@@ -172,7 +172,7 @@ export class CommentPool {
     return undefined;
   }
 
-  getTopics(notify: TopicsCB) {
+  getTopics(notify: TopicsCB): void {
     if (this.topics) {
       notify(this.topics);
       return;
@@ -284,7 +284,7 @@ class LinkLookup {
           }
         })
         .catch((e) => {
-          this.activeBlocks.delete(block);
+          finish();
           errHnd(e);
         });
     };
