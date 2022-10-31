@@ -13,6 +13,7 @@ import CommentGraph, {
   AdjustedLineIndex,
   LineKey,
   Link,
+  toFullKey,
 } from './misc/CommentGraph';
 
 const Main = styled.div`
@@ -97,13 +98,11 @@ export default class App extends PureComponent<AppProps, AppState> {
   };
 
   getChildLine: ChildLineCB = (lineKey, index, callback) => {
-    // FIXME
-    // this.loader.getChildLine(lineName, index, callback);
+    this.graph.getChild(toFullKey(lineKey, index), callback);
   };
 
   getParentLine: ParentLineCB = (lineKey, index, callback) => {
-    // FIXME
-    // this.loader.getParentLine(lineName, index, callback);
+    this.graph.getParent(toFullKey(lineKey, index), callback);
   };
 
   getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {

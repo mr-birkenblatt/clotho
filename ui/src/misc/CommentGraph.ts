@@ -542,4 +542,12 @@ export default class CommentGraph {
     }
     return this.getTopicTopLink(fullKey);
   }
+
+  getParent(fullKey: FullKey, callback: (parent: LineKey) => void): void {
+    // TODO
+  }
+
+  getChild(fullKey: FullKey, callback: (child: LineKey) => void): void {
+    // TODO
+  }
 } // CommentGraph
