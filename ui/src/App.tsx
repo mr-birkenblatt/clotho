@@ -2,8 +2,8 @@ import React, { PureComponent } from 'react';
 // import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
 import Horizontal, { ItemCB } from './main/Horizontal';
-import Vertical, { LinkCB } from './main/Vertical';
-import CommentGraph, { Link } from './misc/CommentGraph';
+import Vertical, { ChildLineCB, LinkCB, ParentLineCB, RenderLinkCB, VItemCB } from './main/Vertical';
+import CommentGraph, { AdjustedLineIndex, LineKey, Link } from './misc/CommentGraph';
 
 const Main = styled.div`
   text-align: center;
@@ -72,11 +72,7 @@ export default class App extends PureComponent<AppProps, AppState> {
     return this.graph.getMessage(fullLinkKey, () => readyCb());
   };
 
-  getVItem = (
-    isParent: boolean,
-    lineName: string,
-    height: number,
-  ): JSX.Element => {
+  getVItem: VItemCB = (lineKey, height) => {
     return (
       <Horizontal
         itemWidth={450}
@@ -84,40 +80,29 @@ export default class App extends PureComponent<AppProps, AppState> {
         itemRadius={10}
         itemPadding={50}
         buttonSize={50}
-        isParent={isParent}
-        lineName={lineName}
+        lineKey={lineKey}
         getItem={this.getItem}
       />
     );
   };
 
-  getChildLine = (
-    lineName: string,
-    index: number,
-    callback: (child: string) => void,
-  ): void => {
-    this.loader.getChildLine(lineName, index, callback);
+  getChildLine: ChildLineCB = (lineKey, index, callback) => {
+    // FIXME
+    // this.loader.getChildLine(lineName, index, callback);
   };
 
-  getParentLine = (
-    lineName: string,
-    index: number,
-    callback: (parent: string) => void,
-  ): void => {
-    this.loader.getParentLine(lineName, index, callback);
+  getParentLine: ParentLineCB = (lineKey, index, callback) => {
+    // FIXME
+    // this.loader.getParentLine(lineName, index, callback);
   };
 
   getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {
     return this.graph.getTopLink(fullLinkKey, parentIndex, () => readyCb());
   };
 
-  renderLink = (
-    link: Link,
-    buttonSize: number,
-    radius: number,
-  ): JSX.Element => {
+  renderLink: RenderLinkCB = (link, buttonSize, radius) => {
     if (!link.valid) {
-      return <div>[missing]</div>;
+      return null;
     }
     return (
       <div>

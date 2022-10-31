@@ -386,7 +386,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const { offset, itemCount } = this.state;
     const locked = locks[constructKey(lineKey)];
     const lockedIx =
-      locked && locked.skipItem ? locked.index : offset + itemCount;
+      locked && locked.skipItem ? locked.index : offset + itemCount as AdjustedLineIndex;
     return index + (lockedIx > index ? 0 : 1) as AdjustedLineIndex;
   }
 

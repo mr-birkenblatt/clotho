@@ -4,8 +4,10 @@ import styled from 'styled-components';
 import {
   AdjustedLineIndex,
   FullKey,
+  LineKey,
   Link,
   ReadyCB,
+  toFullKey,
 } from '../misc/CommentGraph';
 import { range } from '../misc/util';
 import { RootState } from '../store';
@@ -14,6 +16,8 @@ import {
   setVCurrentIx,
   addLine,
   focusV,
+  VIndex,
+  LineIndex,
 } from './LineStateSlice';
 
 const Outer = styled.div`
@@ -91,28 +95,31 @@ export type LinkCB = (
   parentIndex: AdjustedLineIndex,
   readyCb: ReadyCB,
 ) => Link | undefined;
+export type ChildLineCB = (
+  lineKey: LineKey,
+  index: AdjustedLineIndex,
+  callback: (child: LineKey) => void,
+) => void;
+export type ParentLineCB = (
+  lineKey: LineKey,
+  index: AdjustedLineIndex,
+  callback: (parent: LineKey) => void,
+) => void;
+export type VItemCB = (
+  lineKey: LineKey,
+  height: number,
+) => JSX.Element;
+export type RenderLinkCB = (link: Link, buttonSize: number, radius: number) => JSX.Element | null;
 
 interface VerticalProps extends ConnectVertical {
   height: number;
   buttonSize: number;
   radius: number;
-  getChildLine: (
-    lineName: string,
-    index: number,
-    callback: (child: string) => void,
-  ) => void;
-  getParentLine: (
-    lineName: string,
-    index: number,
-    callback: (parent: string) => void,
-  ) => void;
-  getItem: (
-    isParent: boolean,
-    lineName: string,
-    height: number,
-  ) => JSX.Element;
+  getChildLine: ChildLineCB;
+  getParentLine: ParentLineCB;
+  getItem: VItemCB;
   getLink: LinkCB;
-  renderLink: (link: Link, buttonSize: number, radius: number) => JSX.Element;
+  renderLink: RenderLinkCB;
 }
 
 type EmptyVerticalProps = {
@@ -127,7 +134,7 @@ type VerticalState = {
   redraw: boolean;
   scrollInit: boolean;
   isScrolling: boolean;
-  focusIx: number;
+  focusIx: VIndex;
   viewUpdate: boolean;
 };
 
@@ -138,9 +145,9 @@ type EmptyVerticalState = {
 class Vertical extends PureComponent<VerticalProps, VerticalState> {
   rootBox: React.RefObject<HTMLDivElement>;
   bandRef: React.RefObject<HTMLDivElement>;
-  activeRefs: Map<number, React.RefObject<HTMLDivElement>>;
-  awaitOrderChange: string[] | undefined;
-  awaitCurrentChange: number | undefined;
+  activeRefs: Map<VIndex, React.RefObject<HTMLDivElement>>;
+  awaitOrderChange: LineKey[] | undefined;
+  awaitCurrentChange: VIndex | undefined;
 
   constructor(props: VerticalProps) {
     super(props);
@@ -149,7 +156,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       redraw: false,
       scrollInit: false,
       isScrolling: false,
-      focusIx: 0,
+      focusIx: 0 as VIndex,
       viewUpdate: false,
     };
     this.rootBox = React.createRef();
@@ -213,19 +220,16 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const adjIndex = correction + currentIx;
     const minIx = Math.min(rangeOrder[0], rangeArray[0], adjIndex);
     const maxIx = Math.max(rangeOrder[1], rangeArray[1], adjIndex);
-    // FIXME double check all range usages
-    const ord = range(maxIx - minIx).reduce((cur, val) => {
-      const isOrd =
-        val + minIx >= rangeOrder[0] && val + minIx < rangeOrder[1];
+    const ord = range(minIx, maxIx).reduce((cur, val) => {
+      const isOrd = val >= rangeOrder[0] && val < rangeOrder[1];
       return `${cur}${isOrd ? '#' : '_'}`;
     }, '');
-    const arr = range(maxIx - minIx).reduce((cur, val) => {
-      const isArr =
-        val + minIx >= rangeArray[0] && val + minIx < rangeArray[1];
+    const arr = range(minIx, maxIx).reduce((cur, val) => {
+      const isArr = val >= rangeArray[0] && val < rangeArray[1];
       return `${cur}${isArr ? '#' : '_'}`;
     }, '');
-    const cur = range(maxIx - minIx).reduce((cur, val) => {
-      const isCur = val + minIx === adjIndex;
+    const cur = range(minIx, maxIx).reduce((cur, val) => {
+      const isCur = val === adjIndex;
       return `${cur}${isCur ? 'X' : '_'}`;
     }, '');
     console.group('VState');
@@ -235,10 +239,13 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     console.groupEnd();
   }
 
-  computeIx(): number | undefined {
+  computeIx(): VIndex | undefined {
     const { itemCount } = this.state;
+
+    type PosAndIndex = undefined[] | [number, VIndex];
+
     const out = range(itemCount).reduce(
-      (res: undefined[] | number[], ix: number) => {
+      (res: PosAndIndex, ix: number): PosAndIndex => {
         const realIx = this.getRealIndex(ix);
         const curRef = this.activeRefs.get(realIx);
         if (curRef === undefined) {
@@ -302,13 +309,14 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
+        const lastIx = order.length - 1 as VIndex;
         getChildLine(
-          order[order.length - 1],
-          this.getHIndex(order.length - 1, true),
+          order[lastIx],
+          this.getHIndexAdjusted(lastIx),
           (child) => {
             dispatch(
               addLine({
-                lineName: child,
+                lineKey: child,
                 isBack: true,
               }),
             );
@@ -316,10 +324,11 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         );
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
-        getParentLine(order[0], this.getHIndex(0, true), (parent) => {
+        const firstIx = 0 as VIndex;
+        getParentLine(order[firstIx], this.getHIndexAdjusted(firstIx), (parent) => {
           dispatch(
             addLine({
-              lineName: parent,
+              lineKey: parent,
               isBack: false,
             }),
           );
@@ -346,9 +355,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         dispatch(
           setVCurrentIx({
             vIndex: computedIx,
-            hIndex: this.getHIndex(computedIx, false),
-            isParent: this.isParent(computedIx),
-            lineName: this.lineName(computedIx),
+            hIndex: this.getHIndexAdjusted(computedIx),
+            lineKey: this.lineKey(computedIx),
           }),
         );
         this.awaitCurrentChange = currentIx;
@@ -435,9 +443,9 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
   }
 
-  focus(focusIx: number, smooth: boolean): void {
+  focus(focusIx: VIndex, smooth: boolean): void {
     const item = this.activeRefs.get(focusIx);
-    if (item && item.current) {
+    if (item !== undefined && item.current !== null) {
       const curItem = item.current;
       curItem.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
@@ -448,45 +456,45 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
   }
 
-  getRealIndex(index: number): number {
-    return this.props.offset + index;
+  getRealIndex(index: number): VIndex {
+    return this.props.offset + index as VIndex;
   }
 
-  isParent(index: number): boolean {
-    return index <= this.props.currentIx;
-  }
-
-  lineName(index: number): string {
+  lineKey(index: VIndex): LineKey {
     return this.props.order[index + this.props.correction];
   }
 
-  getHIndex(index: number, adjust: boolean): number {
-    const { locks, currentLineIxs } = this.props;
-    const key = constructKey(this.lineName(index));
+  getHIndex(index: VIndex): LineIndex {
+    const { currentLineIxs } = this.props;
+    const key = constructKey(this.lineKey(index));
     const res = currentLineIxs[key];
     if (res === undefined) {
-      return 0;
+      return 0 as LineIndex;
     }
-    if (!adjust) {
-      return res;
-    }
+    return res;
+  }
+
+  getHIndexAdjusted(index: VIndex): AdjustedLineIndex {
+    const { locks } = this.props;
+    const key = constructKey(this.lineKey(index));
+    const res = this.getHIndex(index);
     const locked = locks[key];
     if (locked && res < 0) {
       return locked.index;
     }
-    const lockedIx = locked && locked.skipItem ? locked.index : res + 1;
-    return res + (lockedIx > res ? 0 : 1);
+    const lockedIx = (locked && locked.skipItem ? locked.index : res + 1) as AdjustedLineIndex;
+    return res + (lockedIx > res ? 0 : 1) as AdjustedLineIndex;
   }
 
   handleUp = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ focus: currentIx - 1 }));
+    dispatch(focusV({ focus: currentIx - 1 as VIndex }));
     event.preventDefault();
   };
 
   handleDown = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ focus: currentIx + 1 }));
+    dispatch(focusV({ focus: currentIx + 1 as VIndex }));
     event.preventDefault();
   };
 
@@ -515,17 +523,20 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     } = this.props;
     const { itemCount } = this.state;
 
-    const render = (realIx: number): JSX.Element | string => {
+    const render = (realIx: VIndex): JSX.Element | null => {
       const link = getLink(
-        this.isParent(realIx),
-        this.lineName(realIx),
-        this.getHIndex(realIx, true),
+        toFullKey(this.lineKey(realIx), this.getHIndexAdjusted(realIx)),
+        this.getHIndexAdjusted(realIx - 1 as VIndex),
         this.requestRedraw,
       );
       if (link === undefined) {
-        return '...';
+        return null;
       }
-      return renderLink(link, buttonSize, radius);
+      const res = renderLink(link, buttonSize, radius);
+      if (res === null) {
+        return null;
+      }
+      return <ItemMid>{res}</ItemMid>
     };
 
     return (
@@ -544,8 +555,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
                 key={realIx}
                 ref={this.activeRefs.get(realIx)}
                 isCurrent={currentIx === realIx}>
-                {ix > 0 ? <ItemMid>{render(realIx)}</ItemMid> : null}
-                {getItem(this.isParent(realIx), this.lineName(realIx), height)}
+                {ix > 0 ? render(realIx) : null}
+                {getItem(this.lineKey(realIx), height)}
               </Item>
             );
           })}
