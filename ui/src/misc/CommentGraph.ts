@@ -98,7 +98,9 @@ export type NotifyContentCB = (
   content: Readonly<string>,
 ) => void;
 export type NotifyLinkCB = (link: Readonly<Link>) => void;
-type TopicsCB = (topics: Readonly<[Readonly<MHash>, Readonly<string>][]>) => void;
+type TopicsCB = (
+  topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
+) => void;
 
 class CommentPool {
   private readonly pool: LRU<Readonly<MHash>, string>;
@@ -185,7 +187,10 @@ class CommentPool {
     this.waitFor(mhash, notify);
   }
 
-  getMessage(mhash: Readonly<MHash>, notify?: NotifyContentCB): string | undefined {
+  getMessage(
+    mhash: Readonly<MHash>,
+    notify?: NotifyContentCB,
+  ): string | undefined {
     const res = this.pool.get(mhash);
     if (res !== undefined) {
       return res;
@@ -198,7 +203,9 @@ class CommentPool {
     return undefined;
   }
 
-  getTopics(notify: TopicsCB): Readonly<[Readonly<MHash>, Readonly<string>][]> | undefined {
+  getTopics(
+    notify: TopicsCB,
+  ): Readonly<[Readonly<MHash>, Readonly<string>][]> | undefined {
     if (this.topics) {
       return this.topics;
     }
@@ -230,7 +237,11 @@ class LinkLookup {
   private readonly listeners: Map<AdjustedLineIndex, NotifyLinkCB[]>;
   private readonly activeBlocks: Set<Readonly<LineBlock>>;
 
-  constructor(linkKey: Readonly<LinkKey>, maxLineSize: number, blockSize?: number) {
+  constructor(
+    linkKey: Readonly<LinkKey>,
+    maxLineSize: number,
+    blockSize?: number,
+  ) {
     this.blockSize = blockSize || 10;
     this.linkKey = linkKey;
     this.line = new LRU(maxLineSize);
@@ -471,14 +482,22 @@ export default class CommentGraph {
     return getMessage(link, false);
   }
 
-  getMessage(fullKey: Readonly<FullKey>, notify: NotifyContentCB): string | undefined {
+  getMessage(
+    fullKey: Readonly<FullKey>,
+    notify: NotifyContentCB,
+  ): string | undefined {
     if (!fullKey.topic) {
       return this.getFullLinkMessage(fullKey, notify);
     }
     return this.getTopicMessage(fullKey, notify);
   }
 
-  private getTopicNextLink(fullTopicKey: Readonly<FullTopicKey>, nextIndex: AdjustedLineIndex, isTop: boolean, notify: NotifyLinkCB): Link | undefined {
+  private getTopicNextLink(
+    fullTopicKey: Readonly<FullTopicKey>,
+    nextIndex: AdjustedLineIndex,
+    isTop: boolean,
+    notify: NotifyLinkCB,
+  ): Link | undefined {
     const { index } = fullTopicKey;
 
     const getTopic = (
@@ -490,17 +509,27 @@ export default class CommentGraph {
       return topics[index][0];
     };
 
-    const getTopicTopLink = (mhash: Readonly<MHash> | undefined, notifyOnHit: boolean): Link | undefined => {
+    const getTopicTopLink = (
+      mhash: Readonly<MHash> | undefined,
+      notifyOnHit: boolean,
+    ): Link | undefined => {
       if (mhash === undefined) {
-        const res: Link = {valid: false};
+        const res: Link = { valid: false };
         if (notifyOnHit) {
           notify(res);
         }
         return res;
       }
-      const res = this.linkPool.getLink({
-        mhash, isGetParent: isTop, index: nextIndex
-      }, (link) => {notify(link)});
+      const res = this.linkPool.getLink(
+        {
+          mhash,
+          isGetParent: isTop,
+          index: nextIndex,
+        },
+        (link) => {
+          notify(link);
+        },
+      );
       if (res !== undefined && notifyOnHit) {
         notify(res);
       }
@@ -574,7 +603,7 @@ export default class CommentGraph {
     if (!fullKey.topic) {
       return this.getFullNextLink(fullKey, parentIndex, true, notify);
     }
-    return this.getTopicNextLink(fullKey, parentIndex,true, notify);
+    return this.getTopicNextLink(fullKey, parentIndex, true, notify);
   }
 
   getBottomLink(
@@ -588,13 +617,16 @@ export default class CommentGraph {
     return this.getTopicNextLink(fullKey, childIndex, false, notify);
   }
 
-  getParent(fullKey: Readonly<FullKey>, parentIndex: AdjustedLineIndex, callback: (parent: Readonly<LineKey>) => void): void {
-
+  getParent(
+    fullKey: Readonly<FullKey>,
+    parentIndex: AdjustedLineIndex,
+    callback: (parent: Readonly<LineKey>) => void,
+  ): void {
     const getParent = (link: Link) => {
       if (!link.valid) {
         return; // NOTE: we are not following broken links
       }
-      callback({mhash: link.parent, isGetParent: true});
+      callback({ mhash: link.parent, isGetParent: true });
     };
 
     const res = this.getTopLink(fullKey, parentIndex, getParent);
@@ -603,13 +635,16 @@ export default class CommentGraph {
     }
   }
 
-  getChild(fullKey: Readonly<FullKey>, childIndex: AdjustedLineIndex, callback: (child: Readonly<LineKey>) => void): void {
-
+  getChild(
+    fullKey: Readonly<FullKey>,
+    childIndex: AdjustedLineIndex,
+    callback: (child: Readonly<LineKey>) => void,
+  ): void {
     const getChild = (link: Link) => {
       if (!link.valid) {
         return; // NOTE: we are not following broken links
       }
-      callback({mhash: link.child, isGetParent: false});
+      callback({ mhash: link.child, isGetParent: false });
     };
 
     const res = this.getBottomLink(fullKey, childIndex, getChild);

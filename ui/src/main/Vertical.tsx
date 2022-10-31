@@ -107,7 +107,10 @@ export type ParentLineCB = (
   parentIndex: AdjustedLineIndex,
   callback: (parent: LineKey) => void,
 ) => void;
-export type VItemCB = (lineKey: LineKey | undefined, height: number) => JSX.Element | null;
+export type VItemCB = (
+  lineKey: LineKey | undefined,
+  height: number,
+) => JSX.Element | null;
 export type RenderLinkCB = (
   link: Link,
   buttonSize: number,
@@ -363,7 +366,11 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     ) {
       const computedIx = this.computeIx();
       const computedLine = this.lineKey(computedIx);
-      if (computedIx !== undefined && computedLine !== undefined && computedIx !== currentIx) {
+      if (
+        computedIx !== undefined &&
+        computedLine !== undefined &&
+        computedIx !== currentIx
+      ) {
         dispatch(
           setVCurrentIx({
             vIndex: computedIx,
