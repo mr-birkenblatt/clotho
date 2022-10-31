@@ -1,4 +1,3 @@
-import { Set } from 'typescript';
 import LRU from './LRU';
 import { assertTrue, errHnd, json, range, toJson } from './util';
 
