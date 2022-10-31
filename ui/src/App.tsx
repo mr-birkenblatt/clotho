@@ -9,12 +9,7 @@ import Vertical, {
   RenderLinkCB,
   VItemCB,
 } from './main/Vertical';
-import CommentGraph, {
-  AdjustedLineIndex,
-  LineKey,
-  Link,
-  toFullKey,
-} from './misc/CommentGraph';
+import CommentGraph, { toFullKey } from './misc/CommentGraph';
 
 const Main = styled.div`
   text-align: center;
