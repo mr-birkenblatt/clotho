@@ -31,10 +31,16 @@ type LineBlock = number & { _lineBlock: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
 
-interface LinkKey { topic?: false, mhash: MHash; isGetParent: boolean };
-interface TopicKey { topic: true; };
+interface LinkKey {
+  topic?: false;
+  mhash: MHash;
+  isGetParent: boolean;
+}
+interface TopicKey {
+  topic: true;
+}
 export type LineKey = LinkKey | TopicKey;
-export const TOPIC_KEY: LineKey = {topic: true};
+export const TOPIC_KEY: LineKey = { topic: true };
 
 interface FullLinkKey {
   topic?: false;
@@ -50,7 +56,7 @@ export type FullKey = FullLinkKey | FullTopicKey;
 
 export function asLineKey(fullKey: FullKey): LineKey {
   if (fullKey.topic) {
-    return {topic: true};
+    return { topic: true };
   }
   const { mhash, isGetParent } = fullKey;
   return { mhash, isGetParent };
@@ -61,7 +67,7 @@ export function toFullKey(
   index: AdjustedLineIndex,
 ): FullKey {
   if (lineKey.topic) {
-    return {topic: true, index};
+    return { topic: true, index };
   }
   const { mhash, isGetParent } = lineKey;
   return {
@@ -237,8 +243,8 @@ class LinkLookup {
   }
 
   getFullLinkKey(index: AdjustedLineIndex): Readonly<FullLinkKey> {
-    const {mhash, isGetParent} = this.getLinkKey();
-    return {mhash, isGetParent, index};
+    const { mhash, isGetParent } = this.getLinkKey();
+    return { mhash, isGetParent, index };
   }
 
   private getBlock(index: AdjustedLineIndex): LineBlock {
@@ -383,14 +389,14 @@ class LinkPool {
   }
 
   retrieveLink(fullLinkKey: FullLinkKey, notify: NotifyLinkCB): void {
-    const {mhash, isGetParent} = fullLinkKey;
-    const line = this.getLine({mhash, isGetParent});
+    const { mhash, isGetParent } = fullLinkKey;
+    const line = this.getLine({ mhash, isGetParent });
     line.retrieveLink(fullLinkKey.index, notify);
   }
 
   getLink(fullLinkKey: FullLinkKey, notify?: NotifyLinkCB): Link | undefined {
-    const {mhash, isGetParent} = fullLinkKey;
-    const line = this.getLine({mhash, isGetParent});
+    const { mhash, isGetParent } = fullLinkKey;
+    const line = this.getLine({ mhash, isGetParent });
     return line.getLink(fullLinkKey.index, notify);
   }
 } // LinkPool

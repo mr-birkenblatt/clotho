@@ -131,7 +131,7 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
       }
       lockLine(state, lineKey, hIndex, false);
       state.vCurrentIx = vIndex;
-      state.vOffset = vIndex - 1 as VOffset;
+      state.vOffset = (vIndex - 1) as VOffset;
       state.vFocus = vIndex;
       state.vFocusSmooth = false;
     },
@@ -141,7 +141,7 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
         state.vOrder.push(lineKey);
       } else {
         state.vOrder = [lineKey, ...state.vOrder];
-        state.vCorrection = state.vCorrection + 1 as VCorrection;
+        state.vCorrection = (state.vCorrection + 1) as VCorrection;
       }
     },
     focusV: (state, action) => {

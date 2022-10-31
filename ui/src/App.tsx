@@ -2,8 +2,18 @@ import React, { PureComponent } from 'react';
 // import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
 import Horizontal, { ItemCB } from './main/Horizontal';
-import Vertical, { ChildLineCB, LinkCB, ParentLineCB, RenderLinkCB, VItemCB } from './main/Vertical';
-import CommentGraph, { AdjustedLineIndex, LineKey, Link } from './misc/CommentGraph';
+import Vertical, {
+  ChildLineCB,
+  LinkCB,
+  ParentLineCB,
+  RenderLinkCB,
+  VItemCB,
+} from './main/Vertical';
+import CommentGraph, {
+  AdjustedLineIndex,
+  LineKey,
+  Link,
+} from './misc/CommentGraph';
 
 const Main = styled.div`
   text-align: center;

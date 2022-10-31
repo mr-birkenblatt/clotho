@@ -105,11 +105,12 @@ export type ParentLineCB = (
   index: AdjustedLineIndex,
   callback: (parent: LineKey) => void,
 ) => void;
-export type VItemCB = (
-  lineKey: LineKey,
-  height: number,
-) => JSX.Element;
-export type RenderLinkCB = (link: Link, buttonSize: number, radius: number) => JSX.Element | null;
+export type VItemCB = (lineKey: LineKey, height: number) => JSX.Element;
+export type RenderLinkCB = (
+  link: Link,
+  buttonSize: number,
+  radius: number,
+) => JSX.Element | null;
 
 interface VerticalProps extends ConnectVertical {
   height: number;
@@ -309,7 +310,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
-        const lastIx = order.length - 1 as VIndex;
+        const lastIx = (order.length - 1) as VIndex;
         getChildLine(
           order[lastIx],
           this.getHIndexAdjusted(lastIx),
@@ -325,14 +326,18 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
         const firstIx = 0 as VIndex;
-        getParentLine(order[firstIx], this.getHIndexAdjusted(firstIx), (parent) => {
-          dispatch(
-            addLine({
-              lineKey: parent,
-              isBack: false,
-            }),
-          );
-        });
+        getParentLine(
+          order[firstIx],
+          this.getHIndexAdjusted(firstIx),
+          (parent) => {
+            dispatch(
+              addLine({
+                lineKey: parent,
+                isBack: false,
+              }),
+            );
+          },
+        );
         this.awaitOrderChange = order;
       }
     }
@@ -457,7 +462,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   }
 
   getRealIndex(index: number): VIndex {
-    return this.props.offset + index as VIndex;
+    return (this.props.offset + index) as VIndex;
   }
 
   lineKey(index: VIndex): LineKey {
@@ -482,19 +487,21 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (locked && res < 0) {
       return locked.index;
     }
-    const lockedIx = (locked && locked.skipItem ? locked.index : res + 1) as AdjustedLineIndex;
-    return res + (lockedIx > res ? 0 : 1) as AdjustedLineIndex;
+    const lockedIx = (
+      locked && locked.skipItem ? locked.index : res + 1
+    ) as AdjustedLineIndex;
+    return (res + (lockedIx > res ? 0 : 1)) as AdjustedLineIndex;
   }
 
   handleUp = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ focus: currentIx - 1 as VIndex }));
+    dispatch(focusV({ focus: (currentIx - 1) as VIndex }));
     event.preventDefault();
   };
 
   handleDown = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ focus: currentIx + 1 as VIndex }));
+    dispatch(focusV({ focus: (currentIx + 1) as VIndex }));
     event.preventDefault();
   };
 
@@ -526,7 +533,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const render = (realIx: VIndex): JSX.Element | null => {
       const link = getLink(
         toFullKey(this.lineKey(realIx), this.getHIndexAdjusted(realIx)),
-        this.getHIndexAdjusted(realIx - 1 as VIndex),
+        this.getHIndexAdjusted((realIx - 1) as VIndex),
         this.requestRedraw,
       );
       if (link === undefined) {
@@ -536,7 +543,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       if (res === null) {
         return null;
       }
-      return <ItemMid>{res}</ItemMid>
+      return <ItemMid>{res}</ItemMid>;
     };
 
     return (

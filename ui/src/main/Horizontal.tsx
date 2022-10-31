@@ -2,10 +2,22 @@ import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
-import { AdjustedLineIndex, FullKey, LineKey, ReadyCB, toFullKey } from '../misc/CommentGraph';
+import {
+  AdjustedLineIndex,
+  FullKey,
+  LineKey,
+  ReadyCB,
+  toFullKey,
+} from '../misc/CommentGraph';
 import { range } from '../misc/util';
 import { RootState } from '../store';
-import { constructKey, focusAt, LineIndex, LOCK_INDEX, setHCurrentIx } from './LineStateSlice';
+import {
+  constructKey,
+  focusAt,
+  LineIndex,
+  LOCK_INDEX,
+  setHCurrentIx,
+} from './LineStateSlice';
 
 const Outer = styled.div`
   position: relative;
@@ -239,11 +251,11 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
         let newOffset = offset;
         let newPadSize = padSize;
         while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
-          newOffset = newOffset - 1 as HOffset;
+          newOffset = (newOffset - 1) as HOffset;
           newPadSize -= itemWidth;
         }
         while (currentIx > newOffset + itemCount * 0.5) {
-          newOffset = newOffset + 1 as HOffset;
+          newOffset = (newOffset + 1) as HOffset;
           newPadSize += itemWidth;
         }
         this.setState({
@@ -292,7 +304,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
         }
       });
       range(itemCount).forEach((ix) => {
-        const realIx = offset + ix as LineIndex;
+        const realIx = (offset + ix) as LineIndex;
         if (!this.activeRefs.has(realIx)) {
           this.activeRefs.set(realIx, React.createRef());
           needViewsNew = true;
@@ -329,7 +341,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
 
     if (needViews) {
       range(itemCount).forEach((ix) => {
-        const realIx = offset + ix as LineIndex;
+        const realIx = (offset + ix) as LineIndex;
         const curRef = this.activeRefs.get(realIx);
         if (curRef && curRef.current && this.rootBox.current) {
           if (!this.activeView.has(realIx)) {
@@ -366,7 +378,10 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const { getItem, locks } = this.props;
     const locked = locks[constructKey(lineKey)];
 
-    const getContent = (lkey: LineKey, adjIndex: AdjustedLineIndex): string | JSX.Element => {
+    const getContent = (
+      lkey: LineKey,
+      adjIndex: AdjustedLineIndex,
+    ): string | JSX.Element => {
       const fullLinkKey = toFullKey(lkey, adjIndex);
       const msg = getItem(fullLinkKey, this.requestRedraw);
       if (msg !== undefined) {
@@ -386,8 +401,10 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const { offset, itemCount } = this.state;
     const locked = locks[constructKey(lineKey)];
     const lockedIx =
-      locked && locked.skipItem ? locked.index : offset + itemCount as AdjustedLineIndex;
-    return index + (lockedIx > index ? 0 : 1) as AdjustedLineIndex;
+      locked && locked.skipItem
+        ? locked.index
+        : ((offset + itemCount) as AdjustedLineIndex);
+    return (index + (lockedIx > index ? 0 : 1)) as AdjustedLineIndex;
   }
 
   requestRedraw = (): void => {
@@ -404,14 +421,14 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   handleLeft = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { lineKey, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineKey)];
-    dispatch(focusAt({ lineKey, index: currentIx - 1 as LineIndex }));
+    dispatch(focusAt({ lineKey, index: (currentIx - 1) as LineIndex }));
     event.preventDefault();
   };
 
   handleRight = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { lineKey, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineKey)];
-    dispatch(focusAt({ lineKey, index: currentIx + 1 as LineIndex }));
+    dispatch(focusAt({ lineKey, index: (currentIx + 1) as LineIndex }));
     event.preventDefault();
   };
 
@@ -460,7 +477,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           ) : null}
           <Pad padSize={padSize} />
           {range(itemCount - offShift).map((ix) => {
-            const realIx = offset + ix + offShift as LineIndex;
+            const realIx = (offset + ix + offShift) as LineIndex;
             return (
               <Item
                 key={realIx}
