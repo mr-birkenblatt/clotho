@@ -98,14 +98,16 @@ export type LinkCB = (
 export type ChildLineCB = (
   lineKey: LineKey,
   index: AdjustedLineIndex,
+  childIndex: AdjustedLineIndex,
   callback: (child: LineKey) => void,
 ) => void;
 export type ParentLineCB = (
   lineKey: LineKey,
   index: AdjustedLineIndex,
+  parentIndex: AdjustedLineIndex,
   callback: (parent: LineKey) => void,
 ) => void;
-export type VItemCB = (lineKey: LineKey, height: number) => JSX.Element;
+export type VItemCB = (lineKey: LineKey | undefined, height: number) => JSX.Element | null;
 export type RenderLinkCB = (
   link: Link,
   buttonSize: number,
@@ -311,9 +313,11 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (this.awaitOrderChange === null) {
       if (currentIx + correction >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
+        const newIx = (lastIx + 1) as VIndex;
         getChildLine(
           order[lastIx],
           this.getHIndexAdjusted(lastIx),
+          this.getHIndexAdjusted(newIx),
           (child) => {
             dispatch(
               addLine({
@@ -326,9 +330,11 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         this.awaitOrderChange = order;
       } else if (currentIx + correction <= 0) {
         const firstIx = 0 as VIndex;
+        const newIx = (firstIx - 1) as VIndex;
         getParentLine(
           order[firstIx],
           this.getHIndexAdjusted(firstIx),
+          this.getHIndexAdjusted(newIx),
           (parent) => {
             dispatch(
               addLine({
@@ -356,12 +362,13 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       focus === focusIx
     ) {
       const computedIx = this.computeIx();
-      if (computedIx !== undefined && computedIx !== currentIx) {
+      const computedLine = this.lineKey(computedIx);
+      if (computedIx !== undefined && computedLine !== undefined && computedIx !== currentIx) {
         dispatch(
           setVCurrentIx({
             vIndex: computedIx,
             hIndex: this.getHIndexAdjusted(computedIx),
-            lineKey: this.lineKey(computedIx),
+            lineKey: computedLine,
           }),
         );
         this.awaitCurrentChange = currentIx;
@@ -465,13 +472,25 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return (this.props.offset + index) as VIndex;
   }
 
-  lineKey(index: VIndex): LineKey {
-    return this.props.order[index + this.props.correction];
+  lineKey(index: VIndex | undefined): LineKey | undefined {
+    if (index === undefined) {
+      return undefined;
+    }
+    const { order } = this.props;
+    const correctedIndex = index + this.props.correction;
+    if (correctedIndex < 0 || correctedIndex >= order.length) {
+      return undefined;
+    }
+    return order[correctedIndex];
   }
 
   getHIndex(index: VIndex): LineIndex {
     const { currentLineIxs } = this.props;
-    const key = constructKey(this.lineKey(index));
+    const lineKey = this.lineKey(index);
+    if (lineKey === undefined) {
+      return 0 as LineIndex;
+    }
+    const key = constructKey(lineKey);
     const res = currentLineIxs[key];
     if (res === undefined) {
       return 0 as LineIndex;
@@ -481,7 +500,11 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
   getHIndexAdjusted(index: VIndex): AdjustedLineIndex {
     const { locks } = this.props;
-    const key = constructKey(this.lineKey(index));
+    const lineKey = this.lineKey(index);
+    if (lineKey === undefined) {
+      return 0 as AdjustedLineIndex;
+    }
+    const key = constructKey(lineKey);
     const res = this.getHIndex(index);
     const locked = locks[key];
     if (locked && res < 0) {
@@ -531,8 +554,12 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const { itemCount } = this.state;
 
     const render = (realIx: VIndex): JSX.Element | null => {
+      const lineKey = this.lineKey(realIx);
+      if (lineKey === undefined) {
+        return null;
+      }
       const link = getLink(
-        toFullKey(this.lineKey(realIx), this.getHIndexAdjusted(realIx)),
+        toFullKey(lineKey, this.getHIndexAdjusted(realIx)),
         this.getHIndexAdjusted((realIx - 1) as VIndex),
         this.requestRedraw,
       );

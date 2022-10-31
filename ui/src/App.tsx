@@ -79,6 +79,9 @@ export default class App extends PureComponent<AppProps, AppState> {
   };
 
   getVItem: VItemCB = (lineKey, height) => {
+    if (lineKey === undefined) {
+      return null;
+    }
     return (
       <Horizontal
         itemWidth={450}
@@ -92,12 +95,12 @@ export default class App extends PureComponent<AppProps, AppState> {
     );
   };
 
-  getChildLine: ChildLineCB = (lineKey, index, callback) => {
-    this.graph.getChild(toFullKey(lineKey, index), callback);
+  getChildLine: ChildLineCB = (lineKey, index, childIndex, callback) => {
+    this.graph.getChild(toFullKey(lineKey, index), childIndex, callback);
   };
 
-  getParentLine: ParentLineCB = (lineKey, index, callback) => {
-    this.graph.getParent(toFullKey(lineKey, index), callback);
+  getParentLine: ParentLineCB = (lineKey, index, parentIndex, callback) => {
+    this.graph.getParent(toFullKey(lineKey, index), parentIndex, callback);
   };
 
   getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {

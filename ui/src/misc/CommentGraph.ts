@@ -6,25 +6,25 @@ const URL_PREFIX = `${window.location.origin}/api`;
 const BATCH_DELAY = 10;
 
 type ApiTopic = {
-  topics: { [key: string]: string };
+  topics: Readonly<{ [key: string]: string }>;
 };
 
 type ApiRead = {
-  messages: { [key: string]: string };
-  skipped: MHash[];
+  messages: Readonly<{ [key: string]: string }>;
+  skipped: Readonly<MHash[]>;
 };
 
 type LinkResponse = {
-  parent: MHash;
-  child: MHash;
-  user: string | undefined;
-  first: number;
+  parent: Readonly<MHash>;
+  child: Readonly<MHash>;
+  user: Readonly<string> | undefined;
+  first: Readonly<number>;
   votes: Votes;
 };
 
 type ApiLinkList = {
-  links: LinkResponse[];
-  next: number;
+  links: Readonly<LinkResponse[]>;
+  next: Readonly<number>;
 };
 
 type LineBlock = number & { _lineBlock: void };
@@ -32,29 +32,29 @@ export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
 
 interface LinkKey {
-  topic?: false;
-  mhash: MHash;
-  isGetParent: boolean;
+  topic?: Readonly<false>;
+  mhash: Readonly<MHash>;
+  isGetParent: Readonly<boolean>;
 }
 interface TopicKey {
-  topic: true;
+  topic: Readonly<true>;
 }
 export type LineKey = LinkKey | TopicKey;
-export const TOPIC_KEY: LineKey = { topic: true };
+export const TOPIC_KEY: Readonly<LineKey> = { topic: true };
 
 interface FullLinkKey {
-  topic?: false;
-  mhash: MHash;
-  isGetParent: boolean;
+  topic?: Readonly<false>;
+  mhash: Readonly<MHash>;
+  isGetParent: Readonly<boolean>;
   index: AdjustedLineIndex;
 }
 interface FullTopicKey {
-  topic: true;
+  topic: Readonly<true>;
   index: AdjustedLineIndex;
 }
 export type FullKey = FullLinkKey | FullTopicKey;
 
-export function asLineKey(fullKey: FullKey): LineKey {
+export function asLineKey(fullKey: Readonly<FullKey>): Readonly<LineKey> {
   if (fullKey.topic) {
     return { topic: true };
   }
@@ -63,9 +63,9 @@ export function asLineKey(fullKey: FullKey): LineKey {
 }
 
 export function toFullKey(
-  lineKey: LineKey,
+  lineKey: Readonly<LineKey>,
   index: AdjustedLineIndex,
-): FullKey {
+): Readonly<FullKey> {
   if (lineKey.topic) {
     return { topic: true, index };
   }
@@ -77,41 +77,41 @@ export function toFullKey(
   };
 }
 
-export type Votes = { [key: string]: number };
+export type Votes = Readonly<{ [key: string]: Readonly<number> }>;
 
 export type Link =
   | {
-      valid: true;
-      parent: MHash;
-      child: MHash;
-      user: string;
-      first: number;
+      valid: Readonly<true>;
+      parent: Readonly<MHash>;
+      child: Readonly<MHash>;
+      user: Readonly<string>;
+      first: Readonly<number>;
       votes: Votes;
     }
   | {
-      valid?: false;
+      valid?: Readonly<false>;
     };
 
 export type ReadyCB = () => void;
 export type NotifyContentCB = (
-  mhash: MHash | undefined,
-  content: string,
+  mhash: Readonly<MHash> | undefined,
+  content: Readonly<string>,
 ) => void;
-export type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
-type TopicsCB = (topics: Readonly<[MHash, string][]>) => void;
+export type NotifyLinkCB = (link: Readonly<Link>) => void;
+type TopicsCB = (topics: Readonly<[Readonly<MHash>, Readonly<string>][]>) => void;
 
 class CommentPool {
-  private readonly pool: LRU<MHash, string>;
-  private readonly hashQueue: Set<MHash>;
-  private readonly inFlight: Set<MHash>;
-  private readonly listeners: Map<MHash, NotifyContentCB[]>;
-  private topics: [MHash, string][] | undefined;
+  private readonly pool: LRU<Readonly<MHash>, string>;
+  private readonly hashQueue: Set<Readonly<MHash>>;
+  private readonly inFlight: Set<Readonly<MHash>>;
+  private readonly listeners: Map<Readonly<MHash>, NotifyContentCB[]>;
+  private topics: [Readonly<MHash>, Readonly<string>][] | undefined;
   private active: boolean;
 
   constructor(maxSize?: number) {
     this.pool = new LRU(maxSize || 10000);
-    this.hashQueue = new Set<MHash>();
-    this.inFlight = new Set<MHash>();
+    this.hashQueue = new Set<Readonly<MHash>>();
+    this.inFlight = new Set<Readonly<MHash>>();
     this.listeners = new Map();
     this.topics = undefined;
     this.active = false;
@@ -156,7 +156,7 @@ class CommentPool {
     }, BATCH_DELAY);
   }
 
-  private waitFor(mhash: MHash, notify: NotifyContentCB): void {
+  private waitFor(mhash: Readonly<MHash>, notify: NotifyContentCB): void {
     let notes = this.listeners.get(mhash);
     if (notes === undefined) {
       notes = [];
@@ -166,7 +166,7 @@ class CommentPool {
     this.note(mhash);
   }
 
-  private note(mhash: MHash): void {
+  private note(mhash: Readonly<MHash>): void {
     const content = this.pool.get(mhash);
     if (content !== undefined) {
       const notes = this.listeners.get(mhash);
@@ -177,7 +177,7 @@ class CommentPool {
     }
   }
 
-  retrieveMessage(mhash: MHash, notify: NotifyContentCB): void {
+  retrieveMessage(mhash: Readonly<MHash>, notify: NotifyContentCB): void {
     if (!this.pool.has(mhash)) {
       this.hashQueue.add(mhash);
       this.fetchMessages();
@@ -185,7 +185,7 @@ class CommentPool {
     this.waitFor(mhash, notify);
   }
 
-  getMessage(mhash: MHash, notify?: NotifyContentCB): string | undefined {
+  getMessage(mhash: Readonly<MHash>, notify?: NotifyContentCB): string | undefined {
     const res = this.pool.get(mhash);
     if (res !== undefined) {
       return res;
@@ -198,7 +198,7 @@ class CommentPool {
     return undefined;
   }
 
-  getTopics(notify: TopicsCB): Readonly<[MHash, string][]> | undefined {
+  getTopics(notify: TopicsCB): Readonly<[Readonly<MHash>, Readonly<string>][]> | undefined {
     if (this.topics) {
       return this.topics;
     }
@@ -225,12 +225,12 @@ class CommentPool {
 
 class LinkLookup {
   private readonly blockSize: number;
-  private readonly linkKey: LinkKey;
-  private readonly line: LRU<AdjustedLineIndex, Link>;
+  private readonly linkKey: Readonly<LinkKey>;
+  private readonly line: LRU<AdjustedLineIndex, Readonly<Link>>;
   private readonly listeners: Map<AdjustedLineIndex, NotifyLinkCB[]>;
-  private readonly activeBlocks: Set<LineBlock>;
+  private readonly activeBlocks: Set<Readonly<LineBlock>>;
 
-  constructor(linkKey: LinkKey, maxLineSize: number, blockSize?: number) {
+  constructor(linkKey: Readonly<LinkKey>, maxLineSize: number, blockSize?: number) {
     this.blockSize = blockSize || 10;
     this.linkKey = linkKey;
     this.line = new LRU(maxLineSize);
@@ -345,7 +345,7 @@ class LinkLookup {
       const notes = this.listeners.get(index);
       if (notes !== undefined) {
         this.listeners.delete(index);
-        notes.forEach((cur) => cur(this.getFullLinkKey(index), link));
+        notes.forEach((cur) => cur(link));
       }
     }
   }
@@ -417,8 +417,8 @@ export default class CommentGraph {
     const { index } = fullTopicKey;
 
     const getTopicMessage = (
-      topics: Readonly<[MHash, string][]>,
-    ): Readonly<[MHash | undefined, string]> => {
+      topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
+    ): Readonly<[Readonly<MHash> | undefined, Readonly<string>]> => {
       if (index < 0 || index >= topics.length) {
         return [undefined, '[unavailable]'];
       }
@@ -438,12 +438,11 @@ export default class CommentGraph {
   }
 
   private getFullLinkMessage(
-    fullLinkKey: FullLinkKey,
+    fullLinkKey: Readonly<FullLinkKey>,
     notify: NotifyContentCB,
   ): string | undefined {
     const getMessage = (
-      key: FullLinkKey,
-      link: Link,
+      link: Readonly<Link>,
       notifyOnHit: boolean,
     ): string | undefined => {
       if (!link.valid) {
@@ -453,7 +452,7 @@ export default class CommentGraph {
         }
         return res;
       }
-      const mhash = key.isGetParent ? link.parent : link.child;
+      const mhash = fullLinkKey.isGetParent ? link.parent : link.child;
       const res = this.msgPool.getMessage(mhash, notify);
       if (notifyOnHit && res !== undefined) {
         notify(mhash, res);
@@ -461,93 +460,161 @@ export default class CommentGraph {
       return res;
     };
 
-    const notifyLink: NotifyLinkCB = (key, link) => {
-      getMessage(key, link, true);
+    const notifyLink: NotifyLinkCB = (link) => {
+      getMessage(link, true);
     };
 
     const link = this.linkPool.getLink(fullLinkKey, notifyLink);
     if (link === undefined) {
       return undefined;
     }
-    return getMessage(fullLinkKey, link, false);
+    return getMessage(link, false);
   }
 
-  getMessage(fullKey: FullKey, notify: NotifyContentCB) {
+  getMessage(fullKey: Readonly<FullKey>, notify: NotifyContentCB): string | undefined {
     if (!fullKey.topic) {
       return this.getFullLinkMessage(fullKey, notify);
     }
     return this.getTopicMessage(fullKey, notify);
   }
 
-  private getTopicTopLink(_fullTopicKey: FullTopicKey): Link {
-    return {
-      valid: false,
+  private getTopicNextLink(fullTopicKey: Readonly<FullTopicKey>, nextIndex: AdjustedLineIndex, isTop: boolean, notify: NotifyLinkCB): Link | undefined {
+    const { index } = fullTopicKey;
+
+    const getTopic = (
+      topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
+    ): Readonly<MHash> | undefined => {
+      if (index < 0 || index >= topics.length) {
+        return undefined;
+      }
+      return topics[index][0];
     };
+
+    const getTopicTopLink = (mhash: Readonly<MHash> | undefined, notifyOnHit: boolean): Link | undefined => {
+      if (mhash === undefined) {
+        const res: Link = {valid: false};
+        if (notifyOnHit) {
+          notify(res);
+        }
+        return res;
+      }
+      const res = this.linkPool.getLink({
+        mhash, isGetParent: isTop, index: nextIndex
+      }, (link) => {notify(link)});
+      if (res !== undefined && notifyOnHit) {
+        notify(res);
+      }
+      return res;
+    };
+
+    const notifyTopics: TopicsCB = (topics) => {
+      const mhash = getTopic(topics);
+      getTopicTopLink(mhash, true);
+    };
+
+    const order = this.msgPool.getTopics(notifyTopics);
+    if (order === undefined) {
+      return undefined;
+    }
+    return getTopicTopLink(getTopic(order), false);
   }
 
-  private getFullTopLink(
-    fullLinkKey: FullLinkKey,
-    parentIndex: AdjustedLineIndex,
+  private getFullNextLink(
+    fullLinkKey: Readonly<FullLinkKey>,
+    nextIndex: AdjustedLineIndex,
+    isTop: boolean,
     notify: NotifyLinkCB,
   ): Link | undefined {
     const getLink = (
-      key: FullLinkKey,
-      link: Link,
+      link: Readonly<Link>,
       notifyOnHit: boolean,
     ): Link | undefined => {
-      if (!key.isGetParent) {
+      if (fullLinkKey.isGetParent !== isTop) {
         if (notifyOnHit) {
-          notify(key, link);
+          notify(link);
         }
         return link;
       }
       if (!link.valid) {
         if (notifyOnHit) {
-          notify(key, link);
+          notify(link);
         }
         return link;
       }
-      const topKey: FullLinkKey = {
+      const topKey: Readonly<FullLinkKey> = {
         mhash: link.parent,
-        isGetParent: true,
-        index: parentIndex,
+        isGetParent: isTop,
+        index: nextIndex,
       };
-      const res = this.linkPool.getLink(topKey, (_, topLink) => {
-        notify(key, topLink);
+      const res = this.linkPool.getLink(topKey, (topLink) => {
+        notify(topLink);
       });
       if (notifyOnHit && res !== undefined) {
-        notify(key, res);
+        notify(res);
       }
       return res;
     };
 
-    const notifyLink: NotifyLinkCB = (key, link) => {
-      getLink(key, link, true);
+    const notifyLink: NotifyLinkCB = (link) => {
+      getLink(link, true);
     };
 
     const link = this.linkPool.getLink(fullLinkKey, notifyLink);
     if (link === undefined) {
       return undefined;
     }
-    return getLink(fullLinkKey, link, false);
+    return getLink(link, false);
   }
 
   getTopLink(
-    fullKey: FullKey,
+    fullKey: Readonly<FullKey>,
     parentIndex: AdjustedLineIndex,
     notify: NotifyLinkCB,
   ): Link | undefined {
     if (!fullKey.topic) {
-      return this.getFullTopLink(fullKey, parentIndex, notify);
+      return this.getFullNextLink(fullKey, parentIndex, true, notify);
     }
-    return this.getTopicTopLink(fullKey);
+    return this.getTopicNextLink(fullKey, parentIndex,true, notify);
   }
 
-  getParent(fullKey: FullKey, callback: (parent: LineKey) => void): void {
-    // TODO
+  getBottomLink(
+    fullKey: Readonly<FullKey>,
+    childIndex: AdjustedLineIndex,
+    notify: NotifyLinkCB,
+  ): Link | undefined {
+    if (!fullKey.topic) {
+      return this.getFullNextLink(fullKey, childIndex, false, notify);
+    }
+    return this.getTopicNextLink(fullKey, childIndex, false, notify);
   }
 
-  getChild(fullKey: FullKey, callback: (child: LineKey) => void): void {
-    // TODO
+  getParent(fullKey: Readonly<FullKey>, parentIndex: AdjustedLineIndex, callback: (parent: Readonly<LineKey>) => void): void {
+
+    const getParent = (link: Link) => {
+      if (!link.valid) {
+        return; // NOTE: we are not following broken links
+      }
+      callback({mhash: link.parent, isGetParent: true});
+    };
+
+    const res = this.getTopLink(fullKey, parentIndex, getParent);
+    if (res !== undefined) {
+      getParent(res);
+    }
+  }
+
+  getChild(fullKey: Readonly<FullKey>, childIndex: AdjustedLineIndex, callback: (child: Readonly<LineKey>) => void): void {
+
+    const getChild = (link: Link) => {
+      if (!link.valid) {
+        return; // NOTE: we are not following broken links
+      }
+      callback({mhash: link.child, isGetParent: false});
+    };
+
+    const res = this.getBottomLink(fullKey, childIndex, getChild);
+    if (res !== undefined) {
+      getChild(res);
+    }
   }
 } // CommentGraph
