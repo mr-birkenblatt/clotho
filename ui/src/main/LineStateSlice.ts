@@ -85,7 +85,7 @@ function lockLine(
 ) {
   const key = constructKey(lineKey);
   const { currentLineIxs, currentLineFocus, locks } = state;
-  if (currentLineIxs[key] === LOCK_INDEX) {
+  if (currentLineIxs[key] < 0) {
     return;
   }
   const locked: LineLock = {
