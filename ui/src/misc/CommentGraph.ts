@@ -28,32 +28,42 @@ type ApiLinkList = {
 };
 
 type LineBlock = number & { _lineBlock: void };
-export type LineIndex = number & { _lineIndex: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
-export type LinkKey = { mhash: MHash; isGetParent: boolean };
-export interface FullLinkKey {
+
+interface LinkKey { topic?: false, mhash: MHash; isGetParent: boolean };
+interface TopicKey { topic: true; };
+export type LineKey = LinkKey | TopicKey;
+export const TOPIC_KEY: LineKey = {topic: true};
+
+interface FullLinkKey {
   topic?: false;
   mhash: MHash;
   isGetParent: boolean;
   index: AdjustedLineIndex;
 }
-export interface TopicKey {
+interface FullTopicKey {
   topic: true;
   index: AdjustedLineIndex;
 }
-export type FullKey = FullLinkKey | TopicKey;
+export type FullKey = FullLinkKey | FullTopicKey;
 
-export function asLinkKey(fullLinkKey: FullLinkKey): LinkKey {
-  const { mhash, isGetParent } = fullLinkKey;
+export function asLineKey(fullKey: FullKey): LineKey {
+  if (fullKey.topic) {
+    return {topic: true};
+  }
+  const { mhash, isGetParent } = fullKey;
   return { mhash, isGetParent };
 }
 
-export function toFullLinkKey(
-  linkKey: LinkKey,
+export function toFullKey(
+  lineKey: LineKey,
   index: AdjustedLineIndex,
-): FullLinkKey {
-  const { mhash, isGetParent } = linkKey;
+): FullKey {
+  if (lineKey.topic) {
+    return {topic: true, index};
+  }
+  const { mhash, isGetParent } = lineKey;
   return {
     mhash,
     isGetParent,
@@ -84,7 +94,7 @@ export type NotifyContentCB = (
 export type NotifyLinkCB = (fullLinkKey: FullLinkKey, link: Link) => void;
 type TopicsCB = (topics: Readonly<[MHash, string][]>) => void;
 
-export class CommentPool {
+class CommentPool {
   private readonly pool: LRU<MHash, string>;
   private readonly hashQueue: Set<MHash>;
   private readonly inFlight: Set<MHash>;
@@ -227,7 +237,8 @@ class LinkLookup {
   }
 
   getFullLinkKey(index: AdjustedLineIndex): Readonly<FullLinkKey> {
-    return toFullLinkKey(this.getLinkKey(), index);
+    const {mhash, isGetParent} = this.getLinkKey();
+    return {mhash, isGetParent, index};
   }
 
   private getBlock(index: AdjustedLineIndex): LineBlock {
@@ -353,7 +364,7 @@ class LinkLookup {
   }
 } // LinkLookup
 
-export class LinkPool {
+class LinkPool {
   private readonly maxLineSize: number;
   private readonly pool: LRU<Readonly<LinkKey>, LinkLookup>;
 
@@ -372,12 +383,14 @@ export class LinkPool {
   }
 
   retrieveLink(fullLinkKey: FullLinkKey, notify: NotifyLinkCB): void {
-    const line = this.getLine(asLinkKey(fullLinkKey));
+    const {mhash, isGetParent} = fullLinkKey;
+    const line = this.getLine({mhash, isGetParent});
     line.retrieveLink(fullLinkKey.index, notify);
   }
 
   getLink(fullLinkKey: FullLinkKey, notify?: NotifyLinkCB): Link | undefined {
-    const line = this.getLine(asLinkKey(fullLinkKey));
+    const {mhash, isGetParent} = fullLinkKey;
+    const line = this.getLine({mhash, isGetParent});
     return line.getLink(fullLinkKey.index, notify);
   }
 } // LinkPool
@@ -392,10 +405,10 @@ export default class CommentGraph {
   }
 
   private getTopicMessage(
-    topicKey: TopicKey,
+    fullTopicKey: FullTopicKey,
     notify: NotifyContentCB,
   ): string | undefined {
-    const { index } = topicKey;
+    const { index } = fullTopicKey;
 
     const getTopicMessage = (
       topics: Readonly<[MHash, string][]>,
@@ -453,14 +466,14 @@ export default class CommentGraph {
     return getMessage(fullLinkKey, link, false);
   }
 
-  getMessage(fullLinkKey: FullKey, notify: NotifyContentCB) {
-    if (!fullLinkKey.topic) {
-      return this.getFullLinkMessage(fullLinkKey, notify);
+  getMessage(fullKey: FullKey, notify: NotifyContentCB) {
+    if (!fullKey.topic) {
+      return this.getFullLinkMessage(fullKey, notify);
     }
-    return this.getTopicMessage(fullLinkKey, notify);
+    return this.getTopicMessage(fullKey, notify);
   }
 
-  private getTopicTopLink(topicKey: TopicKey): Link {
+  private getTopicTopLink(_fullTopicKey: FullTopicKey): Link {
     return {
       valid: false,
     };
@@ -514,13 +527,13 @@ export default class CommentGraph {
   }
 
   getTopLink(
-    fullLinkKey: FullKey,
+    fullKey: FullKey,
     parentIndex: AdjustedLineIndex,
     notify: NotifyLinkCB,
   ): Link | undefined {
-    if (!fullLinkKey.topic) {
-      return this.getFullTopLink(fullLinkKey, parentIndex, notify);
+    if (!fullKey.topic) {
+      return this.getFullTopLink(fullKey, parentIndex, notify);
     }
-    return this.getTopicTopLink(fullLinkKey);
+    return this.getTopicTopLink(fullKey);
   }
 } // CommentGraph

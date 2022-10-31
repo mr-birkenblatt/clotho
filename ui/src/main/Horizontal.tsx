@@ -2,10 +2,10 @@ import React, { PureComponent } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
-import { FullKey, FullLinkKey, ReadyCB } from '../misc/CommentGraph';
+import { AdjustedLineIndex, FullKey, LineKey, ReadyCB, toFullKey } from '../misc/CommentGraph';
 import { range } from '../misc/util';
 import { RootState } from '../store';
-import { constructKey, focusAt, setHCurrentIx } from './LineStateSlice';
+import { constructKey, focusAt, LineIndex, LOCK_INDEX, setHCurrentIx } from './LineStateSlice';
 
 const Outer = styled.div`
   position: relative;
@@ -99,8 +99,7 @@ interface HorizontalProps extends ConnectHorizontal {
   itemRadius: number;
   buttonSize: number;
   itemPadding: number;
-  isParent: boolean;
-  lineName: string;
+  lineKey: LineKey;
   getItem: ItemCB;
 }
 
@@ -361,21 +360,13 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     }
   }
 
-  getContent(
-    isParent: boolean,
-    lineName: string,
-    index: number,
-  ): string | JSX.Element {
+  getContent(lineKey: LineKey, index: LineIndex): string | JSX.Element {
     const { getItem, locks } = this.props;
-    const locked = locks[constructKey(lineName)];
+    const locked = locks[constructKey(lineKey)];
     if (locked && index < 0) {
-      return this.getContent(locked.isParent, locked.lineName, locked.index);
+      return this.getContent(locked.lineKey, locked.index);
     }
-    const fullLinkKey: FullLinkKey = {
-      // isParent,
-      // lineName,
-      // index,
-    };
+    const fullLinkKey = toFullKey(lineKey, index);
     const msg = getItem(fullLinkKey, this.requestRedraw);
     if (msg !== undefined) {
       return <ReactMarkdown>{msg}</ReactMarkdown>;
@@ -383,13 +374,13 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     return `loading [${index}]`;
   }
 
-  adjustIndex(index: number): number {
-    const { lineName, locks } = this.props;
+  adjustIndex(index: LineIndex): AdjustedLineIndex {
+    const { lineKey, locks } = this.props;
     const { offset, itemCount } = this.state;
-    const locked = locks[constructKey(lineName)];
+    const locked = locks[constructKey(lineKey)];
     const lockedIx =
       locked && locked.skipItem ? locked.index : offset + itemCount;
-    return index + (lockedIx > index ? 0 : 1);
+    return index + (lockedIx > index ? 0 : 1) as AdjustedLineIndex;
   }
 
   requestRedraw = (): void => {
@@ -457,7 +448,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
                 itemWidth={itemWidth}
                 itemRadius={itemRadius}
                 ref={this.lockedRef}>
-                {this.getContent(isParent, lineName, -1)}
+                {this.getContent(lineKey, LOCK_INDEX)}
               </ItemContent>
             </Item>
           ) : null}

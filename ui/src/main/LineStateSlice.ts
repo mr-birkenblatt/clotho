@@ -1,59 +1,70 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { AdjustedLineIndex, LineKey, TOPIC_KEY } from '../misc/CommentGraph';
+import { safeStringify } from '../misc/util';
 
 export type LineLock = {
-  isParent: boolean;
-  lineName: string;
-  index: number;
+  lineKey: LineKey;
+  index: AdjustedLineIndex;
   skipItem: boolean;
 };
 
+export type LineIndex = number & { _lineIndex: void };
+
+export const LOCK_INDEX = -1 as LineIndex;
+
+export type VIndex = number & { _vIndex: void };
+export type VCorrection = number & { _vCorrection: void };
+export type VOffset = number & { _vOffset: void };
+
+export function constructKey(lineKey: LineKey): string {
+  return safeStringify(lineKey);
+}
+
 type LineState = {
-  currentLineIxs: { [key: string]: number };
-  currentLineFocus: { [key: string]: number };
+  currentLineIxs: { [key: string]: LineIndex };
+  currentLineFocus: { [key: string]: LineIndex };
   locks: { [key: string]: LineLock };
-  vOrder: string[];
-  vCurrentIx: number;
-  vCorrection: number;
-  vOffset: number;
-  vFocus: number;
+  vOrder: LineKey[];
+  vCurrentIx: VIndex;
+  vCorrection: VCorrection;
+  vOffset: VOffset;
+  vFocus: VIndex;
   vFocusSmooth: boolean;
 };
 
 type AddAction = {
   payload: {
-    lineName: string;
+    lineKey: LineKey;
     isBack: boolean;
   };
 };
 
 type IndexAction = {
   payload: {
-    lineName: string;
-    index: number;
+    lineKey: LineKey;
+    index: LineIndex;
   };
 };
 
 type LockAction = {
   payload: {
-    isParent: boolean;
-    lineName: string;
-    adjustedIndex: number;
+    lineKey: LineKey;
+    adjustedIndex: AdjustedLineIndex;
     skipItem: boolean;
   };
 };
 
 type SetVAction = {
   payload: {
-    vIndex: number;
-    hIndex: number;
-    isParent: boolean;
-    lineName: string;
+    vIndex: VIndex;
+    hIndex: AdjustedLineIndex;
+    lineKey: LineKey;
   };
 };
 
 type FocusVAction = {
   payload: {
-    focus: number;
+    focus: VIndex;
   };
 };
 
@@ -66,31 +77,25 @@ type LineReducers = {
   setVCurrentIx: (state: LineState, action: SetVAction) => void;
 };
 
-export function constructKey(lineName: string): string {
-  return `${lineName}`;
-}
-
 function lockLine(
   state: LineState,
-  isParent: boolean,
-  lineName: string,
-  adjustedIndex: number,
+  lineKey: LineKey,
+  adjustedIndex: AdjustedLineIndex,
   skipItem: boolean,
 ) {
-  const key = constructKey(lineName);
+  const key = constructKey(lineKey);
   const { currentLineIxs, currentLineFocus, locks } = state;
-  if (currentLineIxs[key] < 0) {
+  if (currentLineIxs[key] === LOCK_INDEX) {
     return;
   }
   const locked: LineLock = {
-    isParent,
-    lineName,
+    lineKey,
     index: adjustedIndex,
     skipItem,
   };
   locks[key] = locked;
-  currentLineIxs[key] = -1;
-  currentLineFocus[key] = -1;
+  currentLineIxs[key] = LOCK_INDEX;
+  currentLineFocus[key] = LOCK_INDEX;
 }
 
 export const lineStateSlice = createSlice<LineState, LineReducers, string>({
@@ -99,47 +104,44 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
     currentLineIxs: {},
     currentLineFocus: {},
     locks: {},
-    vOrder: [
-      '!0',
-      '9709aa3742acc01b0247eac2968ae4e4605ef0814c541c1df418309b76fce89d',
-    ],
-    vCurrentIx: 1,
-    vCorrection: 0,
-    vOffset: 0,
-    vFocus: 0,
+    vOrder: [TOPIC_KEY],
+    vCurrentIx: 0 as VIndex,
+    vCorrection: 0 as VCorrection,
+    vOffset: 0 as VOffset,
+    vFocus: 0 as VIndex,
     vFocusSmooth: false,
   },
   reducers: {
     setHCurrentIx: (state, action) => {
-      const { lineName, index } = action.payload;
-      state.currentLineIxs[constructKey(lineName)] = index;
+      const { lineKey, index } = action.payload;
+      state.currentLineIxs[constructKey(lineKey)] = index;
     },
     focusAt: (state, action) => {
-      const { lineName, index } = action.payload;
-      state.currentLineFocus[constructKey(lineName)] = index;
+      const { lineKey, index } = action.payload;
+      state.currentLineFocus[constructKey(lineKey)] = index;
     },
     lockCurrent: (state, action) => {
-      const { isParent, lineName, adjustedIndex, skipItem } = action.payload;
-      return lockLine(state, isParent, lineName, adjustedIndex, skipItem);
+      const { lineKey, adjustedIndex, skipItem } = action.payload;
+      return lockLine(state, lineKey, adjustedIndex, skipItem);
     },
     setVCurrentIx: (state, action) => {
-      const { vIndex, hIndex, isParent, lineName } = action.payload;
+      const { vIndex, hIndex, lineKey } = action.payload;
       if (vIndex === state.vCurrentIx) {
         return;
       }
-      lockLine(state, isParent, lineName, hIndex, false);
+      lockLine(state, lineKey, hIndex, false);
       state.vCurrentIx = vIndex;
-      state.vOffset = vIndex - 1;
+      state.vOffset = vIndex - 1 as VOffset;
       state.vFocus = vIndex;
       state.vFocusSmooth = false;
     },
     addLine: (state, action) => {
-      const { lineName, isBack } = action.payload;
+      const { lineKey, isBack } = action.payload;
       if (isBack) {
-        state.vOrder.push(lineName);
+        state.vOrder.push(lineKey);
       } else {
-        state.vOrder = [lineName, ...state.vOrder];
-        state.vCorrection += 1;
+        state.vOrder = [lineKey, ...state.vOrder];
+        state.vCorrection = state.vCorrection + 1 as VCorrection;
       }
     },
     focusV: (state, action) => {

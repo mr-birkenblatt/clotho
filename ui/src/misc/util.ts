@@ -50,7 +50,7 @@ export function assertNotEqual(actual: unknown, expected: unknown): void {
   }
 }
 
-function safeStringify(obj: any): string {
+export function safeStringify(obj: any): string {
   return JSON.stringify(
     obj,
     (_k, value) => {
