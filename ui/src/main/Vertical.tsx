@@ -457,6 +457,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         // filled up correctly.
         setTimeout(() => {
           // this.requestRedraw();
+          console.log('would be redraw');
         }, 100);
       }
     }
