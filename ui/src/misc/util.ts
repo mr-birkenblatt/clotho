@@ -25,6 +25,15 @@ export function json(resp: Response): Promise<any> {
   return resp.json();
 }
 
+export function toJson(obj: any): string {
+  return JSON.stringify(obj, (_key, value) => {
+    if (value instanceof Set) {
+      value = Array.from(value.keys());
+    }
+    return value;
+  });
+}
+
 export function assertTrue(value: boolean): asserts value {
   if (!value) {
     throw new Error('assertion was not true');
@@ -109,7 +118,7 @@ export class SafeMap<K, V> {
       const k = this.mapKeys.get(key);
       if (k === undefined) {
         assertTrue(this.mapKeys.has(key));
-        const uk = k as K; // NOTE: hack to allow undefined in a key type
+        const uk = k as K;  // NOTE: hack to allow undefined in a key type
         callbackfn.call(thisArg, value, uk, this);
         return;
       }
@@ -152,7 +161,7 @@ export class SafeMap<K, V> {
       const k = this.mapKeys.get(key);
       if (k === undefined) {
         assertTrue(this.mapKeys.has(key));
-        const uk = k as K; // NOTE: hack to allow undefined in a key type
+        const uk = k as K;  // NOTE: hack to allow undefined in a key type
         return [uk, value];
       }
       return [k, value];
