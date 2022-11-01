@@ -3,6 +3,9 @@ export function range(from: number, to?: number): number[] {
     to = from;
     from = 0;
   }
+  if (from > to) {
+    return [];
+  }
   return Array.from(Array(to - from).keys()).map((cur) => from + cur);
 }
 
@@ -12,21 +15,14 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
   );
 }
 
+/* istanbul ignore next */
 export function errHnd(e: any): void {
   console.error(e);
 }
 
+/* istanbul ignore next */
 export function json(resp: Response): Promise<any> {
   return resp.json();
-}
-
-export function toJson(obj: any): string {
-  return JSON.stringify(obj, (_key, value) => {
-    if (value instanceof Set) {
-      value = Array.from(value.keys());
-    }
-    return value;
-  });
 }
 
 export function assertTrue(value: boolean): asserts value {
@@ -111,7 +107,12 @@ export class SafeMap<K, V> {
   ): void {
     this.mapValues.forEach((value, key) => {
       const k = this.mapKeys.get(key);
-      assertTrue(k !== undefined);
+      if (k === undefined) {
+        assertTrue(this.mapKeys.has(key));
+        const uk = k as K;  // NOTE: hack to allow undefined in a key type
+        callbackfn.call(thisArg, value, uk, this);
+        return;
+      }
       callbackfn.call(thisArg, value, k, this);
     }, this);
   }
@@ -137,19 +138,23 @@ export class SafeMap<K, V> {
     return this.mapValues.size;
   }
 
-  keys(): Iterator<K> {
+  keys(): IterableIterator<K> {
     return this.mapKeys.values();
   }
 
-  values(): Iterator<V> {
+  values(): IterableIterator<V> {
     return this.mapValues.values();
   }
 
-  entries(): Iterator<[K, V]> {
+  entries(): IterableIterator<[K, V]> {
     const res: [K, V][] = Array.from(this.mapValues.entries()).map((entry) => {
       const [key, value] = entry;
       const k = this.mapKeys.get(key);
-      assertTrue(k !== undefined);
+      if (k === undefined) {
+        assertTrue(this.mapKeys.has(key));
+        const uk = k as K;  // NOTE: hack to allow undefined in a key type
+        return [uk, value];
+      }
       return [k, value];
     });
     return res.values();
@@ -205,7 +210,7 @@ export class SafeSet<V> {
     return this.setValues.size;
   }
 
-  values(): Iterator<V> {
+  values(): IterableIterator<V> {
     return this.setValues.values();
   }
 } // SafeSet
