@@ -109,7 +109,7 @@ export class SafeMap<K, V> {
       const k = this.mapKeys.get(key);
       if (k === undefined) {
         assertTrue(this.mapKeys.has(key));
-        const uk = k as K;  // NOTE: hack to allow undefined in a key type
+        const uk = k as K; // NOTE: hack to allow undefined in a key type
         callbackfn.call(thisArg, value, uk, this);
         return;
       }
@@ -152,7 +152,7 @@ export class SafeMap<K, V> {
       const k = this.mapKeys.get(key);
       if (k === undefined) {
         assertTrue(this.mapKeys.has(key));
-        const uk = k as K;  // NOTE: hack to allow undefined in a key type
+        const uk = k as K; // NOTE: hack to allow undefined in a key type
         return [uk, value];
       }
       return [k, value];
