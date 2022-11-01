@@ -26,7 +26,7 @@ type ApiLinkList = {
   next: Readonly<number>;
 };
 
-type ApiProvider = {
+export type ApiProvider = {
   topic: () => Promise<ApiTopic>;
   read: (hashes: Set<Readonly<MHash>>) => Promise<ApiRead>;
   link: (
