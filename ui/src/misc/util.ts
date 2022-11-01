@@ -15,7 +15,6 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
   );
 }
 
-/* istanbul ignore next */
 export function errHnd(e: any): void {
   console.error(e);
 }

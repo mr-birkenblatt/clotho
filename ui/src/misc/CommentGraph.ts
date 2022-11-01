@@ -26,6 +26,46 @@ type ApiLinkList = {
   next: Readonly<number>;
 };
 
+type ApiProvider = {
+  topic: () => Promise<ApiTopic>;
+  read: (hashes: Set<Readonly<MHash>>) => Promise<ApiRead>;
+  link: (
+    linkKey: LinkKey,
+    offset: number,
+    limit: number,
+  ) => Promise<ApiLinkList>;
+};
+
+const DEFAULT_API: ApiProvider = {
+  topic: async () => fetch(`${URL_PREFIX}/topic`).then(json),
+  read: async (hashes) => {
+    return fetch(`${URL_PREFIX}/read`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: toJson({ hashes }),
+    }).then(json);
+  },
+  link: async (linkKey, offset, limit) => {
+    const { mhash, isGetParent } = linkKey;
+    const query = isGetParent ? { child: mhash } : { parent: mhash };
+    const url = `${URL_PREFIX}/${isGetParent ? 'parents' : 'children'}`;
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...query,
+        offset,
+        limit,
+        scorer: 'best',
+      }),
+    }).then(json);
+  },
+};
+
 type LineBlock = number & { _lineBlock: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
@@ -102,6 +142,7 @@ type TopicsCB = (
 ) => void;
 
 class CommentPool {
+  private readonly api: ApiProvider;
   private readonly pool: LRU<Readonly<MHash>, string>;
   private readonly hashQueue: Set<Readonly<MHash>>;
   private readonly inFlight: Set<Readonly<MHash>>;
@@ -109,7 +150,8 @@ class CommentPool {
   private topics: [Readonly<MHash>, Readonly<string>][] | undefined;
   private active: boolean;
 
-  constructor(maxSize?: number) {
+  constructor(api: ApiProvider, maxSize?: number) {
+    this.api = api;
     this.pool = new LRU(maxSize || 10000);
     this.hashQueue = new Set<Readonly<MHash>>();
     this.inFlight = new Set<Readonly<MHash>>();
@@ -126,16 +168,8 @@ class CommentPool {
     setTimeout(() => {
       this.hashQueue.forEach(this.inFlight.add);
       this.hashQueue.clear();
-      fetch(`${URL_PREFIX}/read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: toJson({
-          hashes: this.inFlight,
-        }),
-      })
-        .then(json)
+      this.api
+        .read(this.inFlight)
         .then((obj: ApiRead) => {
           const { messages, skipped } = obj;
           Object.entries(messages).forEach((cur) => {
@@ -208,8 +242,8 @@ class CommentPool {
     if (this.topics) {
       return this.topics;
     }
-    fetch(`${URL_PREFIX}/topic`)
-      .then(json)
+    this.api
+      .topic()
       .then((obj: ApiTopic) => {
         const { topics } = obj;
         const entries = Object.entries(topics) as [MHash, string][];
@@ -230,6 +264,7 @@ class CommentPool {
 } // CommentPool
 
 class LinkLookup {
+  private readonly api: ApiProvider;
   private readonly blockSize: number;
   private readonly linkKey: Readonly<LinkKey>;
   private readonly line: LRU<AdjustedLineIndex, Readonly<Link>>;
@@ -237,10 +272,12 @@ class LinkLookup {
   private readonly activeBlocks: Set<Readonly<LineBlock>>;
 
   constructor(
+    api: ApiProvider,
     linkKey: Readonly<LinkKey>,
     maxLineSize: number,
     blockSize?: number,
   ) {
+    this.api = api;
     this.blockSize = blockSize || 10;
     this.linkKey = linkKey;
     this.line = new LRU(maxLineSize);
@@ -274,9 +311,6 @@ class LinkLookup {
       return;
     }
     this.activeBlocks.add(block);
-    const { mhash, isGetParent } = this.linkKey;
-    const query = isGetParent ? { child: mhash } : { parent: mhash };
-    const url = `${URL_PREFIX}/${isGetParent ? 'parents' : 'children'}`;
 
     const finish = () => {
       this.activeBlocks.delete(block);
@@ -285,19 +319,8 @@ class LinkLookup {
     const fetchRange = (blockOffset: number) => {
       const fromOffset = this.toIndex(blockOffset, block);
       const remainCount = this.blockSize - blockOffset;
-      fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...query,
-          offset: fromOffset,
-          limit: remainCount,
-          scorer: 'best',
-        }),
-      })
-        .then(json)
+      this.api
+        .link(this.linkKey, fromOffset, remainCount)
         .then((obj: ApiLinkList) => {
           const { links, next } = obj;
           const curCount = next - fromOffset;
@@ -381,10 +404,12 @@ class LinkLookup {
 } // LinkLookup
 
 class LinkPool {
+  private readonly api: ApiProvider;
   private readonly maxLineSize: number;
   private readonly pool: LRU<Readonly<LinkKey>, LinkLookup>;
 
-  constructor(maxSize?: number, maxLineSize?: number) {
+  constructor(api: ApiProvider, maxSize?: number, maxLineSize?: number) {
+    this.api = api;
     this.maxLineSize = maxLineSize || 100;
     this.pool = new LRU(maxSize || 1000);
   }
@@ -392,7 +417,7 @@ class LinkPool {
   private getLine(linkKey: LinkKey): LinkLookup {
     let res = this.pool.get(linkKey);
     if (res === undefined) {
-      res = new LinkLookup(linkKey, this.maxLineSize);
+      res = new LinkLookup(this.api, linkKey, this.maxLineSize);
       this.pool.set(linkKey, res);
     }
     return res;
@@ -415,9 +440,10 @@ export default class CommentGraph {
   private readonly msgPool: CommentPool;
   private readonly linkPool: LinkPool;
 
-  constructor() {
-    this.msgPool = new CommentPool();
-    this.linkPool = new LinkPool();
+  constructor(api?: ApiProvider) {
+    const actualApi = api || DEFAULT_API;
+    this.msgPool = new CommentPool(actualApi);
+    this.linkPool = new LinkPool(actualApi);
   }
 
   private getTopicMessage(
