@@ -15,12 +15,9 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
   );
 }
 
+/* istanbul ignore next */
 export function errHnd(e: any): void {
   console.error(e);
-}
-
-export function fail(e: any): void {
-  throw new Error(`should not have happened: ${e}`);
 }
 
 /* istanbul ignore next */
@@ -35,6 +32,10 @@ export function toJson(obj: any): string {
     }
     return value;
   });
+}
+
+export function fail(e: any): void {
+  throw new Error(`should not have happened: ${e}`);
 }
 
 export function assertTrue(value: boolean): asserts value {

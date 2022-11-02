@@ -1,8 +1,28 @@
-import { ApiProvider, MHash } from './CommentGraph';
+import { ApiProvider, Link, MHash } from './CommentGraph';
 import { assertTrue } from './util';
 
 export function asMHashSet(arr: string[]): Set<MHash> {
   return new Set(arr as MHash[]);
+}
+
+export function asLinkKey(hash: string, isGetParent: boolean): {mhash: MHash, isGetParent: boolean} {
+  return {mhash: hash as MHash, isGetParent};
+}
+
+type TestLink = {
+  parent: Readonly<MHash>;
+  child: Readonly<MHash>;
+  user: Readonly<string> | undefined;
+  first: Readonly<number>;
+  votes: {[key: string]: number};
+};
+
+export function getParentHashs(links: readonly TestLink[]): string[] {
+  return links.map(l => (l.parent as unknown) as string);
+}
+
+export function getChildHashs(links: readonly TestLink[]): string[] {
+  return links.map(l => (l.child as unknown) as string);
 }
 
 export default class TestGraph {
@@ -67,7 +87,7 @@ export default class TestGraph {
           .sort()
           .map((e) => e as MHash);
         const msgArr: string[] = ms.slice(0, this.apiLimit);
-        const skipped: Readonly<MHash[]> = ms.slice(this.apiLimit, -1);
+        const skipped: Readonly<MHash[]> = ms.slice(this.apiLimit, undefined);
         const messages: Readonly<{ [key: string]: string }> =
           Object.fromEntries(msgArr.map((el) => [el, this.messages[el]]));
         return { messages, skipped };

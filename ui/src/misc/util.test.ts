@@ -2,9 +2,11 @@ import {
   assertEqual,
   assertNotEqual,
   assertTrue,
+  fail,
   range,
   SafeMap,
   SafeSet,
+  toJson,
   union,
 } from './util';
 
@@ -184,7 +186,11 @@ test('assert tests', () => {
   };
   expect(an).toThrow(Error);
   const err = () => {
-    fail();
+    fail('test');
   };
   expect(err).toThrow(Error);
+});
+
+test('test json set', () => {
+  expect(toJson({'a': new Set([1])})).toEqual('{"a":[1]}');
 });
