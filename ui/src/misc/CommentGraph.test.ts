@@ -15,12 +15,16 @@ function asTopicKey(index: number): FullKey {
   };
 }
 
-function asLinkKey(hash: string, isGetParent: boolean, index: number): FullKey {
+function asLinkKey(
+  hash: string,
+  isGetParent: boolean,
+  index: number,
+): FullKey {
   return {
     mhash: hash as MHash,
     isGetParent,
     index: index as AdjustedLineIndex,
-  }
+  };
 }
 
 function expectWait(res: any): void {
