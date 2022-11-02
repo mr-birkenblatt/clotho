@@ -183,4 +183,8 @@ test('assert tests', () => {
     assertNotEqual(2, 2);
   };
   expect(an).toThrow(Error);
+  const err = () => {
+    fail();
+  };
+  expect(err).toThrow(Error);
 });

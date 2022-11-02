@@ -19,6 +19,10 @@ export function errHnd(e: any): void {
   console.error(e);
 }
 
+export function fail(e: any): void {
+  throw new Error(`should not have happened: ${e}`);
+}
+
 /* istanbul ignore next */
 export function json(resp: Response): Promise<any> {
   return resp.json();
