@@ -4,13 +4,23 @@ import CommentGraph, {
   MHash,
 } from './CommentGraph';
 import TestGraph from './TestGraph';
-import { assertFail, assertTrue } from './util';
+import { assertTrue } from './util';
+
+jest.useFakeTimers();
 
 function asTopicKey(index: number): FullKey {
   return {
     topic: true,
     index: index as AdjustedLineIndex,
   };
+}
+
+function asLinkKey(hash: string, isGetParent: boolean, index: number): FullKey {
+  return {
+    mhash: hash as MHash,
+    isGetParent,
+    index: index as AdjustedLineIndex,
+  }
 }
 
 function expectWait(res: any): void {
@@ -32,6 +42,7 @@ test('simple test comment graph', () => {
   ]);
   graph.addTopics(['a', 'h']);
   const pool = new CommentGraph(graph.getApiProvider());
+  // TODO use timer api and count function calls
   expectWait(
     pool.getMessage(asTopicKey(0), (mhash, content) => {
       expect(mhash).toEqual('a');
@@ -45,9 +56,39 @@ test('simple test comment graph', () => {
     }),
   );
   expectWait(
+    pool.getMessage(asTopicKey(-1), (mhash, content) => {
+      expect(mhash).toBe(undefined);
+      expect(content).toEqual('[unavailable]');
+    }),
+  );
+  expectWait(
     pool.getMessage(asTopicKey(2), (mhash, content) => {
       expect(mhash).toBe(undefined);
       expect(content).toEqual('[unavailable]');
+    }),
+  );
+  expectWait(
+    pool.getMessage(asLinkKey('a', false, 0), (mhash, content) => {
+      expect(mhash).toEqual('b');
+      expect(content).toEqual('msg: ba');
+    }),
+  );
+  expectWait(
+    pool.getMessage(asLinkKey('a', false, 2), (mhash, content) => {
+      expect(mhash).toEqual('d');
+      expect(content).toEqual('msg: d');
+    }),
+  );
+  expectWait(
+    pool.getMessage(asLinkKey('a', false, 4), (mhash, content) => {
+      expect(mhash).toEqual('f');
+      expect(content).toEqual('msg: f');
+    }),
+  );
+  expectWait(
+    pool.getMessage(asLinkKey('a', false, 5), (mhash, content) => {
+      expect(mhash).toBe(undefined);
+      expect(content).toEqual('[unavailablee]');
     }),
   );
 });
