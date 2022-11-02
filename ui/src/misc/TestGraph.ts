@@ -5,8 +5,11 @@ export function asMHashSet(arr: string[]): Set<MHash> {
   return new Set(arr as MHash[]);
 }
 
-export function asLinkKey(hash: string, isGetParent: boolean): {mhash: MHash, isGetParent: boolean} {
-  return {mhash: hash as MHash, isGetParent};
+export function asLinkKey(
+  hash: string,
+  isGetParent: boolean,
+): { mhash: MHash; isGetParent: boolean } {
+  return { mhash: hash as MHash, isGetParent };
 }
 
 type TestLink = {
@@ -14,15 +17,15 @@ type TestLink = {
   child: Readonly<MHash>;
   user: Readonly<string> | undefined;
   first: Readonly<number>;
-  votes: {[key: string]: number};
+  votes: { [key: string]: number };
 };
 
 export function getParentHashs(links: readonly TestLink[]): string[] {
-  return links.map(l => (l.parent as unknown) as string);
+  return links.map((l) => l.parent as unknown as string);
 }
 
 export function getChildHashs(links: readonly TestLink[]): string[] {
-  return links.map(l => (l.child as unknown) as string);
+  return links.map((l) => l.child as unknown as string);
 }
 
 export default class TestGraph {

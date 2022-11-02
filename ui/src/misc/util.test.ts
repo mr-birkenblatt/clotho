@@ -192,5 +192,5 @@ test('assert tests', () => {
 });
 
 test('test json set', () => {
-  expect(toJson({'a': new Set([1])})).toEqual('{"a":[1]}');
+  expect(toJson({ a: new Set([1]) })).toEqual('{"a":[1]}');
 });

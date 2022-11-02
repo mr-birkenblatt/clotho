@@ -1,4 +1,9 @@
-import TestGraph, { asLinkKey, asMHashSet, getChildHashs, getParentHashs } from './TestGraph';
+import TestGraph, {
+  asLinkKey,
+  asMHashSet,
+  getChildHashs,
+  getParentHashs,
+} from './TestGraph';
 
 test('test graph', () => {
   const graph = new TestGraph(3);
