@@ -1,9 +1,32 @@
-import TestGraph, {
-  asLinkKey,
-  asMHashSet,
-  getChildHashs,
-  getParentHashs,
-} from './TestGraph';
+import { MHash } from './CommentGraph';
+import TestGraph from './TestGraph';
+
+function asMHashSet(arr: string[]): Set<MHash> {
+  return new Set(arr as MHash[]);
+}
+
+function asLinkKey(
+  hash: string,
+  isGetParent: boolean,
+): { mhash: MHash; isGetParent: boolean } {
+  return { mhash: hash as MHash, isGetParent };
+}
+
+type TestLink = {
+  parent: Readonly<MHash>;
+  child: Readonly<MHash>;
+  user: Readonly<string> | undefined;
+  first: Readonly<number>;
+  votes: { [key: string]: number };
+};
+
+function getParentHashs(links: readonly TestLink[]): string[] {
+  return links.map((l) => l.parent as unknown as string);
+}
+
+function getChildHashs(links: readonly TestLink[]): string[] {
+  return links.map((l) => l.child as unknown as string);
+}
 
 test('test graph', () => {
   const graph = new TestGraph(3);

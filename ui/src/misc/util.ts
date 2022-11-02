@@ -17,6 +17,9 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
 
 /* istanbul ignore next */
 export function errHnd(e: any): void {
+  if (process.env.JEST_WORKER_ID !== undefined) {
+    assertFail(e);
+  }
   console.error(e);
 }
 
@@ -34,7 +37,7 @@ export function toJson(obj: any): string {
   });
 }
 
-export function fail(e: any): void {
+export function assertFail(e: any): never {
   throw new Error(`should not have happened: ${e}`);
 }
 

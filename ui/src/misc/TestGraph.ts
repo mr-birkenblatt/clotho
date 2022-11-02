@@ -1,32 +1,5 @@
-import { ApiProvider, Link, MHash } from './CommentGraph';
+import { ApiProvider, MHash } from './CommentGraph';
 import { assertTrue } from './util';
-
-export function asMHashSet(arr: string[]): Set<MHash> {
-  return new Set(arr as MHash[]);
-}
-
-export function asLinkKey(
-  hash: string,
-  isGetParent: boolean,
-): { mhash: MHash; isGetParent: boolean } {
-  return { mhash: hash as MHash, isGetParent };
-}
-
-type TestLink = {
-  parent: Readonly<MHash>;
-  child: Readonly<MHash>;
-  user: Readonly<string> | undefined;
-  first: Readonly<number>;
-  votes: { [key: string]: number };
-};
-
-export function getParentHashs(links: readonly TestLink[]): string[] {
-  return links.map((l) => l.parent as unknown as string);
-}
-
-export function getChildHashs(links: readonly TestLink[]): string[] {
-  return links.map((l) => l.child as unknown as string);
-}
 
 export default class TestGraph {
   private readonly apiLimit: number;

@@ -1,8 +1,8 @@
 import {
   assertEqual,
+  assertFail,
   assertNotEqual,
   assertTrue,
-  fail,
   range,
   SafeMap,
   SafeSet,
@@ -186,7 +186,7 @@ test('assert tests', () => {
   };
   expect(an).toThrow(Error);
   const err = () => {
-    fail('test');
+    assertFail('test');
   };
   expect(err).toThrow(Error);
 });
