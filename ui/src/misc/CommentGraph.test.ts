@@ -4,7 +4,7 @@ import CommentGraph, {
   MHash,
 } from './CommentGraph';
 import TestGraph from './TestGraph';
-import { assertTrue } from './util';
+import { assertTrue, range } from './util';
 
 // FIXME not using fake timers for now as they don't work well with async
 // jest.useFakeTimers();
@@ -170,6 +170,67 @@ test('simple test comment graph', async () => {
     pool,
     pool.getMessage,
     asLinkKey('a', false, 5),
+    (mhash, content) => {
+      expect(mhash).toBe(undefined);
+      expect(content).toEqual('[deleted]');
+    },
+  );
+  const hashes = ['b', 'c', 'd', 'e', 'f'];
+  const contents = hashes.map((el) => `msg: ${el}`);
+  pool.clearCache();
+  await Promise.all(
+    range(5).map((ix) => {
+      return execute(
+        true,
+        pool,
+        pool.getMessage,
+        asLinkKey('a', false, ix),
+        (mhash, content) => {
+          expect(mhash).toEqual(hashes[ix]);
+          expect(content).toEqual(contents[ix]);
+        },
+      );
+    }),
+  );
+  await Promise.all(
+    range(5).map((ix) => {
+      return execute(
+        false,
+        pool,
+        pool.getMessage,
+        asLinkKey('a', false, ix),
+        (mhash, content) => {
+          expect(mhash).toBe(undefined);
+          expect(content).toEqual(contents[ix]);
+        },
+      );
+    }),
+  );
+  await execute(
+    true,
+    pool,
+    pool.getMessage,
+    asLinkKey('b', true, 0),
+    (mhash, content) => {
+      expect(mhash).toBe('a');
+      expect(content).toEqual('msg: a');
+    },
+  );
+  await execute(
+    true,
+    pool,
+    pool.getMessage,
+    asLinkKey('b', true, 1),
+    (mhash, content) => {
+      expect(mhash).toBe('g');
+      expect(content).toEqual('msg: g');
+    },
+  );
+  await execute(
+    false,
+    pool,
+    pool.getMessage,
+    asLinkKey('b', true, 2),
     (mhash, content) => {
       expect(mhash).toBe(undefined);
       expect(content).toEqual('[deleted]');

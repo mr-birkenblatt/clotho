@@ -181,7 +181,9 @@ class CommentPool {
             this.note(mhash);
             this.inFlight.delete(mhash);
           });
-          skipped.forEach(this.inFlight.add);
+          skipped.forEach((val) => {
+            this.inFlight.add(val);
+          });
           this.active = false;
           if (this.inFlight.size > 0) {
             this.fetchMessages();
@@ -242,7 +244,7 @@ class CommentPool {
   getTopics(
     notify: TopicsCB,
   ): Readonly<[Readonly<MHash>, Readonly<string>][]> | undefined {
-    if (this.topics) {
+    if (this.topics !== undefined) {
       return this.topics;
     }
     this.api
@@ -263,6 +265,11 @@ class CommentPool {
       })
       .catch(errHnd);
     return undefined;
+  }
+
+  clearCache(): void {
+    this.topics = undefined;
+    this.pool.clear();
   }
 } // CommentPool
 
@@ -436,6 +443,10 @@ class LinkPool {
     const { mhash, isGetParent } = fullLinkKey;
     const line = this.getLine({ mhash, isGetParent });
     return line.getLink(fullLinkKey.index, notify);
+  }
+
+  clearCache(): void {
+    this.pool.clear();
   }
 } // LinkPool
 
@@ -679,5 +690,10 @@ export default class CommentGraph {
     if (res !== undefined) {
       getChild(res);
     }
+  }
+
+  clearCache(): void {
+    this.msgPool.clearCache();
+    this.linkPool.clearCache();
   }
 } // CommentGraph

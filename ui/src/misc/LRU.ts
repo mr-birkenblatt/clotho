@@ -161,4 +161,10 @@ export default class LRU<K, V> {
     arr.push(cur.item);
     return arr;
   }
+
+  clear(): void {
+    this.objs.clear();
+    this.head = undefined;
+    this.tail = undefined;
+  }
 } // LRU
