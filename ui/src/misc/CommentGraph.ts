@@ -36,6 +36,7 @@ export type ApiProvider = {
   ) => Promise<ApiLinkList>;
 };
 
+/* istanbul ignore next */
 const DEFAULT_API: ApiProvider = {
   topic: async () => fetch(`${URL_PREFIX}/topic`).then(json),
   read: async (hashes) => {
@@ -166,7 +167,9 @@ class CommentPool {
     }
     this.active = true;
     setTimeout(() => {
-      this.hashQueue.forEach(this.inFlight.add);
+      this.hashQueue.forEach((val) => {
+        this.inFlight.add(val);
+      });
       this.hashQueue.clear();
       this.api
         .read(this.inFlight)
