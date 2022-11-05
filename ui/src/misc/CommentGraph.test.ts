@@ -1,6 +1,7 @@
 import CommentGraph, {
   AdjustedLineIndex,
   FullKey,
+  Link,
   MHash,
   NotifyContentCB,
   NotifyLinkCB,
@@ -93,6 +94,7 @@ test('simple test comment graph', async () => {
   const convertMessage = (res: string): [undefined, string] => {
     return [undefined, res];
   };
+
   await execute(
     getMessage,
     [asTopicKey(0)],
@@ -229,5 +231,71 @@ test('simple test comment graph', async () => {
       expect(content).toEqual('[deleted]');
     },
     convertMessage,
+  );
+});
+
+test('parent / child comment graph', async () => {
+const graph = new TestGraph(3);
+  graph.addLinks([
+    ['a1', 'a2'],
+    ['a1', 'b2'],
+    ['a1', 'c2'],
+    ['a1', 'd2'],
+    ['a2', 'a3'],
+    ['a3', 'a4'],
+    ['a3', 'b4'],
+    ['a4', 'a5'],
+    ['a5', 'a1'],
+    ['b4', 'b2'],
+    ['b2', 'b4'],
+  ]);
+  graph.addTopics(['a2', 'b2']);
+  const pool = new CommentGraph(graph.getApiProvider());
+
+  const getTopLink = (
+    notify: NotifyLinkCB,
+    fullKey: Readonly<FullKey>,
+    parentIndex: AdjustedLineIndex): Link | undefined => {
+      return pool.getTopLink(fullKey, parentIndex, notify);
+    };
+  const convertTopLink = (link: Link): [Link] => {return [link];};
+
+  await execute(
+    getTopLink,
+    [asTopicKey(0), 0 as AdjustedLineIndex],
+    (link) => {
+      assertTrue(!!link.valid);
+      expect(link.parent).toEqual('a1');
+      expect(link.child).toEqual('a2');
+    },
+    undefined,
+  );
+  await execute(
+    getTopLink,
+    [asTopicKey(1), 0 as AdjustedLineIndex],
+    (link) => {
+      assertTrue(!!link.valid);
+      expect(link.parent).toEqual('a1');
+      expect(link.child).toEqual('b2');
+    },
+    undefined,
+  );
+  await execute(
+    getTopLink,
+    [asTopicKey(1), 1 as AdjustedLineIndex],
+    (link) => {
+      assertTrue(!!link.valid);
+      expect(link.parent).toEqual('b4');
+      expect(link.child).toEqual('b2');
+    },
+    convertTopLink,
+  );
+  await execute(
+    getTopLink,
+    [asTopicKey(1), 2 as AdjustedLineIndex],
+    (link) => {
+      assertTrue(!link.valid);
+    },
+    convertTopLink,
   );
 });
