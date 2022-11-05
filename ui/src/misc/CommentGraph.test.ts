@@ -88,7 +88,10 @@ test('simple test comment graph', async () => {
   graph.addTopics(['a', 'h']);
   const pool = new CommentGraph(graph.getApiProvider());
 
-  const getMessage = (notify: NotifyContentCB, fullKey: FullKey): string | undefined => {
+  const getMessage = (
+    notify: NotifyContentCB,
+    fullKey: FullKey,
+  ): string | undefined => {
     return pool.getMessage(fullKey, notify);
   };
   const convertMessage = (res: string): [undefined, string] => {
@@ -235,7 +238,7 @@ test('simple test comment graph', async () => {
 });
 
 test('parent / child comment graph', async () => {
-const graph = new TestGraph(3);
+  const graph = new TestGraph(3);
   graph.addLinks([
     ['a1', 'a2'],
     ['a1', 'b2'],
@@ -255,10 +258,13 @@ const graph = new TestGraph(3);
   const getTopLink = (
     notify: NotifyLinkCB,
     fullKey: Readonly<FullKey>,
-    parentIndex: AdjustedLineIndex): Link | undefined => {
-      return pool.getTopLink(fullKey, parentIndex, notify);
-    };
-  const convertTopLink = (link: Link): [Link] => {return [link];};
+    parentIndex: AdjustedLineIndex,
+  ): Link | undefined => {
+    return pool.getTopLink(fullKey, parentIndex, notify);
+  };
+  const convertTopLink = (link: Link): [Link] => {
+    return [link];
+  };
 
   await execute(
     getTopLink,
