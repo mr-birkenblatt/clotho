@@ -5,6 +5,7 @@ import CommentGraph, {
   MHash,
   NotifyContentCB,
   NotifyLinkCB,
+  ValidLink,
 } from './CommentGraph';
 import TestGraph from './TestGraph';
 import { assertTrue, range } from './util';
@@ -265,43 +266,47 @@ test('parent / child comment graph', async () => {
   const convertTopLink = (link: Link): [Link] => {
     return [link];
   };
+  const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
+    return (link) => {
+      assertTrue(!link.invalid);
+      cb(link);
+    };
+  };
+  const invalidLink = (): ((link: Link) => void) => {
+    return (link) => {assertTrue(!!link.invalid);};
+  }
 
   await execute(
     getTopLink,
     [asTopicKey(0), 0 as AdjustedLineIndex],
-    (link) => {
-      assertTrue(!!link.valid);
+    validLink((link) => {
       expect(link.parent).toEqual('a1');
       expect(link.child).toEqual('a2');
-    },
+    }),
     undefined,
   );
   await execute(
     getTopLink,
     [asTopicKey(1), 0 as AdjustedLineIndex],
-    (link) => {
-      assertTrue(!!link.valid);
+    validLink((link) => {
       expect(link.parent).toEqual('a1');
       expect(link.child).toEqual('b2');
-    },
+    }),
     undefined,
   );
   await execute(
     getTopLink,
     [asTopicKey(1), 1 as AdjustedLineIndex],
-    (link) => {
-      assertTrue(!!link.valid);
+    validLink((link) => {
       expect(link.parent).toEqual('b4');
       expect(link.child).toEqual('b2');
-    },
+    }),
     convertTopLink,
   );
   await execute(
     getTopLink,
     [asTopicKey(1), 2 as AdjustedLineIndex],
-    (link) => {
-      assertTrue(!link.valid);
-    },
+    invalidLink(),
     convertTopLink,
   );
 });

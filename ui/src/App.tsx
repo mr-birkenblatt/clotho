@@ -108,7 +108,7 @@ export default class App extends PureComponent<AppProps, AppState> {
   };
 
   renderLink: RenderLinkCB = (link, buttonSize, radius) => {
-    if (!link.valid) {
+    if (link.invalid) {
       return null;
     }
     return (

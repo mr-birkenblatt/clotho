@@ -119,18 +119,18 @@ export function toFullKey(
 
 export type Votes = Readonly<{ [key: string]: Readonly<number> }>;
 
-export type Link =
-  | {
-      valid: Readonly<true>;
-      parent: Readonly<MHash>;
-      child: Readonly<MHash>;
-      user: Readonly<string>;
-      first: Readonly<number>;
-      votes: Votes;
-    }
-  | {
-      valid?: Readonly<false>;
-    };
+export type ValidLink = {
+  invalid?: Readonly<false>;
+  parent: Readonly<MHash>;
+  child: Readonly<MHash>;
+  user: Readonly<string>;
+  first: Readonly<number>;
+  votes: Votes;
+};
+export type InvalidLink = {
+  invalid: Readonly<true>;
+};
+export type Link = ValidLink | InvalidLink;
 
 export type ReadyCB = () => void;
 export type NotifyContentCB = (
@@ -342,7 +342,6 @@ class LinkLookup {
             if (curLink !== undefined) {
               const { child, parent, first, user, votes } = curLink;
               res = {
-                valid: true,
                 child,
                 parent,
                 first,
@@ -350,7 +349,7 @@ class LinkLookup {
                 votes,
               };
             } else {
-              res = { valid: false };
+              res = { invalid: true };
             }
             this.line.set(adjIndex, res);
             this.note(adjIndex);
@@ -495,7 +494,7 @@ export default class CommentGraph {
       link: Readonly<Link>,
       notifyOnHit: boolean,
     ): string | undefined => {
-      if (!link.valid) {
+      if (link.invalid) {
         const res = '[deleted]';
         if (notifyOnHit) {
           notify(undefined, res);
@@ -553,7 +552,7 @@ export default class CommentGraph {
       notifyOnHit: boolean,
     ): Link | undefined => {
       if (mhash === undefined) {
-        const res: Link = { valid: false };
+        const res: Link = { invalid: true };
         if (notifyOnHit) {
           notify(res);
         }
@@ -603,7 +602,7 @@ export default class CommentGraph {
         }
         return link;
       }
-      if (!link.valid) {
+      if (link.invalid) {
         if (notifyOnHit) {
           notify(link);
         }
@@ -662,7 +661,7 @@ export default class CommentGraph {
     callback: (parent: Readonly<LineKey>) => void,
   ): void {
     const getParent = (link: Link) => {
-      if (!link.valid) {
+      if (link.invalid) {
         return; // NOTE: we are not following broken links
       }
       callback({ mhash: link.parent, isGetParent: true });
@@ -680,7 +679,7 @@ export default class CommentGraph {
     callback: (child: Readonly<LineKey>) => void,
   ): void {
     const getChild = (link: Link) => {
-      if (!link.valid) {
+      if (link.invalid) {
         return; // NOTE: we are not following broken links
       }
       callback({ mhash: link.child, isGetParent: false });
