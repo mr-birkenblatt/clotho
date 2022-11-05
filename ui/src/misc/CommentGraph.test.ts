@@ -266,15 +266,19 @@ test('parent / child comment graph', async () => {
   const convertTopLink = (link: Link): [Link] => {
     return [link];
   };
-  const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
+  const validLink = (
+    cb: (vlink: ValidLink) => void,
+  ): ((link: Link) => void) => {
     return (link) => {
       assertTrue(!link.invalid);
       cb(link);
     };
   };
   const invalidLink = (): ((link: Link) => void) => {
-    return (link) => {assertTrue(!!link.invalid);};
-  }
+    return (link) => {
+      assertTrue(!!link.invalid);
+    };
+  };
 
   await execute(
     getTopLink,
