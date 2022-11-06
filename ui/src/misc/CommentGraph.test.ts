@@ -535,17 +535,6 @@ test('cache edge cases for comment graph', async () => {
 test('child comment graph', async () => {
   const pool = new CommentGraph(advancedGraph().getApiProvider());
   const getBottomLink = createGetBottomLink(pool);
-  // ['a1', 'a2'],
-  // ['a1', 'b2'],
-  // ['a1', 'c2'],
-  // ['a1', 'd2'],
-  // ['a2', 'a3'],
-  // ['a3', 'a4'],
-  // ['a3', 'b4'],
-  // ['a4', 'a5'],
-  // ['a5', 'a1'],
-  // ['b4', 'b2'],
-  // ['b2', 'b4'],
 
   await execute(
     getBottomLink,
@@ -571,4 +560,84 @@ test('child comment graph', async () => {
     checkLink('a3', 'b4'),
     convertLink,
   );
+
+  pool.clearCache();
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a5', false, 0), 0),
+    checkLink('a1', 'a2'),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a5', false, 0), 1),
+    checkLink('a1', 'b2'),
+    convertLink,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a5', false, 0), 2),
+    checkLink('a1', 'c2'),
+    convertLink,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a5', false, 0), 3),
+    checkLink('a1', 'd2'),
+    convertLink,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a5', false, 0), 4),
+    invalidLink(),
+    convertLink,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a5', false, 0), -1),
+    invalidLink(),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('c2', true, 0), 1),
+    checkLink('a1', 'b2'),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('c2', true, 1), 1),
+    invalidLink(),
+    convertLink,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('c2', true, 0), 2),
+    checkLink('a1', 'c2'),
+    convertLink,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a2', false, 0), 0),
+    checkLink('a3', 'a4'),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a2', false, 0), 1),
+    checkLink('a3', 'b4'),
+    convertLink,
+  );
 });
+
+// ['a1', 'a2'],
+// ['a1', 'b2'],
+// ['a1', 'c2'],
+// ['a1', 'd2'],
+// ['a2', 'a3'],
+// ['a3', 'a4'],
+// ['a3', 'b4'],
+// ['a4', 'a5'],
+// ['a5', 'a1'],
+// ['b4', 'b2'],
+// ['b2', 'b4'],
