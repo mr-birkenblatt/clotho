@@ -98,23 +98,23 @@ test('simple test comment graph', async () => {
   const convertMessage = (res: string): [undefined, string] => {
     return [undefined, res];
   };
-  const checkMessage = (mhash: string | undefined, content?: string): NotifyContentCB => {
+  const checkMessage = (
+    mhash: string | undefined,
+    content?: string,
+  ): NotifyContentCB => {
     return (otherMhash, otherContent) => {
       if (mhash !== undefined) {
         expect(otherMhash).toEqual(mhash);
       } else {
         expect(otherMhash).toBe(undefined);
       }
-      expect(otherContent).toEqual(content !== undefined ? content : `msg: ${mhash}`);
+      expect(otherContent).toEqual(
+        content !== undefined ? content : `msg: ${mhash}`,
+      );
     };
   };
 
-  await execute(
-    getMessage,
-    [asTopicKey(0)],
-    checkMessage('a'),
-    undefined,
-  );
+  await execute(getMessage, [asTopicKey(0)], checkMessage('a'), undefined);
   await execute(
     getMessage,
     [asTopicKey(1)],
@@ -242,7 +242,10 @@ test('parent / child comment graph', async () => {
       cb(link);
     };
   };
-  const checkLink = (parent: string, child: string): ((link: Link) => void) => {
+  const checkLink = (
+    parent: string,
+    child: string,
+  ): ((link: Link) => void) => {
     return validLink((link) => {
       expect(link.parent).toEqual(parent);
       expect(link.child).toEqual(child);
@@ -253,7 +256,10 @@ test('parent / child comment graph', async () => {
       assertTrue(!!link.invalid);
     };
   };
-  const toArgs = (fullKey: FullKey, nextIx: number): [FullKey, AdjustedLineIndex] => {
+  const toArgs = (
+    fullKey: FullKey,
+    nextIx: number,
+  ): [FullKey, AdjustedLineIndex] => {
     return [fullKey, nextIx as AdjustedLineIndex];
   };
 
