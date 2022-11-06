@@ -82,6 +82,28 @@ interface TopicKey {
 export type LineKey = LinkKey | TopicKey;
 export const TOPIC_KEY: Readonly<LineKey> = { topic: true };
 
+export function equalLineKey(keyA: LineKey, keyB: LineKey): boolean {
+  if (keyA.topic && keyB.topic) {
+    return true;
+  }
+  if (keyA.topic || keyB.topic) {
+    return false;
+  }
+  if (keyA.mhash !== keyB.mhash) {
+    return false;
+  }
+  return keyA.isGetParent === keyB.isGetParent;
+}
+
+export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+  return keysA.reduce((prev, cur, ix) => {
+    return prev && equalLineKey(cur, keysB[ix]);
+  }, true);
+}
+
 interface FullLinkKey {
   topic?: Readonly<false>;
   mhash: Readonly<MHash>;

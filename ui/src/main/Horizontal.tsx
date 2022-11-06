@@ -142,7 +142,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   activeRefs: Map<LineIndex, React.RefObject<HTMLDivElement>>;
   activeView: Map<LineIndex, IntersectionObserver>;
   lockedRef: React.RefObject<HTMLDivElement>;
-  lockedView: IntersectionObserver | null;
+  lockedView: IntersectionObserver | undefined;
   rootBox: React.RefObject<HTMLDivElement>;
   bandRef: React.RefObject<HTMLDivElement>;
 
@@ -161,7 +161,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     this.activeRefs = new Map();
     this.activeView = new Map();
     this.lockedRef = React.createRef();
-    this.lockedView = null;
+    this.lockedView = undefined;
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
     this.updateViews({ offset: undefined, itemCount: undefined });
@@ -312,20 +312,18 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
       });
     }
 
-    const that = this;
-
-    function createObserver(
+    const createObserver = (
       index: LineIndex,
       current: HTMLDivElement,
       currentRoot: HTMLDivElement,
-    ): IntersectionObserver {
+    ): IntersectionObserver => {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (!entry.isIntersecting) {
               return;
             }
-            const { lineKey, dispatch } = that.props;
+            const { lineKey, dispatch } = this.props;
             dispatch(setHCurrentIx({ lineKey, index }));
           });
         },
@@ -337,7 +335,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
       );
       observer.observe(current);
       return observer;
-    }
+    };
 
     if (needViews) {
       range(itemCount).forEach((ix) => {

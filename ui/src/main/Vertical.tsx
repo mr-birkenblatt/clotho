@@ -3,6 +3,7 @@ import { connect, ConnectedProps } from 'react-redux';
 import styled from 'styled-components';
 import {
   AdjustedLineIndex,
+  equalLineKeys,
   FullKey,
   LineKey,
   Link,
@@ -298,7 +299,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (
       prevProps.currentIx !== currentIx ||
       prevProps.offset !== offset ||
-      prevProps.order !== order ||
+      // FIXME identity might be enough
+      !equalLineKeys(prevProps.order, order) ||
       prevProps.correction !== correction ||
       prevState.itemCount !== itemCount
     ) {
@@ -314,7 +316,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       });
     }
 
-    if (this.awaitOrderChange === null) {
+    if (this.awaitOrderChange === undefined) {
       if (currentIx + correction >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
         const newIx = (lastIx + 1) as VIndex;
@@ -361,7 +363,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
     if (
       this.awaitOrderChange !== undefined &&
-      this.awaitOrderChange !== order
+      !equalLineKeys(this.awaitOrderChange, order)
     ) {
       this.awaitOrderChange = undefined;
     }
@@ -424,7 +426,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (
       prevProps.offset !== offset ||
       prevState.itemCount !== itemCount ||
-      prevProps.order !== order ||
+      // FIXME identity might be enough
+      !equalLineKeys(prevProps.order, order) ||
       prevProps.currentIx !== currentIx
     ) {
       Array.from(this.activeRefs.keys()).forEach((realIx) => {
@@ -465,8 +468,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         // NOTE: careful! can end in an infinite loop if elements are not
         // filled up correctly.
         setTimeout(() => {
-          // this.requestRedraw();
           console.log('would be redraw');
+          this.requestRedraw();
         }, 100);
       }
     }
