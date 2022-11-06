@@ -141,6 +141,7 @@ export type NotifyLinkCB = (link: Readonly<Link>) => void;
 type TopicsCB = (
   topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
 ) => void;
+export type NextCB = (next: Readonly<LineKey> | undefined) => void;
 
 class CommentPool {
   private readonly api: ApiProvider;
@@ -652,11 +653,12 @@ export default class CommentGraph {
   getParent(
     fullKey: Readonly<FullKey>,
     parentIndex: AdjustedLineIndex,
-    callback: (parent: Readonly<LineKey>) => void,
+    callback: NextCB,
   ): void {
     const getParent = (link: Link) => {
       if (link.invalid) {
-        return; // NOTE: we are not following broken links
+        callback(undefined);
+        return;
       }
       callback({ mhash: link.parent, isGetParent: true });
     };
@@ -670,11 +672,12 @@ export default class CommentGraph {
   getChild(
     fullKey: Readonly<FullKey>,
     childIndex: AdjustedLineIndex,
-    callback: (child: Readonly<LineKey>) => void,
+    callback: NextCB,
   ): void {
     const getChild = (link: Link) => {
       if (link.invalid) {
-        return; // NOTE: we are not following broken links
+        callback(undefined);
+        return;
       }
       callback({ mhash: link.child, isGetParent: false });
     };
