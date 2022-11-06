@@ -48,6 +48,7 @@ async function execute<A extends any[], T extends any[], R>(
   args: A,
   callback: Callback<T>,
   convertDirect: ((res: R) => T) | undefined,
+  alwaysExpectCall?: boolean,
 ): Promise<boolean> {
   const marker = jest.fn();
   return new Promise((resolve) => {
@@ -61,8 +62,11 @@ async function execute<A extends any[], T extends any[], R>(
         cb(...cbArgs);
       }
     };
-    const res = fun(notify, ...args);
     expect(marker).not.toBeCalled();
+    const res = fun(notify, ...args);
+    if (!alwaysExpectCall) {
+      expect(marker).not.toBeCalled();
+    }
     if (convertDirect === undefined) {
       assertTrue(res === undefined);
     } else {
@@ -72,7 +76,7 @@ async function execute<A extends any[], T extends any[], R>(
     // console.log('runAllTimers');
     // jest.runAllTimers();
   }).then(() => {
-    if (convertDirect === undefined) {
+    if (convertDirect === undefined || alwaysExpectCall) {
       expect(marker).toBeCalled();
       expect(marker).toHaveBeenCalledTimes(1);
     } else {
@@ -102,9 +106,6 @@ const checkMessage = (
 };
 const convertLink = (link: Link): [Link] => {
   return [link];
-};
-const convertLineKey = (lineKey: LineKey): [LineKey] => {
-  return [lineKey];
 };
 const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
   return (link) => {
@@ -687,26 +688,122 @@ test('get parent / child comment graph', async () => {
   const getChild = createGetChild(pool);
 
   await execute(
-    getParent,
+    getChild,
     toArgs(asFullKey('a2', false, 0), 0),
-    checkNext(asLineKey('a3', true)),
+    checkNext(asLineKey('a4', false)),
     undefined,
+    true,
   );
   await execute(
     getParent,
     toArgs(asFullKey('a2', false, 0), 0),
+    checkNext(asLineKey('a2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('c2', true, 0), 1),
+    checkNext(asLineKey('b2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('c2', true, 0), 2),
+    checkNext(asLineKey('c2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('c2', true, 0), 3),
+    checkNext(asLineKey('d2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('b2', true, 1), 0),
     checkNext(asLineKey('a3', true)),
-    convertLineKey,
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('b4', true, 0), 0),
+    checkNext(asLineKey('a4', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('b4', true, 0), 1),
+    checkNext(asLineKey('b4', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('a1', false, 1), 0),
+    checkNext(asLineKey('a1', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('a1', false, 1), 1),
+    checkNext(asLineKey('b4', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('b4', true, 1), 0),
+    checkNext(asLineKey('a1', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('b4', true, 1), 1),
+    checkNext(asLineKey('b4', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('b4', true, 1), 0),
+    checkNext(asLineKey('a1', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('b4', true, 1), 2),
+    checkNext(undefined),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    toArgs(asFullKey('b4', true, 2), 0),
+    checkNext(undefined),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('b4', true, 1), 2),
+    checkNext(undefined),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    toArgs(asFullKey('b4', true, 2), 0),
+    checkNext(undefined),
+    undefined,
+    true,
   );
 });
-// ['a1', 'a2'],
-// ['a1', 'b2'],
-// ['a1', 'c2'],
-// ['a1', 'd2'],
-// ['a2', 'a3'],
-// ['a3', 'a4'],
-// ['a3', 'b4'],
-// ['a4', 'a5'],
-// ['a5', 'a1'],
-// ['b4', 'b2'],
-// ['b2', 'b4'],
