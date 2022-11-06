@@ -98,86 +98,69 @@ test('simple test comment graph', async () => {
   const convertMessage = (res: string): [undefined, string] => {
     return [undefined, res];
   };
+  const checkMessage = (mhash: string | undefined, content?: string): NotifyContentCB => {
+    return (otherMhash, otherContent) => {
+      if (mhash !== undefined) {
+        expect(otherMhash).toEqual(mhash);
+      } else {
+        expect(otherMhash).toBe(undefined);
+      }
+      expect(otherContent).toEqual(content !== undefined ? content : `msg: ${mhash}`);
+    };
+  };
 
   await execute(
     getMessage,
     [asTopicKey(0)],
-    (mhash, content) => {
-      expect(mhash).toEqual('a');
-      expect(content).toEqual('msg: a');
-    },
+    checkMessage('a'),
     undefined,
   );
   await execute(
     getMessage,
     [asTopicKey(1)],
-    (mhash, content) => {
-      expect(mhash).toBe(undefined);
-      expect(content).toEqual('msg: h');
-    },
+    checkMessage(undefined, 'msg: h'),
     convertMessage,
   );
   await execute(
     getMessage,
     [asTopicKey(-1)],
-    (mhash, content) => {
-      expect(mhash).toBe(undefined);
-      expect(content).toEqual('[unavailable]');
-    },
+    checkMessage(undefined, '[unavailable]'),
     convertMessage,
   );
   await execute(
     getMessage,
     [asTopicKey(2)],
-    (mhash, content) => {
-      expect(mhash).toBe(undefined);
-      expect(content).toEqual('[unavailable]');
-    },
+    checkMessage(undefined, '[unavailable]'),
     convertMessage,
   );
   await execute(
     getMessage,
     [asLinkKey('a', false, 0)],
-    (mhash, content) => {
-      expect(mhash).toEqual('b');
-      expect(content).toEqual('msg: b');
-    },
+    checkMessage('b'),
     undefined,
   );
   await execute(
     getMessage,
     [asLinkKey('a', false, 2)],
-    (mhash, content) => {
-      expect(mhash).toEqual('d');
-      expect(content).toEqual('msg: d');
-    },
+    checkMessage('d'),
     undefined,
   );
   await execute(
     getMessage,
     [asLinkKey('a', false, 2)],
-    (mhash, content) => {
-      expect(mhash).toBe(undefined);
-      expect(content).toEqual('msg: d');
-    },
+    checkMessage(undefined, 'msg: d'),
     convertMessage,
   );
   await execute(
     getMessage,
     [asLinkKey('a', false, 4)],
-    (mhash, content) => {
-      expect(mhash).toEqual('f');
-      expect(content).toEqual('msg: f');
-    },
+    checkMessage('f'),
     undefined,
   );
   await execute(
     getMessage,
     [asLinkKey('a', false, 5)],
-    (mhash, content) => {
-      expect(mhash).toBe(undefined);
-      expect(content).toEqual('[deleted]');
-    },
+    checkMessage(undefined, '[deleted]'),
     convertMessage,
   );
   const hashes = ['b', 'c', 'd', 'e', 'f'];
@@ -188,10 +171,7 @@ test('simple test comment graph', async () => {
       return execute(
         getMessage,
         [asLinkKey('a', false, ix)],
-        (mhash, content) => {
-          expect(mhash).toEqual(hashes[ix]);
-          expect(content).toEqual(contents[ix]);
-        },
+        checkMessage(hashes[ix]),
         undefined,
       );
     }),
@@ -201,10 +181,7 @@ test('simple test comment graph', async () => {
       return execute(
         getMessage,
         [asLinkKey('a', false, ix)],
-        (mhash, content) => {
-          expect(mhash).toBe(undefined);
-          expect(content).toEqual(contents[ix]);
-        },
+        checkMessage(undefined, contents[ix]),
         convertMessage,
       );
     }),
@@ -212,28 +189,19 @@ test('simple test comment graph', async () => {
   await execute(
     getMessage,
     [asLinkKey('b', true, 0)],
-    (mhash, content) => {
-      expect(mhash).toBe('a');
-      expect(content).toEqual('msg: a');
-    },
+    checkMessage('a'),
     undefined,
   );
   await execute(
     getMessage,
     [asLinkKey('b', true, 1)],
-    (mhash, content) => {
-      expect(mhash).toBe('g');
-      expect(content).toEqual('msg: g');
-    },
+    checkMessage('g'),
     undefined,
   );
   await execute(
     getMessage,
     [asLinkKey('b', true, 2)],
-    (mhash, content) => {
-      expect(mhash).toBe(undefined);
-      expect(content).toEqual('[deleted]');
-    },
+    checkMessage(undefined, '[deleted]'),
     convertMessage,
   );
 });
@@ -263,7 +231,7 @@ test('parent / child comment graph', async () => {
   ): Link | undefined => {
     return pool.getTopLink(fullKey, parentIndex, notify);
   };
-  const convertTopLink = (link: Link): [Link] => {
+  const convertLink = (link: Link): [Link] => {
     return [link];
   };
   const validLink = (
@@ -274,43 +242,87 @@ test('parent / child comment graph', async () => {
       cb(link);
     };
   };
+  const checkLink = (parent: string, child: string): ((link: Link) => void) => {
+    return validLink((link) => {
+      expect(link.parent).toEqual(parent);
+      expect(link.child).toEqual(child);
+    });
+  };
   const invalidLink = (): ((link: Link) => void) => {
     return (link) => {
       assertTrue(!!link.invalid);
     };
   };
+  const toArgs = (fullKey: FullKey, nextIx: number): [FullKey, AdjustedLineIndex] => {
+    return [fullKey, nextIx as AdjustedLineIndex];
+  };
 
   await execute(
     getTopLink,
-    [asTopicKey(0), 0 as AdjustedLineIndex],
-    validLink((link) => {
-      expect(link.parent).toEqual('a1');
-      expect(link.child).toEqual('a2');
-    }),
+    toArgs(asTopicKey(0), 0),
+    checkLink('a1', 'a2'),
     undefined,
   );
   await execute(
     getTopLink,
-    [asTopicKey(1), 0 as AdjustedLineIndex],
-    validLink((link) => {
-      expect(link.parent).toEqual('a1');
-      expect(link.child).toEqual('b2');
-    }),
+    toArgs(asTopicKey(1), 0),
+    checkLink('a1', 'b2'),
     undefined,
   );
   await execute(
     getTopLink,
-    [asTopicKey(1), 1 as AdjustedLineIndex],
-    validLink((link) => {
-      expect(link.parent).toEqual('b4');
-      expect(link.child).toEqual('b2');
-    }),
-    convertTopLink,
+    toArgs(asTopicKey(1), 1),
+    checkLink('b4', 'b2'),
+    convertLink,
   );
   await execute(
     getTopLink,
-    [asTopicKey(1), 2 as AdjustedLineIndex],
+    toArgs(asTopicKey(1), 2),
     invalidLink(),
-    convertTopLink,
+    convertLink,
   );
+
+  await execute(
+    getTopLink,
+    toArgs(asLinkKey('d2', true, 0), 0),
+    checkLink('a5', 'a1'),
+    undefined,
+  );
+  await execute(
+    getTopLink,
+    toArgs(asLinkKey('b4', true, 1), 0),
+    checkLink('a1', 'b2'),
+    undefined,
+  );
+  await execute(
+    getTopLink,
+    toArgs(asLinkKey('b4', true, 1), 1),
+    checkLink('b4', 'b2'),
+    convertLink,
+  );
+
+  // await execute(
+  //   getTopLink,
+  //   toArgs(asLinkKey('a4', false, 0), 0),
+  //   checkLink('a5', 'a1'),
+  //   undefined,
+  // );
+  // await execute(
+  //   getTopLink,
+  //   toArgs(asLinkKey('a5', false, 0), 0),
+  //   checkLink('a1', 'b2'),
+  //   undefined,
+  // );
+  // await execute(
+  //   getTopLink,
+  //   toArgs(asLinkKey('a3', false, 0), 1),
+  //   checkLink('b4', 'b2'),
+  //   convertLink,
+  // );
+  // await execute(
+  //   getTopLink,
+  //   toArgs(asLinkKey('b2', false, 1), 1),
+  //   checkLink('b4', 'b2'),
+  //   convertLink,
+  // );
 });
