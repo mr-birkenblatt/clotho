@@ -34,10 +34,7 @@ function asFullKey(
   };
 }
 
-function asLineKey(
-  hash: string,
-  isGetParent: boolean,
-): LineKey {
+function asLineKey(hash: string, isGetParent: boolean): LineKey {
   return {
     mhash: hash as MHash,
     isGetParent,
@@ -207,22 +204,34 @@ const createGetBottomLink = (
 
 const createGetMessage = (
   pool: CommentGraph,
-): ((notify: NotifyContentCB, fullKey: Readonly<FullKey>) => string | undefined) => {
+): ((
+  notify: NotifyContentCB,
+  fullKey: Readonly<FullKey>,
+) => string | undefined) => {
   return (notify, fullKey) => pool.getMessage(fullKey, notify);
 };
 
 const createGetParent = (
   pool: CommentGraph,
-): ((notify: NextCB, fullKey: Readonly<FullKey>, parentIndex: AdjustedLineIndex) => undefined) => {
-  return (notify, fullKey, parentIndex) => pool.getParent(fullKey, parentIndex, notify) as undefined;
+): ((
+  notify: NextCB,
+  fullKey: Readonly<FullKey>,
+  parentIndex: AdjustedLineIndex,
+) => undefined) => {
+  return (notify, fullKey, parentIndex) =>
+    pool.getParent(fullKey, parentIndex, notify) as undefined;
 };
 
 const createGetChild = (
   pool: CommentGraph,
-): ((notify: NextCB, fullKey: Readonly<FullKey>, childIndex: AdjustedLineIndex) => undefined) => {
-  return (notify, fullKey, childIndex) => pool.getChild(fullKey, childIndex, notify) as undefined;
+): ((
+  notify: NextCB,
+  fullKey: Readonly<FullKey>,
+  childIndex: AdjustedLineIndex,
+) => undefined) => {
+  return (notify, fullKey, childIndex) =>
+    pool.getChild(fullKey, childIndex, notify) as undefined;
 };
-
 
 test('simple test comment graph', async () => {
   const pool = new CommentGraph(simpleGraph().getApiProvider());
