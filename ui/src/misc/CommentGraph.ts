@@ -547,7 +547,7 @@ export default class CommentGraph {
       return topics[index][0];
     };
 
-    const getTopicTopLink = (
+    const getTopicNextLink = (
       mhash: Readonly<MHash> | undefined,
       notifyOnHit: boolean,
     ): Link | undefined => {
@@ -576,14 +576,14 @@ export default class CommentGraph {
 
     const notifyTopics: TopicsCB = (topics) => {
       const mhash = getTopic(topics);
-      getTopicTopLink(mhash, true);
+      getTopicNextLink(mhash, true);
     };
 
     const order = this.msgPool.getTopics(notifyTopics);
     if (order === undefined) {
       return undefined;
     }
-    return getTopicTopLink(getTopic(order), false);
+    return getTopicNextLink(getTopic(order), false);
   }
 
   private getFullNextLink(
@@ -596,12 +596,6 @@ export default class CommentGraph {
       link: Readonly<Link>,
       notifyOnHit: boolean,
     ): Link | undefined => {
-      if (fullLinkKey.isGetParent !== isTop) {
-        if (notifyOnHit) {
-          notify(link);
-        }
-        return link;
-      }
       if (link.invalid) {
         if (notifyOnHit) {
           notify(link);
@@ -609,7 +603,7 @@ export default class CommentGraph {
         return link;
       }
       const topKey: Readonly<FullLinkKey> = {
-        mhash: link.parent,
+        mhash: fullLinkKey.isGetParent !== isTop ? link.child : link.parent,
         isGetParent: isTop,
         index: nextIndex,
       };
