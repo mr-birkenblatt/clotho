@@ -547,16 +547,28 @@ test('child comment graph', async () => {
   // ['b4', 'b2'],
   // ['b2', 'b4'],
 
-  // await execute(
-  //   getBottomLink,
-  //   toArgs(asLinkKey('a1', false, 1), 0),
-  //   checkLink('b2', 'b4'),
-  //   undefined,
-  // );
-  // await execute(
-  //   getBottomLink,
-  //   toArgs(asLinkKey('b4', true, 0), 0),
-  //   checkLink('b2', 'b4'),
-  //   undefined,
-  // );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('a1', false, 1), 0),
+    checkLink('b2', 'b4'),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('b4', true, 1), 0),
+    checkLink('b2', 'b4'),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('b4', true, 0), 0),
+    checkLink('a3', 'a4'),
+    undefined,
+  );
+  await execute(
+    getBottomLink,
+    toArgs(asLinkKey('b4', true, 0), 1),
+    checkLink('a3', 'b4'),
+    convertLink,
+  );
 });

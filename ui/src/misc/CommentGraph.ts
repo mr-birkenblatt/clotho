@@ -603,7 +603,7 @@ export default class CommentGraph {
         return link;
       }
       const topKey: Readonly<FullLinkKey> = {
-        mhash: fullLinkKey.isGetParent !== isTop ? link.child : link.parent,
+        mhash: fullLinkKey.isGetParent ? link.parent : link.child,
         isGetParent: isTop,
         index: nextIndex,
       };
