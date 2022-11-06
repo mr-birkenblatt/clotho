@@ -6,6 +6,7 @@ import {
   FullKey,
   LineKey,
   Link,
+  NextCB,
   ReadyCB,
   toFullKey,
 } from '../misc/CommentGraph';
@@ -99,13 +100,13 @@ export type ChildLineCB = (
   lineKey: LineKey,
   index: AdjustedLineIndex,
   childIndex: AdjustedLineIndex,
-  callback: (child: LineKey) => void,
+  callback: NextCB,
 ) => void;
 export type ParentLineCB = (
   lineKey: LineKey,
   index: AdjustedLineIndex,
   parentIndex: AdjustedLineIndex,
-  callback: (parent: LineKey) => void,
+  callback: NextCB,
 ) => void;
 export type VItemCB = (
   lineKey: LineKey | undefined,
@@ -322,6 +323,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
           this.getHIndexAdjusted(lastIx),
           this.getHIndexAdjusted(newIx),
           (child) => {
+            if (child === undefined) {
+              console.warn('no child found!');
+              return;
+            }
             dispatch(
               addLine({
                 lineKey: child,
@@ -339,6 +344,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
           this.getHIndexAdjusted(firstIx),
           this.getHIndexAdjusted(newIx),
           (parent) => {
+            if (parent === undefined) {
+              console.warn('no parent found!');
+              return;
+            }
             dispatch(
               addLine({
                 lineKey: parent,
