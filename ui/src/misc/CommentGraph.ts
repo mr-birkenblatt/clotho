@@ -153,7 +153,7 @@ class CommentPool {
 
   constructor(api: ApiProvider, maxSize?: number) {
     this.api = api;
-    this.pool = new LRU(maxSize || 10000);
+    this.pool = new LRU(maxSize ?? 10000);
     this.hashQueue = new Set<Readonly<MHash>>();
     this.inFlight = new Set<Readonly<MHash>>();
     this.listeners = new Map();
@@ -288,7 +288,7 @@ class LinkLookup {
     blockSize?: number,
   ) {
     this.api = api;
-    this.blockSize = blockSize || 10;
+    this.blockSize = blockSize ?? 10;
     this.linkKey = linkKey;
     this.line = new LRU(maxLineSize);
     this.listeners = new Map();
@@ -345,7 +345,7 @@ class LinkLookup {
                 child,
                 parent,
                 first,
-                user: user || '[nouser]',
+                user: user ?? '[nouser]',
                 votes,
               };
             } else {
@@ -419,8 +419,8 @@ class LinkPool {
 
   constructor(api: ApiProvider, maxSize?: number, maxLineSize?: number) {
     this.api = api;
-    this.maxLineSize = maxLineSize || 100;
-    this.pool = new LRU(maxSize || 1000);
+    this.maxLineSize = maxLineSize ?? 100;
+    this.pool = new LRU(maxSize ?? 1000);
   }
 
   private getLine(linkKey: LinkKey): LinkLookup {
@@ -454,7 +454,7 @@ export default class CommentGraph {
   private readonly linkPool: LinkPool;
 
   constructor(api?: ApiProvider) {
-    const actualApi = api || DEFAULT_API;
+    const actualApi = api ?? DEFAULT_API;
     this.msgPool = new CommentPool(actualApi);
     this.linkPool = new LinkPool(actualApi);
   }
