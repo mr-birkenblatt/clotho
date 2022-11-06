@@ -37,7 +37,7 @@ export type ApiProvider = {
 };
 
 /* istanbul ignore next */
-const DEFAULT_API: ApiProvider = {
+export const DEFAULT_API: ApiProvider = {
   topic: async () => fetch(`${URL_PREFIX}/topic`).then(json),
   read: async (hashes) => {
     return fetch(`${URL_PREFIX}/read`, {

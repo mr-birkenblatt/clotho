@@ -1,5 +1,5 @@
 import { MHash } from './CommentGraph';
-import TestGraph from './TestGraph';
+import { simpleGraph } from './TestGraph';
 
 function asMHashSet(arr: string[]): Set<MHash> {
   return new Set(arr as MHash[]);
@@ -29,20 +29,7 @@ function getChildHashs(links: readonly TestLink[]): string[] {
 }
 
 test('test graph', () => {
-  const graph = new TestGraph(3);
-  graph.addLinks([
-    ['a', 'b'],
-    ['a', 'c'],
-    ['a', 'd'],
-    ['a', 'e'],
-    ['a', 'f'],
-    ['g', 'a'],
-    ['g', 'b'],
-    ['h', 'i'],
-    ['h', 'j'],
-  ]);
-  graph.addTopics(['a', 'h']);
-  const api = graph.getApiProvider();
+  const api = simpleGraph().getApiProvider();
   api.topic().then((topics) => {
     expect(topics.topics).toEqual({ a: 'msg: a', h: 'msg: h' });
   });

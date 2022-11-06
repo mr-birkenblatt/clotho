@@ -9,7 +9,7 @@ import CommentGraph, {
   NotifyLinkCB,
   ValidLink,
 } from './CommentGraph';
-import TestGraph from './TestGraph';
+import { advancedGraph, simpleGraph } from './TestGraph';
 import { assertTrue, range } from './util';
 
 // FIXME not using fake timers for now as they don't work well with async
@@ -143,42 +143,6 @@ const toArgs = (
   nextIx: number,
 ): [FullKey, AdjustedLineIndex] => {
   return [fullKey, nextIx as AdjustedLineIndex];
-};
-
-const simpleGraph = (): TestGraph => {
-  const graph = new TestGraph(3);
-  graph.addLinks([
-    ['a', 'b'],
-    ['a', 'c'],
-    ['a', 'd'],
-    ['a', 'e'],
-    ['a', 'f'],
-    ['g', 'a'],
-    ['g', 'b'],
-    ['h', 'i'],
-    ['h', 'j'],
-  ]);
-  graph.addTopics(['a', 'h']);
-  return graph;
-};
-
-const advancedGraph = (): TestGraph => {
-  const graph = new TestGraph(3);
-  graph.addLinks([
-    ['a1', 'a2'],
-    ['a1', 'b2'],
-    ['a1', 'c2'],
-    ['a1', 'd2'],
-    ['a2', 'a3'],
-    ['a3', 'a4'],
-    ['a3', 'b4'],
-    ['a4', 'a5'],
-    ['a5', 'a1'],
-    ['b4', 'b2'],
-    ['b2', 'b4'],
-  ]);
-  graph.addTopics(['a2', 'b2']);
-  return graph;
 };
 
 const createGetTopLink = (

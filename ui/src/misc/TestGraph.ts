@@ -1,6 +1,42 @@
 import { ApiProvider, MHash } from './CommentGraph';
 import { assertTrue } from './util';
 
+export const simpleGraph = (): TestGraph => {
+  const graph = new TestGraph(3);
+  graph.addLinks([
+    ['a', 'b'],
+    ['a', 'c'],
+    ['a', 'd'],
+    ['a', 'e'],
+    ['a', 'f'],
+    ['g', 'a'],
+    ['g', 'b'],
+    ['h', 'i'],
+    ['h', 'j'],
+  ]);
+  graph.addTopics(['a', 'h']);
+  return graph;
+};
+
+export const advancedGraph = (): TestGraph => {
+  const graph = new TestGraph(3);
+  graph.addLinks([
+    ['a1', 'a2'],
+    ['a1', 'b2'],
+    ['a1', 'c2'],
+    ['a1', 'd2'],
+    ['a2', 'a3'],
+    ['a3', 'a4'],
+    ['a3', 'b4'],
+    ['a4', 'a5'],
+    ['a5', 'a1'],
+    ['b4', 'b2'],
+    ['b2', 'b4'],
+  ]);
+  graph.addTopics(['a2', 'b2']);
+  return graph;
+};
+
 export default class TestGraph {
   private readonly apiLimit: number;
   private readonly topics: string[];

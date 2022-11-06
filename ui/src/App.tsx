@@ -10,6 +10,7 @@ import Vertical, {
   VItemCB,
 } from './main/Vertical';
 import CommentGraph, { toFullKey } from './misc/CommentGraph';
+import { advancedGraph } from './misc/TestGraph';
 
 const Main = styled.div`
   text-align: center;
@@ -71,7 +72,7 @@ export default class App extends PureComponent<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
     this.state = {};
-    this.graph = new CommentGraph();
+    this.graph = new CommentGraph(advancedGraph().getApiProvider());
   }
 
   getItem: ItemCB = (fullLinkKey, readyCb) => {
