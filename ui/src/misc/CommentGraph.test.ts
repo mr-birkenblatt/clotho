@@ -118,7 +118,7 @@ const toArgs = (
   return [fullKey, nextIx as AdjustedLineIndex];
 };
 
-test('simple test comment graph', async () => {
+const simpleGraph = (): TestGraph => {
   const graph = new TestGraph(3);
   graph.addLinks([
     ['a', 'b'],
@@ -132,13 +132,59 @@ test('simple test comment graph', async () => {
     ['h', 'j'],
   ]);
   graph.addTopics(['a', 'h']);
-  const pool = new CommentGraph(graph.getApiProvider());
-  const getMessage = (
-    notify: NotifyContentCB,
-    fullKey: FullKey,
-  ): string | undefined => {
-    return pool.getMessage(fullKey, notify);
-  };
+  return graph;
+};
+
+const advancedGraph = (): TestGraph => {
+  const graph = new TestGraph(3);
+  graph.addLinks([
+    ['a1', 'a2'],
+    ['a1', 'b2'],
+    ['a1', 'c2'],
+    ['a1', 'd2'],
+    ['a2', 'a3'],
+    ['a3', 'a4'],
+    ['a3', 'b4'],
+    ['a4', 'a5'],
+    ['a5', 'a1'],
+    ['b4', 'b2'],
+    ['b2', 'b4'],
+  ]);
+  graph.addTopics(['a2', 'b2']);
+  return graph;
+};
+
+const createGetTopLink = (
+  pool: CommentGraph,
+): ((
+  notify: NotifyLinkCB,
+  fullKey: Readonly<FullKey>,
+  parentIndex: AdjustedLineIndex,
+) => Link | undefined) => {
+  return (notify, fullKey, parentIndex) =>
+    pool.getTopLink(fullKey, parentIndex, notify);
+};
+
+const createGetBottomLink = (
+  pool: CommentGraph,
+): ((
+  notify: NotifyLinkCB,
+  fullKey: Readonly<FullKey>,
+  childIndex: AdjustedLineIndex,
+) => Link | undefined) => {
+  return (notify, fullKey, childIndex) =>
+    pool.getBottomLink(fullKey, childIndex, notify);
+};
+
+const createGetMessage = (
+  pool: CommentGraph,
+): ((notify: NotifyContentCB, fullKey: FullKey) => string | undefined) => {
+  return (notify, fullKey) => pool.getMessage(fullKey, notify);
+};
+
+test('simple test comment graph', async () => {
+  const pool = new CommentGraph(simpleGraph().getApiProvider());
+  const getMessage = createGetMessage(pool);
 
   await execute(getMessage, [asTopicKey(0)], checkMessage('a'), undefined);
   await execute(
@@ -189,9 +235,14 @@ test('simple test comment graph', async () => {
     checkMessage(undefined, '[deleted]'),
     convertMessage,
   );
+});
+
+test('simple bulk message reading', async () => {
+  const pool = new CommentGraph(simpleGraph().getApiProvider());
+  const getMessage = createGetMessage(pool);
+
   const hashes = ['b', 'c', 'd', 'e', 'f'];
   const contents = hashes.map((el) => `msg: ${el}`);
-  pool.clearCache();
   await Promise.all(
     range(5).map((ix) => {
       return execute(
@@ -239,44 +290,9 @@ test('simple test comment graph', async () => {
   );
 });
 
-test('parent / child comment graph', async () => {
-  const graph = new TestGraph(3);
-  graph.addLinks([
-    ['a1', 'a2'],
-    ['a1', 'b2'],
-    ['a1', 'c2'],
-    ['a1', 'd2'],
-    ['a2', 'a3'],
-    ['a3', 'a4'],
-    ['a3', 'b4'],
-    ['a4', 'a5'],
-    ['a5', 'a1'],
-    ['b4', 'b2'],
-    ['b2', 'b4'],
-  ]);
-  graph.addTopics(['a2', 'b2']);
-  const pool = new CommentGraph(graph.getApiProvider());
-
-  const getTopLink = (
-    notify: NotifyLinkCB,
-    fullKey: Readonly<FullKey>,
-    parentIndex: AdjustedLineIndex,
-  ): Link | undefined => {
-    return pool.getTopLink(fullKey, parentIndex, notify);
-  };
-  const getBottomLink = (
-    notify: NotifyLinkCB,
-    fullKey: Readonly<FullKey>,
-    childIndex: AdjustedLineIndex,
-  ): Link | undefined => {
-    return pool.getBottomLink(fullKey, childIndex, notify);
-  };
-  const getMessage = (
-    notify: NotifyContentCB,
-    fullKey: FullKey,
-  ): string | undefined => {
-    return pool.getMessage(fullKey, notify);
-  };
+test('topic comment graph', async () => {
+  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const getTopLink = createGetTopLink(pool);
 
   await execute(
     getTopLink,
@@ -321,7 +337,11 @@ test('parent / child comment graph', async () => {
     invalidLink(),
     undefined,
   );
+});
 
+test('parent comment graph', async () => {
+  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const getTopLink = createGetTopLink(pool);
   await execute(
     getTopLink,
     toArgs(asLinkKey('d2', true, 0), 0),
@@ -352,7 +372,13 @@ test('parent / child comment graph', async () => {
     invalidLink(),
     convertLink,
   );
+});
 
+test('cache edge cases for comment graph', async () => {
+  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const getTopLink = createGetTopLink(pool);
+  const getBottomLink = createGetBottomLink(pool);
+  const getMessage = createGetMessage(pool);
   await execute(
     getTopLink,
     toArgs(asLinkKey('a4', false, 0), 0),
@@ -381,7 +407,7 @@ test('parent / child comment graph', async () => {
     getTopLink,
     toArgs(asLinkKey('a3', false, 1), 0),
     checkLink('a3', 'b4'),
-    convertLink,
+    undefined,
   );
   await execute(
     getTopLink,
@@ -439,7 +465,6 @@ test('parent / child comment graph', async () => {
     checkLink('b4', 'b2'),
     undefined,
   );
-  console.log('hi');
   await execute(
     getTopLink,
     toArgs(asLinkKey('a5', true, 0), 0),
@@ -458,7 +483,6 @@ test('parent / child comment graph', async () => {
     checkMessage('a3'),
     undefined,
   );
-  console.log('ih');
 
   pool.clearCache();
   await execute(
@@ -506,6 +530,11 @@ test('parent / child comment graph', async () => {
     invalidLink(),
     convertLink,
   );
+});
+
+test('child comment graph', async () => {
+  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const getBottomLink = createGetBottomLink(pool);
   // ['a1', 'a2'],
   // ['a1', 'b2'],
   // ['a1', 'c2'],
