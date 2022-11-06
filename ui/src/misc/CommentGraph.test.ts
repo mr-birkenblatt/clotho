@@ -94,18 +94,13 @@ const checkMessage = (
 const convertLink = (link: Link): [Link] => {
   return [link];
 };
-const validLink = (
-  cb: (vlink: ValidLink) => void,
-): ((link: Link) => void) => {
+const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
   return (link) => {
     assertTrue(!link.invalid);
     cb(link);
   };
 };
-const checkLink = (
-  parent: string,
-  child: string,
-): ((link: Link) => void) => {
+const checkLink = (parent: string, child: string): ((link: Link) => void) => {
   return validLink((link) => {
     expect(link.parent).toEqual(parent);
     expect(link.child).toEqual(child);
@@ -450,7 +445,7 @@ test('parent / child comment graph', async () => {
     toArgs(asLinkKey('a5', true, 0), 0),
     checkLink('a3', 'a4'),
     undefined,
-    );
+  );
   await execute(
     getMessage,
     [asLinkKey('a4', true, 0)],
@@ -498,12 +493,7 @@ test('parent / child comment graph', async () => {
     undefined,
   );
   pool.clearCache();
-  await execute(
-    getMessage,
-    [asTopicKey(1)],
-    checkMessage('b2'),
-    undefined,
-  );
+  await execute(getMessage, [asTopicKey(1)], checkMessage('b2'), undefined);
   await execute(
     getBottomLink,
     toArgs(asTopicKey(-1), 0),
