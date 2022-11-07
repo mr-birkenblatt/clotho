@@ -20,6 +20,7 @@ import {
   focusV,
   VIndex,
   LineIndex,
+  VArrIndex,
 } from './LineStateSlice';
 
 const Outer = styled.div`
@@ -225,7 +226,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const { itemCount } = this.state;
     const rangeOrder = [0, order.length];
     const rangeArray = [correction + offset, correction + offset + itemCount];
-    const adjIndex = correction + currentIx;
+    const adjIndex = this.getArrayIndex(currentIx);
     const minIx = Math.min(rangeOrder[0], rangeArray[0], adjIndex);
     const maxIx = Math.max(rangeOrder[1], rangeArray[1], adjIndex);
     const ord = range(minIx, maxIx).reduce((cur, val) => {
@@ -318,7 +319,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
 
     if (this.awaitOrderChange === undefined) {
-      if (currentIx + correction >= order.length - 2) {
+      if (this.getArrayIndex(currentIx) >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
         const newIx = (lastIx + 1) as VIndex;
         console.log('request child line', newIx);
@@ -340,7 +341,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
           },
         );
         this.awaitOrderChange = order;
-      } else if (currentIx + correction <= 0) {
+      } else if (this.getArrayIndex(currentIx) <= 0) {
         const firstIx = 0 as VIndex;
         const newIx = (firstIx - 1) as VIndex;
         console.log('request parent line', newIx);
@@ -501,12 +502,16 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return (this.props.offset + index) as VIndex;
   }
 
+  getArrayIndex(index: VIndex): VArrIndex {
+    return (index + this.props.correction) as VArrIndex;
+  }
+
   lineKey(index: VIndex | undefined): LineKey | undefined {
     if (index === undefined) {
       return undefined;
     }
     const { order } = this.props;
-    const correctedIndex = index + this.props.correction;
+    const correctedIndex = this.getArrayIndex(index);
     if (correctedIndex < 0 || correctedIndex >= order.length) {
       return undefined;
     }
@@ -608,8 +613,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
           {range(itemCount).map((ix) => {
             const realIx = this.getRealIndex(ix);
             if (
-              realIx + correction >= order.length ||
-              realIx + correction < 0
+              this.getArrayIndex(realIx) >= order.length ||
+              this.getArrayIndex(realIx) < 0
             ) {
               console.log(`no render ${realIx}`);
               return null;

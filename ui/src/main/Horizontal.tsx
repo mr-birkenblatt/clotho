@@ -383,7 +383,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
       const fullLinkKey = toFullKey(lkey, adjIndex);
       const msg = getItem(fullLinkKey, this.requestRedraw);
       if (msg !== undefined) {
-        return <ReactMarkdown>{msg}</ReactMarkdown>;
+        return <ReactMarkdown skipHtml={true}>{msg}</ReactMarkdown>;
       }
       return `loading [${index}]`;
     };

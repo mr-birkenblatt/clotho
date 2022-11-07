@@ -14,6 +14,7 @@ export const LOCK_INDEX = -1 as LineIndex;
 
 export type VIndex = number & { _vIndex: void };
 export type VCorrection = number & { _vCorrection: void };
+export type VArrIndex = number & { _vArrIndex: void };
 export type VOffset = number & { _vOffset: void };
 
 export function constructKey(lineKey: LineKey): string {
