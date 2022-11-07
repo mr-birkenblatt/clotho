@@ -257,7 +257,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       (res: PosAndIndex, ix: number): PosAndIndex => {
         const realIx = this.getRealIndex(ix);
         const curRef = this.activeRefs.get(realIx);
-        console.log('read active ref for compute ix', curRef, realIx);
         if (curRef === undefined) {
           return res;
         }
@@ -439,7 +438,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
           realIx < this.getRealIndex(0) ||
           realIx >= this.getRealIndex(itemCount)
         ) {
-          console.log('delete active ref', realIx);
           this.activeRefs.delete(realIx);
           newViewUpdate = true;
         }
@@ -447,7 +445,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       range(itemCount).forEach((ix) => {
         const realIx = this.getRealIndex(ix);
         if (!this.activeRefs.has(realIx)) {
-          console.log('set active ref', realIx);
           this.activeRefs.set(realIx, React.createRef());
           newViewUpdate = true;
         }
@@ -460,16 +457,17 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     } else if (viewUpdate) {
       const allReady = Array.from(this.activeRefs.entries()).reduce(
         (cur, val) => {
-          val[1].current === null && console.log('ref missing', val);
+          // NOTE: for debugging
+          // val[1].current === null && console.log('ref missing', val);
           return cur && val[1].current !== null;
         },
         true,
       );
       if (allReady) {
         // NOTE: for debugging
-        console.log(
-          Array.from(this.activeRefs.values()).map((val) => val.current),
-        );
+        // console.log(
+        //   Array.from(this.activeRefs.values()).map((val) => val.current),
+        // );
         this.setState({
           viewUpdate: false,
         });
@@ -477,7 +475,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         // NOTE: careful! can end in an infinite loop if elements are not
         // filled up correctly.
         setTimeout(() => {
-          console.log('would be redraw');
           this.requestRedraw();
         }, 100);
       }
@@ -486,7 +483,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
   focus(focusIx: VIndex, smooth: boolean): void {
     const item = this.activeRefs.get(focusIx);
-    console.log('get active ref for focus', item, focusIx);
     if (item !== undefined && item.current !== null) {
       const curItem = item.current;
       curItem.scrollIntoView({
@@ -576,7 +572,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   render() {
     const {
       buttonSize,
-      correction,
       currentIx,
       getItem,
       getLink,
@@ -616,15 +611,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
               this.getArrayIndex(realIx) >= order.length ||
               this.getArrayIndex(realIx) < 0
             ) {
-              console.log(`no render ${realIx}`);
               return null;
             }
-            console.log(
-              'get active ref for rendering',
-              this.activeRefs.get(realIx),
-              realIx,
-              correction,
-            );
             return (
               <Item
                 key={realIx}
