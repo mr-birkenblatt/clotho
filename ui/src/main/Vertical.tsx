@@ -256,6 +256,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       (res: PosAndIndex, ix: number): PosAndIndex => {
         const realIx = this.getRealIndex(ix);
         const curRef = this.activeRefs.get(realIx);
+        console.log('read active ref for compute ix', curRef, realIx);
         if (curRef === undefined) {
           return res;
         }
@@ -320,6 +321,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       if (currentIx + correction >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
         const newIx = (lastIx + 1) as VIndex;
+        console.log('request child line', newIx);
         getChildLine(
           order[lastIx],
           this.getHIndexAdjusted(lastIx),
@@ -341,6 +343,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       } else if (currentIx + correction <= 0) {
         const firstIx = 0 as VIndex;
         const newIx = (firstIx - 1) as VIndex;
+        console.log('request parent line', newIx);
         getParentLine(
           order[firstIx],
           this.getHIndexAdjusted(firstIx),
@@ -431,7 +434,11 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       prevProps.currentIx !== currentIx
     ) {
       Array.from(this.activeRefs.keys()).forEach((realIx) => {
-        if (realIx < offset || realIx >= offset + itemCount) {
+        if (
+          realIx < this.getRealIndex(0) ||
+          realIx >= this.getRealIndex(itemCount)
+        ) {
+          console.log('delete active ref', realIx);
           this.activeRefs.delete(realIx);
           newViewUpdate = true;
         }
@@ -439,6 +446,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       range(itemCount).forEach((ix) => {
         const realIx = this.getRealIndex(ix);
         if (!this.activeRefs.has(realIx)) {
+          console.log('set active ref', realIx);
           this.activeRefs.set(realIx, React.createRef());
           newViewUpdate = true;
         }
@@ -477,6 +485,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
   focus(focusIx: VIndex, smooth: boolean): void {
     const item = this.activeRefs.get(focusIx);
+    console.log('get active ref for focus', item, focusIx);
     if (item !== undefined && item.current !== null) {
       const curItem = item.current;
       curItem.scrollIntoView({
@@ -602,8 +611,15 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
               realIx + correction >= order.length ||
               realIx + correction < 0
             ) {
+              console.log(`no render ${realIx}`);
               return null;
             }
+            console.log(
+              'get active ref for rendering',
+              this.activeRefs.get(realIx),
+              realIx,
+              correction,
+            );
             return (
               <Item
                 key={realIx}

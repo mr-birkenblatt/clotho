@@ -141,6 +141,7 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
         state.vOrder.push(lineKey);
       } else {
         state.vOrder = [lineKey, ...state.vOrder];
+        state.vOffset = (state.vOffset - 1) as VOffset;
         state.vCorrection = (state.vCorrection + 1) as VCorrection;
       }
     },
