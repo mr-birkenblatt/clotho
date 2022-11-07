@@ -72,7 +72,9 @@ export default class App extends PureComponent<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
     this.state = {};
-    this.graph = new CommentGraph(advancedGraph().getApiProvider());
+    this.graph = new CommentGraph(
+      undefined && advancedGraph().getApiProvider(),
+    );
   }
 
   getItem: ItemCB = (fullLinkKey, readyCb) => {

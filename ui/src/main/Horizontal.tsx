@@ -86,6 +86,7 @@ const ItemContent = styled.div<ItemContentProps>`
   border-radius: ${(props) => props.itemRadius}px;
   padding: ${(props) => -props.itemPadding}px;
   // background-color: pink;
+  white-space: normal;
 `;
 
 const Pad = styled.div`
