@@ -718,32 +718,24 @@ export default class CommentGraph {
       return topics[index][0];
     };
 
-    const getTopicNext = (
-      mhash: Readonly<MHash> | undefined,
-      notifyOnHit: boolean,
-    ): Readonly<LineKey> => {
+    const getTopicNext = (mhash: Readonly<MHash> | undefined): void => {
       if (mhash === undefined) {
         const res = INVALID_KEY;
-        if (notifyOnHit) {
-          notify(res);
-        }
-        return res;
+        notify(res);
+        return;
       }
       const res: LineKey = { mhash, isGetParent };
-      if (notifyOnHit) {
-        notify(res);
-      }
-      return res;
+      notify(res);
     };
 
     const notifyTopics: TopicsCB = (topics) => {
       const mhash = getTopic(topics);
-      getTopicNext(mhash, true);
+      getTopicNext(mhash);
     };
 
     const order = this.msgPool.getTopics(notifyTopics);
     if (order !== undefined) {
-      getTopicNext(getTopic(order), true);
+      getTopicNext(getTopic(order));
     }
   }
 
@@ -770,9 +762,8 @@ export default class CommentGraph {
 
   getParent(fullKey: Readonly<FullKey>, callback: NextCB): void {
     if (fullKey.invalid) {
-      return callback(asLineKey(fullKey));
-    }
-    if (fullKey.topic) {
+      callback(asLineKey(fullKey));
+    } else if (fullKey.topic) {
       this.getTopicNext(fullKey, true, callback);
     } else {
       this.getFullNext(fullKey, true, callback);
@@ -781,9 +772,8 @@ export default class CommentGraph {
 
   getChild(fullKey: Readonly<FullKey>, callback: NextCB): void {
     if (fullKey.invalid) {
-      return callback(asLineKey(fullKey));
-    }
-    if (fullKey.topic) {
+      callback(asLineKey(fullKey));
+    } else if (fullKey.topic) {
       this.getTopicNext(fullKey, false, callback);
     } else {
       this.getFullNext(fullKey, false, callback);
