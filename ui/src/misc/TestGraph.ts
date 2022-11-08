@@ -101,7 +101,9 @@ export default class TestGraph {
         const msgArr: string[] = ms.slice(0, this.apiLimit);
         const skipped: Readonly<MHash[]> = ms.slice(this.apiLimit, undefined);
         const messages: Readonly<{ [key: string]: string }> =
-          Object.fromEntries(msgArr.map((el) => [el, this.messages[el]]));
+          Object.fromEntries(
+            msgArr.map((el) => [el, this.messages[el] ?? '[missing]']),
+          );
         return { messages, skipped };
       },
       link: async (linkKey, offset, limit) => {

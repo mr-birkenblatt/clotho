@@ -53,10 +53,14 @@ async function execute<A extends any[], T extends any[], R>(
   alwaysExpectCall?: boolean,
 ): Promise<boolean> {
   const marker = jest.fn();
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const cb: Callback<T> = (...cbArgs) => {
-      callback(...cbArgs);
-      resolve(true);
+      try {
+        callback(...cbArgs);
+        resolve(true);
+      } catch (e) {
+        reject(e);
+      }
     };
     const notify: Callback<T> = (...cbArgs) => {
       marker();
@@ -719,6 +723,13 @@ test('get parent / child comment graph', async () => {
     true,
   );
   await execute(
+    getChild,
+    [asFullKey('b4', true, 0)],
+    checkNext(asLineKey('a3', false)),
+    undefined,
+    true,
+  );
+  await execute(
     getParent,
     [asFullKey('a1', false, 1)],
     checkNext(asLineKey('b2', true)),
@@ -736,6 +747,13 @@ test('get parent / child comment graph', async () => {
     getParent,
     [asFullKey('b4', true, 1)],
     checkNext(asLineKey('b2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asFullKey('b4', true, 0)],
+    checkNext(asLineKey('a3', true)),
     undefined,
     true,
   );

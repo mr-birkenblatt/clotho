@@ -706,7 +706,7 @@ export default class CommentGraph {
     fullTopicKey: Readonly<FullTopicKey>,
     isGetParent: boolean,
     notify: NextCB,
-  ): Readonly<LineKey> | undefined {
+  ): void {
     const { index } = fullTopicKey;
 
     const getTopic = (
@@ -742,47 +742,30 @@ export default class CommentGraph {
     };
 
     const order = this.msgPool.getTopics(notifyTopics);
-    if (order === undefined) {
-      return undefined;
+    if (order !== undefined) {
+      getTopicNext(getTopic(order), true);
     }
-    return getTopicNext(getTopic(order), false);
   }
 
   private getFullNext(
     fullLinkKey: Readonly<FullLinkKey>,
     isGetParent: boolean,
     notify: NextCB,
-  ): Readonly<LineKey> | undefined {
-    const getLink = (
-      link: Readonly<Link>,
-      notifyOnHit: boolean,
-    ): Readonly<LineKey> | undefined => {
+  ): void {
+    const notifyLink: NotifyLinkCB = (link) => {
       if (link.invalid) {
         const res = INVALID_KEY;
-        if (notifyOnHit) {
-          notify(res);
-        }
-        return res;
+        notify(res);
+        return;
       }
       const res: LineKey = {
         mhash: fullLinkKey.isGetParent ? link.parent : link.child,
         isGetParent,
       };
-      if (notifyOnHit) {
-        notify(res);
-      }
-      return res;
+      notify(res);
     };
 
-    const notifyLink: NotifyLinkCB = (link) => {
-      getLink(link, true);
-    };
-
-    const link = this.linkPool.getLink(fullLinkKey, notifyLink);
-    if (link === undefined) {
-      return undefined;
-    }
-    return getLink(link, false);
+    this.linkPool.retrieveLink(fullLinkKey, notifyLink);
   }
 
   getParent(fullKey: Readonly<FullKey>, callback: NextCB): void {

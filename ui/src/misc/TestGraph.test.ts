@@ -28,7 +28,7 @@ function getChildHashs(links: readonly TestLink[]): string[] {
   return links.map((l) => l.child as unknown as string);
 }
 
-test('test graph', () => {
+test('test messages', () => {
   const api = simpleGraph().getApiProvider();
   api.topic().then((topics) => {
     expect(topics.topics).toEqual({ a: 'msg: a', h: 'msg: h' });
@@ -45,6 +45,14 @@ test('test graph', () => {
     expect(read.messages).toEqual({ d: 'msg: d' });
     expect(read.skipped).toEqual([]);
   });
+  api.read(asMHashSet(['foo'])).then((read) => {
+    expect(read.messages).toEqual({ foo: '[missing]' });
+    expect(read.skipped).toEqual([]);
+  });
+});
+
+test('test links', () => {
+  const api = simpleGraph().getApiProvider();
   api.link(asLinkKey('a', false), 0, 5).then((link) => {
     expect(getParentHashs(link.links)).toEqual(['a', 'a', 'a']);
     expect(getChildHashs(link.links)).toEqual(['b', 'c', 'd']);
@@ -73,6 +81,11 @@ test('test graph', () => {
   api.link(asLinkKey('b', true), 0, 5).then((link) => {
     expect(getParentHashs(link.links)).toEqual(['a', 'g']);
     expect(getChildHashs(link.links)).toEqual(['b', 'b']);
+    expect(link.next).toBe(0);
+  });
+  api.link(asLinkKey('foo', true), 0, 5).then((link) => {
+    expect(getParentHashs(link.links)).toEqual([]);
+    expect(getChildHashs(link.links)).toEqual([]);
     expect(link.next).toBe(0);
   });
 });
