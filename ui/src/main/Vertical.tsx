@@ -93,6 +93,12 @@ type ButtonProps = {
   buttonSize: number;
 };
 
+export enum VPosType {
+  AboveFocus,
+  InFocus,
+  BelowFocus,
+}
+
 export type LinkCB = (
   fullLinkKey: FullKey,
   parentIndex: AdjustedLineIndex,
@@ -113,6 +119,8 @@ export type ParentLineCB = (
 export type VItemCB = (
   lineKey: LineKey | undefined,
   height: number,
+  isViewUpdate: boolean,
+  vPosType: VPosType,
 ) => JSX.Element | null;
 export type RenderLinkCB = (
   link: Link,
@@ -151,10 +159,13 @@ type EmptyVerticalState = {
   itemCount: undefined;
 };
 
+type RefCB = (instance: HTMLDivElement | null) => void;
+
 class Vertical extends PureComponent<VerticalProps, VerticalState> {
   rootBox: React.RefObject<HTMLDivElement>;
   bandRef: React.RefObject<HTMLDivElement>;
-  activeRefs: Map<VIndex, React.RefObject<HTMLDivElement>>;
+  activeRefCbs: Map<VIndex, RefCB>;
+  activeElements: Map<VIndex, HTMLDivElement>;
   awaitOrderChange: LineKey[] | undefined;
   awaitCurrentChange: VIndex | undefined;
 
@@ -170,7 +181,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     };
     this.rootBox = React.createRef();
     this.bandRef = React.createRef();
-    this.activeRefs = new Map();
+    this.activeRefCbs = new Map();
+    this.activeElements = new Map();
     this.awaitOrderChange = undefined;
     this.awaitCurrentChange = undefined;
   }
@@ -249,22 +261,12 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   }
 
   computeIx(): VIndex | undefined {
-    const { itemCount } = this.state;
+    type PosAndIndex = [undefined, undefined] | [number, VIndex];
 
-    type PosAndIndex = undefined[] | [number, VIndex];
-
-    const out = range(itemCount).reduce(
-      (res: PosAndIndex, ix: number): PosAndIndex => {
-        const realIx = this.getRealIndex(ix);
-        const curRef = this.activeRefs.get(realIx);
-        if (curRef === undefined) {
-          return res;
-        }
-        const cur = curRef.current;
-        if (cur === null) {
-          return res;
-        }
-        const bounds = cur.getBoundingClientRect();
+    const out = Array.from(this.activeElements.entries()).reduce(
+      (res: PosAndIndex, val: [VIndex, HTMLDivElement]): PosAndIndex => {
+        const [realIx, element] = val;
+        const bounds = element.getBoundingClientRect();
         if (bounds.top <= -50) {
           return res;
         }
@@ -406,7 +408,17 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       this.awaitCurrentChange = undefined;
     }
 
-    this.updateViews(prevProps, prevState);
+    if (viewUpdate) {
+      const refIxs = Array.from(this.activeElements.keys())
+        .map((realIx) => this.getArrayIndex(realIx))
+        .sort();
+      const allReady = refIxs.every((corrIx, ix) => corrIx === ix);
+      if (allReady) {
+        this.setState({
+          viewUpdate: false,
+        });
+      }
+    }
 
     if (
       this.awaitCurrentChange === undefined &&
@@ -418,74 +430,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     }
   }
 
-  updateViews(
-    prevProps: VerticalProps | EmptyVerticalProps,
-    prevState: VerticalState | EmptyVerticalState,
-  ): void {
-    const { offset, order, currentIx } = this.props;
-    const { itemCount, viewUpdate } = this.state;
-
-    let newViewUpdate = false;
-    if (
-      prevProps.offset !== offset ||
-      prevState.itemCount !== itemCount ||
-      // FIXME identity might be enough
-      !equalLineKeys(prevProps.order, order) ||
-      prevProps.currentIx !== currentIx
-    ) {
-      Array.from(this.activeRefs.keys()).forEach((realIx) => {
-        if (
-          realIx < this.getRealIndex(0) ||
-          realIx >= this.getRealIndex(itemCount)
-        ) {
-          this.activeRefs.delete(realIx);
-          newViewUpdate = true;
-        }
-      });
-      range(itemCount).forEach((ix) => {
-        const realIx = this.getRealIndex(ix);
-        if (!this.activeRefs.has(realIx)) {
-          this.activeRefs.set(realIx, React.createRef());
-          newViewUpdate = true;
-        }
-      });
-    }
-    if (newViewUpdate && !viewUpdate) {
-      this.setState({
-        viewUpdate: true,
-      });
-    } else if (viewUpdate) {
-      const allReady = Array.from(this.activeRefs.entries()).reduce(
-        (cur, val) => {
-          // NOTE: for debugging
-          // val[1].current === null && console.log('ref missing', val);
-          return cur && val[1].current !== null;
-        },
-        true,
-      );
-      if (allReady) {
-        // NOTE: for debugging
-        // console.log(
-        //   Array.from(this.activeRefs.values()).map((val) => val.current),
-        // );
-        this.setState({
-          viewUpdate: false,
-        });
-      } else {
-        // NOTE: careful! can end in an infinite loop if elements are not
-        // filled up correctly.
-        setTimeout(() => {
-          this.requestRedraw();
-        }, 100);
-      }
-    }
-  }
-
   focus(focusIx: VIndex, smooth: boolean): void {
-    const item = this.activeRefs.get(focusIx);
-    if (item !== undefined && item.current !== null) {
-      const curItem = item.current;
-      curItem.scrollIntoView({
+    const item = this.activeElements.get(focusIx);
+    if (item !== undefined) {
+      item.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
         block: 'start',
         inline: 'nearest',
@@ -552,6 +500,17 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return (res + (lockedIx > res ? 0 : 1)) as AdjustedLineIndex;
   }
 
+  getRefCb(realIx: VIndex): RefCB {
+    return (element) => {
+      if (element !== null) {
+        this.activeElements.set(realIx, element);
+      } else {
+        this.activeElements.delete(realIx);
+      }
+      this.requestRedraw();
+    };
+  }
+
   handleUp = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
     dispatch(focusV({ focus: (currentIx - 1) as VIndex }));
@@ -585,7 +544,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       radius,
       renderLink,
     } = this.props;
-    const { itemCount } = this.state;
+    const { itemCount, viewUpdate } = this.state;
 
     const render = (realIx: VIndex): JSX.Element | null => {
       const lineKey = this.lineKey(realIx);
@@ -607,6 +566,14 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       return <ItemMid>{res}</ItemMid>;
     };
 
+    const validRealIx = new Set(range(itemCount));
+    Array.from(this.activeRefCbs.keys()).forEach((realIx) => {
+      if (validRealIx.has(realIx)) {
+        return;
+      }
+      this.activeRefCbs.delete(realIx);
+    });
+
     return (
       <Outer ref={this.rootBox}>
         <Band ref={this.bandRef}>
@@ -615,13 +582,25 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
             if (!this.isValidArrayIndex(realIx)) {
               return null;
             }
+            let mRefCb = this.activeRefCbs.get(realIx);
+            if (mRefCb === undefined) {
+              mRefCb = this.getRefCb(realIx);
+              this.activeRefCbs.set(realIx, mRefCb);
+            }
+            const refCb = mRefCb;
+            const vPosType =
+              currentIx === realIx
+                ? VPosType.InFocus
+                : currentIx < realIx
+                ? VPosType.BelowFocus
+                : VPosType.AboveFocus;
             return (
               <Item
                 key={realIx}
-                ref={this.activeRefs.get(realIx)}
+                ref={refCb}
                 isCurrent={currentIx === realIx}>
                 {ix > 0 ? render(realIx) : null}
-                {getItem(this.lineKey(realIx), height)}
+                {getItem(this.lineKey(realIx), height, viewUpdate, vPosType)}
               </Item>
             );
           })}

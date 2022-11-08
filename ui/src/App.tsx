@@ -79,7 +79,7 @@ export default class App extends PureComponent<AppProps, AppState> {
     return this.graph.getMessage(fullLinkKey, () => readyCb());
   };
 
-  getVItem: VItemCB = (lineKey, height) => {
+  getVItem: VItemCB = (lineKey, height, isViewUpdate, vPosType) => {
     if (lineKey === undefined) {
       return null;
     }
@@ -90,6 +90,8 @@ export default class App extends PureComponent<AppProps, AppState> {
         itemRadius={10}
         itemPadding={50}
         buttonSize={50}
+        isViewUpdate={isViewUpdate}
+        vPosType={vPosType}
         lineKey={lineKey}
         getItem={this.getItem}
       />

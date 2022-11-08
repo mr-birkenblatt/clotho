@@ -18,6 +18,7 @@ import {
   LOCK_INDEX,
   setHCurrentIx,
 } from './LineStateSlice';
+import { VPosType } from './Vertical';
 
 const Outer = styled.div`
   position: relative;
@@ -48,11 +49,13 @@ const NavButton = styled.button`
   pointer-events: auto;
 `;
 
-const Band = styled.div`
+const Band = styled.div<BandProps>`
   display: inline-block;
   height: 100%;
-  width: ${(props: { itemWidth: number }) => props.itemWidth}px;
-  // background-color: green;
+  width: ${(props) => props.itemWidth}px;
+  background-color: ${(props) =>
+    props.vPosType === VPosType.BelowFocus ? 'green' : 'none'};
+  opacity: ${(props) => (props.isViewUpdate ? 0.5 : 1.0)};
   white-space: nowrap;
   overflow-x: scroll;
   overflow-y: hidden;
@@ -100,6 +103,12 @@ export type ItemCB = (
   readyCb: ReadyCB,
 ) => string | undefined;
 
+type BandProps = {
+  itemWidth: number;
+  isViewUpdate: boolean;
+  vPosType: VPosType;
+};
+
 type ItemContentProps = {
   itemWidth: number;
   itemRadius: number;
@@ -113,6 +122,8 @@ interface HorizontalProps extends ConnectHorizontal {
   buttonSize: number;
   itemPadding: number;
   lineKey: LineKey;
+  isViewUpdate: boolean;
+  vPosType: VPosType;
   getItem: ItemCB;
 }
 
@@ -438,6 +449,8 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
       itemRadius,
       buttonSize,
       itemPadding,
+      isViewUpdate,
+      vPosType,
       lineKey,
       locks,
     } = this.props;
@@ -462,6 +475,8 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
         </Overlay>
         <Band
           itemWidth={itemWidth}
+          isViewUpdate={isViewUpdate}
+          vPosType={vPosType}
           ref={this.bandRef}>
           {locked ? (
             <Item itemWidth={itemWidth}>
