@@ -502,15 +502,21 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return (index + this.props.correction) as VArrIndex;
   }
 
+  isValidArrayIndex(index: VIndex): boolean {
+    const { order } = this.props;
+    const arrIx = this.getArrayIndex(index);
+    return arrIx < order.length || arrIx >= 0;
+  }
+
   lineKey(index: VIndex | undefined): LineKey | undefined {
     if (index === undefined) {
       return undefined;
     }
-    const { order } = this.props;
-    const correctedIndex = this.getArrayIndex(index);
-    if (correctedIndex < 0 || correctedIndex >= order.length) {
+    if (!this.isValidArrayIndex(index)) {
       return undefined;
     }
+    const { order } = this.props;
+    const correctedIndex = this.getArrayIndex(index);
     return order[correctedIndex];
   }
 
@@ -576,7 +582,6 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       getItem,
       getLink,
       height,
-      order,
       radius,
       renderLink,
     } = this.props;
@@ -607,10 +612,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         <Band ref={this.bandRef}>
           {range(itemCount).map((ix) => {
             const realIx = this.getRealIndex(ix);
-            if (
-              this.getArrayIndex(realIx) >= order.length ||
-              this.getArrayIndex(realIx) < 0
-            ) {
+            if (!this.isValidArrayIndex(realIx)) {
               return null;
             }
             return (
