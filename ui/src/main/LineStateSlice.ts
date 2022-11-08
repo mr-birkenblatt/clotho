@@ -131,8 +131,20 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
         return;
       }
       lockLine(state, lineKey, hIndex, false);
+      const vOrder = state.vOrder;
+      const oldArrIx = (state.vCurrentIx + state.vCorrection) as VCorrection;
+      const oldRemain = vOrder.length - oldArrIx;
+      const arrIx = (vIndex + state.vCorrection) as VCorrection;
+      if (arrIx < 0 && arrIx >= vOrder.length) {
+        console.warn('new index out of bounds', vIndex, arrIx, vOrder);
+        return;
+      }
       state.vCurrentIx = vIndex;
-      state.vOffset = (vIndex - 1) as VOffset;
+      const fromIx = Math.max(0, arrIx - 1);
+      const toIx = fromIx + oldRemain;
+      state.vOffset = (vIndex - arrIx + fromIx) as VOffset;
+      state.vCorrection = -state.vOffset as VCorrection;
+      state.vOrder = vOrder.slice(fromIx, toIx);
       state.vFocus = vIndex;
       state.vFocusSmooth = false;
     },

@@ -72,17 +72,29 @@ export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 export type MHash = string & { _mHash: void };
 
 interface LinkKey {
+  invalid?: Readonly<false>;
   topic?: Readonly<false>;
   mhash: Readonly<MHash>;
   isGetParent: Readonly<boolean>;
 }
 interface TopicKey {
+  invalid?: Readonly<false>;
   topic: Readonly<true>;
 }
-export type LineKey = LinkKey | TopicKey;
+interface InvalidKey {
+  invalid: Readonly<true>;
+}
+export type LineKey = LinkKey | TopicKey | InvalidKey;
+export const INVALID_KEY: Readonly<LineKey> = { invalid: true };
 export const TOPIC_KEY: Readonly<LineKey> = { topic: true };
 
 export function equalLineKey(keyA: LineKey, keyB: LineKey): boolean {
+  if (keyA.invalid && keyB.invalid) {
+    return true;
+  }
+  if (keyA.invalid || keyB.invalid) {
+    return false;
+  }
   if (keyA.topic && keyB.topic) {
     return true;
   }
@@ -105,20 +117,29 @@ export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
 }
 
 interface FullLinkKey {
+  invalid?: Readonly<false>;
   topic?: Readonly<false>;
   mhash: Readonly<MHash>;
   isGetParent: Readonly<boolean>;
   index: AdjustedLineIndex;
 }
 interface FullTopicKey {
+  invalid?: Readonly<false>;
   topic: Readonly<true>;
   index: AdjustedLineIndex;
 }
-export type FullKey = FullLinkKey | FullTopicKey;
+interface FullInvalidKey {
+  invalid: Readonly<true>;
+}
+export type FullKey = FullLinkKey | FullTopicKey | FullInvalidKey;
+export const INVALID_FULL_KEY: Readonly<FullKey> = { invalid: true };
 
 export function asLineKey(fullKey: Readonly<FullKey>): Readonly<LineKey> {
+  if (fullKey.invalid) {
+    return INVALID_KEY;
+  }
   if (fullKey.topic) {
-    return { topic: true };
+    return TOPIC_KEY;
   }
   const { mhash, isGetParent } = fullKey;
   return { mhash, isGetParent };
@@ -128,6 +149,9 @@ export function toFullKey(
   lineKey: Readonly<LineKey>,
   index: AdjustedLineIndex,
 ): Readonly<FullKey> {
+  if (lineKey.invalid) {
+    return INVALID_FULL_KEY;
+  }
   if (lineKey.topic) {
     return { topic: true, index };
   }
@@ -153,6 +177,7 @@ export type InvalidLink = {
   invalid: Readonly<true>;
 };
 export type Link = ValidLink | InvalidLink;
+export const INVALID_LINK: Readonly<Link> = { invalid: true };
 
 export type ReadyCB = () => void;
 export type NotifyContentCB = (
@@ -163,7 +188,7 @@ export type NotifyLinkCB = (link: Readonly<Link>) => void;
 type TopicsCB = (
   topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
 ) => void;
-export type NextCB = (next: Readonly<LineKey> | undefined) => void;
+export type NextCB = (next: Readonly<LineKey>) => void;
 
 class CommentPool {
   private readonly api: ApiProvider;
@@ -250,16 +275,14 @@ class CommentPool {
 
   getMessage(
     mhash: Readonly<MHash>,
-    notify?: NotifyContentCB,
+    notify: NotifyContentCB,
   ): string | undefined {
     const res = this.pool.get(mhash);
     if (res !== undefined) {
       return res;
     }
     this.hashQueue.add(mhash);
-    if (notify !== undefined) {
-      this.waitFor(mhash, notify);
-    }
+    this.waitFor(mhash, notify);
     this.fetchMessages();
     return undefined;
   }
@@ -372,7 +395,7 @@ class LinkLookup {
                 votes,
               };
             } else {
-              res = { invalid: true };
+              res = INVALID_LINK;
             }
             this.line.set(adjIndex, res);
             this.note(adjIndex);
@@ -422,15 +445,13 @@ class LinkLookup {
     this.waitFor(index, notify);
   }
 
-  getLink(index: AdjustedLineIndex, notify?: NotifyLinkCB): Link | undefined {
+  getLink(index: AdjustedLineIndex, notify: NotifyLinkCB): Link | undefined {
     const res = this.line.get(index);
     if (res !== undefined) {
       return res;
     }
     this.requestIndex(index);
-    if (notify !== undefined) {
-      this.waitFor(index, notify);
-    }
+    this.waitFor(index, notify);
     return undefined;
   }
 } // LinkLookup
@@ -461,7 +482,7 @@ class LinkPool {
     line.retrieveLink(fullLinkKey.index, notify);
   }
 
-  getLink(fullLinkKey: FullLinkKey, notify?: NotifyLinkCB): Link | undefined {
+  getLink(fullLinkKey: FullLinkKey, notify: NotifyLinkCB): Link | undefined {
     const { mhash, isGetParent } = fullLinkKey;
     const line = this.getLine({ mhash, isGetParent });
     return line.getLink(fullLinkKey.index, notify);
@@ -547,6 +568,9 @@ export default class CommentGraph {
     fullKey: Readonly<FullKey>,
     notify: NotifyContentCB,
   ): string | undefined {
+    if (fullKey.invalid) {
+      return '[invalid]';
+    }
     if (!fullKey.topic) {
       return this.getFullLinkMessage(fullKey, notify);
     }
@@ -575,7 +599,7 @@ export default class CommentGraph {
       notifyOnHit: boolean,
     ): Link | undefined => {
       if (mhash === undefined) {
-        const res: Link = { invalid: true };
+        const res = INVALID_LINK;
         if (notifyOnHit) {
           notify(res);
         }
@@ -655,6 +679,9 @@ export default class CommentGraph {
     parentIndex: AdjustedLineIndex,
     notify: NotifyLinkCB,
   ): Link | undefined {
+    if (fullKey.invalid) {
+      return INVALID_LINK;
+    }
     if (!fullKey.topic) {
       return this.getFullNextLink(fullKey, parentIndex, true, notify);
     }
@@ -666,47 +693,117 @@ export default class CommentGraph {
     childIndex: AdjustedLineIndex,
     notify: NotifyLinkCB,
   ): Link | undefined {
+    if (fullKey.invalid) {
+      return INVALID_LINK;
+    }
     if (!fullKey.topic) {
       return this.getFullNextLink(fullKey, childIndex, false, notify);
     }
     return this.getTopicNextLink(fullKey, childIndex, false, notify);
   }
 
-  getParent(
-    fullKey: Readonly<FullKey>,
-    parentIndex: AdjustedLineIndex,
-    callback: NextCB,
-  ): void {
-    const getParent = (link: Link) => {
-      if (link.invalid) {
-        callback(undefined);
-        return;
+  private getTopicNext(
+    fullTopicKey: Readonly<FullTopicKey>,
+    isGetParent: boolean,
+    notify: NextCB,
+  ): Readonly<LineKey> | undefined {
+    const { index } = fullTopicKey;
+
+    const getTopic = (
+      topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
+    ): Readonly<MHash> | undefined => {
+      if (index < 0 || index >= topics.length) {
+        return undefined;
       }
-      callback({ mhash: link.parent, isGetParent: true });
+      return topics[index][0];
     };
 
-    const res = this.getTopLink(fullKey, parentIndex, getParent);
-    if (res !== undefined) {
-      getParent(res);
+    const getTopicNext = (
+      mhash: Readonly<MHash> | undefined,
+      notifyOnHit: boolean,
+    ): Readonly<LineKey> => {
+      if (mhash === undefined) {
+        const res = INVALID_KEY;
+        if (notifyOnHit) {
+          notify(res);
+        }
+        return res;
+      }
+      const res: LineKey = { mhash, isGetParent };
+      if (notifyOnHit) {
+        notify(res);
+      }
+      return res;
+    };
+
+    const notifyTopics: TopicsCB = (topics) => {
+      const mhash = getTopic(topics);
+      getTopicNext(mhash, true);
+    };
+
+    const order = this.msgPool.getTopics(notifyTopics);
+    if (order === undefined) {
+      return undefined;
+    }
+    return getTopicNext(getTopic(order), false);
+  }
+
+  private getFullNext(
+    fullLinkKey: Readonly<FullLinkKey>,
+    isGetParent: boolean,
+    notify: NextCB,
+  ): Readonly<LineKey> | undefined {
+    const getLink = (
+      link: Readonly<Link>,
+      notifyOnHit: boolean,
+    ): Readonly<LineKey> | undefined => {
+      if (link.invalid) {
+        const res = INVALID_KEY;
+        if (notifyOnHit) {
+          notify(res);
+        }
+        return res;
+      }
+      const res: LineKey = {
+        mhash: fullLinkKey.isGetParent ? link.parent : link.child,
+        isGetParent,
+      };
+      if (notifyOnHit) {
+        notify(res);
+      }
+      return res;
+    };
+
+    const notifyLink: NotifyLinkCB = (link) => {
+      getLink(link, true);
+    };
+
+    const link = this.linkPool.getLink(fullLinkKey, notifyLink);
+    if (link === undefined) {
+      return undefined;
+    }
+    return getLink(link, false);
+  }
+
+  getParent(fullKey: Readonly<FullKey>, callback: NextCB): void {
+    if (fullKey.invalid) {
+      return callback(asLineKey(fullKey));
+    }
+    if (fullKey.topic) {
+      this.getTopicNext(fullKey, true, callback);
+    } else {
+      this.getFullNext(fullKey, true, callback);
     }
   }
 
-  getChild(
-    fullKey: Readonly<FullKey>,
-    childIndex: AdjustedLineIndex,
-    callback: NextCB,
-  ): void {
-    const getChild = (link: Link) => {
-      if (link.invalid) {
-        callback(undefined);
-        return;
-      }
-      callback({ mhash: link.child, isGetParent: false });
-    };
-
-    const res = this.getBottomLink(fullKey, childIndex, getChild);
-    if (res !== undefined) {
-      getChild(res);
+  getChild(fullKey: Readonly<FullKey>, callback: NextCB): void {
+    if (fullKey.invalid) {
+      return callback(asLineKey(fullKey));
+    }
+    if (fullKey.topic) {
+      this.getTopicNext(fullKey, false, callback);
+    } else {
+      this.getFullNext(fullKey, false, callback);
     }
   }
 

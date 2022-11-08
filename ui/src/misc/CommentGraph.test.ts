@@ -1,6 +1,8 @@
 import CommentGraph, {
   AdjustedLineIndex,
+  equalLineKey,
   FullKey,
+  INVALID_KEY,
   LineKey,
   Link,
   MHash,
@@ -124,18 +126,9 @@ const invalidLink = (): ((link: Link) => void) => {
     assertTrue(!!link.invalid);
   };
 };
-const checkNext = (lineKey: Readonly<LineKey> | undefined): NextCB => {
+const checkNext = (lineKey: Readonly<LineKey>): NextCB => {
   return (child) => {
-    if (lineKey === undefined) {
-      expect(child).toBe(undefined);
-    } else {
-      assertTrue(!lineKey.topic);
-      const linkKey = lineKey;
-      assertTrue(child !== undefined);
-      assertTrue(!child.topic);
-      expect(child.mhash).toEqual(linkKey.mhash);
-      expect(child.isGetParent).toEqual(linkKey.isGetParent);
-    }
+    assertTrue(equalLineKey(child, lineKey));
   };
 };
 const toArgs = (
@@ -178,24 +171,14 @@ const createGetMessage = (
 
 const createGetParent = (
   pool: CommentGraph,
-): ((
-  notify: NextCB,
-  fullKey: Readonly<FullKey>,
-  parentIndex: AdjustedLineIndex,
-) => undefined) => {
-  return (notify, fullKey, parentIndex) =>
-    pool.getParent(fullKey, parentIndex, notify) as undefined;
+): ((notify: NextCB, fullKey: Readonly<FullKey>) => undefined) => {
+  return (notify, fullKey) => pool.getParent(fullKey, notify) as undefined;
 };
 
 const createGetChild = (
   pool: CommentGraph,
-): ((
-  notify: NextCB,
-  fullKey: Readonly<FullKey>,
-  childIndex: AdjustedLineIndex,
-) => undefined) => {
-  return (notify, fullKey, childIndex) =>
-    pool.getChild(fullKey, childIndex, notify) as undefined;
+): ((notify: NextCB, fullKey: Readonly<FullKey>) => undefined) => {
+  return (notify, fullKey) => pool.getChild(fullKey, notify) as undefined;
 };
 
 test('simple test comment graph', async () => {
@@ -653,120 +636,183 @@ test('get parent / child comment graph', async () => {
 
   await execute(
     getChild,
-    toArgs(asFullKey('a2', false, 0), 0),
-    checkNext(asLineKey('a4', false)),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('a2', false, 0), 0),
-    checkNext(asLineKey('a2', true)),
+    [asFullKey('a2', false, 0)],
+    checkNext(asLineKey('a3', false)),
     undefined,
     true,
   );
   await execute(
     getChild,
-    toArgs(asFullKey('c2', true, 0), 1),
+    [asFullKey('c2', true, 0)],
+    checkNext(asLineKey('a1', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asFullKey('c2', false, 0)],
+    checkNext(INVALID_KEY),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asFullKey('a1', false, 0)],
+    checkNext(asLineKey('a2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asFullKey('a1', false, 1)],
     checkNext(asLineKey('b2', false)),
     undefined,
     true,
   );
   await execute(
     getChild,
-    toArgs(asFullKey('c2', true, 0), 2),
+    [asFullKey('a1', false, 2)],
     checkNext(asLineKey('c2', false)),
     undefined,
     true,
   );
   await execute(
     getChild,
-    toArgs(asFullKey('c2', true, 0), 3),
-    checkNext(asLineKey('d2', false)),
+    [asFullKey('a1', false, 2)],
+    checkNext(asLineKey('c2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asFullKey('a1', false, 4)],
+    checkNext(INVALID_KEY),
     undefined,
     true,
   );
   await execute(
     getParent,
-    toArgs(asFullKey('b2', true, 1), 0),
+    [asFullKey('b2', true, 0)],
+    checkNext(asLineKey('a1', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asFullKey('b2', true, 1)],
+    checkNext(asLineKey('b4', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asFullKey('b4', true, 0)],
+    checkNext(asLineKey('a3', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asFullKey('b4', true, 0)],
+    checkNext(asLineKey('a3', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asFullKey('a1', false, 1)],
+    checkNext(asLineKey('b2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asFullKey('a1', false, 0)],
+    checkNext(asLineKey('a2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asFullKey('b4', true, 1)],
+    checkNext(asLineKey('b2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asFullKey('b4', true, 0)],
     checkNext(asLineKey('a3', true)),
     undefined,
     true,
   );
   await execute(
-    getChild,
-    toArgs(asFullKey('b4', true, 0), 0),
-    checkNext(asLineKey('a4', false)),
-    undefined,
-    true,
-  );
-  await execute(
-    getChild,
-    toArgs(asFullKey('b4', true, 0), 1),
-    checkNext(asLineKey('b4', false)),
-    undefined,
-    true,
-  );
-  await execute(
     getParent,
-    toArgs(asFullKey('a1', false, 1), 0),
-    checkNext(asLineKey('a1', true)),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('a1', false, 1), 1),
-    checkNext(asLineKey('b4', true)),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('b4', true, 1), 0),
-    checkNext(asLineKey('a1', true)),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('b4', true, 1), 1),
-    checkNext(asLineKey('b4', true)),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('b4', true, 1), 0),
-    checkNext(asLineKey('a1', true)),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('b4', true, 1), 2),
-    checkNext(undefined),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    toArgs(asFullKey('b4', true, 2), 0),
-    checkNext(undefined),
+    [asFullKey('b4', true, 2)],
+    checkNext(INVALID_KEY),
     undefined,
     true,
   );
   await execute(
     getChild,
-    toArgs(asFullKey('b4', true, 1), 2),
-    checkNext(undefined),
+    [asFullKey('b4', true, 1)],
+    checkNext(asLineKey('b2', false)),
+    undefined,
+    true,
+  );
+});
+
+test('get parent / child of topic', async () => {
+  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const getParent = createGetParent(pool);
+  const getChild = createGetChild(pool);
+
+  await execute(
+    getChild,
+    [asTopicKey(0)],
+    checkNext(asLineKey('a2', false)),
     undefined,
     true,
   );
   await execute(
     getChild,
-    toArgs(asFullKey('b4', true, 2), 0),
-    checkNext(undefined),
+    [asTopicKey(1)],
+    checkNext(asLineKey('b2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asTopicKey(0)],
+    checkNext(asLineKey('a2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asTopicKey(1)],
+    checkNext(asLineKey('b2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asTopicKey(1)],
+    checkNext(asLineKey('b2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asTopicKey(2)],
+    checkNext(INVALID_KEY),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asTopicKey(-1)],
+    checkNext(INVALID_KEY),
     undefined,
     true,
   );

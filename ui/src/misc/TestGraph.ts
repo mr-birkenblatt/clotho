@@ -107,7 +107,7 @@ export default class TestGraph {
       link: async (linkKey, offset, limit) => {
         const { mhash, isGetParent } = linkKey;
         const map = isGetParent ? this.parents : this.children;
-        const arr = map[mhash as MHash];
+        const arr = map[mhash as MHash] ?? [];
         const ret = arr.slice(offset, offset + Math.min(limit, this.apiLimit));
         const endIx = offset + ret.length;
         const next = endIx === arr.length ? 0 : endIx;

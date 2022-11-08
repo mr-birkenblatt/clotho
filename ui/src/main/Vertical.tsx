@@ -107,13 +107,11 @@ export type LinkCB = (
 export type ChildLineCB = (
   lineKey: LineKey,
   index: AdjustedLineIndex,
-  childIndex: AdjustedLineIndex,
   callback: NextCB,
 ) => void;
 export type ParentLineCB = (
   lineKey: LineKey,
   index: AdjustedLineIndex,
-  parentIndex: AdjustedLineIndex,
   callback: NextCB,
 ) => void;
 export type VItemCB = (
@@ -322,12 +320,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (this.awaitOrderChange === undefined) {
       if (this.getArrayIndex(currentIx) >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
-        const newIx = (lastIx + 1) as VIndex;
-        console.log('request child line', newIx);
+        console.log('request child line', lastIx);
         getChildLine(
           order[lastIx],
           this.getHIndexAdjusted(lastIx),
-          this.getHIndexAdjusted(newIx),
           (child) => {
             if (child === undefined) {
               console.warn('no child found!');
@@ -344,12 +340,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         this.awaitOrderChange = order;
       } else if (this.getArrayIndex(currentIx) <= 0) {
         const firstIx = 0 as VIndex;
-        const newIx = (firstIx - 1) as VIndex;
-        console.log('request parent line', newIx);
+        console.log('request parent line', firstIx);
         getParentLine(
           order[firstIx],
           this.getHIndexAdjusted(firstIx),
-          this.getHIndexAdjusted(newIx),
           (parent) => {
             if (parent === undefined) {
               console.warn('no parent found!');
@@ -381,16 +375,22 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       focus === focusIx
     ) {
       const computedIx = this.computeIx();
-      const computedLine = this.lineKey(computedIx);
+      const nextIx = (
+        computedIx !== undefined && computedIx > currentIx
+          ? currentIx + 1
+          : currentIx - 1
+      ) as VIndex;
+      const computedLine = this.lineKey(nextIx);
       if (
         computedIx !== undefined &&
         computedLine !== undefined &&
         computedIx !== currentIx
       ) {
+        console.log('update computedIx', computedIx, currentIx, nextIx);
         dispatch(
           setVCurrentIx({
-            vIndex: computedIx,
-            hIndex: this.getHIndexAdjusted(computedIx),
+            vIndex: nextIx,
+            hIndex: this.getHIndexAdjusted(nextIx),
             lineKey: computedLine,
           }),
         );
@@ -408,17 +408,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       this.awaitCurrentChange = undefined;
     }
 
-    if (viewUpdate) {
-      const refIxs = Array.from(this.activeElements.keys())
-        .map((realIx) => this.getArrayIndex(realIx))
-        .sort();
-      const allReady = refIxs.every((corrIx, ix) => corrIx === ix);
-      if (allReady) {
-        this.setState({
-          viewUpdate: false,
-        });
-      }
-    }
+    viewUpdate = this.checkViewReady(viewUpdate);
 
     if (
       this.awaitCurrentChange === undefined &&
@@ -428,6 +418,38 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     ) {
       this.focus(focus, focusSmooth);
     }
+  }
+
+  checkViewReady(viewUpdate: boolean): boolean {
+    console.log('checkViewReady before', viewUpdate);
+    if (viewUpdate) {
+      const refIxs = Array.from(this.activeElements.keys())
+        .map((realIx) => this.getArrayIndex(realIx))
+        .sort();
+      const allReady = refIxs.every((corrIx, ix) => {
+        if (corrIx !== ix) {
+          console.log(
+            corrIx,
+            ix,
+            Array.from(this.activeElements.keys()),
+            refIxs,
+            this.props.correction,
+            this.props.offset,
+            this.props.currentIx,
+          );
+          this.debugString();
+        }
+        return corrIx === ix;
+      });
+      if (allReady) {
+        this.setState({
+          viewUpdate: false,
+        });
+        viewUpdate = false;
+      }
+    }
+    console.log('checkViewReady after', viewUpdate);
+    return viewUpdate;
   }
 
   focus(focusIx: VIndex, smooth: boolean): void {
@@ -502,12 +524,14 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
   getRefCb(realIx: VIndex): RefCB {
     return (element) => {
+      console.log('ref', realIx, element);
       if (element !== null) {
         this.activeElements.set(realIx, element);
       } else {
         this.activeElements.delete(realIx);
       }
-      this.requestRedraw();
+      const { viewUpdate } = this.state;
+      this.checkViewReady(viewUpdate);
     };
   }
 

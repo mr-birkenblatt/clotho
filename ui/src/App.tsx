@@ -98,12 +98,12 @@ export default class App extends PureComponent<AppProps, AppState> {
     );
   };
 
-  getChildLine: ChildLineCB = (lineKey, index, childIndex, callback) => {
-    this.graph.getChild(toFullKey(lineKey, index), childIndex, callback);
+  getChildLine: ChildLineCB = (lineKey, index, callback) => {
+    this.graph.getChild(toFullKey(lineKey, index), callback);
   };
 
-  getParentLine: ParentLineCB = (lineKey, index, parentIndex, callback) => {
-    this.graph.getParent(toFullKey(lineKey, index), parentIndex, callback);
+  getParentLine: ParentLineCB = (lineKey, index, callback) => {
+    this.graph.getParent(toFullKey(lineKey, index), callback);
   };
 
   getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {

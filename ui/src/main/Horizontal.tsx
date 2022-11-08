@@ -53,9 +53,10 @@ const Band = styled.div<BandProps>`
   display: inline-block;
   height: 100%;
   width: ${(props) => props.itemWidth}px;
+  opacity: ${(props) => (props.vPosType === VPosType.BelowFocus ? 0.5 : 1.0)};
   background-color: ${(props) =>
     props.vPosType === VPosType.BelowFocus ? 'green' : 'none'};
-  opacity: ${(props) => (props.isViewUpdate ? 0.5 : 1.0)};
+  filter: blur(${(props) => (props.isViewUpdate ? '1px' : '0')});
   white-space: nowrap;
   overflow-x: scroll;
   overflow-y: hidden;
