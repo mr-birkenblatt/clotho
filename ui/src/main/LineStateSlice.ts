@@ -1,11 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { AdjustedLineIndex, LineKey, TOPIC_KEY } from '../misc/CommentGraph';
-import { safeStringify } from '../misc/util';
+import {
+  AdjustedLineIndex,
+  LineKey,
+  MHash,
+  TOPIC_KEY,
+} from '../misc/CommentGraph';
+import { num, safeStringify } from '../misc/util';
 
 export type LineLock = {
-  lineKey: LineKey;
-  index: AdjustedLineIndex;
-  skipItem: boolean;
+  lineKey: Readonly<LineKey>;
+  mhash: Readonly<MHash> | undefined;
 };
 
 export type LineIndex = number & { _lineIndex: void };
@@ -17,55 +21,62 @@ export type VCorrection = number & { _vCorrection: void };
 export type VArrIndex = number & { _vArrIndex: void };
 export type VOffset = number & { _vOffset: void };
 
-export function constructKey(lineKey: LineKey): string {
+export function constructKey(lineKey: Readonly<LineKey>): string {
   return safeStringify(lineKey);
 }
 
 type LineState = {
-  currentLineIxs: { [key: string]: LineIndex };
-  currentLineFocus: { [key: string]: LineIndex };
-  locks: { [key: string]: LineLock };
+  currentLineIxs: { [key: string]: Readonly<LineIndex> };
+  currentLineFocus: { [key: string]: Readonly<LineIndex> };
+  locks: { [key: string]: Readonly<LineLock> };
+  lockIndex: { [key: string]: Readonly<AdjustedLineIndex> | undefined };
   vOrder: LineKey[];
-  vCurrentIx: VIndex;
-  vCorrection: VCorrection;
-  vOffset: VOffset;
-  vFocus: VIndex;
+  vCurrentIx: Readonly<VIndex>;
+  vCorrection: Readonly<VCorrection>;
+  vOffset: Readonly<VOffset>;
+  vFocus: Readonly<VIndex>;
   vFocusSmooth: boolean;
 };
 
 type AddAction = {
   payload: {
-    lineKey: LineKey;
+    lineKey: Readonly<LineKey>;
     isBack: boolean;
   };
 };
 
 type IndexAction = {
   payload: {
-    lineKey: LineKey;
-    index: LineIndex;
+    lineKey: Readonly<LineKey>;
+    index: Readonly<LineIndex>;
   };
 };
 
 type LockAction = {
   payload: {
-    lineKey: LineKey;
-    adjustedIndex: AdjustedLineIndex;
-    skipItem: boolean;
+    lineKey: Readonly<LineKey>;
+    mhash: Readonly<MHash> | undefined;
+  };
+};
+
+type LockIndexAction = {
+  payload: {
+    lineKey: Readonly<LineKey>;
+    lockIndex: Readonly<AdjustedLineIndex>;
   };
 };
 
 type SetVAction = {
   payload: {
-    vIndex: VIndex;
-    hIndex: AdjustedLineIndex;
-    lineKey: LineKey;
+    vIndex: Readonly<VIndex>;
+    mhash: Readonly<MHash> | undefined;
+    lineKey: Readonly<LineKey>;
   };
 };
 
 type FocusVAction = {
   payload: {
-    focus: VIndex;
+    focus: Readonly<VIndex>;
   };
 };
 
@@ -74,27 +85,27 @@ type LineReducers = {
   focusAt: (state: LineState, action: IndexAction) => void;
   focusV: (state: LineState, action: FocusVAction) => void;
   lockCurrent: (state: LineState, action: LockAction) => void;
+  setLockIndex: (state: LineState, action: LockIndexAction) => void;
   setHCurrentIx: (state: LineState, action: IndexAction) => void;
   setVCurrentIx: (state: LineState, action: SetVAction) => void;
 };
 
 function lockLine(
   state: LineState,
-  lineKey: LineKey,
-  adjustedIndex: AdjustedLineIndex,
-  skipItem: boolean,
+  lineKey: Readonly<LineKey>,
+  mhash: Readonly<MHash> | undefined,
 ) {
   const key = constructKey(lineKey);
-  const { currentLineIxs, currentLineFocus, locks } = state;
-  if (currentLineIxs[key] < 0) {
+  const { currentLineIxs, currentLineFocus, locks, lockIndex } = state;
+  if (currentLineIxs[key] === LOCK_INDEX) {
     return;
   }
   const locked: LineLock = {
     lineKey,
-    index: adjustedIndex,
-    skipItem,
+    mhash,
   };
   locks[key] = locked;
+  lockIndex[key] = undefined;
   currentLineIxs[key] = LOCK_INDEX;
   currentLineFocus[key] = LOCK_INDEX;
 }
@@ -105,6 +116,7 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
     currentLineIxs: {},
     currentLineFocus: {},
     locks: {},
+    lockIndex: {},
     vOrder: [TOPIC_KEY],
     vCurrentIx: 0 as VIndex,
     vCorrection: 0 as VCorrection,
@@ -122,19 +134,25 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
       state.currentLineFocus[constructKey(lineKey)] = index;
     },
     lockCurrent: (state, action) => {
-      const { lineKey, adjustedIndex, skipItem } = action.payload;
-      return lockLine(state, lineKey, adjustedIndex, skipItem);
+      const { lineKey, mhash } = action.payload;
+      return lockLine(state, lineKey, mhash);
+    },
+    setLockIndex: (state, action) => {
+      const { lineKey, lockIndex } = action.payload;
+      const key = constructKey(lineKey);
+      state.lockIndex[key] = lockIndex;
     },
     setVCurrentIx: (state, action) => {
-      const { vIndex, hIndex, lineKey } = action.payload;
+      const { vIndex, mhash, lineKey } = action.payload;
       if (vIndex === state.vCurrentIx) {
         return;
       }
-      lockLine(state, lineKey, hIndex, false);
+      lockLine(state, lineKey, mhash);
       const vOrder = state.vOrder;
-      const oldArrIx = (state.vCurrentIx + state.vCorrection) as VCorrection;
+      const oldArrIx = (num(state.vCurrentIx) +
+        num(state.vCorrection)) as VCorrection;
       const oldRemain = vOrder.length - oldArrIx;
-      const arrIx = (vIndex + state.vCorrection) as VCorrection;
+      const arrIx = (num(vIndex) + num(state.vCorrection)) as VCorrection;
       if (arrIx < 0 && arrIx >= vOrder.length) {
         console.warn('new index out of bounds', vIndex, arrIx, vOrder);
         return;
@@ -142,7 +160,7 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
       state.vCurrentIx = vIndex;
       const fromIx = Math.max(0, arrIx - 1);
       const toIx = fromIx + oldRemain;
-      state.vOffset = (vIndex - arrIx + fromIx) as VOffset;
+      state.vOffset = (num(vIndex) - arrIx + fromIx) as VOffset;
       state.vCorrection = -state.vOffset as VCorrection;
       state.vOrder = vOrder.slice(fromIx, toIx);
       state.vFocus = vIndex;
@@ -154,8 +172,8 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
         state.vOrder.push(lineKey);
       } else {
         state.vOrder = [lineKey, ...state.vOrder];
-        state.vOffset = (state.vOffset - 1) as VOffset;
-        state.vCorrection = (state.vCorrection + 1) as VCorrection;
+        state.vOffset = (num(state.vOffset) - 1) as VOffset;
+        state.vCorrection = (num(state.vCorrection) + 1) as VCorrection;
       }
     },
     focusV: (state, action) => {
@@ -171,6 +189,7 @@ export const {
   focusAt,
   focusV,
   lockCurrent,
+  setLockIndex,
   setHCurrentIx,
   setVCurrentIx,
 } = lineStateSlice.actions;

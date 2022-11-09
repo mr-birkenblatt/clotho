@@ -1,3 +1,11 @@
+export function num<T extends number>(value: Readonly<T>): number {
+  return value as unknown as number;
+}
+
+export function str<T extends string>(value: Readonly<T>): Readonly<string> {
+  return value as unknown as string;
+}
+
 export function range(from: number, to?: number): number[] {
   if (to === undefined) {
     to = from;

@@ -5,11 +5,13 @@ import styled from 'styled-components';
 import {
   AdjustedLineIndex,
   FullKey,
+  INVALID_FULL_KEY,
   LineKey,
+  MHash,
   ReadyCB,
   toFullKey,
 } from '../misc/CommentGraph';
-import { range } from '../misc/util';
+import { num, range } from '../misc/util';
 import { RootState } from '../store';
 import {
   constructKey,
@@ -17,6 +19,7 @@ import {
   LineIndex,
   LOCK_INDEX,
   setHCurrentIx,
+  setLockIndex,
 } from './LineStateSlice';
 import { VPosType } from './Vertical';
 
@@ -100,14 +103,14 @@ const Pad = styled.div`
 `;
 
 export type ItemCB = (
-  fullLinkKey: FullKey,
+  fullLinkKey: Readonly<FullKey>,
   readyCb: ReadyCB,
-) => string | undefined;
+) => readonly [Readonly<MHash> | undefined, string] | undefined;
 
 type BandProps = {
   itemWidth: number;
   isViewUpdate: boolean;
-  vPosType: VPosType;
+  vPosType: Readonly<VPosType>;
 };
 
 type ItemContentProps = {
@@ -122,9 +125,9 @@ interface HorizontalProps extends ConnectHorizontal {
   itemRadius: number;
   buttonSize: number;
   itemPadding: number;
-  lineKey: LineKey;
+  lineKey: Readonly<LineKey>;
   isViewUpdate: boolean;
-  vPosType: VPosType;
+  vPosType: Readonly<VPosType>;
   getItem: ItemCB;
 }
 
@@ -136,7 +139,7 @@ type EmptyHorizontalProps = {
 type HOffset = number & { _hOffset: void };
 
 type HorizontalState = {
-  offset: HOffset;
+  offset: Readonly<HOffset>;
   itemCount: number;
   padSize: number;
   needViews: boolean;
@@ -152,8 +155,8 @@ type EmptyHorizontalState = {
 };
 
 class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
-  activeRefs: Map<LineIndex, React.RefObject<HTMLDivElement>>;
-  activeView: Map<LineIndex, IntersectionObserver>;
+  activeRefs: Map<Readonly<LineIndex>, React.RefObject<HTMLDivElement>>;
+  activeView: Map<Readonly<LineIndex>, IntersectionObserver>;
   lockedRef: React.RefObject<HTMLDivElement>;
   lockedView: IntersectionObserver | undefined;
   rootBox: React.RefObject<HTMLDivElement>;
@@ -230,9 +233,9 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     const key = constructKey(lineKey);
     const currentIx = currentLineIxs[key];
     const lineFocus = currentLineFocus[key];
-    const prevCurrentIx: LineIndex | undefined =
+    const prevCurrentIx: Readonly<LineIndex> | undefined =
       prevProps.currentLineIxs && prevProps.currentLineIxs[key];
-    const prevLineFocus: LineIndex | undefined =
+    const prevLineFocus: Readonly<LineIndex> | undefined =
       prevProps.currentLineFocus && prevProps.currentLineFocus[key];
     const {
       itemCount,
@@ -261,18 +264,21 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           });
         }
       } else {
-        let newOffset = offset;
+        let newOffset = num(offset);
         let newPadSize = padSize;
-        while (newOffset > 0 && currentIx < newOffset + itemCount * 0.5 - 1) {
+        while (
+          newOffset > 0 &&
+          num(currentIx) < newOffset + itemCount * 0.5 - 1
+        ) {
           newOffset = (newOffset - 1) as HOffset;
           newPadSize -= itemWidth;
         }
-        while (currentIx > newOffset + itemCount * 0.5) {
+        while (num(currentIx) > newOffset + itemCount * 0.5) {
           newOffset = (newOffset + 1) as HOffset;
           newPadSize += itemWidth;
         }
         this.setState({
-          offset: newOffset,
+          offset: newOffset as unknown as Readonly<HOffset>,
           padSize: newPadSize,
           pendingPad: false,
         });
@@ -286,7 +292,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
       });
     }
     if (prevLineFocus !== lineFocus) {
-      const isInstant = lineFocus < 0 && currentIx < 0;
+      const isInstant = lineFocus === LOCK_INDEX && currentIx === LOCK_INDEX;
       if (isInstant) {
         this.setState({
           padSize: 0,
@@ -303,7 +309,10 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     let needViewsNew = needViews;
     if (prevState.offset !== offset || prevState.itemCount !== itemCount) {
       Array.from(this.activeView.keys()).forEach((realIx) => {
-        if (realIx < offset || realIx >= offset + itemCount) {
+        if (
+          num(realIx) < num(offset) ||
+          num(realIx) >= num(offset) + itemCount
+        ) {
           const obs = this.activeView.get(realIx);
           if (obs) {
             obs.disconnect();
@@ -312,12 +321,15 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
         }
       });
       Array.from(this.activeRefs.keys()).forEach((realIx) => {
-        if (realIx < offset || realIx >= offset + itemCount) {
+        if (
+          num(realIx) < num(offset) ||
+          num(realIx) >= num(offset) + itemCount
+        ) {
           this.activeRefs.delete(realIx);
         }
       });
       range(itemCount).forEach((ix) => {
-        const realIx = (offset + ix) as LineIndex;
+        const realIx = (num(offset) + ix) as LineIndex;
         if (!this.activeRefs.has(realIx)) {
           this.activeRefs.set(realIx, React.createRef());
           needViewsNew = true;
@@ -326,7 +338,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     }
 
     const createObserver = (
-      index: LineIndex,
+      index: Readonly<LineIndex>,
       current: HTMLDivElement,
       currentRoot: HTMLDivElement,
     ): IntersectionObserver => {
@@ -352,7 +364,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
 
     if (needViews) {
       range(itemCount).forEach((ix) => {
-        const realIx = (offset + ix) as LineIndex;
+        const realIx = (num(offset) + ix) as LineIndex;
         const curRef = this.activeRefs.get(realIx);
         if (curRef && curRef.current && this.rootBox.current) {
           if (!this.activeView.has(realIx)) {
@@ -374,8 +386,9 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     return needViewsNew;
   }
 
-  focus(focusIx: LineIndex, smooth: boolean): void {
-    const item = focusIx < 0 ? this.lockedRef : this.activeRefs.get(focusIx);
+  focus(focusIx: Readonly<LineIndex>, smooth: boolean): void {
+    const item =
+      focusIx === LOCK_INDEX ? this.lockedRef : this.activeRefs.get(focusIx);
     if (item && item.current) {
       item.current.scrollIntoView({
         behavior: smooth ? 'smooth' : 'auto',
@@ -385,37 +398,57 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     }
   }
 
-  getContent(lineKey: LineKey, index: LineIndex): string | JSX.Element {
-    const { getItem, locks } = this.props;
+  getContent(
+    lineKey: Readonly<LineKey>,
+    index: Readonly<LineIndex>,
+  ): string | JSX.Element {
+    const { dispatch, getItem, locks, lockIndex } = this.props;
     const locked = locks[constructKey(lineKey)];
 
     const getContent = (
-      lkey: LineKey,
-      adjIndex: AdjustedLineIndex,
+      fullLinkKey: Readonly<FullKey>,
+      adjIndex: Readonly<AdjustedLineIndex> | undefined,
     ): string | JSX.Element => {
-      const fullLinkKey = toFullKey(lkey, adjIndex);
-      const msg = getItem(fullLinkKey, this.requestRedraw);
-      if (msg !== undefined) {
+      const item = getItem(fullLinkKey, this.requestRedraw);
+      if (item !== undefined) {
+        const [mhash, msg] = item;
+        if (
+          adjIndex !== undefined &&
+          lockIndex === undefined &&
+          locked !== undefined &&
+          locked.mhash === mhash
+        ) {
+          dispatch(setLockIndex({ lineKey, lockIndex: adjIndex }));
+        }
         return <ReactMarkdown skipHtml={true}>{msg}</ReactMarkdown>;
       }
       return `loading [${index}]`;
     };
 
-    if (locked && index < 0) {
-      return getContent(locked.lineKey, locked.index);
+    if (locked !== undefined && index === LOCK_INDEX) {
+      return getContent(
+        locked.mhash
+          ? { direct: true, mhash: locked.mhash }
+          : INVALID_FULL_KEY,
+        undefined,
+      );
     }
-    return getContent(lineKey, this.adjustIndex(index));
+    const adjIndex = this.adjustIndex(index);
+    return getContent(toFullKey(lineKey, adjIndex), adjIndex);
   }
 
-  adjustIndex(index: LineIndex): AdjustedLineIndex {
-    const { lineKey, locks } = this.props;
-    const { offset, itemCount } = this.state;
-    const locked = locks[constructKey(lineKey)];
-    const lockedIx =
-      locked && locked.skipItem
-        ? locked.index
-        : ((offset + itemCount) as AdjustedLineIndex);
-    return (index + (lockedIx > index ? 0 : 1)) as AdjustedLineIndex;
+  adjustIndex(index: Readonly<LineIndex>): Readonly<AdjustedLineIndex> {
+    const { lineKey, lockIndex } = this.props;
+    if (lineKey === undefined) {
+      return 0 as AdjustedLineIndex;
+    }
+    const key = constructKey(lineKey);
+    const lIndex = lockIndex[key];
+    if (lIndex && index === LOCK_INDEX) {
+      return lIndex;
+    }
+    const lockedIx = lIndex ? num(lIndex) : num(index) + 1;
+    return (num(index) + (lockedIx > num(index) ? 0 : 1)) as AdjustedLineIndex;
   }
 
   requestRedraw = (): void => {
@@ -432,14 +465,14 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   handleLeft = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { lineKey, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineKey)];
-    dispatch(focusAt({ lineKey, index: (currentIx - 1) as LineIndex }));
+    dispatch(focusAt({ lineKey, index: (num(currentIx) - 1) as LineIndex }));
     event.preventDefault();
   };
 
   handleRight = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { lineKey, currentLineIxs, dispatch } = this.props;
     const currentIx = currentLineIxs[constructKey(lineKey)];
-    dispatch(focusAt({ lineKey, index: (currentIx + 1) as LineIndex }));
+    dispatch(focusAt({ lineKey, index: (num(currentIx) + 1) as LineIndex }));
     event.preventDefault();
   };
 
@@ -457,7 +490,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
     } = this.props;
     const { offset, itemCount, padSize } = this.state;
     const locked = locks[constructKey(lineKey)];
-    const offShift = (offset < 0 ? -offset : 0) as HOffset;
+    const offShift = (num(offset) < 0 ? -offset : 0) as HOffset;
     return (
       <Outer
         itemHeight={itemHeight}
@@ -492,7 +525,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
           ) : null}
           <Pad padSize={padSize} />
           {range(itemCount - offShift).map((ix) => {
-            const realIx = (offset + ix + offShift) as LineIndex;
+            const realIx = (num(offset) + ix + offShift) as LineIndex;
             return (
               <Item
                 key={realIx}
@@ -517,6 +550,7 @@ const connector = connect((state: RootState) => ({
   currentLineIxs: state.lineState.currentLineIxs,
   currentLineFocus: state.lineState.currentLineFocus,
   locks: state.lineState.locks,
+  lockIndex: state.lineState.lockIndex,
 }));
 
 export default connector(Horizontal);

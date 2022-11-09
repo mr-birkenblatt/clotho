@@ -1,4 +1,4 @@
-import { MHash } from './CommentGraph';
+import { fromMHash, MHash } from './CommentGraph';
 import { simpleGraph } from './TestGraph';
 
 function asMHashSet(arr: string[]): Set<MHash> {
@@ -21,11 +21,11 @@ type TestLink = {
 };
 
 function getParentHashs(links: readonly TestLink[]): string[] {
-  return links.map((l) => l.parent as unknown as string);
+  return links.map((l) => fromMHash(l.parent));
 }
 
 function getChildHashs(links: readonly TestLink[]): string[] {
-  return links.map((l) => l.child as unknown as string);
+  return links.map((l) => fromMHash(l.child));
 }
 
 test('test messages', () => {

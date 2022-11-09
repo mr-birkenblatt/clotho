@@ -4,14 +4,16 @@ import styled from 'styled-components';
 import {
   AdjustedLineIndex,
   equalLineKeys,
+  FullIndirectKey,
   FullKey,
   LineKey,
   Link,
   NextCB,
+  NotifyHashCB,
   ReadyCB,
   toFullKey,
 } from '../misc/CommentGraph';
-import { range } from '../misc/util';
+import { assertTrue, num, range } from '../misc/util';
 import { RootState } from '../store';
 import {
   constructKey,
@@ -21,6 +23,7 @@ import {
   VIndex,
   LineIndex,
   VArrIndex,
+  LOCK_INDEX,
 } from './LineStateSlice';
 
 const Outer = styled.div`
@@ -99,29 +102,33 @@ export enum VPosType {
   BelowFocus,
 }
 
+export type HashCB = (
+  fullKey: Readonly<FullKey>,
+  callback: NotifyHashCB,
+) => void;
 export type LinkCB = (
-  fullLinkKey: FullKey,
-  parentIndex: AdjustedLineIndex,
+  fullLinkKey: Readonly<FullIndirectKey>,
+  parentIndex: Readonly<AdjustedLineIndex>,
   readyCb: ReadyCB,
-) => Link | undefined;
+) => Readonly<Link> | undefined;
 export type ChildLineCB = (
-  lineKey: LineKey,
-  index: AdjustedLineIndex,
+  lineKey: Readonly<LineKey>,
+  index: Readonly<AdjustedLineIndex>,
   callback: NextCB,
 ) => void;
 export type ParentLineCB = (
-  lineKey: LineKey,
-  index: AdjustedLineIndex,
+  lineKey: Readonly<LineKey>,
+  index: Readonly<AdjustedLineIndex>,
   callback: NextCB,
 ) => void;
 export type VItemCB = (
-  lineKey: LineKey | undefined,
+  lineKey: Readonly<LineKey> | undefined,
   height: number,
   isViewUpdate: boolean,
-  vPosType: VPosType,
+  vPosType: Readonly<VPosType>,
 ) => JSX.Element | null;
 export type RenderLinkCB = (
-  link: Link,
+  link: Readonly<Link>,
   buttonSize: number,
   radius: number,
 ) => JSX.Element | null;
@@ -133,6 +140,7 @@ interface VerticalProps extends ConnectVertical {
   getChildLine: ChildLineCB;
   getParentLine: ParentLineCB;
   getItem: VItemCB;
+  getHash: HashCB;
   getLink: LinkCB;
   renderLink: RenderLinkCB;
 }
@@ -149,7 +157,7 @@ type VerticalState = {
   redraw: boolean;
   scrollInit: boolean;
   isScrolling: boolean;
-  focusIx: VIndex;
+  focusIx: Readonly<VIndex>;
   viewUpdate: boolean;
 };
 
@@ -162,10 +170,10 @@ type RefCB = (instance: HTMLDivElement | null) => void;
 class Vertical extends PureComponent<VerticalProps, VerticalState> {
   rootBox: React.RefObject<HTMLDivElement>;
   bandRef: React.RefObject<HTMLDivElement>;
-  activeRefCbs: Map<VIndex, RefCB>;
-  activeElements: Map<VIndex, HTMLDivElement>;
+  activeRefCbs: Map<Readonly<VIndex>, RefCB>;
+  activeElements: Map<Readonly<VIndex>, HTMLDivElement>;
   awaitOrderChange: LineKey[] | undefined;
-  awaitCurrentChange: VIndex | undefined;
+  awaitCurrentChange: Readonly<VIndex> | undefined;
 
   constructor(props: VerticalProps) {
     super(props);
@@ -235,7 +243,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     const { offset, order, currentIx, correction } = this.props;
     const { itemCount } = this.state;
     const rangeOrder = [0, order.length];
-    const rangeArray = [correction + offset, correction + offset + itemCount];
+    const rangeArray = [
+      num(correction) + num(offset),
+      num(correction) + num(offset) + itemCount,
+    ];
     const adjIndex = this.getArrayIndex(currentIx);
     const minIx = Math.min(rangeOrder[0], rangeArray[0], adjIndex);
     const maxIx = Math.max(rangeOrder[1], rangeArray[1], adjIndex);
@@ -258,11 +269,14 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     console.groupEnd();
   }
 
-  computeIx(): VIndex | undefined {
-    type PosAndIndex = [undefined, undefined] | [number, VIndex];
+  computeIx(): Readonly<VIndex> | undefined {
+    type PosAndIndex = [undefined, undefined] | [number, Readonly<VIndex>];
 
     const out = Array.from(this.activeElements.entries()).reduce(
-      (res: PosAndIndex, val: [VIndex, HTMLDivElement]): PosAndIndex => {
+      (
+        res: PosAndIndex,
+        val: [Readonly<VIndex>, HTMLDivElement],
+      ): PosAndIndex => {
         const [realIx, element] = val;
         const bounds = element.getBoundingClientRect();
         if (bounds.top <= -50) {
@@ -291,6 +305,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       focusSmooth,
       getChildLine,
       getParentLine,
+      getHash,
       order,
       offset,
     } = this.props;
@@ -377,8 +392,8 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       const computedIx = this.computeIx();
       const nextIx = (
         computedIx !== undefined && computedIx > currentIx
-          ? currentIx + 1
-          : currentIx - 1
+          ? num(currentIx) + 1
+          : num(currentIx) - 1
       ) as VIndex;
       const computedLine = this.lineKey(nextIx);
       if (
@@ -387,12 +402,19 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         computedIx !== currentIx
       ) {
         console.log('update computedIx', computedIx, currentIx, nextIx);
-        dispatch(
-          setVCurrentIx({
-            vIndex: nextIx,
-            hIndex: this.getHIndexAdjusted(nextIx),
-            lineKey: computedLine,
-          }),
+        const lineKey = order[nextIx];
+        assertTrue(lineKey !== undefined);
+        getHash(
+          toFullKey(lineKey, this.getHIndexAdjusted(nextIx)),
+          (mhash) => {
+            dispatch(
+              setVCurrentIx({
+                vIndex: nextIx,
+                mhash,
+                lineKey: computedLine,
+              }),
+            );
+          },
         );
         this.awaitCurrentChange = currentIx;
         this.setState({
@@ -452,7 +474,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return viewUpdate;
   }
 
-  focus(focusIx: VIndex, smooth: boolean): void {
+  focus(focusIx: Readonly<VIndex>, smooth: boolean): void {
     const item = this.activeElements.get(focusIx);
     if (item !== undefined) {
       item.scrollIntoView({
@@ -465,20 +487,20 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   }
 
   getRealIndex(index: number): VIndex {
-    return (this.props.offset + index) as VIndex;
+    return (num(this.props.offset) + index) as VIndex;
   }
 
-  getArrayIndex(index: VIndex): VArrIndex {
-    return (index + this.props.correction) as VArrIndex;
+  getArrayIndex(index: Readonly<VIndex>): VArrIndex {
+    return (num(index) + num(this.props.correction)) as VArrIndex;
   }
 
-  isValidArrayIndex(index: VIndex): boolean {
+  isValidArrayIndex(index: Readonly<VIndex>): boolean {
     const { order } = this.props;
     const arrIx = this.getArrayIndex(index);
     return arrIx < order.length || arrIx >= 0;
   }
 
-  lineKey(index: VIndex | undefined): LineKey | undefined {
+  lineKey(index: Readonly<VIndex> | undefined): Readonly<LineKey> | undefined {
     if (index === undefined) {
       return undefined;
     }
@@ -490,7 +512,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return order[correctedIndex];
   }
 
-  getHIndex(index: VIndex): LineIndex {
+  getHIndex(index: Readonly<VIndex>): Readonly<LineIndex> {
     const { currentLineIxs } = this.props;
     const lineKey = this.lineKey(index);
     if (lineKey === undefined) {
@@ -504,22 +526,20 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return res;
   }
 
-  getHIndexAdjusted(index: VIndex): AdjustedLineIndex {
-    const { locks } = this.props;
+  getHIndexAdjusted(index: Readonly<VIndex>): Readonly<AdjustedLineIndex> {
+    const { lockIndex } = this.props;
     const lineKey = this.lineKey(index);
     if (lineKey === undefined) {
       return 0 as AdjustedLineIndex;
     }
     const key = constructKey(lineKey);
+    const lIndex = lockIndex[key];
     const res = this.getHIndex(index);
-    const locked = locks[key];
-    if (locked && res < 0) {
-      return locked.index;
+    if (lIndex && res === LOCK_INDEX) {
+      return lIndex;
     }
-    const lockedIx = (
-      locked && locked.skipItem ? locked.index : res + 1
-    ) as AdjustedLineIndex;
-    return (res + (lockedIx > res ? 0 : 1)) as AdjustedLineIndex;
+    const lockedIx = lIndex ? num(lIndex) : num(res) + 1;
+    return (num(res) + (lockedIx > num(res) ? 0 : 1)) as AdjustedLineIndex;
   }
 
   getRefCb(realIx: VIndex): RefCB {
@@ -537,13 +557,13 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
 
   handleUp = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ focus: (currentIx - 1) as VIndex }));
+    dispatch(focusV({ focus: (num(currentIx) - 1) as VIndex }));
     event.preventDefault();
   };
 
   handleDown = (event: React.MouseEvent<HTMLButtonElement>): void => {
     const { currentIx, dispatch } = this.props;
-    dispatch(focusV({ focus: (currentIx + 1) as VIndex }));
+    dispatch(focusV({ focus: (num(currentIx) + 1) as VIndex }));
     event.preventDefault();
   };
 
@@ -590,7 +610,9 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       return <ItemMid>{res}</ItemMid>;
     };
 
-    const validRealIx = new Set(range(itemCount));
+    const validRealIx = new Set<Readonly<VIndex>>(
+      range(itemCount) as unknown as Readonly<VIndex>[],
+    );
     Array.from(this.activeRefCbs.keys()).forEach((realIx) => {
       if (validRealIx.has(realIx)) {
         return;
@@ -652,7 +674,7 @@ const connector = connect((state: RootState) => ({
   focusSmooth: state.lineState.vFocusSmooth,
   offset: state.lineState.vOffset,
   order: state.lineState.vOrder,
-  locks: state.lineState.locks,
+  lockIndex: state.lineState.lockIndex,
 }));
 export default connector(Vertical);
 

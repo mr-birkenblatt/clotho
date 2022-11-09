@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import Horizontal, { ItemCB } from './main/Horizontal';
 import Vertical, {
   ChildLineCB,
+  HashCB,
   LinkCB,
   ParentLineCB,
   RenderLinkCB,
@@ -75,6 +76,10 @@ export default class App extends PureComponent<AppProps, AppState> {
     this.graph = new CommentGraph(advancedGraph().getApiProvider());
   }
 
+  getHash: HashCB = (fullKey, callback) => {
+    this.graph.getHash(fullKey, callback);
+  };
+
   getItem: ItemCB = (fullLinkKey, readyCb) => {
     return this.graph.getMessage(fullLinkKey, () => readyCb());
   };
@@ -144,6 +149,7 @@ export default class App extends PureComponent<AppProps, AppState> {
         <MainColumn>
           <Vertical
             getItem={this.getVItem}
+            getHash={this.getHash}
             getChildLine={this.getChildLine}
             getParentLine={this.getParentLine}
             getLink={this.getLink}

@@ -3,6 +3,7 @@ import CommentGraph, {
   asLineKey,
   equalLineKey,
   equalLineKeys,
+  FullIndirectKey,
   FullKey,
   INVALID_FULL_KEY,
   INVALID_KEY,
@@ -11,6 +12,7 @@ import CommentGraph, {
   MHash,
   NextCB,
   NotifyContentCB,
+  NotifyHashCB,
   NotifyLinkCB,
   toFullKey,
   TOPIC_KEY,
@@ -22,7 +24,7 @@ import { assertTrue, range } from './util';
 // FIXME not using fake timers for now as they don't work well with async
 // jest.useFakeTimers();
 
-function asTopicKey(index: number): FullKey {
+function asTopicKey(index: number): Readonly<FullIndirectKey> {
   return {
     topic: true,
     index: index as AdjustedLineIndex,
@@ -33,7 +35,7 @@ function asFullKey(
   hash: string,
   isGetParent: boolean,
   index: number,
-): FullKey {
+): Readonly<FullIndirectKey> {
   return {
     mhash: hash as MHash,
     isGetParent,
@@ -41,20 +43,24 @@ function asFullKey(
   };
 }
 
-function toLineKey(hash: string, isGetParent: boolean): LineKey {
+function toLineKey(hash: string, isGetParent: boolean): Readonly<LineKey> {
   return {
     mhash: hash as MHash,
     isGetParent,
   };
 }
 
+function asDirectKey(hash: string): Readonly<FullKey> {
+  return { direct: true, mhash: hash as MHash };
+}
+
 type Callback<T extends any[]> = (...args: T) => void;
 
 async function execute<A extends any[], T extends any[], R>(
   fun: (notify: Callback<T>, ...args: A) => R | undefined,
-  args: A,
+  args: Readonly<A>,
   callback: Callback<T>,
-  convertDirect: ((res: R) => T) | undefined,
+  convertDirect: ((res: Readonly<R>) => Readonly<T>) | undefined,
   alwaysExpectCall?: boolean,
 ): Promise<boolean> {
   const marker = jest.fn();
@@ -97,8 +103,10 @@ async function execute<A extends any[], T extends any[], R>(
   });
 }
 
-const convertMessage = (res: string): [undefined, string] => {
-  return [undefined, res];
+const convertMessage = (
+  res: readonly [Readonly<MHash> | undefined, Readonly<string>],
+): readonly [Readonly<MHash> | undefined, Readonly<string>] => {
+  return res;
 };
 const checkMessage = (
   mhash: string | undefined,
@@ -115,7 +123,16 @@ const checkMessage = (
     );
   };
 };
-const convertLink = (link: Link): [Link] => {
+const checkHash = (mhash: string | undefined): NotifyHashCB => {
+  return (otherMhash) => {
+    if (mhash !== undefined) {
+      expect(otherMhash).toEqual(mhash);
+    } else {
+      expect(otherMhash).toBe(undefined);
+    }
+  };
+};
+const convertLink = (link: Link): readonly [Readonly<Link>] => {
   return [link];
 };
 const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
@@ -141,9 +158,9 @@ const checkNext = (lineKey: Readonly<LineKey>): NextCB => {
   };
 };
 const toArgs = (
-  fullKey: FullKey,
+  fullKey: Readonly<FullIndirectKey>,
   nextIx: number,
-): [FullKey, AdjustedLineIndex] => {
+): readonly [Readonly<FullIndirectKey>, Readonly<AdjustedLineIndex>] => {
   return [fullKey, nextIx as AdjustedLineIndex];
 };
 
@@ -151,9 +168,9 @@ const createGetTopLink = (
   pool: CommentGraph,
 ): ((
   notify: NotifyLinkCB,
-  fullKey: Readonly<FullKey>,
-  parentIndex: AdjustedLineIndex,
-) => Link | undefined) => {
+  fullKey: Readonly<FullIndirectKey>,
+  parentIndex: Readonly<AdjustedLineIndex>,
+) => Readonly<Link> | undefined) => {
   return (notify, fullKey, parentIndex) =>
     pool.getTopLink(fullKey, parentIndex, notify);
 };
@@ -162,8 +179,8 @@ const createGetBottomLink = (
   pool: CommentGraph,
 ): ((
   notify: NotifyLinkCB,
-  fullKey: Readonly<FullKey>,
-  childIndex: AdjustedLineIndex,
+  fullKey: Readonly<FullIndirectKey>,
+  childIndex: Readonly<AdjustedLineIndex>,
 ) => Link | undefined) => {
   return (notify, fullKey, childIndex) =>
     pool.getBottomLink(fullKey, childIndex, notify);
@@ -174,8 +191,14 @@ const createGetMessage = (
 ): ((
   notify: NotifyContentCB,
   fullKey: Readonly<FullKey>,
-) => string | undefined) => {
+) => readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined) => {
   return (notify, fullKey) => pool.getMessage(fullKey, notify);
+};
+
+const createGetHash = (
+  pool: CommentGraph,
+): ((notify: NotifyHashCB, fullKey: Readonly<FullKey>) => void) => {
+  return (notify, fullKey) => pool.getHash(fullKey, notify);
 };
 
 const createGetParent = (
@@ -198,7 +221,7 @@ test('simple test comment graph', async () => {
   await execute(
     getMessage,
     [asTopicKey(1)],
-    checkMessage(undefined, 'msg: h'),
+    checkMessage('h', 'msg: h'),
     convertMessage,
   );
   await execute(
@@ -228,7 +251,7 @@ test('simple test comment graph', async () => {
   await execute(
     getMessage,
     [asFullKey('a', false, 2)],
-    checkMessage(undefined, 'msg: d'),
+    checkMessage('d', 'msg: d'),
     convertMessage,
   );
   await execute(
@@ -243,6 +266,53 @@ test('simple test comment graph', async () => {
     checkMessage(undefined, '[deleted]'),
     convertMessage,
   );
+  await execute(
+    getMessage,
+    [asDirectKey('a')],
+    checkMessage('a', 'msg: a'),
+    undefined,
+  );
+  await execute(
+    getMessage,
+    [asDirectKey('a')],
+    checkMessage('a', 'msg: a'),
+    convertMessage,
+  );
+  await execute(
+    getMessage,
+    [asDirectKey('d')],
+    checkMessage('d', 'msg: d'),
+    convertMessage,
+  );
+  await execute(
+    getMessage,
+    [asDirectKey('foo')],
+    checkMessage('foo', '[missing]'),
+    undefined,
+  );
+});
+
+test('get hash graph', async () => {
+  const pool = new CommentGraph(simpleGraph().getApiProvider());
+  const getHash = createGetHash(pool);
+
+  await execute(getHash, [asTopicKey(1)], checkHash('h'), undefined);
+  await execute(getHash, [asTopicKey(2)], checkHash(undefined), undefined);
+  await execute(getHash, [asDirectKey('foo')], checkHash('foo'), undefined);
+  await execute(
+    getHash,
+    [asFullKey('a', false, 2)],
+    checkHash('d'),
+    undefined,
+  );
+  await execute(getHash, [asFullKey('a', true, 0)], checkHash('g'), undefined);
+  await execute(
+    getHash,
+    [asFullKey('a', true, 1)],
+    checkHash(undefined),
+    undefined,
+  );
+  await execute(getHash, [INVALID_FULL_KEY], checkHash(undefined), undefined);
 });
 
 test('simple bulk message reading', async () => {
@@ -266,7 +336,7 @@ test('simple bulk message reading', async () => {
       return execute(
         getMessage,
         [asFullKey('a', false, ix)],
-        checkMessage(undefined, contents[ix]),
+        checkMessage(hashes[ix], contents[ix]),
         convertMessage,
       );
     }),
@@ -798,6 +868,48 @@ test('get parent / child comment graph', async () => {
     getChild,
     [asFullKey('b4', true, 1)],
     checkNext(toLineKey('b2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asDirectKey('a1')],
+    checkNext(toLineKey('a1', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asDirectKey('a1')],
+    checkNext(toLineKey('a1', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asDirectKey('d2')],
+    checkNext(toLineKey('d2', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asDirectKey('d2')],
+    checkNext(toLineKey('d2', false)),
+    undefined,
+    true,
+  );
+  await execute(
+    getParent,
+    [asDirectKey('foo')],
+    checkNext(toLineKey('foo', true)),
+    undefined,
+    true,
+  );
+  await execute(
+    getChild,
+    [asDirectKey('foo')],
+    checkNext(toLineKey('foo', false)),
     undefined,
     true,
   );
