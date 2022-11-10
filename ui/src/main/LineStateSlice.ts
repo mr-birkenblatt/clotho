@@ -2,6 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 import {
   AdjustedLineIndex,
   LineKey,
+  Link,
   MHash,
   TOPIC_KEY,
 } from '../misc/CommentGraph';
@@ -9,7 +10,8 @@ import { num, safeStringify } from '../misc/util';
 
 export type LineLock = {
   lineKey: Readonly<LineKey>;
-  mhash: Readonly<MHash> | undefined;
+  mhash: Readonly<MHash>;
+  link: Readonly<Link>;
 };
 
 export type LineIndex = number & { _lineIndex: void };
@@ -55,7 +57,8 @@ type IndexAction = {
 type LockAction = {
   payload: {
     lineKey: Readonly<LineKey>;
-    mhash: Readonly<MHash> | undefined;
+    mhash: Readonly<MHash>;
+    link: Readonly<Link>;
   };
 };
 
@@ -69,7 +72,8 @@ type LockIndexAction = {
 type SetVAction = {
   payload: {
     vIndex: Readonly<VIndex>;
-    mhash: Readonly<MHash> | undefined;
+    mhash: Readonly<MHash>;
+    link: Readonly<Link>;
     lineKey: Readonly<LineKey>;
   };
 };
@@ -93,7 +97,8 @@ type LineReducers = {
 function lockLine(
   state: LineState,
   lineKey: Readonly<LineKey>,
-  mhash: Readonly<MHash> | undefined,
+  mhash: Readonly<MHash>,
+  link: Readonly<Link>,
 ) {
   const key = constructKey(lineKey);
   const { currentLineIxs, currentLineFocus, locks, lockIndex } = state;
@@ -103,6 +108,7 @@ function lockLine(
   const locked: LineLock = {
     lineKey,
     mhash,
+    link,
   };
   locks[key] = locked;
   lockIndex[key] = undefined;
@@ -134,8 +140,8 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
       state.currentLineFocus[constructKey(lineKey)] = index;
     },
     lockCurrent: (state, action) => {
-      const { lineKey, mhash } = action.payload;
-      return lockLine(state, lineKey, mhash);
+      const { lineKey, mhash, link } = action.payload;
+      return lockLine(state, lineKey, mhash, link);
     },
     setLockIndex: (state, action) => {
       const { lineKey, lockIndex } = action.payload;
@@ -143,11 +149,11 @@ export const lineStateSlice = createSlice<LineState, LineReducers, string>({
       state.lockIndex[key] = lockIndex;
     },
     setVCurrentIx: (state, action) => {
-      const { vIndex, mhash, lineKey } = action.payload;
+      const { vIndex, mhash, link, lineKey } = action.payload;
       if (vIndex === state.vCurrentIx) {
         return;
       }
-      lockLine(state, lineKey, mhash);
+      lockLine(state, lineKey, mhash, link);
       const vOrder = state.vOrder;
       const oldArrIx = (num(state.vCurrentIx) +
         num(state.vCorrection)) as VCorrection;

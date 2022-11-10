@@ -5,7 +5,6 @@ import styled from 'styled-components';
 import {
   AdjustedLineIndex,
   FullKey,
-  INVALID_FULL_KEY,
   LineKey,
   MHash,
   ReadyCB,
@@ -427,9 +426,7 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
 
     if (locked !== undefined && index === LOCK_INDEX) {
       return getContent(
-        locked.mhash
-          ? { direct: true, mhash: locked.mhash }
-          : INVALID_FULL_KEY,
+        { direct: true, mhash: locked.mhash, topLink: locked.link },
         undefined,
       );
     }
@@ -452,10 +449,10 @@ class Horizontal extends PureComponent<HorizontalProps, HorizontalState> {
   }
 
   requestRedraw = (): void => {
-    console.groupCollapsed('H');
-    console.log('request redraw H');
-    console.trace();
-    console.groupEnd();
+    // console.groupCollapsed('H');
+    // console.log('request redraw H');
+    // console.trace();
+    // console.groupEnd();
     const { redraw } = this.state;
     this.setState({
       redraw: !redraw,

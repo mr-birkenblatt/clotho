@@ -6,14 +6,16 @@ import {
   equalLineKeys,
   FullIndirectKey,
   FullKey,
+  INVALID_FULL_KEY,
   LineKey,
   Link,
   NextCB,
   NotifyHashCB,
+  NotifyLinkCB,
   ReadyCB,
   toFullKey,
 } from '../misc/CommentGraph';
-import { assertTrue, num, range } from '../misc/util';
+import { assertTrue, num, range, safeStringify } from '../misc/util';
 import { RootState } from '../store';
 import {
   constructKey,
@@ -106,19 +108,22 @@ export type HashCB = (
   fullKey: Readonly<FullKey>,
   callback: NotifyHashCB,
 ) => void;
+export type TopLinkCB = (
+  fullKey: Readonly<FullIndirectKey>,
+  parentIndex: Readonly<AdjustedLineIndex>,
+  notify: NotifyLinkCB,
+) => void;
 export type LinkCB = (
   fullLinkKey: Readonly<FullIndirectKey>,
   parentIndex: Readonly<AdjustedLineIndex>,
   readyCb: ReadyCB,
 ) => Readonly<Link> | undefined;
 export type ChildLineCB = (
-  lineKey: Readonly<LineKey>,
-  index: Readonly<AdjustedLineIndex>,
+  fullKey: Readonly<FullKey>,
   callback: NextCB,
 ) => void;
 export type ParentLineCB = (
-  lineKey: Readonly<LineKey>,
-  index: Readonly<AdjustedLineIndex>,
+  fullKey: Readonly<FullKey>,
   callback: NextCB,
 ) => void;
 export type VItemCB = (
@@ -141,6 +146,7 @@ interface VerticalProps extends ConnectVertical {
   getParentLine: ParentLineCB;
   getItem: VItemCB;
   getHash: HashCB;
+  getTopLink: TopLinkCB;
   getLink: LinkCB;
   renderLink: RenderLinkCB;
 }
@@ -262,11 +268,45 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       const isCur = val === adjIndex;
       return `${cur}${isCur ? 'X' : '_'}`;
     }, '');
+    const orderStr = order
+      .map((cur, ix) => {
+        const obj = `${safeStringify(cur)}${ix === adjIndex ? '*' : ''}`;
+        return `[${ix}] ${this.getRealIndex(ix)} ${obj}`;
+      })
+      .join('\n');
     console.group('VState');
     console.log(`ORD ${ord}`);
     console.log(`ARR ${arr}`);
     console.log(`CUR ${cur}`);
+    console.log(`SEQ\n${orderStr}`);
+    console.log(`RAW ix:${currentIx} off:${offset} corr:${correction}`);
     console.groupEnd();
+    order.forEach((cur, ix) => {
+      const hfk = this.getHFullKey(this.getRealIndex(ix));
+      this.getHash(hfk, (mhash) =>
+        console.log(
+          `${safeStringify(cur)} [${safeStringify(hfk)}] -> ${mhash}`,
+        ),
+      );
+    });
+  }
+
+  getProperKey(fullKey: FullKey): Readonly<FullKey> {
+    const { locks } = this.props;
+    if (!fullKey.direct && !fullKey.invalid && num(fullKey.index) < 0) {
+      const key = constructKey(fullKey);
+      const lock = locks[key];
+      if (lock === undefined || lock.mhash === undefined) {
+        return INVALID_FULL_KEY;
+      }
+      return { direct: true, mhash: lock.mhash, topLink: lock.link };
+    }
+    return fullKey;
+  }
+
+  getHash(fullKey: FullKey, notify: NotifyHashCB) {
+    const { getHash } = this.props;
+    getHash(this.getProperKey(fullKey), notify);
   }
 
   computeIx(): Readonly<VIndex> | undefined {
@@ -305,7 +345,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       focusSmooth,
       getChildLine,
       getParentLine,
-      getHash,
+      getTopLink,
       order,
       offset,
     } = this.props;
@@ -336,42 +376,34 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       if (this.getArrayIndex(currentIx) >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
         console.log('request child line', lastIx);
-        getChildLine(
-          order[lastIx],
-          this.getHIndexAdjusted(lastIx),
-          (child) => {
-            if (child === undefined) {
-              console.warn('no child found!');
-              return;
-            }
-            dispatch(
-              addLine({
-                lineKey: child,
-                isBack: true,
-              }),
-            );
-          },
-        );
+        getChildLine(this.getHFullKey(lastIx), (child) => {
+          if (child === undefined) {
+            console.warn('no child found!');
+            return;
+          }
+          dispatch(
+            addLine({
+              lineKey: child,
+              isBack: true,
+            }),
+          );
+        });
         this.awaitOrderChange = order;
       } else if (this.getArrayIndex(currentIx) <= 0) {
         const firstIx = 0 as VIndex;
         console.log('request parent line', firstIx);
-        getParentLine(
-          order[firstIx],
-          this.getHIndexAdjusted(firstIx),
-          (parent) => {
-            if (parent === undefined) {
-              console.warn('no parent found!');
-              return;
-            }
-            dispatch(
-              addLine({
-                lineKey: parent,
-                isBack: false,
-              }),
-            );
-          },
-        );
+        getParentLine(this.getHFullKey(firstIx), (parent) => {
+          if (parent === undefined) {
+            console.warn('no parent found!');
+            return;
+          }
+          dispatch(
+            addLine({
+              lineKey: parent,
+              isBack: false,
+            }),
+          );
+        });
         this.awaitOrderChange = order;
       }
     }
@@ -404,18 +436,35 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         console.log('update computedIx', computedIx, currentIx, nextIx);
         const lineKey = order[nextIx];
         assertTrue(lineKey !== undefined);
-        getHash(
-          toFullKey(lineKey, this.getHIndexAdjusted(nextIx)),
-          (mhash) => {
-            dispatch(
-              setVCurrentIx({
-                vIndex: nextIx,
-                mhash,
-                lineKey: computedLine,
-              }),
-            );
-          },
-        );
+        const fullKey = this.getHFullKey(nextIx);
+        if (fullKey.direct) {
+          dispatch(
+            setVCurrentIx({
+              vIndex: nextIx,
+              mhash: fullKey.mhash,
+              lineKey: computedLine,
+              link: fullKey.topLink,
+            }),
+          );
+        } else {
+          getTopLink(
+            fullKey,
+            this.getHIndexAdjusted((num(nextIx) - 1) as VIndex),
+            (link) => {
+              if (link.invalid) {
+                return;
+              }
+              dispatch(
+                setVCurrentIx({
+                  vIndex: nextIx,
+                  mhash: link.child,
+                  lineKey: computedLine,
+                  link,
+                }),
+              );
+            },
+          );
+        }
         this.awaitCurrentChange = currentIx;
         this.setState({
           viewUpdate: true,
@@ -443,22 +492,22 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   }
 
   checkViewReady(viewUpdate: boolean): boolean {
-    console.log('checkViewReady before', viewUpdate);
+    // console.log('checkViewReady before', viewUpdate);
     if (viewUpdate) {
       const refIxs = Array.from(this.activeElements.keys())
         .map((realIx) => this.getArrayIndex(realIx))
         .sort();
       const allReady = refIxs.every((corrIx, ix) => {
         if (corrIx !== ix) {
-          console.log(
-            corrIx,
-            ix,
-            Array.from(this.activeElements.keys()),
-            refIxs,
-            this.props.correction,
-            this.props.offset,
-            this.props.currentIx,
-          );
+          // console.log(
+          //   corrIx,
+          //   ix,
+          //   Array.from(this.activeElements.keys()),
+          //   refIxs,
+          //   this.props.correction,
+          //   this.props.offset,
+          //   this.props.currentIx,
+          // );
           this.debugString();
         }
         return corrIx === ix;
@@ -470,7 +519,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         viewUpdate = false;
       }
     }
-    console.log('checkViewReady after', viewUpdate);
+    // console.log('checkViewReady after', viewUpdate);
     return viewUpdate;
   }
 
@@ -542,9 +591,31 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     return (num(res) + (lockedIx > num(res) ? 0 : 1)) as AdjustedLineIndex;
   }
 
+  getHFullKey(index: Readonly<VIndex>): Readonly<FullKey> {
+    const { locks, lockIndex } = this.props;
+    const lineKey = this.lineKey(index);
+    if (lineKey === undefined) {
+      return INVALID_FULL_KEY;
+    }
+    const key = constructKey(lineKey);
+    const lIndex = lockIndex[key];
+    const res = this.getHIndex(index);
+    const lock = locks[key];
+    if (lock !== undefined && res === LOCK_INDEX && lock.mhash) {
+      return { direct: true, mhash: lock.mhash, topLink: lock.link };
+    }
+    const lockedIx = lIndex ? num(lIndex) : num(res) + 1;
+    const adjIx = (num(res) +
+      (lockedIx > num(res) ? 0 : 1)) as AdjustedLineIndex;
+    if (adjIx < 0) {
+      return INVALID_FULL_KEY;
+    }
+    return toFullKey(lineKey, adjIx);
+  }
+
   getRefCb(realIx: VIndex): RefCB {
     return (element) => {
-      console.log('ref', realIx, element);
+      // console.log('ref', realIx, element);
       if (element !== null) {
         this.activeElements.set(realIx, element);
       } else {
@@ -568,10 +639,10 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
   };
 
   requestRedraw = (): void => {
-    console.groupCollapsed('V');
-    console.log('request redraw V');
-    console.trace();
-    console.groupEnd();
+    // console.groupCollapsed('V');
+    // console.log('request redraw V');
+    // console.trace();
+    // console.groupEnd();
     const { redraw } = this.state;
     this.setState({
       redraw: !redraw,
@@ -595,11 +666,14 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       if (lineKey === undefined) {
         return null;
       }
-      const link = getLink(
-        toFullKey(lineKey, this.getHIndexAdjusted(realIx)),
-        this.getHIndexAdjusted((realIx - 1) as VIndex),
-        this.requestRedraw,
-      );
+      const fullKey = this.getHFullKey(realIx);
+      const link = fullKey.direct
+        ? fullKey.topLink
+        : getLink(
+            fullKey,
+            this.getHIndexAdjusted((realIx - 1) as VIndex),
+            this.requestRedraw,
+          );
       if (link === undefined) {
         return null;
       }
@@ -674,6 +748,7 @@ const connector = connect((state: RootState) => ({
   focusSmooth: state.lineState.vFocusSmooth,
   offset: state.lineState.vOffset,
   order: state.lineState.vOrder,
+  locks: state.lineState.locks,
   lockIndex: state.lineState.lockIndex,
 }));
 export default connector(Vertical);

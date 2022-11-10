@@ -131,6 +131,7 @@ interface FullDirectKey {
   invalid?: Readonly<false>;
   topic?: Readonly<false>;
   mhash: Readonly<MHash>;
+  topLink: Readonly<Link>;
 }
 interface FullLinkKey {
   direct?: Readonly<false>;

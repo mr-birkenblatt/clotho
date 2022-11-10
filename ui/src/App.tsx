@@ -8,9 +8,10 @@ import Vertical, {
   LinkCB,
   ParentLineCB,
   RenderLinkCB,
+  TopLinkCB,
   VItemCB,
 } from './main/Vertical';
-import CommentGraph, { toFullKey } from './misc/CommentGraph';
+import CommentGraph from './misc/CommentGraph';
 import { advancedGraph } from './misc/TestGraph';
 
 const Main = styled.div`
@@ -103,16 +104,23 @@ export default class App extends PureComponent<AppProps, AppState> {
     );
   };
 
-  getChildLine: ChildLineCB = (lineKey, index, callback) => {
-    this.graph.getChild(toFullKey(lineKey, index), callback);
+  getChildLine: ChildLineCB = (fullKey, callback) => {
+    this.graph.getChild(fullKey, callback);
   };
 
-  getParentLine: ParentLineCB = (lineKey, index, callback) => {
-    this.graph.getParent(toFullKey(lineKey, index), callback);
+  getParentLine: ParentLineCB = (fullKey, callback) => {
+    this.graph.getParent(fullKey, callback);
   };
 
   getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {
     return this.graph.getTopLink(fullLinkKey, parentIndex, () => readyCb());
+  };
+
+  getTopLink: TopLinkCB = (fullLinkKey, parentIndex, callback) => {
+    const res = this.graph.getTopLink(fullLinkKey, parentIndex, callback);
+    if (res !== undefined) {
+      callback(res);
+    }
   };
 
   renderLink: RenderLinkCB = (link, buttonSize, radius) => {
@@ -153,6 +161,7 @@ export default class App extends PureComponent<AppProps, AppState> {
             getChildLine={this.getChildLine}
             getParentLine={this.getParentLine}
             getLink={this.getLink}
+            getTopLink={this.getTopLink}
             renderLink={this.renderLink}
             height={450}
             radius={10}

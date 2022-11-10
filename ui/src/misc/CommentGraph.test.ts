@@ -7,6 +7,7 @@ import CommentGraph, {
   FullKey,
   INVALID_FULL_KEY,
   INVALID_KEY,
+  INVALID_LINK,
   LineKey,
   Link,
   MHash,
@@ -51,7 +52,7 @@ function toLineKey(hash: string, isGetParent: boolean): Readonly<LineKey> {
 }
 
 function asDirectKey(hash: string): Readonly<FullKey> {
-  return { direct: true, mhash: hash as MHash };
+  return { direct: true, mhash: hash as MHash, topLink: INVALID_LINK };
 }
 
 type Callback<T extends any[]> = (...args: T) => void;
