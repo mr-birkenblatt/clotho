@@ -118,6 +118,11 @@ export type LinkCB = (
   parentIndex: Readonly<AdjustedLineIndex>,
   readyCb: ReadyCB,
 ) => Readonly<Link> | undefined;
+export type SingleLinkCB = (
+  parent: Readonly<FullKey>,
+  child: Readonly<FullKey>,
+  notify: NotifyLinkCB,
+) => void;
 export type ChildLineCB = (
   fullKey: Readonly<FullKey>,
   callback: NextCB,
@@ -148,6 +153,7 @@ interface VerticalProps extends ConnectVertical {
   getHash: HashCB;
   getTopLink: TopLinkCB;
   getLink: LinkCB;
+  getSingleLink: SingleLinkCB;
   renderLink: RenderLinkCB;
 }
 
@@ -346,6 +352,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
       getChildLine,
       getParentLine,
       getTopLink,
+      getSingleLink,
       order,
       offset,
     } = this.props;
@@ -433,7 +440,12 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         computedLine !== undefined &&
         computedIx !== currentIx
       ) {
-        console.log('update computedIx', computedIx, currentIx, nextIx);
+        console.log(
+          'update computedIx',
+          `computedIx:${computedIx}`,
+          `currentIx:${currentIx}`,
+          `nextIx:${nextIx}`,
+        );
         const lineKey = order[nextIx];
         assertTrue(lineKey !== undefined);
         const fullKey = this.getHFullKey(nextIx);
@@ -447,11 +459,19 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
             }),
           );
         } else {
-          getTopLink(
-            fullKey,
-            this.getHIndexAdjusted((num(nextIx) - 1) as VIndex),
-            (link) => {
+          const parentNextIx = (num(nextIx) - 1) as VIndex;
+          const nextHIx = this.getHIndexAdjusted(parentNextIx);
+          if (num(nextHIx) < 0) {
+            const parentFullKey = this.getHFullKey(parentNextIx);
+            getSingleLink(parentFullKey, fullKey, (link) => {
               if (link.invalid) {
+                console.warn(
+                  'invalid link in single link update ',
+                  `nextIx:${nextIx}`,
+                  `parentNextIx:${parentNextIx}`,
+                  `fullKey:${safeStringify(fullKey)}`,
+                  `parentFullKey:${parentFullKey}`,
+                );
                 return;
               }
               dispatch(
@@ -462,8 +482,28 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
                   link,
                 }),
               );
-            },
-          );
+            });
+          } else {
+            getTopLink(fullKey, nextHIx, (link) => {
+              if (link.invalid) {
+                console.warn(
+                  'invalid link in update ',
+                  `nextIx:${nextIx}`,
+                  `fullKey:${safeStringify(fullKey)}`,
+                  `parentIndex:${nextHIx}`,
+                );
+                return;
+              }
+              dispatch(
+                setVCurrentIx({
+                  vIndex: nextIx,
+                  mhash: link.child,
+                  lineKey: computedLine,
+                  link,
+                }),
+              );
+            });
+          }
         }
         this.awaitCurrentChange = currentIx;
         this.setState({

@@ -294,6 +294,15 @@ def setup(
             "next": link_query["offset"] + len(links),
         }
 
+    @server.json_post(f"{prefix}/link")
+    def _post_link(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
+        args = rargs["post"]
+        parent = MHash.parse(args["parent"])
+        child = MHash.parse(args["child"])
+        now = now_ts()
+        link = link_store.get_link(parent, child)
+        return link.get_response(user_store, now)
+
     return server, prefix
 
 

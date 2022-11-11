@@ -8,6 +8,7 @@ import Vertical, {
   LinkCB,
   ParentLineCB,
   RenderLinkCB,
+  SingleLinkCB,
   TopLinkCB,
   VItemCB,
 } from './main/Vertical';
@@ -123,6 +124,10 @@ export default class App extends PureComponent<AppProps, AppState> {
     }
   };
 
+  getSingleLink: SingleLinkCB = (parent, child, callback) => {
+    this.graph.getSingleLink(parent, child, callback);
+  };
+
   renderLink: RenderLinkCB = (link, buttonSize, radius) => {
     if (link.invalid) {
       return null;
@@ -162,6 +167,7 @@ export default class App extends PureComponent<AppProps, AppState> {
             getParentLine={this.getParentLine}
             getLink={this.getLink}
             getTopLink={this.getTopLink}
+            getSingleLink={this.getSingleLink}
             renderLink={this.renderLink}
             height={450}
             radius={10}

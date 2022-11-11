@@ -1,5 +1,5 @@
-import { ApiProvider, MHash } from './CommentGraph';
-import { assertTrue } from './util';
+import { ApiProvider, MHash, Votes } from './CommentGraph';
+import { assertTrue, str } from './util';
 
 export const simpleGraph = (): TestGraph => {
   const graph = new TestGraph(3);
@@ -121,6 +121,18 @@ export default class TestGraph {
           votes: { up: 1 },
         }));
         return { links, next };
+      },
+      singleLink: async (parent, child) => {
+        const children = this.children[parent as MHash] ?? [];
+        const exists = children.some((cur) => cur === str(child));
+        const votes: Votes = exists ? { up: 1 } : {};
+        return {
+          parent,
+          child,
+          user: exists ? 'abc' : undefined,
+          first: exists ? 123 : 999,
+          votes,
+        };
       },
     };
   }

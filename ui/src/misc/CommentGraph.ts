@@ -13,7 +13,7 @@ type ApiRead = {
   skipped: Readonly<MHash[]>;
 };
 
-type LinkResponse = {
+type ApiLinkResponse = {
   parent: Readonly<MHash>;
   child: Readonly<MHash>;
   user: Readonly<string> | undefined;
@@ -22,7 +22,7 @@ type LinkResponse = {
 };
 
 type ApiLinkList = {
-  links: Readonly<LinkResponse[]>;
+  links: Readonly<ApiLinkResponse[]>;
   next: Readonly<number>;
 };
 
@@ -30,10 +30,14 @@ export type ApiProvider = {
   topic: () => Promise<ApiTopic>;
   read: (hashes: Set<Readonly<MHash>>) => Promise<ApiRead>;
   link: (
-    linkKey: LinkKey,
+    linkKey: Readonly<LinkKey>,
     offset: number,
     limit: number,
   ) => Promise<ApiLinkList>;
+  singleLink: (
+    parent: Readonly<MHash>,
+    child: Readonly<MHash>,
+  ) => Promise<ApiLinkResponse>;
 };
 
 /* istanbul ignore next */
@@ -62,6 +66,19 @@ export const DEFAULT_API: ApiProvider = {
         offset,
         limit,
         scorer: 'best',
+      }),
+    }).then(json);
+  },
+  singleLink: async (parent, child) => {
+    const url = `${URL_PREFIX}/link`;
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        parent,
+        child,
       }),
     }).then(json);
   },
@@ -361,6 +378,7 @@ class LinkLookup {
   private readonly api: Readonly<ApiProvider>;
   private readonly blockSize: Readonly<number>;
   private readonly linkKey: Readonly<LinkKey>;
+
   private readonly line: LRU<Readonly<AdjustedLineIndex>, Readonly<Link>>;
   private readonly listeners: Map<Readonly<AdjustedLineIndex>, NotifyLinkCB[]>;
   private readonly activeBlocks: Set<Readonly<LineBlock>>;
@@ -391,17 +409,14 @@ class LinkLookup {
   }
 
   private getBlock(index: Readonly<AdjustedLineIndex>): LineBlock {
-    return Math.floor(
-      (index as unknown as number) / this.blockSize,
-    ) as LineBlock;
+    return Math.floor(num(index) / this.blockSize) as LineBlock;
   }
 
   private toIndex(
     offset: Readonly<number>,
     block: Readonly<LineBlock>,
   ): AdjustedLineIndex {
-    return ((block as unknown as number) * this.blockSize +
-      offset) as AdjustedLineIndex;
+    return (num(block) * this.blockSize + offset) as AdjustedLineIndex;
   }
 
   private requestIndex(index: Readonly<AdjustedLineIndex>): void {
@@ -518,16 +533,23 @@ class LinkLookup {
 class LinkPool {
   private readonly api: Readonly<ApiProvider>;
   private readonly maxLineSize: Readonly<number>;
+  private readonly linkCache: LRU<
+    Readonly<[Readonly<MHash>, Readonly<MHash>]>,
+    Readonly<Link>
+  >;
+
   private readonly pool: LRU<Readonly<LinkKey>, LinkLookup>;
 
   constructor(
     api: Readonly<ApiProvider>,
     maxSize?: Readonly<number>,
+    maxLinkCache?: Readonly<number>,
     maxLineSize?: Readonly<number>,
   ) {
     this.api = api;
     this.maxLineSize = maxLineSize ?? 100;
     this.pool = new LRU(maxSize ?? 1000);
+    this.linkCache = new LRU(maxLinkCache ?? 1000);
   }
 
   private getLine(linkKey: Readonly<LinkKey>): Readonly<LinkLookup> {
@@ -539,13 +561,22 @@ class LinkPool {
     return res;
   }
 
+  private constructNotify = (notify: NotifyLinkCB): NotifyLinkCB => {
+    return (link) => {
+      if (!link.invalid) {
+        this.linkCache.set([link.parent, link.child], link);
+      }
+      notify(link);
+    };
+  };
+
   retrieveLink(
     fullLinkKey: Readonly<FullLinkKey>,
     notify: NotifyLinkCB,
   ): void {
     const { mhash, isGetParent } = fullLinkKey;
     const line = this.getLine({ mhash, isGetParent });
-    line.retrieveLink(fullLinkKey.index, notify);
+    line.retrieveLink(fullLinkKey.index, this.constructNotify(notify));
   }
 
   getLink(
@@ -554,7 +585,38 @@ class LinkPool {
   ): Link | undefined {
     const { mhash, isGetParent } = fullLinkKey;
     const line = this.getLine({ mhash, isGetParent });
-    return line.getLink(fullLinkKey.index, notify);
+    return line.getLink(fullLinkKey.index, this.constructNotify(notify));
+  }
+
+  getSingleLink(
+    parent: Readonly<MHash>,
+    child: Readonly<MHash>,
+    notify: NotifyLinkCB,
+  ): void {
+    const key: [Readonly<MHash>, Readonly<MHash>] = [parent, child];
+    const res = this.linkCache.get(key);
+    if (res !== undefined) {
+      notify(res);
+    } else {
+      this.api
+        .singleLink(parent, child)
+        .then((linkRes) => {
+          const { child, parent, first, user, votes } = linkRes;
+          const link = {
+            child,
+            parent,
+            first,
+            user: user ?? /* istanbul ignore next */ '[nouser]',
+            votes,
+          };
+          this.linkCache.set(key, link);
+          notify(link);
+        })
+        .catch(
+          /* istanbul ignore next */
+          errHnd,
+        );
+    }
   }
 
   clearCache(): void {
@@ -592,7 +654,7 @@ export default class CommentGraph {
     const getTopicMessage = (
       topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
     ): Readonly<[Readonly<MHash> | undefined, Readonly<string>]> => {
-      const ix = index as unknown as number;
+      const ix = num(index);
       if (ix < 0 || ix >= topics.length) {
         return [undefined, '[unavailable]'];
       }
@@ -700,6 +762,27 @@ export default class CommentGraph {
     }
   }
 
+  getSingleLink(
+    parent: Readonly<FullKey>,
+    child: Readonly<FullKey>,
+    callback: NotifyLinkCB,
+  ): void {
+    this.getHash(parent, (parentHash) => {
+      if (parentHash === undefined) {
+        callback(INVALID_LINK);
+        return;
+      }
+      const phash = parentHash;
+      this.getHash(child, (childHash) => {
+        if (childHash === undefined) {
+          callback(INVALID_LINK);
+          return;
+        }
+        this.linkPool.getSingleLink(phash, childHash, callback);
+      });
+    });
+  }
+
   private getTopicNextLink(
     fullTopicKey: Readonly<FullTopicKey>,
     nextIndex: Readonly<AdjustedLineIndex>,
@@ -711,7 +794,7 @@ export default class CommentGraph {
     const getTopic = (
       topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
     ): Readonly<MHash> | undefined => {
-      const ix = index as unknown as number;
+      const ix = num(index);
       if (ix < 0 || ix >= topics.length) {
         return undefined;
       }
