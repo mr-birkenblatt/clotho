@@ -382,12 +382,19 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
     if (this.awaitOrderChange === undefined) {
       if (this.getArrayIndex(currentIx) >= order.length - 2) {
         const lastIx = (order.length - 1) as VIndex;
-        console.log('request child line', lastIx);
-        getChildLine(this.getHFullKey(lastIx), (child) => {
+        console.log('request child line', `lastIx:${lastIx}`);
+        const lastFullKey = this.getHFullKey(lastIx);
+        getChildLine(lastFullKey, (child) => {
           if (child === undefined) {
             console.warn('no child found!');
             return;
           }
+          console.log(
+            'received child',
+            `\nlastFullKey:${safeStringify(lastFullKey)}`,
+            `\ncurrent:${safeStringify(order[lastIx])}`,
+            `\nchild:${safeStringify(child)}`,
+          );
           dispatch(
             addLine({
               lineKey: child,
@@ -398,12 +405,19 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         this.awaitOrderChange = order;
       } else if (this.getArrayIndex(currentIx) <= 0) {
         const firstIx = 0 as VIndex;
-        console.log('request parent line', firstIx);
-        getParentLine(this.getHFullKey(firstIx), (parent) => {
+        console.log('request parent line', `firstIx:${firstIx}`);
+        const firstFullKey = this.getHFullKey(firstIx);
+        getParentLine(firstFullKey, (parent) => {
           if (parent === undefined) {
             console.warn('no parent found!');
             return;
           }
+          console.log(
+            'received parent',
+            `\nfirstFullKey:${safeStringify(firstFullKey)}`,
+            `\ncurrent:${safeStringify(order[firstIx])}`,
+            `\nparent:${safeStringify(parent)}`,
+          );
           dispatch(
             addLine({
               lineKey: parent,
