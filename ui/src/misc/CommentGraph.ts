@@ -87,6 +87,10 @@ export const DEFAULT_API: ApiProvider = {
 type LineBlock = number & { _lineBlock: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 
+export function adj(index: number): Readonly<AdjustedLineIndex> {
+  return index as AdjustedLineIndex;
+}
+
 export function fromAdjustedIndex(index: Readonly<AdjustedLineIndex>): number {
   return num(index);
 }
@@ -148,7 +152,7 @@ interface FullDirectKey {
   invalid?: Readonly<false>;
   topic?: Readonly<false>;
   mhash: Readonly<MHash>;
-  topLink: Readonly<Link>;
+  topLink?: Readonly<Link>;
 }
 interface FullLinkKey {
   direct?: Readonly<false>;

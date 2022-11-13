@@ -464,6 +464,7 @@ class Vertical extends PureComponent<VerticalProps, VerticalState> {
         assertTrue(lineKey !== undefined);
         const fullKey = this.getHFullKey(nextIx);
         if (fullKey.direct) {
+          assertTrue(fullKey.topLink !== undefined);
           dispatch(
             setVCurrentIx({
               vIndex: nextIx,
