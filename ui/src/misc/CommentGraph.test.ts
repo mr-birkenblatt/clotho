@@ -1,13 +1,15 @@
 import CommentGraph, {
   AdjustedLineIndex,
+  asDirectKey,
+  asFullKey,
   asLineKey,
+  asTopicKey,
   equalLineKey,
   equalLineKeys,
   FullIndirectKey,
   FullKey,
   INVALID_FULL_KEY,
   INVALID_KEY,
-  INVALID_LINK,
   LineKey,
   Link,
   MHash,
@@ -16,6 +18,7 @@ import CommentGraph, {
   NotifyHashCB,
   NotifyLinkCB,
   toFullKey,
+  toLineKey,
   TOPIC_KEY,
   ValidLink,
 } from './CommentGraph';
@@ -24,36 +27,6 @@ import { assertTrue, range } from './util';
 
 // FIXME not using fake timers for now as they don't work well with async
 // jest.useFakeTimers();
-
-function asTopicKey(index: number): Readonly<FullIndirectKey> {
-  return {
-    topic: true,
-    index: index as AdjustedLineIndex,
-  };
-}
-
-function asFullKey(
-  hash: string,
-  isGetParent: boolean,
-  index: number,
-): Readonly<FullIndirectKey> {
-  return {
-    mhash: hash as MHash,
-    isGetParent,
-    index: index as AdjustedLineIndex,
-  };
-}
-
-function toLineKey(hash: string, isGetParent: boolean): Readonly<LineKey> {
-  return {
-    mhash: hash as MHash,
-    isGetParent,
-  };
-}
-
-function asDirectKey(hash: string): Readonly<FullKey> {
-  return { direct: true, mhash: hash as MHash, topLink: INVALID_LINK };
-}
 
 type Callback<T extends any[]> = (...args: T) => void;
 

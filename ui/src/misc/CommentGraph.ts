@@ -119,7 +119,10 @@ export type LineKey = LinkKey | TopicKey | InvalidKey;
 export const INVALID_KEY: Readonly<InvalidKey> = { invalid: true };
 export const TOPIC_KEY: Readonly<TopicKey> = { topic: true };
 
-export function equalLineKey(keyA: LineKey, keyB: LineKey): boolean {
+export function equalLineKey(
+  keyA: Readonly<LineKey>,
+  keyB: Readonly<LineKey>,
+): boolean {
   if (keyA.invalid && keyB.invalid) {
     return true;
   }
@@ -145,6 +148,16 @@ export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
   return keysA.reduce((prev, cur, ix) => {
     return prev && equalLineKey(cur, keysB[ix]);
   }, true);
+}
+
+export function toLineKey(
+  hash: string,
+  isGetParent: boolean,
+): Readonly<LineKey> {
+  return {
+    mhash: hash as MHash,
+    isGetParent,
+  };
 }
 
 interface FullDirectKey {
@@ -210,6 +223,61 @@ export function toFullKey(
     isGetParent,
     index,
   };
+}
+
+export function equalFullKey(
+  keyA: Readonly<FullKey>,
+  keyB: Readonly<FullKey>,
+): boolean {
+  if (keyA.invalid && keyB.invalid) {
+    return true;
+  }
+  if (keyA.invalid || keyB.invalid) {
+    return false;
+  }
+  if (keyA.topic && keyB.topic) {
+    return keyA.index === keyB.index;
+  }
+  if (keyA.topic || keyB.topic) {
+    return false;
+  }
+  if (keyA.direct && keyB.direct) {
+    // NOTE: topLink is a cache
+    return keyA.mhash === keyB.mhash;
+  }
+  if (keyA.direct || keyB.direct) {
+    return false;
+  }
+  if (keyA.index !== keyB.index) {
+    return false;
+  }
+  if (keyA.mhash !== keyB.mhash) {
+    return false;
+  }
+  return keyA.isGetParent === keyB.isGetParent;
+}
+
+export function asTopicKey(index: number): Readonly<FullIndirectKey> {
+  return {
+    topic: true,
+    index: index as AdjustedLineIndex,
+  };
+}
+
+export function asFullKey(
+  hash: string,
+  isGetParent: boolean,
+  index: number,
+): Readonly<FullIndirectKey> {
+  return {
+    mhash: hash as MHash,
+    isGetParent,
+    index: index as AdjustedLineIndex,
+  };
+}
+
+export function asDirectKey(hash: string): Readonly<FullKey> {
+  return { direct: true, mhash: hash as MHash, topLink: INVALID_LINK };
 }
 
 export type Votes = Readonly<{ [key: string]: Readonly<number> }>;
@@ -625,6 +693,7 @@ class LinkPool {
 
   clearCache(): void {
     this.pool.clear();
+    this.linkCache.clear();
   }
 } // LinkPool
 

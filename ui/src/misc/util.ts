@@ -1,3 +1,16 @@
+export type LoggerCB = (...msg: string[]) => void;
+
+export function maybeLog(
+  logger: LoggerCB | undefined,
+  text: string,
+): LoggerCB {
+  return logger !== undefined ? amend(logger, text) : (..._) => undefined;
+}
+
+export function amend(logger: LoggerCB, text: string): LoggerCB {
+  return (...msg) => logger(text, ...msg);
+}
+
 export function num<T extends number>(value: Readonly<T>): number {
   return value as unknown as number;
 }

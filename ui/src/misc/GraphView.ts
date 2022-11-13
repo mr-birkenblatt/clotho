@@ -1,6 +1,7 @@
 import CommentGraph, {
   adj,
   AdjustedLineIndex,
+  equalFullKey,
   FullKey,
   INVALID_FULL_KEY,
   Link,
@@ -9,7 +10,7 @@ import CommentGraph, {
   toFullKey,
   TOPIC_KEY,
 } from './CommentGraph';
-import { num } from './util';
+import { amend, LoggerCB, maybeLog, num, safeStringify } from './util';
 
 export type Cell = {
   fullKey: Readonly<FullKey>;
@@ -29,6 +30,178 @@ export type GraphView = {
   top?: Readonly<Cell>;
   bottom?: Readonly<Cell>;
 };
+
+export function equalCell(
+  cell: Readonly<Cell> | undefined,
+  expected: Readonly<Cell> | undefined,
+): boolean {
+  if (cell === undefined && expected === undefined) {
+    return true;
+  }
+  if (cell === undefined || expected === undefined) {
+    return false;
+  }
+  if (cell.invalid && expected.invalid) {
+    return true;
+  }
+  if (cell.invalid || expected.invalid) {
+    return false;
+  }
+  if (!equalFullKey(cell.fullKey, expected.fullKey)) {
+    return false;
+  }
+  if (cell.mhash !== expected.mhash) {
+    return false;
+  }
+  // NOTE: topLink is a cache
+  return cell.content === expected.content;
+}
+
+export function equalView(
+  view: Readonly<GraphView>,
+  expected: Readonly<GraphView>,
+): boolean {
+  if (!equalCell(view.centerTop, expected.centerTop)) {
+    return false;
+  }
+  if (!equalCell(view.centerBottom, expected.centerBottom)) {
+    return false;
+  }
+  if (!equalCell(view.topLeft, expected.topLeft)) {
+    return false;
+  }
+  if (!equalCell(view.topRight, expected.topRight)) {
+    return false;
+  }
+  if (!equalCell(view.bottomLeft, expected.bottomLeft)) {
+    return false;
+  }
+  if (!equalCell(view.bottomRight, expected.bottomRight)) {
+    return false;
+  }
+  if (!equalCell(view.top, expected.top)) {
+    return false;
+  }
+  return equalCell(view.bottom, expected.bottom);
+}
+
+function checkLink(
+  cell: Readonly<Cell>,
+  other: Readonly<Cell> | undefined,
+  logger: LoggerCB,
+): boolean {
+  if (other === undefined) {
+    if (cell.topLink === undefined) {
+      return true;
+    }
+    logger(`cell:${safeStringify(cell)} !== other:${safeStringify(other)}`);
+    return false;
+  }
+  if (cell.invalid && cell.topLink !== undefined && cell.topLink.invalid) {
+    return true;
+  }
+  if (cell.topLink === undefined || cell.topLink.invalid) {
+    logger(`invalid topLink: ${safeStringify(cell.topLink)}`);
+    return false;
+  }
+  if (cell.mhash === undefined || other.mhash === undefined) {
+    logger(`undefined hash cell:${cell.mhash} other:${other.mhash}`);
+    return false;
+  }
+  const topLink = cell.topLink;
+  if (topLink.child === cell.mhash && topLink.parent === other.mhash) {
+    return true;
+  }
+  logger(
+    'mismatching link:',
+    safeStringify(topLink),
+    `!== parent:${other.mhash} child:${cell.mhash}`,
+  );
+  return false;
+}
+
+export function consistentLinks(
+  view: Readonly<GraphView>,
+  logger?: LoggerCB,
+): boolean {
+  const log = maybeLog(logger, 'consistentLinks:');
+  if (view.top === undefined) {
+    log('top is undefined');
+    return false;
+  }
+  if (!checkLink(view.centerTop, view.top, amend(log, '(centerTop->top)'))) {
+    return false;
+  }
+  if (!checkLink(view.top, undefined, amend(log, '(top->undefined)'))) {
+    return false;
+  }
+  if (view.topLeft === undefined) {
+    log('topLeft is undefined');
+    return false;
+  }
+  if (
+    !checkLink(view.topLeft, undefined, amend(log, '(topLeft->undefined)'))
+  ) {
+    return false;
+  }
+  if (view.topRight === undefined) {
+    log('topRight is undefined');
+    return false;
+  }
+  if (
+    !checkLink(view.topRight, undefined, amend(log, '(topRight->undefined)'))
+  ) {
+    return false;
+  }
+  if (view.centerBottom === undefined) {
+    log('centerBottom is undefined');
+    return false;
+  }
+  if (
+    !checkLink(
+      view.centerBottom,
+      view.centerTop,
+      amend(log, '(centerBottom->centerTop)'),
+    )
+  ) {
+    return false;
+  }
+  if (view.bottomLeft === undefined) {
+    log('bottomLeft is undefined');
+    return false;
+  }
+  if (
+    !checkLink(
+      view.bottomLeft,
+      view.centerTop,
+      amend(log, '(bottomLeft->centerTop)'),
+    )
+  ) {
+    return false;
+  }
+  if (view.bottomRight === undefined) {
+    log('bottomRight is undefined');
+    return false;
+  }
+  if (
+    !checkLink(
+      view.bottomRight,
+      view.centerTop,
+      amend(log, '(bottomRight->centerTop)'),
+    )
+  ) {
+    return false;
+  }
+  if (view.bottom === undefined) {
+    log('bottom is undefined');
+    return false;
+  }
+  return checkLink(
+    view.bottom,
+    view.centerBottom,
+    amend(log, '(bottom->centerBottom)'),
+  );
+}
 
 export type ViewUpdateCB = (view: Readonly<GraphView>) => void;
 type CellUpdateCB = (cell: Readonly<Cell>) => void;
