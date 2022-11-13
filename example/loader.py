@@ -279,3 +279,7 @@ def process_action_file(
         user_pool=user_pool,
         synth_pool=synth_pool,
         counter=counter)
+    # FIXME: process by children count first (least first)
+    # FIXME: use temporary files to filter each pass
+    # FIXME: analyze mhash storage (how many hashes per file / how deep?)
+    # FIXME: batch votes (100 at a time)
