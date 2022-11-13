@@ -58,9 +58,15 @@ export function equalCell(
 }
 
 export function equalView(
-  view: Readonly<GraphView>,
-  expected: Readonly<GraphView>,
+  view: Readonly<GraphView> | undefined,
+  expected: Readonly<GraphView> | undefined,
 ): boolean {
+  if (view === undefined && expected === undefined) {
+    return true;
+  }
+  if (view === undefined || expected === undefined) {
+    return false;
+  }
   if (!equalCell(view.centerTop, expected.centerTop)) {
     return false;
   }
