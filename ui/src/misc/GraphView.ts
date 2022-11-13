@@ -234,17 +234,9 @@ export function progressView(
     getTopLink(graph, view.bottomRight, view.centerTop.fullKey, (cell) => {
       updateCB({ ...view, bottomRight: cell });
     });
-  } else if (view.topRight.topLink === undefined) {
-    getTopLink(graph, view.topRight, view.top.fullKey, (cell) => {
-      updateCB({ ...view, topRight: cell });
-    });
   } else if (view.bottomLeft.topLink === undefined) {
     getTopLink(graph, view.bottomLeft, view.centerTop.fullKey, (cell) => {
       updateCB({ ...view, bottomLeft: cell });
-    });
-  } else if (view.topLeft.topLink === undefined) {
-    getTopLink(graph, view.topLeft, view.top.fullKey, (cell) => {
-      updateCB({ ...view, topLeft: cell });
     });
   } else {
     return view;
