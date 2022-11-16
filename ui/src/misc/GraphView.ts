@@ -34,61 +34,91 @@ export type GraphView = {
 export function equalCell(
   cell: Readonly<Cell> | undefined,
   expected: Readonly<Cell> | undefined,
+  logger?: LoggerCB,
 ): boolean {
+  const log = maybeLog(logger, 'equalCell:');
   if (cell === undefined && expected === undefined) {
     return true;
   }
   if (cell === undefined || expected === undefined) {
+    log(`cell:${safeStringify(cell)} !== expected:${safeStringify(expected)}`);
     return false;
   }
   if (cell.invalid && expected.invalid) {
     return true;
   }
   if (cell.invalid || expected.invalid) {
+    log(
+      `cell.invalid:${cell.invalid} !== expected.invalid:${expected.invalid}`,
+    );
     return false;
   }
-  if (!equalFullKey(cell.fullKey, expected.fullKey)) {
+  if (!equalFullKey(cell.fullKey, expected.fullKey, amend(log, 'fullKey'))) {
     return false;
   }
   if (cell.mhash !== expected.mhash) {
+    log(`cell.mhash:${cell.mhash} !== expected.mhash:${expected.mhash}`);
     return false;
   }
   // NOTE: topLink is a cache
-  return cell.content === expected.content;
+  if (cell.content === expected.content) {
+    return true;
+  }
+  log(`cell.content:${cell.content} !== expected.content:${expected.content}`);
+  return false;
 }
 
 export function equalView(
   view: Readonly<GraphView> | undefined,
   expected: Readonly<GraphView> | undefined,
+  logger?: LoggerCB,
 ): boolean {
+  const log = maybeLog(logger, 'equalView:');
   if (view === undefined && expected === undefined) {
     return true;
   }
   if (view === undefined || expected === undefined) {
+    log(`view:${safeStringify(view)} !== expected:${safeStringify(expected)}`);
     return false;
   }
-  if (!equalCell(view.centerTop, expected.centerTop)) {
+  if (
+    !equalCell(view.centerTop, expected.centerTop, amend(log, 'centerTop'))
+  ) {
     return false;
   }
-  if (!equalCell(view.centerBottom, expected.centerBottom)) {
+  if (
+    !equalCell(
+      view.centerBottom,
+      expected.centerBottom,
+      amend(log, 'centerBottom'),
+    )
+  ) {
     return false;
   }
-  if (!equalCell(view.topLeft, expected.topLeft)) {
+  if (!equalCell(view.topLeft, expected.topLeft, amend(log, 'topLeft'))) {
     return false;
   }
-  if (!equalCell(view.topRight, expected.topRight)) {
+  if (!equalCell(view.topRight, expected.topRight, amend(log, 'topRight'))) {
     return false;
   }
-  if (!equalCell(view.bottomLeft, expected.bottomLeft)) {
+  if (
+    !equalCell(view.bottomLeft, expected.bottomLeft, amend(log, 'bottomLeft'))
+  ) {
     return false;
   }
-  if (!equalCell(view.bottomRight, expected.bottomRight)) {
+  if (
+    !equalCell(
+      view.bottomRight,
+      expected.bottomRight,
+      amend(log, 'bottomRight'),
+    )
+  ) {
     return false;
   }
-  if (!equalCell(view.top, expected.top)) {
+  if (!equalCell(view.top, expected.top, amend(log, 'top'))) {
     return false;
   }
-  return equalCell(view.bottom, expected.bottom);
+  return equalCell(view.bottom, expected.bottom, amend(log, 'bottom'));
 }
 
 function checkLink(

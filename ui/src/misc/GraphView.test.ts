@@ -1,4 +1,5 @@
 import CommentGraph, {
+  asDirectKey,
   asFullKey,
   asTopicKey,
   FullKey,
@@ -39,7 +40,10 @@ async function execute(
     });
     if (res !== undefined) {
       expect(marker).toBeCalledTimes(expectedTransitions);
-      if (equalView(view, expected) && consistentLinks(view, console.warn)) {
+      if (
+        equalView(view, expected, console.warn) &&
+        consistentLinks(view, console.warn)
+      ) {
         resolve(res);
       } else {
         reject(`${safeStringify(view)} !== ${safeStringify(expected)}`);
@@ -144,16 +148,16 @@ test('test graph view init', async () => {
     graph,
     scrollTopHorizontal(initGraph, true),
     buildFullView(
-      ['a1', asFullKey('a2', true, 0)],
+      ['a1', asFullKey('b2', true, 0)],
+      [['a2', asTopicKey(0)], ['b2', asTopicKey(1)], undefined],
       [
-        ['a2', asTopicKey(0)],
-        ['b2', asTopicKey(1)],
-        ['b2', asTopicKey(2)],
+        undefined,
+        ['a3', asDirectKey('a3')],
+        ['b4', asFullKey('b2', false, 0)],
       ],
-      [undefined, ['a3', asFullKey('a2', false, 0)], undefined],
       ['a4', asFullKey('a3', false, 0)],
     ),
-    1,
+    8,
   );
   // ['a1', 'a2'],
   // ['a1', 'b2'],

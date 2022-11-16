@@ -1,5 +1,15 @@
 import LRU from './LRU';
-import { assertTrue, errHnd, json, num, range, str, toJson } from './util';
+import {
+  assertTrue,
+  errHnd,
+  json,
+  LoggerCB,
+  maybeLog,
+  num,
+  range,
+  str,
+  toJson,
+} from './util';
 
 const URL_PREFIX = `${window.location.origin}/api`;
 const BATCH_DELAY = 10;
@@ -228,33 +238,56 @@ export function toFullKey(
 export function equalFullKey(
   keyA: Readonly<FullKey>,
   keyB: Readonly<FullKey>,
+  logger?: LoggerCB,
 ): boolean {
+  const log = maybeLog(logger, 'equalFullKey:');
   if (keyA.invalid && keyB.invalid) {
     return true;
   }
   if (keyA.invalid || keyB.invalid) {
+    log(`keyA.invalid:${keyA.invalid} !== keyB.invalid:${keyB.invalid}`);
     return false;
   }
   if (keyA.topic && keyB.topic) {
-    return keyA.index === keyB.index;
+    if (keyA.index === keyB.index) {
+      return true;
+    }
+    log(`topic: keyA.index:${keyA.index} !== keyB.index:${keyB.index}`);
+    return false;
   }
   if (keyA.topic || keyB.topic) {
+    log(`keyA.topic:${keyA.topic} !== keyB.topic:${keyB.topic}`);
     return false;
   }
   if (keyA.direct && keyB.direct) {
     // NOTE: topLink is a cache
-    return keyA.mhash === keyB.mhash;
+    if (keyA.mhash === keyB.mhash) {
+      return true;
+    }
+    log(`direct: keyA.mhash:${keyA.mhash} !== keyB.mhash:${keyB.mhash}`);
+    return false;
   }
   if (keyA.direct || keyB.direct) {
+    log(`keyA.direct:${keyA.direct} !== keyB.direct:${keyB.direct}`);
     return false;
   }
   if (keyA.index !== keyB.index) {
+    log(`keyA.index:${keyA.index} !== keyB.index:${keyB.index}`);
     return false;
   }
   if (keyA.mhash !== keyB.mhash) {
+    log(`keyA.mhash:${keyA.mhash} !== keyB.mhash:${keyB.mhash}`);
     return false;
   }
-  return keyA.isGetParent === keyB.isGetParent;
+  if (keyA.isGetParent === keyB.isGetParent) {
+    return true;
+  }
+  log(
+    `keyA.isGetParent:${keyA.isGetParent}`,
+    '!==',
+    `keyB.isGetParent:${keyB.isGetParent}`,
+  );
+  return false;
 }
 
 export function asTopicKey(index: number): Readonly<FullIndirectKey> {
