@@ -7,6 +7,7 @@ import {
   maybeLog,
   num,
   range,
+  safeStringify,
   str,
   toJson,
 } from './util';
@@ -245,7 +246,11 @@ export function equalFullKey(
     return true;
   }
   if (keyA.invalid || keyB.invalid) {
-    log(`keyA.invalid:${keyA.invalid} !== keyB.invalid:${keyB.invalid}`);
+    log(
+      `keyA.invalid:${safeStringify(keyA)}`,
+      '!==',
+      `keyB.invalid:${safeStringify(keyB)}`,
+    );
     return false;
   }
   if (keyA.topic && keyB.topic) {
@@ -361,29 +366,36 @@ class CommentPool {
   }
 
   private fetchMessages(): void {
+    console.log('is active', this.active);
     if (this.active) {
       return;
     }
     this.active = true;
+    console.log('fetch messages', this.hashQueue.size);
     setTimeout(() => {
       this.hashQueue.forEach((val) => {
         this.inFlight.add(val);
       });
       this.hashQueue.clear();
+      console.log('fetch messages api', this.inFlight.size);
       this.api
         .read(this.inFlight)
         .then((obj: ApiRead) => {
           const { messages, skipped } = obj;
+          // FIXME: how can we make sure it is not active when note is called
+          this.active = false;
           Object.entries(messages).forEach((cur) => {
             const [mhash, content] = cur as [MHash, string];
             this.pool.set(mhash, content);
+            console.log('got', mhash);
             this.note(mhash);
             this.inFlight.delete(mhash);
           });
           skipped.forEach((val) => {
+            console.log('skipped', val);
             this.inFlight.add(val);
           });
-          this.active = false;
+          console.log('set active false');
           if (this.inFlight.size > 0) {
             this.fetchMessages();
           }
@@ -423,11 +435,11 @@ class CommentPool {
 
   /* istanbul ignore next: not used anywhere */
   retrieveMessage(mhash: Readonly<MHash>, notify: NotifyContentCB): void {
+    this.waitFor(mhash, notify);
     if (!this.pool.has(mhash)) {
       this.hashQueue.add(mhash);
       this.fetchMessages();
     }
-    this.waitFor(mhash, notify);
   }
 
   getMessage(
@@ -435,11 +447,12 @@ class CommentPool {
     notify: NotifyContentCB,
   ): readonly [Readonly<MHash>, Readonly<string>] | undefined {
     const res = this.pool.get(mhash);
+    console.log('mhash', mhash, res);
     if (res !== undefined) {
       return [mhash, res];
     }
-    this.hashQueue.add(mhash);
     this.waitFor(mhash, notify);
+    this.hashQueue.add(mhash);
     this.fetchMessages();
     return undefined;
   }
@@ -615,10 +628,10 @@ class LinkLookup {
     index: Readonly<AdjustedLineIndex>,
     notify: NotifyLinkCB,
   ): void {
+    this.waitFor(index, notify);
     if (!this.line.has(index)) {
       this.requestIndex(index);
     }
-    this.waitFor(index, notify);
   }
 
   getLink(
@@ -629,8 +642,8 @@ class LinkLookup {
     if (res !== undefined) {
       return res;
     }
-    this.requestIndex(index);
     this.waitFor(index, notify);
+    this.requestIndex(index);
     return undefined;
   }
 } // LinkLookup
@@ -823,14 +836,18 @@ export default class CommentGraph {
     notify: NotifyContentCB,
   ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
     if (fullKey.invalid) {
+      console.log('invalid');
       return [undefined, '[invalid]'];
     }
     if (fullKey.direct) {
+      console.log('direct');
       return this.getMessageByHash(fullKey, notify);
     }
     if (!fullKey.topic) {
+      console.log('full');
       return this.getFullLinkMessage(fullKey, notify);
     }
+    console.log('topic');
     return this.getTopicMessage(fullKey, notify);
   }
 

@@ -49,7 +49,9 @@ export function equalCell(
   }
   if (cell.invalid || expected.invalid) {
     log(
-      `cell.invalid:${cell.invalid} !== expected.invalid:${expected.invalid}`,
+      `cell.invalid:${safeStringify(cell)}`,
+      '!==',
+      `expected.invalid:${safeStringify(expected)}`,
     );
     return false;
   }
@@ -292,6 +294,7 @@ function getCellContent(
   updateCB: CellUpdateCB,
 ) {
   const getMessage: NotifyContentCB = (mhash, content) => {
+    console.log('hi');
     const res = mhash !== undefined ? { mhash } : { invalid: true };
     updateCB({
       ...cell,
@@ -299,7 +302,9 @@ function getCellContent(
       content,
     });
   };
+  console.log('cc');
   const res = graph.getMessage(cell.fullKey, getMessage);
+  console.log('message response', res);
   if (res !== undefined) {
     getMessage(...res);
   }
@@ -346,14 +351,18 @@ export function progressView(
   graph: CommentGraph,
   view: Readonly<GraphView>,
   updateCB: ViewUpdateCB,
+  logger?: LoggerCB,
 ): Readonly<GraphView> | undefined {
+  const log = maybeLog(logger, 'progress');
   if (view.centerTop.invalid) {
+    log('invalid');
     return view;
   }
   if (
     view.centerTop.content === undefined ||
     view.centerTop.mhash === undefined
   ) {
+    log('centerTop content');
     getCellContent(graph, view.centerTop, (cell) => {
       updateCB({ ...view, centerTop: cell });
     });
@@ -362,6 +371,7 @@ export function progressView(
     view.centerBottom.mhash === undefined ||
     view.centerBottom.content === undefined
   ) {
+    log('centerBottom content');
     getCellContent(
       graph,
       view.centerBottom !== undefined
@@ -372,10 +382,12 @@ export function progressView(
       },
     );
   } else if (view.centerBottom.topLink === undefined) {
+    log('centerBottom topLink');
     getTopLink(graph, view.centerBottom, view.centerTop.fullKey, (cell) => {
       updateCB({ ...view, centerBottom: cell });
     });
   } else if (view.topRight === undefined) {
+    log('centerTop neighbor right');
     getNextCell(
       graph,
       view.centerTop.fullKey,
@@ -387,6 +399,7 @@ export function progressView(
       },
     );
   } else if (view.bottomRight === undefined) {
+    log('centerBottom neighbor right');
     getNextCell(
       graph,
       view.centerBottom.fullKey,
@@ -398,6 +411,7 @@ export function progressView(
       },
     );
   } else if (view.topLeft === undefined) {
+    log('centerTop neighbor left');
     getNextCell(
       graph,
       view.centerTop.fullKey,
@@ -409,6 +423,7 @@ export function progressView(
       },
     );
   } else if (view.bottomLeft === undefined) {
+    log('centerBottom neighbor left');
     getNextCell(
       graph,
       view.centerBottom.fullKey,
@@ -420,10 +435,12 @@ export function progressView(
       },
     );
   } else if (view.top === undefined) {
+    log('top content');
     getCellContent(graph, cell(view.centerTop.mhash, true, adj(0)), (cell) => {
       updateCB({ ...view, top: cell });
     });
   } else if (view.bottom === undefined) {
+    log('bottom content');
     getCellContent(
       graph,
       cell(view.centerBottom.mhash, false, adj(0)),
@@ -432,22 +449,27 @@ export function progressView(
       },
     );
   } else if (view.centerTop.topLink === undefined) {
+    log('centerTop topLink');
     getTopLink(graph, view.centerTop, view.top.fullKey, (cell) => {
       updateCB({ ...view, centerTop: cell });
     });
   } else if (view.bottom.topLink === undefined) {
+    log('bottom topLink');
     getTopLink(graph, view.bottom, view.centerBottom.fullKey, (cell) => {
       updateCB({ ...view, bottom: cell });
     });
   } else if (view.bottomRight.topLink === undefined) {
+    log('bottomRight topLink');
     getTopLink(graph, view.bottomRight, view.centerTop.fullKey, (cell) => {
       updateCB({ ...view, bottomRight: cell });
     });
   } else if (view.bottomLeft.topLink === undefined) {
+    log('bottomLeft topLink');
     getTopLink(graph, view.bottomLeft, view.centerTop.fullKey, (cell) => {
       updateCB({ ...view, bottomLeft: cell });
     });
   } else {
+    log('no change');
     return view;
   }
   return undefined;

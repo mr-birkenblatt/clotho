@@ -17,13 +17,14 @@ import {
   scrollTopHorizontal,
 } from './GraphView';
 import { advancedGraph } from './TestGraph';
-import { assertFail, assertTrue, safeStringify } from './util';
+import { assertFail, assertTrue, LoggerCB, safeStringify } from './util';
 
 async function execute(
   graph: CommentGraph,
   view: Readonly<GraphView> | undefined,
   expected: Readonly<GraphView>,
   expectedTransitions: number,
+  logger?: LoggerCB,
 ): Promise<Readonly<GraphView>> {
   assertTrue(view !== undefined);
   const marker = jest.fn();
@@ -34,10 +35,15 @@ async function execute(
     ) => void,
     reject: (reason: any) => void,
   ) => void = (view, resolve, reject) => {
-    const res = progressView(graph, view, (newView) => {
-      marker();
-      transition(newView, resolve, reject);
-    });
+    const res = progressView(
+      graph,
+      view,
+      (newView) => {
+        marker();
+        transition(newView, resolve, reject);
+      },
+      logger,
+    );
     if (res !== undefined) {
       expect(marker).toBeCalledTimes(expectedTransitions);
       if (
@@ -159,6 +165,24 @@ test('test graph view init', async () => {
     ),
     8,
   );
+
+  const a1Graph = await execute(
+    graph,
+    { centerTop: asCell(asDirectKey('a1')) },
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)]],
+      [
+        undefined,
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+    ),
+    13,
+    console.log,
+  );
+  assertTrue(a1Graph !== undefined);
   // ['a1', 'a2'],
   // ['a1', 'b2'],
   // ['a1', 'c2'],
