@@ -57,7 +57,6 @@ export default class LRU<K, V> {
       assertEqual(this.tail.next, tail);
       this.tail.next = this.tail;
       this.objs.delete(tail.key);
-      console.log('remove', tail.key);
     }
     return undefined;
   }

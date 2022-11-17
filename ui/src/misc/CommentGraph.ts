@@ -366,18 +366,15 @@ class CommentPool {
   }
 
   private fetchMessages(): void {
-    console.log('is active', this.active);
     if (this.active) {
       return;
     }
     this.active = true;
-    console.log('fetch messages', this.hashQueue.size);
     setTimeout(() => {
       this.hashQueue.forEach((val) => {
         this.inFlight.add(val);
       });
       this.hashQueue.clear();
-      console.log('fetch messages api', this.inFlight.size);
       this.api
         .read(this.inFlight)
         .then((obj: ApiRead) => {
@@ -387,15 +384,12 @@ class CommentPool {
           Object.entries(messages).forEach((cur) => {
             const [mhash, content] = cur as [MHash, string];
             this.pool.set(mhash, content);
-            console.log('got', mhash);
             this.note(mhash);
             this.inFlight.delete(mhash);
           });
           skipped.forEach((val) => {
-            console.log('skipped', val);
             this.inFlight.add(val);
           });
-          console.log('set active false');
           if (this.inFlight.size > 0) {
             this.fetchMessages();
           }
@@ -447,7 +441,6 @@ class CommentPool {
     notify: NotifyContentCB,
   ): readonly [Readonly<MHash>, Readonly<string>] | undefined {
     const res = this.pool.get(mhash);
-    console.log('mhash', mhash, res);
     if (res !== undefined) {
       return [mhash, res];
     }
@@ -836,18 +829,14 @@ export default class CommentGraph {
     notify: NotifyContentCB,
   ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
     if (fullKey.invalid) {
-      console.log('invalid');
       return [undefined, '[invalid]'];
     }
     if (fullKey.direct) {
-      console.log('direct');
       return this.getMessageByHash(fullKey, notify);
     }
     if (!fullKey.topic) {
-      console.log('full');
       return this.getFullLinkMessage(fullKey, notify);
     }
-    console.log('topic');
     return this.getTopicMessage(fullKey, notify);
   }
 

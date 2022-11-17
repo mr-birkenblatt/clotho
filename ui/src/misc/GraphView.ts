@@ -294,7 +294,6 @@ function getCellContent(
   updateCB: CellUpdateCB,
 ) {
   const getMessage: NotifyContentCB = (mhash, content) => {
-    console.log('hi');
     const res = mhash !== undefined ? { mhash } : { invalid: true };
     updateCB({
       ...cell,
@@ -302,9 +301,7 @@ function getCellContent(
       content,
     });
   };
-  console.log('cc');
   const res = graph.getMessage(cell.fullKey, getMessage);
-  console.log('message response', res);
   if (res !== undefined) {
     getMessage(...res);
   }

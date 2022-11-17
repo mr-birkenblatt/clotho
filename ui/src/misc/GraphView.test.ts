@@ -180,9 +180,75 @@ test('test graph view init', async () => {
       ['a3', asFullKey('a2', false, 0)],
     ),
     13,
-    console.log,
   );
+
   assertTrue(a1Graph !== undefined);
+  assertTrue(scrollTopHorizontal(a1Graph, false) === undefined);
+  assertTrue(scrollBottomHorizontal(a1Graph, false) === undefined);
+
+  const a1TRGraph = await execute(
+    graph,
+    scrollTopHorizontal(a1Graph, true),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)], undefined],
+      [
+        undefined,
+        ['a2', asDirectKey('a2')],
+        ['a2', asFullKey('a1', false, 0)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+    ),
+    8,
+  );
+
+  await execute(
+    graph,
+    scrollTopHorizontal(a1TRGraph, false),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)]],
+      [
+        undefined,
+        ['a2', asDirectKey('a2')],
+        ['a2', asFullKey('a1', false, 0)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+    ),
+    8,
+  );
+
+  const a1TRBRGraph = await execute(
+    graph,
+    scrollBottomHorizontal(a1TRGraph, true),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)]],
+      [
+        ['a2', asDirectKey('a2')],
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+    ),
+    6,
+  );
+
+  await execute(
+    graph,
+    scrollBottomHorizontal(a1TRBRGraph, true),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('b2', true, 0)]],
+      [
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+        ['c2', asFullKey('a1', false, 2)],
+      ],
+      ['b4', asFullKey('b2', false, 0)],
+    ),
+    6,
+  );
   // ['a1', 'a2'],
   // ['a1', 'b2'],
   // ['a1', 'c2'],
