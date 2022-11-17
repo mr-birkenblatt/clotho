@@ -1,17 +1,6 @@
 import React, { PureComponent } from 'react';
-// import RequireLogin from './RequireLogin.js';
 import styled from 'styled-components';
-import Horizontal, { ItemCB } from './main/Horizontal';
-import Vertical, {
-  ChildLineCB,
-  HashCB,
-  LinkCB,
-  ParentLineCB,
-  RenderLinkCB,
-  SingleLinkCB,
-  TopLinkCB,
-  VItemCB,
-} from './main/Vertical';
+import View from './main/View';
 import CommentGraph from './misc/CommentGraph';
 import { advancedGraph } from './misc/TestGraph';
 
@@ -38,33 +27,32 @@ const Main = styled.div`
 // `;
 
 const MainColumn = styled.div`
-  max-width: 500px;
   margin: 0 auto;
-  width: 100%;
+  width: var(--main-size);
   height: 100vh;
   background-color: pink;
-  border: green 1px solid;
+  border: 0;
   display: flex;
   flex-direction: column;
   flex-grow: 0;
   overflow: hidden;
 `;
 
-const ItemMidContent = styled.div<ItemMidContentProps>`
-  display: flex;
-  height: ${(props) => props.buttonSize}px;
-  background-color: green;
-  padding: ${(props) => props.radius}px;
-  border-radius: ${(props) => props.radius}px;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-`;
+// const ItemMidContent = styled.div<ItemMidContentProps>`
+//   display: flex;
+//   height: ${(props) => props.buttonSize}px;
+//   background-color: green;
+//   padding: ${(props) => props.radius}px;
+//   border-radius: ${(props) => props.radius}px;
+//   align-items: center;
+//   justify-content: center;
+//   flex-direction: column;
+// `;
 
-type ItemMidContentProps = {
-  buttonSize: number;
-  radius: number;
-};
+// type ItemMidContentProps = {
+//   buttonSize: number;
+//   radius: number;
+// };
 
 type AppProps = Record<string, never>;
 type AppState = Record<string, never>;
@@ -78,80 +66,80 @@ export default class App extends PureComponent<AppProps, AppState> {
     this.graph = new CommentGraph(advancedGraph().getApiProvider());
   }
 
-  getHash: HashCB = (fullKey, callback) => {
-    this.graph.getHash(fullKey, callback);
-  };
+  // getHash: HashCB = (fullKey, callback) => {
+  //   this.graph.getHash(fullKey, callback);
+  // };
 
-  getItem: ItemCB = (fullLinkKey, readyCb) => {
-    return this.graph.getMessage(fullLinkKey, () => readyCb());
-  };
+  // getItem: ItemCB = (fullLinkKey, readyCb) => {
+  //   return this.graph.getMessage(fullLinkKey, () => readyCb());
+  // };
 
-  getVItem: VItemCB = (lineKey, height, isViewUpdate, vPosType) => {
-    if (lineKey === undefined) {
-      return null;
-    }
-    return (
-      <Horizontal
-        itemWidth={450}
-        itemHeight={height}
-        itemRadius={10}
-        itemPadding={50}
-        buttonSize={50}
-        isViewUpdate={isViewUpdate}
-        vPosType={vPosType}
-        lineKey={lineKey}
-        getItem={this.getItem}
-      />
-    );
-  };
+  // getVItem: VItemCB = (lineKey, height, isViewUpdate, vPosType) => {
+  //   if (lineKey === undefined) {
+  //     return null;
+  //   }
+  //   return (
+  //     <Horizontal
+  //       itemWidth={450}
+  //       itemHeight={height}
+  //       itemRadius={10}
+  //       itemPadding={50}
+  //       buttonSize={50}
+  //       isViewUpdate={isViewUpdate}
+  //       vPosType={vPosType}
+  //       lineKey={lineKey}
+  //       getItem={this.getItem}
+  //     />
+  //   );
+  // };
 
-  getChildLine: ChildLineCB = (fullKey, callback) => {
-    this.graph.getChild(fullKey, callback);
-  };
+  // getChildLine: ChildLineCB = (fullKey, callback) => {
+  //   this.graph.getChild(fullKey, callback);
+  // };
 
-  getParentLine: ParentLineCB = (fullKey, callback) => {
-    this.graph.getParent(fullKey, callback);
-  };
+  // getParentLine: ParentLineCB = (fullKey, callback) => {
+  //   this.graph.getParent(fullKey, callback);
+  // };
 
-  getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {
-    return this.graph.getTopLink(fullLinkKey, parentIndex, () => readyCb());
-  };
+  // getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {
+  //   return this.graph.getTopLink(fullLinkKey, parentIndex, () => readyCb());
+  // };
 
-  getTopLink: TopLinkCB = (fullLinkKey, parentIndex, callback) => {
-    const res = this.graph.getTopLink(fullLinkKey, parentIndex, callback);
-    if (res !== undefined) {
-      callback(res);
-    }
-  };
+  // getTopLink: TopLinkCB = (fullLinkKey, parentIndex, callback) => {
+  //   const res = this.graph.getTopLink(fullLinkKey, parentIndex, callback);
+  //   if (res !== undefined) {
+  //     callback(res);
+  //   }
+  // };
 
-  getSingleLink: SingleLinkCB = (parent, child, callback) => {
-    this.graph.getSingleLink(parent, child, callback);
-  };
+  // getSingleLink: SingleLinkCB = (parent, child, callback) => {
+  //   this.graph.getSingleLink(parent, child, callback);
+  // };
 
-  renderLink: RenderLinkCB = (link, buttonSize, radius) => {
-    if (link.invalid) {
-      return null;
-    }
-    return (
-      <div>
-        <div>
-          {link.user}: {link.first}
-        </div>
-        <div>
-          {Object.keys(link.votes).map((voteName) => (
-            <ItemMidContent
-              buttonSize={buttonSize}
-              radius={radius}
-              key={voteName}>
-              <span>
-                {voteName}: {link.votes[voteName]}
-              </span>
-            </ItemMidContent>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  // renderLink: RenderLinkCB = (link, buttonSize, radius) => {
+  //   if (link.invalid) {
+  //     return null;
+  //   }
+  //   return (
+  //     <div>
+  //       <div>
+  //         {link.user}: {link.first}
+  //       </div>
+  //       <div>
+  //         {Object.keys(link.votes).map((voteName) => (
+  //           <ItemMidContent
+  //             buttonSize={buttonSize}
+  //             radius={radius}
+  //             key={voteName}>
+  //             <span>
+  //               {voteName}: {link.votes[voteName]}
+  //             </span>
+  //           </ItemMidContent>
+  //         ))}
+  //       </div>
+  //     </div>
+  //   );
+  // };
 
   render() {
     return (
@@ -160,7 +148,8 @@ export default class App extends PureComponent<AppProps, AppState> {
           <RequireLogin />
         </MainHeader> */}
         <MainColumn>
-          <Vertical
+          <View graph={this.graph} />
+          {/* <Vertical
             getItem={this.getVItem}
             getHash={this.getHash}
             getChildLine={this.getChildLine}
@@ -172,7 +161,7 @@ export default class App extends PureComponent<AppProps, AppState> {
             height={450}
             radius={10}
             buttonSize={50}
-          />
+          /> */}
         </MainColumn>
       </Main>
     );

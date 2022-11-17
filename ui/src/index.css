@@ -1,3 +1,7 @@
+:root {
+  --main-size: min(100vw, 50vh);
+}
+
 body {
   margin: 0;
   padding: 0;
