@@ -3,7 +3,14 @@ import React, { PureComponent, ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
 import styled from 'styled-components';
 import { RootState } from '../store';
-import { Cell, progressView } from '../misc/GraphView';
+import {
+  Cell,
+  GraphView,
+  progressView,
+  scrollBottomHorizontal,
+  scrollTopHorizontal,
+  scrollVertical,
+} from '../misc/GraphView';
 import CommentGraph from '../misc/CommentGraph';
 import { safeStringify } from '../misc/util';
 import { setView } from './ViewStateSlice';
@@ -18,7 +25,7 @@ const Outer = styled.div`
   padding: 0;
 `;
 
-const VBand = styled.div`
+const VBand = styled.div<NoScrollProp>`
   margin: 0;
   padding: 0;
   display: block;
@@ -26,7 +33,7 @@ const VBand = styled.div`
   height: 100%;
   background-color: green;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: ${(props) => (props.noScroll ? 'hidden' : 'scroll')};
 
   &::-webkit-scrollbar {
     display: none;
@@ -37,14 +44,16 @@ const VBand = styled.div`
   scroll-snap-type: y mandatory;
 `;
 
-const HBand = styled.div`
+const HBand = styled.div<NoScrollProp>`
   margin: 0;
   padding: 0;
   display: inline-block;
   width: 100%;
   height: var(--main-size);
   white-space: nowrap;
-  overflow-x: scroll;
+  opacity: ${(props) => (props.noScroll ? 0.5 : 1.0)};
+  filter: blur(${(props) => (props.noScroll ? '1px' : '0')});
+  overflow-x: ${(props) => (props.noScroll ? 'hidden' : 'scroll')};
   overflow-y: hidden;
 
   &::-webkit-scrollbar {
@@ -78,18 +87,57 @@ const ItemContent = styled.div`
   border-radius: calc(var(--main-size) * 0.05);
   padding: calc(var(--main-size) * 0.05);
   white-space: normal;
+  overflow: hidden;
 
-  background-color: green;
-  &:hover {
-    background-color: blue;
-  }
+  background-color: lime;
 `;
 
+type NoScrollProp = {
+  noScroll: boolean;
+};
+
 enum ResetView {
+  StopScroll,
   ResetBottom,
   ResetTop,
   Done,
 }
+
+type Refs = {
+  top: React.RefObject<HTMLDivElement>;
+  topLeft: React.RefObject<HTMLDivElement>;
+  centerTop: React.RefObject<HTMLDivElement>;
+  topRight: React.RefObject<HTMLDivElement>;
+  bottomLeft: React.RefObject<HTMLDivElement>;
+  centerBottom: React.RefObject<HTMLDivElement>;
+  bottomRight: React.RefObject<HTMLDivElement>;
+  bottom: React.RefObject<HTMLDivElement>;
+};
+
+type Obs = {
+  top: IntersectionObserver | undefined;
+  topLeft: IntersectionObserver | undefined;
+  topRight: IntersectionObserver | undefined;
+  bottomLeft: IntersectionObserver | undefined;
+  bottomRight: IntersectionObserver | undefined;
+  bottom: IntersectionObserver | undefined;
+};
+
+type ObsKey = keyof Obs;
+
+type NavigationCB = (
+  view: Readonly<GraphView>,
+  upRight: boolean,
+) => Readonly<GraphView> | undefined;
+
+const navigationCBs: { [Property in ObsKey]: [NavigationCB, boolean] } = {
+  top: [scrollVertical, true],
+  topLeft: [scrollTopHorizontal, false],
+  topRight: [scrollTopHorizontal, true],
+  bottomLeft: [scrollBottomHorizontal, false],
+  bottomRight: [scrollBottomHorizontal, true],
+  bottom: [scrollVertical, false],
+};
 
 interface ViewProps extends ConnectView {
   graph: CommentGraph;
@@ -105,14 +153,9 @@ type ViewState = {
 };
 
 class View extends PureComponent<ViewProps, ViewState> {
-  top: React.RefObject<HTMLDivElement>;
-  topLeft: React.RefObject<HTMLDivElement>;
-  centerTop: React.RefObject<HTMLDivElement>;
-  topRight: React.RefObject<HTMLDivElement>;
-  bottomLeft: React.RefObject<HTMLDivElement>;
-  centerBottom: React.RefObject<HTMLDivElement>;
-  bottomRight: React.RefObject<HTMLDivElement>;
-  bottom: React.RefObject<HTMLDivElement>;
+  rootRef: React.RefObject<HTMLDivElement>;
+  curRefs: Refs;
+  curObs: Obs;
 
   constructor(props: Readonly<ViewProps>) {
     super(props);
@@ -120,14 +163,25 @@ class View extends PureComponent<ViewProps, ViewState> {
       resetView: ResetView.ResetBottom,
       redraw: false,
     };
-    this.top = React.createRef();
-    this.topLeft = React.createRef();
-    this.centerTop = React.createRef();
-    this.topRight = React.createRef();
-    this.bottomLeft = React.createRef();
-    this.centerBottom = React.createRef();
-    this.bottomRight = React.createRef();
-    this.bottom = React.createRef();
+    this.rootRef = React.createRef();
+    this.curRefs = {
+      top: React.createRef(),
+      topLeft: React.createRef(),
+      centerTop: React.createRef(),
+      topRight: React.createRef(),
+      bottomLeft: React.createRef(),
+      centerBottom: React.createRef(),
+      bottomRight: React.createRef(),
+      bottom: React.createRef(),
+    };
+    this.curObs = {
+      top: undefined,
+      topLeft: undefined,
+      topRight: undefined,
+      bottomLeft: undefined,
+      bottomRight: undefined,
+      bottom: undefined,
+    };
   }
 
   componentDidMount(): void {
@@ -139,25 +193,29 @@ class View extends PureComponent<ViewProps, ViewState> {
     _prevState: Readonly<ViewState> | undefined,
   ): void {
     const { graph, view, dispatch } = this.props;
-    const { resetView } = this.state;
+    const { resetView, redraw } = this.state;
     if (view !== prevProps.view) {
       progressView(graph, view, (newView) => {
         dispatch(setView({ view: newView }));
       });
     }
     if (resetView !== ResetView.Done) {
-      if (
+      if (resetView === ResetView.StopScroll) {
+        setTimeout(() => {
+          this.setState({ resetView: ResetView.ResetBottom });
+        }, 100);
+      } else if (
         resetView === ResetView.ResetBottom &&
-        this.centerBottom.current !== null
+        this.curRefs.centerBottom.current !== null
       ) {
-        this.centerBottom.current.scrollIntoView({
+        this.curRefs.centerBottom.current.scrollIntoView({
           behavior: 'auto',
           block: 'end',
           inline: 'nearest',
         });
         this.setState({ resetView: ResetView.ResetTop });
-      } else if (this.centerTop.current !== null) {
-        this.centerTop.current.scrollIntoView({
+      } else if (this.curRefs.centerTop.current !== null) {
+        this.curRefs.centerTop.current.scrollIntoView({
           behavior: 'auto',
           block: 'start',
           inline: 'nearest',
@@ -165,10 +223,62 @@ class View extends PureComponent<ViewProps, ViewState> {
         this.setState({ resetView: ResetView.Done });
       }
     }
+
+    const ensureObserver = (key: ObsKey): boolean => {
+      if (this.curObs[key] !== undefined) {
+        return true;
+      }
+      const current = this.curRefs[key].current;
+      if (current === null) {
+        return false;
+      }
+      const root = this.rootRef.current;
+      if (root === null) {
+        return false;
+      }
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) {
+              return;
+            }
+            console.log('navigate', key);
+            this.navigate(...navigationCBs[key]);
+          });
+        },
+        {
+          root,
+          rootMargin: '0px',
+          threshold: 0.9,
+        },
+      );
+      observer.observe(current);
+      this.curObs[key] = observer;
+      return true;
+    };
+    const obsReady = Object.keys(this.curObs).map((key) => {
+      return ensureObserver(key as ObsKey);
+    });
+    if (!obsReady.every((res) => res)) {
+      console.warn('delayed intersection observers!');
+      this.setState({ redraw: !redraw });
+    }
+  }
+
+  navigate(navigator: NavigationCB, upRight: boolean): void {
+    const { dispatch, view } = this.props;
+    const newView = navigator(view, upRight);
+    if (newView !== undefined) {
+      console.log('new view');
+      dispatch(setView({ view: newView }));
+    }
+    this.setState({ resetView: ResetView.StopScroll });
   }
 
   render(): ReactNode {
     const { view } = this.props;
+    const { resetView } = this.state;
+    const noScroll = resetView === ResetView.StopScroll;
 
     const getContent = (cell: Cell | undefined) => {
       if (cell === undefined) {
@@ -181,37 +291,37 @@ class View extends PureComponent<ViewProps, ViewState> {
     };
 
     return (
-      <Outer>
-        <VBand>
-          <HBand>
-            <Item ref={this.top}>
+      <Outer ref={this.rootRef}>
+        <VBand noScroll={noScroll}>
+          <HBand noScroll={noScroll}>
+            <Item ref={this.curRefs.top}>
               <ItemContent>{getContent(view.top)}</ItemContent>
             </Item>
           </HBand>
-          <HBand>
-            <Item ref={this.topLeft}>
+          <HBand noScroll={noScroll}>
+            <Item ref={this.curRefs.topLeft}>
               <ItemContent>{getContent(view.topLeft)}</ItemContent>
             </Item>
-            <Item ref={this.centerTop}>
+            <Item ref={this.curRefs.centerTop}>
               <ItemContent>{getContent(view.centerTop)}</ItemContent>
             </Item>
-            <Item ref={this.topRight}>
+            <Item ref={this.curRefs.topRight}>
               <ItemContent>{getContent(view.topRight)}</ItemContent>
             </Item>
           </HBand>
-          <HBand>
-            <Item ref={this.bottomLeft}>
+          <HBand noScroll={noScroll}>
+            <Item ref={this.curRefs.bottomLeft}>
               <ItemContent>{getContent(view.bottomLeft)}</ItemContent>
             </Item>
-            <Item ref={this.centerBottom}>
+            <Item ref={this.curRefs.centerBottom}>
               <ItemContent>{getContent(view.centerBottom)}</ItemContent>
             </Item>
-            <Item ref={this.bottomRight}>
+            <Item ref={this.curRefs.bottomRight}>
               <ItemContent>{getContent(view.bottomRight)}</ItemContent>
             </Item>
           </HBand>
-          <HBand>
-            <Item ref={this.bottom}>
+          <HBand noScroll={noScroll}>
+            <Item ref={this.curRefs.bottom}>
               <ItemContent>{getContent(view.bottom)}</ItemContent>
             </Item>
           </HBand>

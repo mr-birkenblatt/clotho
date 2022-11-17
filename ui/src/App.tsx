@@ -4,6 +4,8 @@ import View from './main/View';
 import CommentGraph from './misc/CommentGraph';
 import { advancedGraph } from './misc/TestGraph';
 
+const DEBUG = false;
+
 const Main = styled.div`
   text-align: center;
   margin: 0 auto;
@@ -63,7 +65,9 @@ export default class App extends PureComponent<AppProps, AppState> {
   constructor(props: AppProps) {
     super(props);
     this.state = {};
-    this.graph = new CommentGraph(advancedGraph().getApiProvider());
+    this.graph = new CommentGraph(
+      DEBUG ? advancedGraph().getApiProvider() : undefined,
+    );
   }
 
   // getHash: HashCB = (fullKey, callback) => {
