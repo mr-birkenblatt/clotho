@@ -236,6 +236,7 @@ export function toFullKey(
   };
 }
 
+/* istanbul ignore next */
 export function equalFullKey(
   keyA: Readonly<FullKey>,
   keyB: Readonly<FullKey>,
@@ -277,7 +278,11 @@ export function equalFullKey(
     return false;
   }
   if (keyA.index !== keyB.index) {
-    log(`keyA.index:${keyA.index} !== keyB.index:${keyB.index}`);
+    log(
+      `keyA.index:${safeStringify(keyA)}`,
+      '!==',
+      `keyB.index:${safeStringify(keyB)}`,
+    );
     return false;
   }
   if (keyA.mhash !== keyB.mhash) {

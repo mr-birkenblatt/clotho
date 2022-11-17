@@ -12,9 +12,11 @@ import {
   consistentLinks,
   equalView,
   GraphView,
+  initView,
   progressView,
   scrollBottomHorizontal,
   scrollTopHorizontal,
+  scrollVertical,
 } from './GraphView';
 import { advancedGraph } from './TestGraph';
 import { assertFail, assertTrue, LoggerCB, safeStringify } from './util';
@@ -91,7 +93,9 @@ function buildFullView(
     [string, FullKey],
     [string, FullKey] | undefined,
   ],
-  bottom: [string, FullKey],
+  bottom: [string, FullKey] | undefined,
+  topSkip: string | undefined,
+  bottomSkip: string | undefined,
 ): Readonly<GraphView> {
   return {
     top: cellFromString(...top),
@@ -113,12 +117,10 @@ function buildFullView(
       middleBottom[2] !== undefined
         ? cellFromString(...middleBottom[2])
         : invalidCell(),
-    bottom: cellFromString(...bottom),
+    bottom: bottom !== undefined ? cellFromString(...bottom) : invalidCell(),
+    topSkip: topSkip !== undefined ? (topSkip as MHash) : undefined,
+    bottomSkip: bottomSkip !== undefined ? (bottomSkip as MHash) : undefined,
   };
-}
-
-function asCell(fullKey: Readonly<FullKey>): Readonly<Cell> {
-  return { fullKey };
 }
 
 test('test graph view init', async () => {
@@ -126,12 +128,14 @@ test('test graph view init', async () => {
 
   const initGraph = await execute(
     graph,
-    { centerTop: asCell(asTopicKey(0)) },
+    initView(undefined),
     buildFullView(
       ['a1', asFullKey('a2', true, 0)],
       [undefined, ['a2', asTopicKey(0)], ['b2', asTopicKey(1)]],
       [undefined, ['a3', asFullKey('a2', false, 0)], undefined],
       ['a4', asFullKey('a3', false, 0)],
+      undefined,
+      undefined,
     ),
     13,
   );
@@ -162,22 +166,26 @@ test('test graph view init', async () => {
         ['b4', asFullKey('b2', false, 0)],
       ],
       ['a4', asFullKey('a3', false, 0)],
+      undefined,
+      'a3',
     ),
     8,
   );
 
   const a1Graph = await execute(
     graph,
-    { centerTop: asCell(asDirectKey('a1')) },
+    initView('a1' as MHash),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
-      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)]],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
       [
         undefined,
         ['a2', asFullKey('a1', false, 0)],
         ['b2', asFullKey('a1', false, 1)],
       ],
       ['a3', asFullKey('a2', false, 0)],
+      'a1',
+      undefined,
     ),
     13,
   );
@@ -186,68 +194,180 @@ test('test graph view init', async () => {
   assertTrue(scrollTopHorizontal(a1Graph, false) === undefined);
   assertTrue(scrollBottomHorizontal(a1Graph, false) === undefined);
 
-  const a1TRGraph = await execute(
+  const a1BRGraph = await execute(
     graph,
-    scrollTopHorizontal(a1Graph, true),
+    scrollBottomHorizontal(a1Graph, true),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
-      [['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)], undefined],
-      [
-        undefined,
-        ['a2', asDirectKey('a2')],
-        ['a2', asFullKey('a1', false, 0)],
-      ],
-      ['a3', asFullKey('a2', false, 0)],
-    ),
-    8,
-  );
-
-  await execute(
-    graph,
-    scrollTopHorizontal(a1TRGraph, false),
-    buildFullView(
-      ['a5', asFullKey('a1', true, 0)],
-      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)]],
-      [
-        undefined,
-        ['a2', asDirectKey('a2')],
-        ['a2', asFullKey('a1', false, 0)],
-      ],
-      ['a3', asFullKey('a2', false, 0)],
-    ),
-    8,
-  );
-
-  const a1TRBRGraph = await execute(
-    graph,
-    scrollBottomHorizontal(a1TRGraph, true),
-    buildFullView(
-      ['a5', asFullKey('a1', true, 0)],
-      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('a2', true, 0)]],
-      [
-        ['a2', asDirectKey('a2')],
-        ['a2', asFullKey('a1', false, 0)],
-        ['b2', asFullKey('a1', false, 1)],
-      ],
-      ['a3', asFullKey('a2', false, 0)],
-    ),
-    6,
-  );
-
-  await execute(
-    graph,
-    scrollBottomHorizontal(a1TRBRGraph, true),
-    buildFullView(
-      ['a5', asFullKey('a1', true, 0)],
-      [undefined, ['a1', asDirectKey('a1')], ['a1', asFullKey('b2', true, 0)]],
+      [undefined, ['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)]],
       [
         ['a2', asFullKey('a1', false, 0)],
         ['b2', asFullKey('a1', false, 1)],
         ['c2', asFullKey('a1', false, 2)],
       ],
       ['b4', asFullKey('b2', false, 0)],
+      'a1',
+      undefined,
     ),
     6,
+  );
+
+  const a1BRBRGraph = await execute(
+    graph,
+    scrollBottomHorizontal(a1BRGraph, true),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
+      [
+        ['b2', asFullKey('a1', false, 1)],
+        ['c2', asFullKey('a1', false, 2)],
+        ['d2', asFullKey('a1', false, 3)],
+      ],
+      undefined,
+      'a1',
+      undefined,
+    ),
+    6,
+  );
+
+  assertTrue(scrollVertical(a1BRBRGraph, false) === undefined);
+
+  await execute(
+    graph,
+    scrollBottomHorizontal(a1BRGraph, false),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
+      [
+        undefined,
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+      'a1',
+      undefined,
+    ),
+    6,
+  );
+
+  const a1BRTRGraph = await execute(
+    graph,
+    scrollTopHorizontal(a1BRGraph, true),
+    buildFullView(
+      ['a3', asFullKey('b4', true, 0)],
+      [['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)], undefined],
+      [undefined, ['b2', asDirectKey('b2')], undefined],
+      ['b4', asFullKey('b2', false, 0)],
+      'a1',
+      'b2',
+    ),
+    8,
+  );
+
+  const a1BRTRUGraph = await execute(
+    graph,
+    scrollVertical(a1BRTRGraph, true),
+    buildFullView(
+      ['a2', asFullKey('a3', true, 0)],
+      [
+        undefined,
+        ['a3', asFullKey('b4', true, 0)],
+        ['b2', asFullKey('b4', true, 1)],
+      ],
+      [['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)], undefined],
+      ['b2', asDirectKey('b2')],
+      undefined,
+      'a1',
+    ),
+    6,
+  );
+
+  const a1BRTRUTRGraph = await execute(
+    graph,
+    scrollTopHorizontal(a1BRTRUGraph, true),
+    buildFullView(
+      ['a1', asFullKey('b2', true, 0)],
+      [
+        ['a3', asFullKey('b4', true, 0)],
+        ['b2', asFullKey('b4', true, 1)],
+        undefined,
+      ],
+      [undefined, ['b4', asDirectKey('b4')], undefined],
+      ['b2', asDirectKey('b2')],
+      undefined,
+      'b4',
+    ),
+    8,
+  );
+
+  await execute(
+    graph,
+    scrollVertical(a1BRTRUTRGraph, false),
+    buildFullView(
+      ['b2', asFullKey('b4', true, 1)],
+      [undefined, ['b4', asDirectKey('b4')], undefined],
+      [undefined, ['b2', asDirectKey('b2')], undefined],
+      ['b4', asFullKey('b2', false, 0)],
+      'b4',
+      'b2',
+    ),
+    6,
+  );
+
+  const a1BRTRUTRTLGraph = await execute(
+    graph,
+    scrollTopHorizontal(a1BRTRUTRGraph, false),
+    buildFullView(
+      ['a2', asFullKey('a3', true, 0)],
+      [
+        undefined,
+        ['a3', asFullKey('b4', true, 0)],
+        ['b2', asFullKey('b4', true, 1)],
+      ],
+      [
+        undefined,
+        ['b4', asDirectKey('b4')],
+        ['a4', asFullKey('a3', false, 0)],
+      ],
+      ['b2', asDirectKey('b2')],
+      undefined,
+      'b4',
+    ),
+    8,
+  );
+
+  const a1BRTRUTRTLBRGraph = await execute(
+    graph,
+    scrollBottomHorizontal(a1BRTRUTRTLGraph, true),
+    buildFullView(
+      ['a2', asFullKey('a3', true, 0)],
+      [undefined, ['a3', asDirectKey('a3')], undefined],
+      [
+        ['b4', asDirectKey('b4')],
+        ['a4', asFullKey('a3', false, 0)],
+        undefined,
+      ],
+      ['a5', asFullKey('a4', false, 0)],
+      'a3',
+      'b4',
+    ),
+    6,
+  );
+
+  assertTrue(scrollTopHorizontal(a1BRTRUTRTLBRGraph, true) === undefined);
+
+  await execute(
+    graph,
+    initView('a5' as MHash, 'a1' as MHash),
+    buildFullView(
+      ['a4', asFullKey('a5', true, 0)],
+      [undefined, ['a5', asDirectKey('a5')], undefined],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
+      ['a2', asFullKey('a1', false, 0)],
+      'a5',
+      'a1',
+    ),
+    13,
   );
   // ['a1', 'a2'],
   // ['a1', 'b2'],

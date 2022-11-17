@@ -29,8 +29,11 @@ export type GraphView = {
   bottomRight?: Readonly<Cell>;
   top?: Readonly<Cell>;
   bottom?: Readonly<Cell>;
+  topSkip?: Readonly<MHash>;
+  bottomSkip?: Readonly<MHash>;
 };
 
+/* istanbul ignore next */
 export function equalCell(
   cell: Readonly<Cell> | undefined,
   expected: Readonly<Cell> | undefined,
@@ -70,6 +73,7 @@ export function equalCell(
   return false;
 }
 
+/* istanbul ignore next */
 export function equalView(
   view: Readonly<GraphView> | undefined,
   expected: Readonly<GraphView> | undefined,
@@ -81,6 +85,22 @@ export function equalView(
   }
   if (view === undefined || expected === undefined) {
     log(`view:${safeStringify(view)} !== expected:${safeStringify(expected)}`);
+    return false;
+  }
+  if (view.topSkip !== expected.topSkip) {
+    log(
+      `view.topSkip:${safeStringify(view.topSkip)}`,
+      '!==',
+      `expected.topSkip:${safeStringify(expected.topSkip)}`,
+    );
+    return false;
+  }
+  if (view.bottomSkip !== expected.bottomSkip) {
+    log(
+      `view.bottomSkip:${safeStringify(view.bottomSkip)}`,
+      '!==',
+      `expected.bottomSkip:${safeStringify(expected.bottomSkip)}`,
+    );
     return false;
   }
   if (
@@ -123,6 +143,7 @@ export function equalView(
   return equalCell(view.bottom, expected.bottom, amend(log, 'bottom'));
 }
 
+/* istanbul ignore next */
 function checkLink(
   cell: Readonly<Cell>,
   other: Readonly<Cell> | undefined,
@@ -158,6 +179,7 @@ function checkLink(
   return false;
 }
 
+/* istanbul ignore next */
 export function consistentLinks(
   view: Readonly<GraphView>,
   logger?: LoggerCB,
@@ -273,6 +295,8 @@ export function initView(
   return {
     centerTop: topCell,
     centerBottom: bottomCell,
+    topSkip: top,
+    bottomSkip: bottom,
   };
 }
 
@@ -325,6 +349,7 @@ function getNextCell(
   graph: CommentGraph,
   sameLevel: Readonly<FullKey>,
   otherLevel: Readonly<MHash>,
+  skip: Readonly<MHash> | undefined,
   isTop: boolean,
   isIncrease: boolean,
   updateCB: CellUpdateCB,
@@ -340,7 +365,20 @@ function getNextCell(
       : sameLevel.topic
       ? topicCell(index)
       : cell(otherLevel, isTop, index),
-    updateCB,
+    (res) => {
+      if (skip !== undefined && res.mhash === skip && num(index) >= 0) {
+        const skipIndex = adj(num(index) + 1);
+        getCellContent(
+          graph,
+          sameLevel.topic
+            ? topicCell(skipIndex)
+            : cell(otherLevel, isTop, skipIndex),
+          updateCB,
+        );
+        return;
+      }
+      updateCB(res);
+    },
   );
 }
 
@@ -389,6 +427,7 @@ export function progressView(
       graph,
       view.centerTop.fullKey,
       view.centerBottom.mhash,
+      view.topSkip,
       true,
       true,
       (cell) => {
@@ -401,6 +440,7 @@ export function progressView(
       graph,
       view.centerBottom.fullKey,
       view.centerTop.mhash,
+      view.bottomSkip,
       false,
       true,
       (cell) => {
@@ -413,6 +453,7 @@ export function progressView(
       graph,
       view.centerTop.fullKey,
       view.centerBottom.mhash,
+      undefined,
       true,
       false,
       (cell) => {
@@ -425,6 +466,7 @@ export function progressView(
       graph,
       view.centerBottom.fullKey,
       view.centerTop.mhash,
+      undefined,
       false,
       false,
       (cell) => {
@@ -472,6 +514,16 @@ export function progressView(
   return undefined;
 }
 
+function removeLink<T extends Readonly<Cell> | undefined>(
+  cell: T,
+): Readonly<Cell> | (undefined extends T ? undefined : never) {
+  if (cell === undefined) {
+    return undefined as undefined extends T ? undefined : never;
+  }
+  const { topLink: _, ...rest }: Readonly<Cell> = cell;
+  return { ...rest };
+}
+
 export function scrollVertical(
   view: Readonly<GraphView>,
   up: boolean,
@@ -489,20 +541,30 @@ export function scrollVertical(
       topRight: undefined,
       bottomLeft: view.topLeft,
       bottomRight: view.topRight,
+      topSkip: view.top.fullKey.direct ? view.top.mhash : undefined,
+      bottomSkip: view.topSkip,
     };
   } else {
+    if (view.bottom === undefined || view.bottom.invalid) {
+      return undefined;
+    }
     if (view.centerBottom === undefined || view.centerBottom.invalid) {
       return undefined;
     }
     return {
-      top: view.centerTop,
+      top: removeLink(view.centerTop),
       centerTop: view.centerBottom,
       centerBottom: view.bottom,
       bottom: undefined,
-      topLeft: view.bottomLeft,
-      topRight: view.bottomRight,
+      topLeft: removeLink(view.bottomLeft),
+      topRight: removeLink(view.bottomRight),
       bottomLeft: undefined,
       bottomRight: undefined,
+      topSkip: view.bottomSkip,
+      bottomSkip:
+        view.bottom !== undefined && view.bottom.fullKey.direct
+          ? view.bottom.mhash
+          : undefined,
     };
   }
 }
@@ -517,16 +579,6 @@ function convertToDirect<T extends Readonly<Cell> | undefined>(
     ...cell,
     ...directCell(cell.mhash),
   };
-}
-
-function removeLink<T extends Readonly<Cell> | undefined>(
-  cell: T,
-): Readonly<Cell> | (undefined extends T ? undefined : never) {
-  if (cell === undefined) {
-    return undefined as undefined extends T ? undefined : never;
-  }
-  const { topLink: _, ...rest }: Readonly<Cell> = cell;
-  return { ...rest };
 }
 
 export function scrollTopHorizontal(
@@ -547,6 +599,8 @@ export function scrollTopHorizontal(
       topRight: undefined,
       bottomLeft: undefined,
       bottomRight: undefined,
+      topSkip: view.topSkip,
+      bottomSkip: centerBottom !== undefined ? centerBottom.mhash : undefined,
     };
   } else {
     if (view.topLeft === undefined || view.topLeft.invalid) {
@@ -561,6 +615,8 @@ export function scrollTopHorizontal(
       topRight: removeLink(view.centerTop),
       bottomLeft: undefined,
       bottomRight: undefined,
+      topSkip: view.topSkip,
+      bottomSkip: centerBottom !== undefined ? centerBottom.mhash : undefined,
     };
   }
 }
@@ -583,6 +639,8 @@ export function scrollBottomHorizontal(
       topRight: undefined,
       bottomLeft: view.centerBottom,
       bottomRight: undefined,
+      topSkip: centerTop.mhash,
+      bottomSkip: view.bottomSkip,
     };
   } else {
     if (view.bottomLeft === undefined || view.bottomLeft.invalid) {
@@ -597,6 +655,8 @@ export function scrollBottomHorizontal(
       topRight: undefined,
       bottomLeft: undefined,
       bottomRight: view.centerBottom,
+      topSkip: centerTop.mhash,
+      bottomSkip: view.bottomSkip,
     };
   }
 }
