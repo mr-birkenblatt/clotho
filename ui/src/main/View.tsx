@@ -106,6 +106,30 @@ const ItemContent = styled.div`
   background-color: lime;
 `;
 
+const ItemMid = styled.div`
+  display: flex;
+  width: 100%;
+  height: 0;
+  position: relative;
+  top: 0;
+  left: 0;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.8;
+`;
+
+const ItemMidContent = styled.div`
+  display: flex;
+  height: calc(var(--main-size) * 0.05);
+  background-color: green;
+  padding: calc(var(--main-size) * 0.0125);
+  border-radius: calc(var(--main-size) * 0.0125);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+`;
+
 type NoScrollProp = {
   noScroll: boolean;
 };
@@ -349,7 +373,38 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { resetView, tempContent } = this.state;
     const noScroll = resetView === ResetView.StopScroll;
 
-    const getContent = (cell: Cell | undefined) => {
+    const getTopLink = (cell: Cell | undefined): JSX.Element | null => {
+      if (cell === undefined) {
+        return null;
+      }
+      if (cell.topLink === undefined) {
+        return null;
+      }
+      const link = cell.topLink;
+      if (link.invalid) {
+        return null;
+      }
+      return (
+        <ItemMid>
+          <div>
+            <div>
+              {link.user}: {link.first}
+            </div>
+            <div>
+              {Object.keys(link.votes).map((voteName) => (
+                <ItemMidContent key={voteName}>
+                  <span>
+                    {voteName}: {link.votes[voteName]}
+                  </span>
+                </ItemMidContent>
+              ))}
+            </div>
+          </div>
+        </ItemMid>
+      );
+    };
+
+    const getContent = (cell: Cell | undefined): JSX.Element | string => {
       if (cell === undefined) {
         return '[loading]';
       }
@@ -380,6 +435,7 @@ class View extends PureComponent<ViewProps, ViewState> {
               <ItemContent>{getContent(view.topLeft)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.centerTop}>
+              {getTopLink(view.centerTop)}
               <ItemContent>{getContent(view.centerTop)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.topRight}>
@@ -388,17 +444,21 @@ class View extends PureComponent<ViewProps, ViewState> {
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.bottomLeft}>
+              {getTopLink(view.bottomLeft)}
               <ItemContent>{getContent(view.bottomLeft)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.centerBottom}>
+              {getTopLink(view.centerBottom)}
               <ItemContent>{getContent(view.centerBottom)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.bottomRight}>
+              {getTopLink(view.bottomRight)}
               <ItemContent>{getContent(view.bottomRight)}</ItemContent>
             </Item>
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.bottom}>
+              {getTopLink(view.bottom)}
               <ItemContent>{getContent(view.bottom)}</ItemContent>
             </Item>
           </HBand>
