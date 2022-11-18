@@ -25,12 +25,25 @@ const Outer = styled.div`
   padding: 0;
 `;
 
+const Temp = styled.div<NoScrollProp>`
+  display: ${(props) => (props.noScroll ? 'block' : 'none')};
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+`;
+
 const VBand = styled.div<NoScrollProp>`
   margin: 0;
   padding: 0;
   display: block;
   width: 100%;
   height: 100%;
+  vertical-align: top;
   background-color: green;
   overflow-x: hidden;
   overflow-y: ${(props) => (props.noScroll ? 'hidden' : 'scroll')};
@@ -51,8 +64,7 @@ const HBand = styled.div<NoScrollProp>`
   width: 100%;
   height: var(--main-size);
   white-space: nowrap;
-  opacity: ${(props) => (props.noScroll ? 0.5 : 1.0)};
-  filter: blur(${(props) => (props.noScroll ? '1px' : '0')});
+  vertical-align: top;
   overflow-x: ${(props) => (props.noScroll ? 'hidden' : 'scroll')};
   overflow-y: hidden;
 
@@ -68,6 +80,8 @@ const HBand = styled.div<NoScrollProp>`
 
 const Item = styled.div`
   display: inline-block;
+  white-space: nowrap;
+  vertical-align: top;
   margin: 0;
   padding: 0;
   width: var(--main-size);
@@ -150,6 +164,8 @@ type EmptyViewProps = {
 type ViewState = {
   resetView: ResetView;
   redraw: boolean;
+  tempContent: [Readonly<Cell> | undefined, Readonly<Cell> | undefined];
+  pending: [NavigationCB, boolean] | undefined;
 };
 
 class View extends PureComponent<ViewProps, ViewState> {
@@ -162,6 +178,8 @@ class View extends PureComponent<ViewProps, ViewState> {
     this.state = {
       resetView: ResetView.ResetBottom,
       redraw: false,
+      tempContent: [undefined, undefined],
+      pending: undefined,
     };
     this.rootRef = React.createRef();
     this.curRefs = {
@@ -193,17 +211,27 @@ class View extends PureComponent<ViewProps, ViewState> {
     _prevState: Readonly<ViewState> | undefined,
   ): void {
     const { graph, view, dispatch } = this.props;
-    const { resetView, redraw } = this.state;
-    if (view !== prevProps.view) {
-      progressView(graph, view, (newView) => {
+    const { resetView, redraw, pending } = this.state;
+    if (view !== prevProps.view || pending !== undefined) {
+      const finalView = progressView(graph, view, (newView) => {
         dispatch(setView({ view: newView }));
       });
+      if (finalView !== undefined && pending !== undefined) {
+        const [navigator, upRight] = pending;
+        const nextView = navigator(view, upRight);
+        if (nextView !== undefined) {
+          dispatch(setView({ view: nextView }));
+        }
+        this.setState({ pending: undefined });
+      }
     }
     if (resetView !== ResetView.Done) {
       if (resetView === ResetView.StopScroll) {
-        setTimeout(() => {
-          this.setState({ resetView: ResetView.ResetBottom });
-        }, 100);
+        if (pending === undefined) {
+          setTimeout(() => {
+            this.setState({ resetView: ResetView.ResetBottom });
+          }, 100);
+        }
       } else if (
         resetView === ResetView.ResetBottom &&
         this.curRefs.centerBottom.current !== null
@@ -238,12 +266,17 @@ class View extends PureComponent<ViewProps, ViewState> {
       }
       const observer = new IntersectionObserver(
         (entries) => {
+          const { pending, resetView } = this.state;
+          let done = pending !== undefined || resetView !== ResetView.Done;
           entries.forEach((entry) => {
             if (!entry.isIntersecting) {
               return;
             }
-            console.log('navigate', key);
-            this.navigate(...navigationCBs[key]);
+            if (done) {
+              return;
+            }
+            this.navigate(key, ...navigationCBs[key]);
+            done = true;
           });
         },
         {
@@ -265,19 +298,55 @@ class View extends PureComponent<ViewProps, ViewState> {
     }
   }
 
-  navigate(navigator: NavigationCB, upRight: boolean): void {
+  private getTempConfig(
+    key: ObsKey,
+  ): [Readonly<Cell> | undefined, Readonly<Cell> | undefined] {
+    const { view } = this.props;
+    if (key === 'top') {
+      return [view.top, view.centerTop];
+    }
+    if (key == 'topLeft') {
+      return [view.topLeft, view.centerBottom];
+    }
+    if (key == 'topRight') {
+      return [view.topRight, view.centerBottom];
+    }
+    if (key == 'bottomLeft') {
+      return [view.centerTop, view.bottomLeft];
+    }
+    if (key == 'bottomRight') {
+      return [view.centerTop, view.bottomRight];
+    }
+    if (key == 'bottom') {
+      return [view.centerBottom, view.bottom];
+    }
+    return [view.centerTop, view.centerBottom];
+  }
+
+  private navigate(
+    key: ObsKey,
+    navigator: NavigationCB,
+    upRight: boolean,
+  ): void {
     const { dispatch, view } = this.props;
     const newView = navigator(view, upRight);
     if (newView !== undefined) {
-      console.log('new view');
       dispatch(setView({ view: newView }));
+    } else {
+      this.setState({ pending: [navigator, upRight] });
     }
-    this.setState({ resetView: ResetView.StopScroll });
+    this.setState({
+      resetView: ResetView.StopScroll,
+      tempContent:
+        newView !== undefined
+          ? [newView.centerTop, newView.centerBottom]
+          : this.getTempConfig(key),
+    });
   }
 
   render(): ReactNode {
     const { view } = this.props;
-    const { resetView } = this.state;
+    const { resetView, tempContent } = this.state;
     const noScroll = resetView === ResetView.StopScroll;
 
     const getContent = (cell: Cell | undefined) => {
@@ -292,6 +361,14 @@ class View extends PureComponent<ViewProps, ViewState> {
 
     return (
       <Outer ref={this.rootRef}>
+        <Temp noScroll={noScroll}>
+          <Item>
+            <ItemContent>{getContent(tempContent[0])}</ItemContent>
+          </Item>
+          <Item>
+            <ItemContent>{getContent(tempContent[1])}</ItemContent>
+          </Item>
+        </Temp>
         <VBand noScroll={noScroll}>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.top}>
