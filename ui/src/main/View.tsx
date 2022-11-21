@@ -117,6 +117,7 @@ const ItemMid = styled.div`
   justify-content: center;
   text-align: center;
   opacity: 0.8;
+  z-index: 1;
 `;
 
 const ItemMidContent = styled.div`

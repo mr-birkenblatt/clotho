@@ -283,3 +283,4 @@ def process_action_file(
     # FIXME: use temporary files to filter each pass
     # FIXME: analyze mhash storage (how many hashes per file / how deep?)
     # FIXME: batch votes (100 at a time)
+    # FIXME: lazy caching -- invalidation / recomputation markers by time
