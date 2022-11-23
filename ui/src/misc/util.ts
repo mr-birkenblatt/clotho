@@ -58,6 +58,27 @@ export function toJson(obj: any): string {
   });
 }
 
+const UNITS: readonly [Readonly<string>, number, number][] = [
+  ['k', 1000, 750],
+  ['M', 1000, 750],
+];
+
+export function toReadableNumber(num: number): string {
+  if (num < 0) {
+    return `-${toReadableNumber(-num)}`;
+  }
+  let unit = '';
+  let cur = num;
+  let ix = 0;
+  while (ix < UNITS.length && cur >= UNITS[ix][2]) {
+    const [curUnit, curMul, _] = UNITS[ix];
+    unit = curUnit;
+    cur /= curMul;
+    ix += 1;
+  }
+  return `${cur.toPrecision(3).replace(/(?:\.0+|(\.\d+?)0+)$/, '$1')}${unit}`;
+}
+
 export function assertFail(e: any): never {
   throw new Error(`should not have happened: ${e}`);
 }

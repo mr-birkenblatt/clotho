@@ -32,7 +32,6 @@ const MainColumn = styled.div`
   margin: 0 auto;
   width: var(--main-size);
   height: 100vh;
-  background-color: pink;
   border: 0;
   display: flex;
   flex-direction: column;

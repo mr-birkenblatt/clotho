@@ -12,8 +12,10 @@ import {
   scrollVertical,
 } from '../misc/GraphView';
 import CommentGraph from '../misc/CommentGraph';
-import { safeStringify } from '../misc/util';
+import { safeStringify, toReadableNumber } from '../misc/util';
 import { setView } from './ViewStateSlice';
+import { NormalComponents } from 'react-markdown/lib/complex-types';
+import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 
 const Outer = styled.div`
   position: relative;
@@ -44,7 +46,7 @@ const VBand = styled.div<NoScrollProp>`
   width: 100%;
   height: 100%;
   vertical-align: top;
-  background-color: green;
+  background-color: #282c34;
   overflow-x: hidden;
   overflow-y: ${(props) => (props.noScroll ? 'hidden' : 'scroll')};
 
@@ -103,7 +105,7 @@ const ItemContent = styled.div`
   white-space: normal;
   overflow: hidden;
 
-  background-color: lime;
+  background-color: #393d45;
 `;
 
 const ItemMid = styled.div`
@@ -111,25 +113,62 @@ const ItemMid = styled.div`
   width: 100%;
   height: 0;
   position: relative;
-  top: 0;
+  top: calc(var(--main-size) * 0.06);
   left: 0;
   align-items: center;
   justify-content: center;
   text-align: center;
   opacity: 0.8;
-  z-index: 1;
+  flex-direction: column;
+`;
+
+const ItemMidVotes = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ItemMidName = styled.div`
+  font-size: 0.6em;
+  align-items: center;
+  justify-content: center;
 `;
 
 const ItemMidContent = styled.div`
   display: flex;
-  height: calc(var(--main-size) * 0.05);
-  background-color: green;
-  padding: calc(var(--main-size) * 0.0125);
-  border-radius: calc(var(--main-size) * 0.0125);
   align-items: center;
   justify-content: center;
-  flex-direction: column;
+  flex-direction: row;
+  height: calc(var(--main-size) * 0.05);
+  border-radius: calc(var(--main-size) * 0.0125);
+  padding: calc(var(--main-size) * 0.0125);
 `;
+
+const Link = styled.a`
+  color: silver;
+
+  &:visited {
+    color: silver;
+  }
+  &:active {
+    color: silver;
+  }
+  &:hover {
+    color: #ddd;
+  }
+`;
+
+const VOTE_SYMBOL = new Map();
+VOTE_SYMBOL.set('up', '👍');
+VOTE_SYMBOL.set('down', '👎');
+VOTE_SYMBOL.set('honor', '⭐');
+
+const MD_COMPONENTS: Partial<
+  Omit<NormalComponents, keyof SpecialComponents> & SpecialComponents
+> = {
+  a: ({ node: _, ...props }) => <Link {...props} />,
+};
 
 type NoScrollProp = {
   noScroll: boolean;
@@ -273,7 +312,10 @@ class View extends PureComponent<ViewProps, ViewState> {
           block: 'start',
           inline: 'nearest',
         });
-        this.setState({ resetView: ResetView.Done });
+        this.setState({
+          resetView: ResetView.Done,
+          tempContent: [undefined, undefined],
+        });
       }
     }
 
@@ -362,10 +404,10 @@ class View extends PureComponent<ViewProps, ViewState> {
     }
     this.setState({
       resetView: ResetView.StopScroll,
-      tempContent:
-        newView !== undefined
-          ? [newView.centerTop, newView.centerBottom]
-          : this.getTempConfig(key),
+      tempContent: this.getTempConfig(key),
+      // newView !== undefined
+      //   ? [newView.centerTop, newView.centerBottom]
+      //   : this.getTempConfig(key),
     });
   }
 
@@ -387,20 +429,15 @@ class View extends PureComponent<ViewProps, ViewState> {
       }
       return (
         <ItemMid>
-          <div>
-            <div>
-              {link.user}: {link.first}
-            </div>
-            <div>
-              {Object.keys(link.votes).map((voteName) => (
-                <ItemMidContent key={voteName}>
-                  <span>
-                    {voteName}: {link.votes[voteName]}
-                  </span>
-                </ItemMidContent>
-              ))}
-            </div>
-          </div>
+          <ItemMidVotes>
+            {Object.keys(link.votes).map((voteName) => (
+              <ItemMidContent key={voteName}>
+                {toReadableNumber(link.votes[voteName])}{' '}
+                {VOTE_SYMBOL.get(voteName) ?? `[${voteName}]`}
+              </ItemMidContent>
+            ))}
+          </ItemMidVotes>
+          <ItemMidName>{link.user}</ItemMidName>
         </ItemMid>
       );
     };
@@ -412,16 +449,24 @@ class View extends PureComponent<ViewProps, ViewState> {
       if (cell.content === undefined) {
         return `[loading...${safeStringify(cell.fullKey)}]`;
       }
-      return <ReactMarkdown skipHtml={true}>{cell.content}</ReactMarkdown>;
+      return (
+        <ReactMarkdown
+          skipHtml={true}
+          components={MD_COMPONENTS}>
+          {cell.content}
+        </ReactMarkdown>
+      );
     };
 
     return (
       <Outer ref={this.rootRef}>
         <Temp noScroll={noScroll}>
           <Item>
+            {getTopLink(tempContent[0])}
             <ItemContent>{getContent(tempContent[0])}</ItemContent>
           </Item>
           <Item>
+            {getTopLink(tempContent[1])}
             <ItemContent>{getContent(tempContent[1])}</ItemContent>
           </Item>
         </Temp>
