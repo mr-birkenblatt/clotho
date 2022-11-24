@@ -38,7 +38,7 @@ class MessageStore:
         res: list[MHash] = []
         cur_ix = start
         while cur_ix < end:
-            rng = np.random.default_rng(base_seed + SEED_MUL * cur_ix)
+            rng = np.random.default_rng(abs(base_seed + SEED_MUL * cur_ix))
             res.extend(self.do_get_random_messages(rng, RNG_ALIGN))
             cur_ix += RNG_ALIGN
         rel_start = offset - start

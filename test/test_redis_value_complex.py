@@ -2,7 +2,6 @@
 import time
 from typing import NamedTuple
 
-from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
     ValueDependentRedisType,
@@ -26,38 +25,28 @@ def test_complex() -> None:
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
         "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
-    def compute_destinations(
-            obj: EffectDependent[FLink, list[int], Link],
-            parents: tuple[ValueRootRedisType[Link, int]],
-            pkey: Link,
-            key: FLink) -> None:
-        lks, = parents
-        obj.set_value(key, sorted(lks.get_range(f"link:{pkey.l_from}:")))
+    def compute_destinations(key: FLink) -> None:
+        dests.set_value(key, sorted(links.get_range(f"link:{key.l_from}:")))
 
-    def compute_sources(
-            obj: EffectDependent[TLink, list[int], Link],
-            parents: tuple[ValueRootRedisType[Link, int]],
-            pkey: Link,
-            key: TLink) -> None:
-        lks, = parents
-        obj.set_value(key, sorted(lks.get_range("link:", f":{pkey.l_to}")))
+    def compute_sources(key: TLink) -> None:
+        srcs.set_value(key, sorted(links.get_range("link:", f":{key.l_to}")))
 
-    dests: ValueDependentRedisType[FLink, list[int], Link] = \
+    dests: ValueDependentRedisType[FLink, list[int]] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
-            (links,),
-            compute_destinations,
-            lambda pkey: FLink(l_from=pkey.l_from),
-            0.1)
-    srcs: ValueDependentRedisType[TLink, list[int], Link] = \
+            parents=(links,),
+            convert=lambda pkey: FLink(l_from=pkey.l_from),
+            effect=compute_destinations,
+            delay=0.1)
+    srcs: ValueDependentRedisType[TLink, list[int]] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
-            (links,),
-            compute_sources,
-            lambda pkey: TLink(l_to=pkey.l_to),
-            0.1)
+            parents=(links,),
+            convert=lambda pkey: TLink(l_to=pkey.l_to),
+            effect=compute_sources,
+            delay=0.1)
 
     assert dests.get_value(FLink(l_from="a"), []) == []
 
@@ -89,40 +78,30 @@ def test_complex_list() -> None:
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
         "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
-    def compute_destinations(
-            obj: EffectDependent[FLink, list[str], Link],
-            parents: tuple[ValueRootRedisType[Link, int]],
-            pkey: Link,
-            key: FLink) -> None:
-        lks, = parents
-        obj.set_value(key, sorted((
-            f"{val}" for val in lks.get_range(f"link:{pkey.l_from}:"))))
+    def compute_destinations(key: FLink) -> None:
+        dests.set_value(key, sorted((
+            f"{val}" for val in links.get_range(f"link:{key.l_from}:"))))
 
-    def compute_sources(
-            obj: EffectDependent[TLink, list[str], Link],
-            parents: tuple[ValueRootRedisType[Link, int]],
-            pkey: Link,
-            key: TLink) -> None:
-        lks, = parents
-        obj.set_value(key, sorted((
-            f"{val}" for val in lks.get_range("link:", f":{pkey.l_to}"))))
+    def compute_sources(key: TLink) -> None:
+        srcs.set_value(key, sorted((
+            f"{val}" for val in links.get_range("link:", f":{key.l_to}"))))
 
-    dests: ListDependentRedisType[FLink, Link] = \
+    dests: ListDependentRedisType[FLink] = \
         ListDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
-            (links,),
-            compute_destinations,
-            lambda pkey: FLink(l_from=pkey.l_from),
-            0.1)
-    srcs: ListDependentRedisType[TLink, Link] = \
+            parents=(links,),
+            convert=lambda pkey: FLink(l_from=pkey.l_from),
+            effect=compute_destinations,
+            delay=0.1)
+    srcs: ListDependentRedisType[TLink] = \
         ListDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
-            (links,),
-            compute_sources,
-            lambda pkey: TLink(l_to=pkey.l_to),
-            0.1)
+            parents=(links,),
+            convert=lambda pkey: TLink(l_to=pkey.l_to),
+            effect=compute_sources,
+            delay=0.1)
 
     assert dests.get_value(FLink(l_from="a"), []) == []
 

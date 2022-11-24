@@ -1,6 +1,7 @@
 import contextlib
 import os
 import threading
+import time
 import uuid
 from typing import (
     Any,
@@ -20,11 +21,16 @@ from redis_lock import Lock
 
 from misc.env import envload_int, envload_str
 from misc.io import open_read
-from misc.util import json_compact, json_read
+from misc.util import get_relative_function_info, json_compact, json_read
 
 
 REDIS_SALT_LOCK = threading.RLock()
 REDIS_SALT: dict[str, str] = {}
+
+REDIS_SLOW = 1.0
+REDIS_SLOW_CONTEXT = 3
+REDIS_UNIQUE: set[tuple[str, int, str]] = set()
+NL = "\n"
 
 
 def is_test() -> bool:
@@ -49,18 +55,22 @@ def get_salt() -> str | None:
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods
     def __call__(
             self,
+            *,
             keys: list[str],
             args: list[Any],
-            client: StrictRedis | None = None) -> bytes:
+            client: StrictRedis | None,
+            depth: int) -> bytes:
         ...
 
 
 class RedisFunctionList(Protocol):  # pylint: disable=too-few-public-methods
     def __call__(
             self,
+            *,
             keys: list[str],
             args: list[Any],
-            client: StrictRedis | None = None) -> list[bytes]:
+            client: StrictRedis | None,
+            depth: int) -> list[bytes]:
         ...
 
 
@@ -138,7 +148,8 @@ class RedisWrapper:
         return res
 
     @contextlib.contextmanager
-    def get_connection(self) -> Iterator[StrictRedis]:
+    def get_connection(self, *, depth: int) -> Iterator[StrictRedis]:
+        conn_start = time.monotonic()
         try:
             if self._conn is None:
                 self._conn = self._get_redis_cached_conn(self._module)
@@ -146,6 +157,33 @@ class RedisWrapper:
         except Exception:
             self.reset()
             raise
+        finally:
+            conn_time = time.monotonic() - conn_start
+            if conn_time > REDIS_SLOW:
+                fun_info = get_relative_function_info(depth=depth + 1)
+                fun_key = fun_info[:3]
+                if fun_key not in REDIS_UNIQUE:
+                    fun_fname, fun_line, fun_name, fun_locals = fun_info
+                    context = []
+                    try:
+                        fun_line -= 1
+                        with open_read(fun_fname, text=True) as fin:
+                            for lineno, line in enumerate(fin):
+                                if lineno < fun_line - REDIS_SLOW_CONTEXT:
+                                    continue
+                                if lineno > fun_line + REDIS_SLOW_CONTEXT:
+                                    break
+                                if lineno == fun_line:
+                                    context.append(f"> {line.rstrip()}")
+                                else:
+                                    context.append(f"  {line.rstrip()}")
+                    except (OSError, FileNotFoundError):
+                        context.append("## not available ##")
+                    print(
+                        f"slow redis call ({conn_time:.2f}s) "
+                        f"at {fun_name} ({fun_fname}:{fun_line})\n"
+                        f"{NL.join(context)}\nlocals:\n{fun_locals}")
+                    REDIS_UNIQUE.add(fun_key)
 
     def reset(self) -> None:
         conn = self._conn
@@ -189,8 +227,8 @@ class RedisConnection:
         salt_str = "" if salt is None else f"{salt}:"
         self._module = f"{salt_str}{module}"
 
-    def get_connection(self) -> ContextManager[StrictRedis]:
-        return self._conn.get_connection()
+    def get_connection(self, *, depth: int) -> ContextManager[StrictRedis]:
+        return self._conn.get_connection(depth=depth + 1)
 
     def get_dynamic_script(self, code: str) -> RedisFunctionBytes:
         if is_test():
@@ -216,10 +254,13 @@ class RedisConnection:
             return new_msg, ctx[max(num - context - 1, 0):num + context]
 
         @contextlib.contextmanager
-        def get_client(client: StrictRedis | None) -> Iterator[StrictRedis]:
+        def get_client(
+                *,
+                client: StrictRedis | None,
+                depth: int) -> Iterator[StrictRedis]:
             try:
                 if client is None:
-                    with self.get_connection() as res:
+                    with self.get_connection(depth=depth + 1) as res:
                         yield res
                 else:
                     yield client
@@ -240,10 +281,12 @@ class RedisConnection:
                     )
 
         def execute_bytes_result(
+                *,
                 keys: list[str],
                 args: list[bytes | str | int],
-                client: StrictRedis | None = None) -> bytes:
-            with get_client(client) as inner:
+                client: StrictRedis | None,
+                depth: int) -> bytes:
+            with get_client(client=client, depth=depth + 1) as inner:
                 return compute(keys=keys, args=args, client=inner)
 
         return execute_bytes_result
@@ -311,10 +354,13 @@ class RedisConnection:
             return new_msg, ctx[max(num - context - 1, 0):num + context]
 
         @contextlib.contextmanager
-        def get_client(client: StrictRedis | None) -> Iterator[StrictRedis]:
+        def get_client(
+                *,
+                client: StrictRedis | None,
+                depth: int) -> Iterator[StrictRedis]:
             try:
                 if client is None:
-                    with self.get_connection() as res:
+                    with self.get_connection(depth=depth + 1) as res:
                         yield res
                 else:
                     yield client
@@ -333,19 +379,23 @@ class RedisConnection:
                     exc.args = (f"{res[0].rstrip()}\nContext:\n{ctx}",)
 
         def execute_list_result(
+                *,
                 keys: list[str],
                 args: list[bytes | str | int],
-                client: StrictRedis | None = None) -> list[bytes]:
-            with get_client(client) as inner:
+                client: StrictRedis | None,
+                depth: int) -> list[bytes]:
+            with get_client(client=client, depth=depth + 1) as inner:
                 res = compute(keys=keys, args=args, client=inner)
                 assert isinstance(res, list)
                 return res
 
         def execute_bytes_result(
+                *,
                 keys: list[str],
                 args: list[bytes | str | int],
-                client: StrictRedis | None = None) -> bytes:
-            with get_client(client) as inner:
+                client: StrictRedis | None,
+                depth: int) -> bytes:
+            with get_client(client=client, depth=depth + 1) as inner:
                 return compute(keys=keys, args=args, client=inner)
 
         if return_list:
@@ -365,7 +415,7 @@ class RedisConnection:
             granularity: float = 30.0) -> None:
         if predicate():
             return
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             with conn.pubsub() as psub:
                 psub.subscribe(self.get_pubsub_key(key))
                 try:
@@ -379,15 +429,15 @@ class RedisConnection:
                     psub.unsubscribe()
 
     def notify_all(self, key: str) -> None:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             conn.publish(self.get_pubsub_key(key), "notify")
 
     def ping(self) -> None:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             conn.ping()
 
     def flush_all(self) -> None:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             conn.flushall()
 
     def keys_count(self, prefix: str) -> int:
@@ -395,7 +445,7 @@ class RedisConnection:
         vals: set[bytes] = set()
         cursor = 0
         count = 10
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             while True:
                 cursor, res = conn.scan(cursor, full_prefix, count)
                 vals.update(res)
@@ -408,12 +458,13 @@ class RedisConnection:
     def keys_count_approx(self, prefix: str) -> int:
         return self.keys_count(prefix)
 
-    def keys_str(self, prefix: str) -> Iterable[str]:
-        full_prefix = f"{prefix}*"
+    def keys_str(
+            self, prefix: str, postfix: str | None = None) -> Iterable[str]:
+        full_prefix = f"{prefix}*{'' if postfix is None else postfix}"
         vals: set[bytes] = set()
         cursor = 0
         count = 10
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             while True:
                 cursor, res = conn.scan(cursor, full_prefix, count)
                 vals.update(res)
@@ -423,11 +474,12 @@ class RedisConnection:
                     count = min(4000, count * 2)
         return (val.decode("utf-8") for val in vals)
 
-    def prefix_exists(self, prefix: str) -> bool:
-        full_prefix = f"{prefix}*"
+    def prefix_exists(
+            self, prefix: str, postfix: str | None = None) -> bool:
+        full_prefix = f"{prefix}*{'' if postfix is None else postfix}"
         cursor = 0
         count = 10
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             while True:
                 cursor, res = conn.scan(cursor, full_prefix, count)
                 if res:
@@ -456,7 +508,11 @@ class ObjectRedis(RedisConnection):
         return f"{self._objs}:{name}:{key}"
 
     def obj_flush_keys(self, patterns: list[str], skip: list[str]) -> None:
-        self._flush_keys(keys=[], args=[json_compact(patterns), *skip])
+        self._flush_keys(
+            keys=[],
+            args=[json_compact(patterns), *skip],
+            client=None,
+            depth=1)
 
     def obj_put(
             self,
@@ -470,7 +526,9 @@ class ObjectRedis(RedisConnection):
         path = self.compute_name(name, key)
         self._obj_put(
             keys=[path],
-            args=[int(preserve_expire), json_compact(value)])
+            args=[int(preserve_expire), json_compact(value)],
+            client=None,
+            depth=1)
 
     def obj_put_nx(
             self,
@@ -482,7 +540,7 @@ class ObjectRedis(RedisConnection):
         Returns True if the value was set.
         """
         path = self.compute_name(name, key)
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             res = int(conn.setnx(path, json_compact(value)))
         return res != 0
 
@@ -493,18 +551,18 @@ class ObjectRedis(RedisConnection):
             value: Any,
             expire: float | None) -> None:
         path = self.compute_name(name, key)
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             conn.set(
                 path,
                 json_compact(value),
                 px=None if expire is None else int(expire * 1000))
 
     def obj_expire(self, name: str, key: str, expire: float) -> None:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             conn.pexpire(self.compute_name(name, key), int(expire * 1000))
 
     def obj_get(self, name: str, key: str, default: Any = None) -> Any:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             res = conn.get(self.compute_name(name, key))
         return json_read(res) if res is not None else default
 
@@ -515,7 +573,7 @@ class ObjectRedis(RedisConnection):
             expire: float | None,
             default: Any = None) -> Any:
         path = self.compute_name(name, key)
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             # expire before reading to ensure correct treatment of 0
             if expire is not None:
                 conn.pexpire(path, int(expire * 1000))
@@ -526,7 +584,7 @@ class ObjectRedis(RedisConnection):
         # pylint: disable=unbalanced-tuple-unpacking
 
         path = self.compute_name(name, key)
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.exists(path)
                 pipe.pttl(path)
@@ -536,20 +594,17 @@ class ObjectRedis(RedisConnection):
         return None
 
     def obj_has(self, name: str, key: str) -> bool:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             return conn.get(self.compute_name(name, key)) is not None
 
-    def obj_keys(self, name: str) -> list[str]:
+    def obj_keys(self, name: str) -> Iterable[str]:
         path = self.compute_name(name, key="")
-        return [
-            key[len(path):]
-            for key in self.keys_str(path)
-        ]
+        return (key[len(path):] for key in self.keys_str(path))
 
     def obj_dict(self, name: str) -> dict[str, Any]:
         path = self.compute_name(name, key="")
         keys = list(self.keys_str(path))
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             return {
                 key[len(path):]: json_read(res)
                 for (key, res) in zip(keys, conn.mget(keys))
@@ -560,25 +615,22 @@ class ObjectRedis(RedisConnection):
         path = self.compute_name(name, key="")
         return self.keys_count(path)
 
-    def obj_partial_keys(self, partial: str) -> list[str]:
+    def obj_partial_keys(self, partial: str) -> Iterable[str]:
         path = f"{self._objs}:{partial}"
-        return [
-            key[len(path):]
-            for key in self.keys_str(path)
-        ]
+        return (key[len(path):] for key in self.keys_str(path))
 
     def obj_remove(self, name: str, key: str = "*") -> None:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             conn.delete(self.compute_name(name, key))
 
     def obj_remove_all(self, name: str, keys: list[str]) -> None:
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             for key in keys:
                 conn.delete(self.compute_name(name, key))
 
     def obj_pop_raw(self, name: str, key: str) -> bytes | None:
         path = self.compute_name(name, key)
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.get(path)
                 pipe.delete(path)
@@ -586,7 +638,7 @@ class ObjectRedis(RedisConnection):
 
     def obj_pop(self, name: str, key: str, default: Any = None) -> Any:
         path = self.compute_name(name, key)
-        with self.get_connection() as conn:
+        with self.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.get(path)
                 pipe.delete(path)

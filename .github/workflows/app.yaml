@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ui/node_modules/
-        key: ${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
+        key: v1-${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
 
     - name: Yarn Install
       run: |
@@ -41,6 +41,14 @@ jobs:
     - name: Lint Code (ts)
       run: |
         make lint-ts
+
+    - name: Test Code (ts)
+      run: |
+        make test-ts
+
+    - name: Test Build (ts)
+      run: |
+        make ts-build
 
 
   lints_pipeline:
@@ -64,7 +72,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+        key: v1-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
@@ -156,7 +164,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+        key: v1-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
@@ -171,7 +179,7 @@ jobs:
         echo "Previous timings are: ${FILE_INFO[0]}"
         FILES=$(echo "${OUT}" | sed -E 's/^[^,]*,//')
         echo "Selected Files are: ${FILES}"
-        rm -r test-results
+        rm -rf test-results
         make pytest RESULT_FNAME=results-${{ matrix.python }}-${{ matrix.ci_node_index }}.xml FILE="${FILES}"
         tail -v -n +1 test-results/*.xml
 
@@ -215,7 +223,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+        key: v1-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
@@ -230,7 +238,7 @@ jobs:
 
     - name: Clean test-result Cache
       run: |
-        rm -r test-results
+        rm -rf test-results
         mkdir -p test-results/parts/
 
     - name: Download all results and coverage

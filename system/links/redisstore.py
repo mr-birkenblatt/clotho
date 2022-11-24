@@ -4,7 +4,6 @@ from typing import Callable, Iterable, NamedTuple
 import pandas as pd
 
 from effects.dedicated import RedisFn, RootSet, RootValue, Script
-from effects.effects import EffectDependent
 from effects.redis import (
     ListDependentRedisType,
     SetRootRedisType,
@@ -191,148 +190,126 @@ class RedisLinkStore(LinkStore):
 
         # all children for a given parent
 
-        def compute_call(
-                obj: EffectDependent[PLink, list[str], RLink],
-                parents: tuple[ValueRootRedisType[RLink, float]],
-                _: RLink,
-                key: PLink) -> None:
-            last, = parents
-            obj.set_value(
+        def compute_call(key: PLink) -> None:
+            self.r_call.set_value(
                 key,
-                list(last.get_range_keys(key_children("vlast", key))))
+                list(self.r_last.get_range_keys(key_children("vlast", key))))
 
-        self.r_call: ListDependentRedisType[PLink, RLink] = \
+        self.r_call: ListDependentRedisType[PLink] = \
             ListDependentRedisType(
                 "link",
                 key_parent_constructor("vcall"),
-                (self.r_last,),
-                compute_call,
-                lambda pkey: PLink(
+                parents=(self.r_last,),
+                convert=lambda pkey: PLink(
                     vote_type=pkey.vote_type, parent=pkey.parent),
-                2.0 * dmul)
+                effect=compute_call,
+                delay=2.0 * dmul)
 
         # all parents for a given child
 
-        def compute_pall(
-                obj: EffectDependent[CLink, list[str], RLink],
-                parents: tuple[ValueRootRedisType[RLink, float]],
-                _: RLink,
-                key: CLink) -> None:
-            last, = parents
-            obj.set_value(
+        def compute_pall(key: CLink) -> None:
+            self.r_pall.set_value(
                 key,
-                list(last.get_range_keys(*key_parents("vlast", key))))
+                list(self.r_last.get_range_keys(*key_parents("vlast", key))))
 
-        self.r_pall: ListDependentRedisType[CLink, RLink] = \
+        self.r_pall: ListDependentRedisType[CLink] = \
             ListDependentRedisType(
                 "link",
                 key_child_constructor("vpall"),
-                (self.r_last,),
-                compute_pall,
-                lambda pkey: CLink(vote_type=pkey.vote_type, child=pkey.child),
-                2.0 * dmul)
+                parents=(self.r_last,),
+                convert=lambda pkey: CLink(
+                    vote_type=pkey.vote_type, child=pkey.child),
+                effect=compute_pall,
+                delay=2.0 * dmul)
 
         # sorted lists by score
 
         self.r_call_sorted: dict[
-            ScorerName, ListDependentRedisType[PLink, PLink]] = {}
+            ScorerName, ListDependentRedisType[PLink]] = {}
         self.r_pall_sorted: dict[
-            ScorerName, ListDependentRedisType[CLink, CLink]] = {}
+            ScorerName, ListDependentRedisType[CLink]] = {}
         self.r_user_sorted: dict[
-            ScorerName, ListDependentRedisType[str, str]] = {}
+            ScorerName, ListDependentRedisType[str]] = {}
 
         def add_scorer_dependent_types(scorer: Scorer) -> None:
             sname = scorer.name()
 
             # all children for a given parent sorted with score
 
-            def compute_call_sorted(
-                    obj: EffectDependent[PLink, list[str], PLink],
-                    parents: tuple[ListDependentRedisType[PLink, RLink]],
-                    pkey: PLink,
-                    key: PLink) -> None:
-                call, = parents
+            def compute_call_sorted(key: PLink) -> None:
                 now = now_ts()
                 links = sorted(
                     (
-                        self.get_link(pkey.parent, MHash.parse(child))
-                        for child in call.get_value(pkey, [])
+                        self.get_link(key.parent, MHash.parse(child))
+                        for child in self.r_call.get_value(key, [])
                     ),
                     key=lambda link: scorer.get_score(link, now),
                     reverse=True)
-                obj.set_value(
+                cur_r_call_sorted.set_value(
                     key, [link.get_child().to_parseable() for link in links])
 
-            self.r_call_sorted[sname] = ListDependentRedisType(
+            cur_r_call_sorted = ListDependentRedisType(
                 "link",
                 key_parent_constructor(f"scall:{sname}"),
-                (self.r_call,),
-                compute_call_sorted,
-                lambda pkey: pkey,
-                2.0 * dmul)
+                parents=(self.r_call,),
+                convert=lambda pkey: pkey,
+                effect=compute_call_sorted,
+                delay=2.0 * dmul)
+            self.r_call_sorted[sname] = cur_r_call_sorted
 
             # all parents for a given child sorted with score
 
-            def compute_pall_sorted(
-                    obj: EffectDependent[CLink, list[str], CLink],
-                    parents: tuple[ListDependentRedisType[CLink, RLink]],
-                    pkey: CLink,
-                    key: CLink) -> None:
-                pall, = parents
+            def compute_pall_sorted(key: CLink) -> None:
                 now = now_ts()
                 links = sorted(
                     (
-                        self.get_link(MHash.parse(parent), pkey.child)
-                        for parent in pall.get_value(pkey, [])
+                        self.get_link(MHash.parse(parent), key.child)
+                        for parent in self.r_pall.get_value(key, [])
                     ),
                     key=lambda link: scorer.get_score(link, now),
                     reverse=True)
-                obj.set_value(
+                cur_r_pall_sorted.set_value(
                     key, [link.get_parent().to_parseable() for link in links])
 
-            self.r_pall_sorted[sname] = ListDependentRedisType(
+            cur_r_pall_sorted = ListDependentRedisType(
                 "link",
                 key_child_constructor(f"spall:{sname}"),
-                (self.r_pall,),
-                compute_pall_sorted,
-                lambda pkey: pkey,
-                2.0 * dmul)
+                parents=(self.r_pall,),
+                convert=lambda pkey: pkey,
+                effect=compute_pall_sorted,
+                delay=2.0 * dmul)
+            self.r_pall_sorted[sname] = cur_r_pall_sorted
 
             # all links created by a user sorted with score
 
-            def compute_user_sorted(
-                    obj: EffectDependent[str, list[str], str],
-                    parents: tuple[SetRootRedisType[str]],
-                    pkey: str,
-                    key: str) -> None:
-                user_links, = parents
+            def to_link(ulink: str) -> Link:
+                rlink = parse_link(VT_UP, ulink)
+                return self.get_link(rlink.parent, rlink.child)
+
+            def compute_user_sorted(key: str) -> None:
                 now = now_ts()
-
-                def to_link(ulink: str) -> Link:
-                    rlink = parse_link(VT_UP, ulink)
-                    return self.get_link(rlink.parent, rlink.child)
-
                 links = sorted(
                     (
                         to_link(ulink)
-                        for ulink in user_links.get_value(pkey, set())
+                        for ulink in self.r_user_links.get_value(key, set())
                     ),
                     key=lambda link: scorer.get_score(link, now),
                     reverse=True)
-                obj.set_value(
+                cur_r_user_sorted.set_value(
                     key,
                     [
                         parseable_link(link.get_parent(), link.get_child())
                         for link in links
                     ])
 
-            self.r_user_sorted[sname] = ListDependentRedisType(
+            cur_r_user_sorted = ListDependentRedisType(
                 "link",
                 lambda user: f"suserlinks:{sname}:{user}",
-                (self.r_user_links,),
-                compute_user_sorted,
-                lambda pkey: pkey,
-                4.0 * dmul)
+                parents=(self.r_user_links,),
+                convert=lambda pkey: pkey,
+                effect=compute_user_sorted,
+                delay=4.0 * dmul)
+            self.r_user_sorted[sname] = cur_r_user_sorted
 
         for scorer in self.valid_scorers():
             add_scorer_dependent_types(scorer)
@@ -366,7 +343,8 @@ class RedisLinkStore(LinkStore):
                 "r_last": link,
                 "r_user_links": user_id,
             },
-            conn=self._conn)
+            conn=self._conn,
+            depth=1)
 
     def create_add_vote_script(self) -> Script:
         script = Script()

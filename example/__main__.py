@@ -8,6 +8,7 @@ from example.loader import process_action_file
 from example.reddit import RedditAccess
 from misc.io import open_append
 from misc.util import json_compact
+from system.links.redisstore import get_delay_multiplier, set_delay_multiplier
 from system.links.store import get_default_link_store
 from system.msgs.store import get_default_message_store
 from system.users.store import get_default_user_store
@@ -47,6 +48,8 @@ def process_load() -> None:
     user_store = get_default_user_store()
     now = pd.Timestamp("2022-08-22", tz="UTC")
     reference_time = time.monotonic()
+    old_dm = get_delay_multiplier()
+    set_delay_multiplier(3600)
     process_action_file(
         REDDIT_ACTION_FILE,
         message_store=message_store,
@@ -55,6 +58,7 @@ def process_load() -> None:
         now=now,
         reference_time=reference_time,
         roots=set(ROOTS))
+    set_delay_multiplier(old_dm)
 
 
 def run() -> None:
