@@ -187,8 +187,21 @@ const createGetChild = (
   return (notify, fullKey) => pool.getChild(fullKey, notify) as undefined;
 };
 
+const createCommentGraph = (isSimple: boolean): CommentGraph => {
+  return new CommentGraph(
+    isSimple
+      ? simpleGraph().getApiProvider()
+      : advancedGraph().getApiProvider(),
+    100,
+    100,
+    100,
+    100,
+    10,
+  );
+};
+
 test('simple test comment graph', async () => {
-  const pool = new CommentGraph(simpleGraph().getApiProvider());
+  const pool = createCommentGraph(true);
   const getMessage = createGetMessage(pool);
 
   await execute(getMessage, [asTopicKey(0)], checkMessage('a'), undefined);
@@ -267,7 +280,7 @@ test('simple test comment graph', async () => {
 });
 
 test('get hash graph', async () => {
-  const pool = new CommentGraph(simpleGraph().getApiProvider());
+  const pool = createCommentGraph(true);
   const getHash = createGetHash(pool);
 
   await execute(getHash, [asTopicKey(1)], checkHash('h'), undefined);
@@ -290,7 +303,7 @@ test('get hash graph', async () => {
 });
 
 test('simple bulk message reading', async () => {
-  const pool = new CommentGraph(simpleGraph().getApiProvider());
+  const pool = createCommentGraph(true);
   const getMessage = createGetMessage(pool);
 
   const hashes = ['b', 'c', 'd', 'e', 'f'];
@@ -349,7 +362,7 @@ test('simple bulk message reading', async () => {
 });
 
 test('topic comment graph', async () => {
-  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const pool = createCommentGraph(false);
   const getTopLink = createGetTopLink(pool);
 
   await execute(
@@ -398,7 +411,7 @@ test('topic comment graph', async () => {
 });
 
 test('parent comment graph', async () => {
-  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const pool = createCommentGraph(false);
   const getTopLink = createGetTopLink(pool);
   await execute(
     getTopLink,
@@ -433,7 +446,7 @@ test('parent comment graph', async () => {
 });
 
 test('cache edge cases for comment graph', async () => {
-  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const pool = createCommentGraph(false);
   const getTopLink = createGetTopLink(pool);
   const getBottomLink = createGetBottomLink(pool);
   const getMessage = createGetMessage(pool);
@@ -603,7 +616,7 @@ test('cache edge cases for comment graph', async () => {
 });
 
 test('child comment graph', async () => {
-  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const pool = createCommentGraph(false);
   const getBottomLink = createGetBottomLink(pool);
 
   await execute(
@@ -701,7 +714,7 @@ test('child comment graph', async () => {
 });
 
 test('get parent / child comment graph', async () => {
-  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const pool = createCommentGraph(false);
   const getParent = createGetParent(pool);
   const getChild = createGetChild(pool);
 
@@ -890,7 +903,7 @@ test('get parent / child comment graph', async () => {
 });
 
 test('get parent / child of topic', async () => {
-  const pool = new CommentGraph(advancedGraph().getApiProvider());
+  const pool = createCommentGraph(false);
   const getParent = createGetParent(pool);
   const getChild = createGetChild(pool);
 

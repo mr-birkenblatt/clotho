@@ -124,7 +124,14 @@ function buildFullView(
 }
 
 test('test graph view init', async () => {
-  const graph = new CommentGraph(advancedGraph().getApiProvider());
+  const graph = new CommentGraph(
+    advancedGraph().getApiProvider(),
+    100,
+    100,
+    100,
+    100,
+    10,
+  );
 
   const initGraph = await execute(
     graph,

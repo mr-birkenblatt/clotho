@@ -365,9 +365,9 @@ class CommentPool {
   private topics: [Readonly<MHash>, Readonly<string>][] | undefined;
   private active: boolean;
 
-  constructor(api: ApiProvider, maxSize?: number) {
+  constructor(api: ApiProvider, maxSize: number) {
     this.api = api;
-    this.pool = new LRU(maxSize ?? DEFAULT_COMMENT_POOL_SIZE);
+    this.pool = new LRU(maxSize);
     this.hashQueue = new Set<Readonly<MHash>>();
     this.inFlight = new Set<Readonly<MHash>>();
     this.listeners = new Map();
@@ -508,10 +508,10 @@ class LinkLookup {
     api: Readonly<ApiProvider>,
     linkKey: Readonly<LinkKey>,
     maxLineSize: Readonly<number>,
-    blockSize?: Readonly<number>,
+    blockSize: Readonly<number>,
   ) {
     this.api = api;
-    this.blockSize = blockSize ?? DEFAULT_BLOCK_SIZE;
+    this.blockSize = blockSize;
     this.linkKey = linkKey;
     this.line = new LRU(maxLineSize);
     this.listeners = new Map();
@@ -654,6 +654,7 @@ class LinkLookup {
 class LinkPool {
   private readonly api: Readonly<ApiProvider>;
   private readonly maxLineSize: Readonly<number>;
+  private readonly blockSize: Readonly<number>;
   private readonly linkCache: LRU<
     Readonly<[Readonly<MHash>, Readonly<MHash>]>,
     Readonly<Link>
@@ -663,20 +664,27 @@ class LinkPool {
 
   constructor(
     api: Readonly<ApiProvider>,
-    maxSize?: Readonly<number>,
-    maxLinkCache?: Readonly<number>,
-    maxLineSize?: Readonly<number>,
+    maxSize: Readonly<number>,
+    maxLinkCache: Readonly<number>,
+    maxLineSize: Readonly<number>,
+    blockSize: Readonly<number>,
   ) {
     this.api = api;
-    this.maxLineSize = maxLineSize ?? DEFAULT_LINE_SIZE;
-    this.pool = new LRU(maxSize ?? DEFAULT_LINK_POOL_SIZE);
-    this.linkCache = new LRU(maxLinkCache ?? DEFAULT_LINK_CACHE_SIZE);
+    this.maxLineSize = maxLineSize;
+    this.blockSize = blockSize;
+    this.pool = new LRU(maxSize);
+    this.linkCache = new LRU(maxLinkCache);
   }
 
   private getLine(linkKey: Readonly<LinkKey>): Readonly<LinkLookup> {
     let res = this.pool.get(linkKey);
     if (res === undefined) {
-      res = new LinkLookup(this.api, linkKey, this.maxLineSize);
+      res = new LinkLookup(
+        this.api,
+        linkKey,
+        this.maxLineSize,
+        this.blockSize,
+      );
       this.pool.set(linkKey, res);
     }
     return res;
@@ -750,10 +758,26 @@ export default class CommentGraph {
   private readonly msgPool: Readonly<CommentPool>;
   private readonly linkPool: Readonly<LinkPool>;
 
-  constructor(api?: Readonly<ApiProvider>) {
+  constructor(
+    api?: Readonly<ApiProvider>,
+    maxCommentPoolSize?: Readonly<number>,
+    maxLinkPoolSize?: Readonly<number>,
+    maxLinkCache?: Readonly<number>,
+    maxLineSize?: Readonly<number>,
+    blockSize?: Readonly<number>,
+  ) {
     const actualApi = api ?? /* istanbul ignore next */ DEFAULT_API;
-    this.msgPool = new CommentPool(actualApi);
-    this.linkPool = new LinkPool(actualApi);
+    this.msgPool = new CommentPool(
+      actualApi,
+      maxCommentPoolSize ?? DEFAULT_COMMENT_POOL_SIZE,
+    );
+    this.linkPool = new LinkPool(
+      actualApi,
+      maxLinkPoolSize ?? DEFAULT_LINK_POOL_SIZE,
+      maxLinkCache ?? DEFAULT_LINK_CACHE_SIZE,
+      maxLineSize ?? DEFAULT_LINE_SIZE,
+      blockSize ?? DEFAULT_BLOCK_SIZE,
+    );
   }
 
   private getMessageByHash(
