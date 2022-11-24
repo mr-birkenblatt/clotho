@@ -55,17 +55,20 @@ def test_dedicated() -> None:
     script.execute(
         args={"input_a": -1.0, "input_b": 3.0},
         keys={"value_a": "def"},
-        conn=conn)
+        conn=conn,
+        depth=0)
     assert value_a.maybe_get_value("def") == 2.0
     script.execute(
         args={"input_a": 3.0, "input_b": -1.0},
         keys={"value_a": "def"},
-        conn=conn)
+        conn=conn,
+        depth=0)
     assert value_a.maybe_get_value("def") == 1.0
     assert value_a.maybe_get_value("abc") is None
 
     assert int(script.execute(
         args={"input_a": 3.0, "input_b": -1.0},
         keys={"value_a": "abc"},
-        conn=conn)) != 0
+        conn=conn,
+        depth=0)) != 0
     assert value_a.maybe_get_value("abc") == -1.0

@@ -2,6 +2,7 @@ help:
 	@echo "The following make targets are available:"
 	@echo "install	install all python dependencies"
 	@echo "install-ts	install all typescript dependencies"
+	@echo "lint-comment	ensures fixme comments are grepable"
 	@echo "lint-emptyinit	main inits must be empty"
 	@echo "lint-flake8	run flake8 checker to deteck missing trailing comma"
 	@echo "lint-forgottenformat	ensures format strings are used"
@@ -15,15 +16,22 @@ help:
 	@echo "lint-type-check	run type check"
 	@echo "lint-ts	run typescript linting"
 	@echo "lint-ts-fix	run typescript linting with fix"
+	@echo "lint-all	run all lints"
 	@echo "pre-commit 	sort python package imports using isort"
+	@echo "name	generate a unique permanent name for the current commit"
+	@echo "git-check	ensures no git visible files have been altered"
 	@echo "clean	clean test data"
 	@echo "pytest	run all test with pytest (requires a running test redis server)"
+	@echo "test-ts	run all typescript tests"
+	@echo "ts-build	build the ui code"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
 	@echo "run-test-redis	start redis server for pytest"
 	@echo "run-redis	start redis server"
 	@echo "run-api	start api server"
 	@echo "run-web	start web server"
+	@echo "coverage-report	show the coverage report for python"
+	@echo "coverage-report-ts	show the coverage report for typescript"
 
 export LC_ALL=C
 export LANG=C
@@ -124,11 +132,17 @@ clean:
 pytest:
 	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
 
+test-ts:
+	cd ui && yarn test --all --coverage
+
+ts-build:
+	cd ui && yarn build
+
 run-test-redis:
 	cd test && redis-server
 
 run-redis:
-	cd userdata && redis-server
+	cd userdata && redis-server ../redis.main.conf
 
 run-api:
 	python3 -m app
@@ -138,3 +152,6 @@ run-web:
 
 coverage-report:
 	cd coverage/reports/html_report && open index.html
+
+coverage-report-ts:
+	cd ui/coverage/lcov-report && open index.html
