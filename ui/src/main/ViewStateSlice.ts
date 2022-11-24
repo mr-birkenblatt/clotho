@@ -3,11 +3,14 @@ import { GraphView, initView } from '../misc/GraphView';
 
 type ViewState = {
   currentView: Readonly<GraphView>;
+  currentChanges: Readonly<number>;
 };
 
 type SetAction = {
   payload: {
     view: Readonly<GraphView>;
+    changes: number;
+    progress: boolean;
   };
 };
 
@@ -19,10 +22,20 @@ export const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
   name: 'viewState',
   initialState: {
     currentView: initView(undefined, undefined),
+    currentChanges: 0,
   },
   reducers: {
     setView: (state, action) => {
-      state.currentView = action.payload.view;
+      const { view, changes, progress } = action.payload;
+      if (progress) {
+        if (changes !== state.currentChanges) {
+          return;
+        }
+      } else {
+        state.currentChanges =
+          (Math.max(state.currentChanges, changes) + 1) % 100;
+      }
+      state.currentView = view;
     },
   },
 });

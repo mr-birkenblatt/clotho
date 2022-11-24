@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ui/node_modules/
-        key: ${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
+        key: v1-${{ matrix.node }}-${{ hashFiles('ui/yarn.lock') }}
 
     - name: Yarn Install
       run: |
@@ -72,7 +72,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+        key: v1-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
@@ -164,7 +164,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+        key: v1-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |
@@ -223,7 +223,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ${{ env.pythonLocation }}
-        key: ${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
+        key: v1-${{ env.pythonLocation }}-${{ hashFiles('requirements.txt') }}
 
     - name: Install dependencies
       run: |

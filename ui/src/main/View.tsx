@@ -274,17 +274,17 @@ class View extends PureComponent<ViewProps, ViewState> {
     prevProps: Readonly<ViewProps> | EmptyViewProps,
     _prevState: Readonly<ViewState> | undefined,
   ): void {
-    const { graph, view, dispatch } = this.props;
+    const { graph, view, changes, dispatch } = this.props;
     const { resetView, redraw, pending } = this.state;
     if (view !== prevProps.view || pending !== undefined) {
       const finalView = progressView(graph, view, (newView) => {
-        dispatch(setView({ view: newView }));
+        dispatch(setView({ view: newView, changes, progress: true }));
       });
       if (finalView !== undefined && pending !== undefined) {
         const [navigator, upRight] = pending;
         const nextView = navigator(view, upRight);
         if (nextView !== undefined) {
-          dispatch(setView({ view: nextView }));
+          dispatch(setView({ view: nextView, changes, progress: false }));
         }
         this.setState({ pending: undefined });
       }
@@ -395,19 +395,16 @@ class View extends PureComponent<ViewProps, ViewState> {
     navigator: NavigationCB,
     upRight: boolean,
   ): void {
-    const { dispatch, view } = this.props;
+    const { dispatch, view, changes } = this.props;
     const newView = navigator(view, upRight);
     if (newView !== undefined) {
-      dispatch(setView({ view: newView }));
+      dispatch(setView({ view: newView, changes, progress: false }));
     } else {
       this.setState({ pending: [navigator, upRight] });
     }
     this.setState({
       resetView: ResetView.StopScroll,
       tempContent: this.getTempConfig(key),
-      // newView !== undefined
-      //   ? [newView.centerTop, newView.centerBottom]
-      //   : this.getTempConfig(key),
     });
   }
 
@@ -516,6 +513,7 @@ class View extends PureComponent<ViewProps, ViewState> {
 
 const connector = connect((state: RootState) => ({
   view: state.viewState.currentView,
+  changes: state.viewState.currentChanges,
 }));
 
 export default connector(View);
