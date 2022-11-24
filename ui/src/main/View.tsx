@@ -27,7 +27,51 @@ const Outer = styled.div`
   padding: 0;
 `;
 
-const Temp = styled.div<NoScrollProp>`
+const NavButton = styled.button`
+  appearance: none;
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  pointer-events: auto;
+  cursor: pointer;
+  border: 0;
+  opacity: 0.8;
+  color: #5b5f67;
+  border-radius: calc(var(--main-size) * 0.1);
+  width: calc(var(--main-size) * 0.15);
+  height: calc(var(--main-size) * 0.15);
+  background-color: #393d45;
+
+  &:hover {
+    background-color: #4a4e56;
+  }
+  &:active {
+    background-color: #5b5f67;
+  }
+`;
+
+const VNavButton = styled(NavButton)<OverlayProps>`
+  position: fixed;
+  ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
+  right: 0;
+`;
+
+const HOverlay = styled.div<OverlayProps>`
+  height: calc(var(--main-size) * 0.15);
+  position: absolute;
+  left: 0;
+  ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  width: var(--main-size);
+  pointer-events: none;
+`;
+
+const HNavButton = styled(NavButton)``;
+
+const Temp = styled.div<NoScrollProps>`
   display: ${(props) => (props.noScroll ? 'block' : 'none')};
   position: relative;
   top: 0;
@@ -39,7 +83,7 @@ const Temp = styled.div<NoScrollProp>`
   overflow: hidden;
 `;
 
-const VBand = styled.div<NoScrollProp>`
+const VBand = styled.div<NoScrollProps>`
   margin: 0;
   padding: 0;
   display: block;
@@ -59,7 +103,7 @@ const VBand = styled.div<NoScrollProp>`
   scroll-snap-type: y mandatory;
 `;
 
-const HBand = styled.div<NoScrollProp>`
+const HBand = styled.div<NoScrollProps>`
   margin: 0;
   padding: 0;
   display: inline-block;
@@ -100,7 +144,7 @@ const ItemContent = styled.div`
   width: calc(var(--main-size) * 0.9);
   height: calc(var(--main-size) * 0.9);
   margin: 0;
-  border-radius: calc(var(--main-size) * 0.05);
+  border-radius: calc(var(--main-size) * 0.1);
   padding: calc(var(--main-size) * 0.05);
   white-space: normal;
   overflow: hidden;
@@ -129,19 +173,38 @@ const ItemMidVotes = styled.div`
   justify-content: center;
 `;
 
-const ItemMidName = styled.div`
+const ButtonDiv = styled.div`
+  display: inline-block;
+  text-align: center;
+  vertical-align: middle;
+  pointer-events: auto;
+  cursor: pointer;
+  border: 0;
+
+  &:hover {
+    background-color: #4a4e56;
+  }
+  &:active {
+    background-color: #5b5f67;
+  }
+`;
+
+const ItemMidName = styled(ButtonDiv)`
   font-size: 0.6em;
   align-items: center;
   justify-content: center;
+  border-radius: calc(var(--main-size) * 0.025);
+  margin-top: calc(var(--main-size) * -0.0125);
+  padding: calc(var(--main-size) * 0.0125);
 `;
 
-const ItemMidContent = styled.div`
+const ItemMidContent = styled(ButtonDiv)`
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: row;
   height: calc(var(--main-size) * 0.05);
-  border-radius: calc(var(--main-size) * 0.0125);
+  border-radius: calc(var(--main-size) * 0.025);
   padding: calc(var(--main-size) * 0.0125);
 `;
 
@@ -170,7 +233,11 @@ const MD_COMPONENTS: Partial<
   a: ({ node: _, ...props }) => <Link {...props} />,
 };
 
-type NoScrollProp = {
+type OverlayProps = {
+  isTop: boolean;
+};
+
+type NoScrollProps = {
   noScroll: boolean;
 };
 
@@ -215,6 +282,15 @@ const navigationCBs: { [Property in ObsKey]: [NavigationCB, boolean] } = {
   bottomLeft: [scrollBottomHorizontal, false],
   bottomRight: [scrollBottomHorizontal, true],
   bottom: [scrollVertical, false],
+};
+
+const scrollBlocks: { [Property in ObsKey]: ScrollLogicalPosition } = {
+  top: 'start',
+  topLeft: 'start',
+  topRight: 'start',
+  bottomLeft: 'end',
+  bottomRight: 'end',
+  bottom: 'end',
 };
 
 interface ViewProps extends ConnectView {
@@ -390,6 +466,11 @@ class View extends PureComponent<ViewProps, ViewState> {
     return [view.centerTop, view.centerBottom];
   }
 
+  private isNoScroll(): boolean {
+    const { resetView } = this.state;
+    return resetView === ResetView.StopScroll;
+  }
+
   private navigate(
     key: ObsKey,
     navigator: NavigationCB,
@@ -408,10 +489,49 @@ class View extends PureComponent<ViewProps, ViewState> {
     });
   }
 
+  private handleButtons(
+    event: React.MouseEvent<HTMLElement>,
+    key: ObsKey,
+  ): void {
+    const current = this.curRefs[key].current;
+    if (current !== null && !this.isNoScroll()) {
+      current.scrollIntoView({
+        behavior: 'smooth',
+        block: scrollBlocks[key],
+        inline: 'nearest',
+      });
+    }
+    event.preventDefault();
+  }
+
+  handleUp = (event: React.MouseEvent<HTMLElement>): void => {
+    this.handleButtons(event, 'top');
+  };
+
+  handleDown = (event: React.MouseEvent<HTMLElement>): void => {
+    this.handleButtons(event, 'bottom');
+  };
+
+  handleTopRight = (event: React.MouseEvent<HTMLElement>): void => {
+    this.handleButtons(event, 'topRight');
+  };
+
+  handleTopLeft = (event: React.MouseEvent<HTMLElement>): void => {
+    this.handleButtons(event, 'topLeft');
+  };
+
+  handleBottomRight = (event: React.MouseEvent<HTMLElement>): void => {
+    this.handleButtons(event, 'bottomRight');
+  };
+
+  handleBottomLeft = (event: React.MouseEvent<HTMLElement>): void => {
+    this.handleButtons(event, 'bottomLeft');
+  };
+
   render(): ReactNode {
     const { view } = this.props;
-    const { resetView, tempContent } = this.state;
-    const noScroll = resetView === ResetView.StopScroll;
+    const { tempContent } = this.state;
+    const noScroll = this.isNoScroll();
 
     const getTopLink = (cell: Cell | undefined): JSX.Element | null => {
       if (cell === undefined) {
@@ -506,6 +626,24 @@ class View extends PureComponent<ViewProps, ViewState> {
             </Item>
           </HBand>
         </VBand>
+        <HOverlay isTop={true}>
+          <HNavButton onClick={this.handleTopLeft}>◀</HNavButton>
+          <HNavButton onClick={this.handleTopRight}>▶</HNavButton>
+        </HOverlay>
+        <HOverlay isTop={false}>
+          <HNavButton onClick={this.handleBottomLeft}>◀</HNavButton>
+          <HNavButton onClick={this.handleBottomRight}>▶</HNavButton>
+        </HOverlay>
+        <VNavButton
+          isTop={true}
+          onClick={this.handleUp}>
+          ▲
+        </VNavButton>
+        <VNavButton
+          isTop={false}
+          onClick={this.handleDown}>
+          ▼
+        </VNavButton>
       </Outer>
     );
   }

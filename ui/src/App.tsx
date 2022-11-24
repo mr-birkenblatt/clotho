@@ -39,22 +39,6 @@ const MainColumn = styled.div`
   overflow: hidden;
 `;
 
-// const ItemMidContent = styled.div<ItemMidContentProps>`
-//   display: flex;
-//   height: ${(props) => props.buttonSize}px;
-//   background-color: green;
-//   padding: ${(props) => props.radius}px;
-//   border-radius: ${(props) => props.radius}px;
-//   align-items: center;
-//   justify-content: center;
-//   flex-direction: column;
-// `;
-
-// type ItemMidContentProps = {
-//   buttonSize: number;
-//   radius: number;
-// };
-
 type AppProps = Record<string, never>;
 type AppState = Record<string, never>;
 
@@ -69,81 +53,6 @@ export default class App extends PureComponent<AppProps, AppState> {
     );
   }
 
-  // getHash: HashCB = (fullKey, callback) => {
-  //   this.graph.getHash(fullKey, callback);
-  // };
-
-  // getItem: ItemCB = (fullLinkKey, readyCb) => {
-  //   return this.graph.getMessage(fullLinkKey, () => readyCb());
-  // };
-
-  // getVItem: VItemCB = (lineKey, height, isViewUpdate, vPosType) => {
-  //   if (lineKey === undefined) {
-  //     return null;
-  //   }
-  //   return (
-  //     <Horizontal
-  //       itemWidth={450}
-  //       itemHeight={height}
-  //       itemRadius={10}
-  //       itemPadding={50}
-  //       buttonSize={50}
-  //       isViewUpdate={isViewUpdate}
-  //       vPosType={vPosType}
-  //       lineKey={lineKey}
-  //       getItem={this.getItem}
-  //     />
-  //   );
-  // };
-
-  // getChildLine: ChildLineCB = (fullKey, callback) => {
-  //   this.graph.getChild(fullKey, callback);
-  // };
-
-  // getParentLine: ParentLineCB = (fullKey, callback) => {
-  //   this.graph.getParent(fullKey, callback);
-  // };
-
-  // getLink: LinkCB = (fullLinkKey, parentIndex, readyCb) => {
-  //   return this.graph.getTopLink(fullLinkKey, parentIndex, () => readyCb());
-  // };
-
-  // getTopLink: TopLinkCB = (fullLinkKey, parentIndex, callback) => {
-  //   const res = this.graph.getTopLink(fullLinkKey, parentIndex, callback);
-  //   if (res !== undefined) {
-  //     callback(res);
-  //   }
-  // };
-
-  // getSingleLink: SingleLinkCB = (parent, child, callback) => {
-  //   this.graph.getSingleLink(parent, child, callback);
-  // };
-
-  // renderLink: RenderLinkCB = (link, buttonSize, radius) => {
-  //   if (link.invalid) {
-  //     return null;
-  //   }
-  //   return (
-  //     <div>
-  //       <div>
-  //         {link.user}: {link.first}
-  //       </div>
-  //       <div>
-  //         {Object.keys(link.votes).map((voteName) => (
-  //           <ItemMidContent
-  //             buttonSize={buttonSize}
-  //             radius={radius}
-  //             key={voteName}>
-  //             <span>
-  //               {voteName}: {link.votes[voteName]}
-  //             </span>
-  //           </ItemMidContent>
-  //         ))}
-  //       </div>
-  //     </div>
-  //   );
-  // };
-
   render() {
     return (
       <Main>
@@ -152,19 +61,6 @@ export default class App extends PureComponent<AppProps, AppState> {
         </MainHeader> */}
         <MainColumn>
           <View graph={this.graph} />
-          {/* <Vertical
-            getItem={this.getVItem}
-            getHash={this.getHash}
-            getChildLine={this.getChildLine}
-            getParentLine={this.getParentLine}
-            getLink={this.getLink}
-            getTopLink={this.getTopLink}
-            getSingleLink={this.getSingleLink}
-            renderLink={this.renderLink}
-            height={450}
-            radius={10}
-            buttonSize={50}
-          /> */}
         </MainColumn>
       </Main>
     );

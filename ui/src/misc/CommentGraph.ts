@@ -14,6 +14,11 @@ import {
 
 const URL_PREFIX = `${window.location.origin}/api`;
 const BATCH_DELAY = 10;
+const DEFAULT_BLOCK_SIZE = 5;
+const DEFAULT_COMMENT_POOL_SIZE = 10000;
+const DEFAULT_LINE_SIZE = 100;
+const DEFAULT_LINK_POOL_SIZE = 1000;
+const DEFAULT_LINK_CACHE_SIZE = 1000;
 
 type ApiTopic = {
   topics: Readonly<{ [key: string]: string }>;
@@ -362,7 +367,7 @@ class CommentPool {
 
   constructor(api: ApiProvider, maxSize?: number) {
     this.api = api;
-    this.pool = new LRU(maxSize ?? 10000);
+    this.pool = new LRU(maxSize ?? DEFAULT_COMMENT_POOL_SIZE);
     this.hashQueue = new Set<Readonly<MHash>>();
     this.inFlight = new Set<Readonly<MHash>>();
     this.listeners = new Map();
@@ -506,7 +511,7 @@ class LinkLookup {
     blockSize?: Readonly<number>,
   ) {
     this.api = api;
-    this.blockSize = blockSize ?? 10;
+    this.blockSize = blockSize ?? DEFAULT_BLOCK_SIZE;
     this.linkKey = linkKey;
     this.line = new LRU(maxLineSize);
     this.listeners = new Map();
@@ -663,9 +668,9 @@ class LinkPool {
     maxLineSize?: Readonly<number>,
   ) {
     this.api = api;
-    this.maxLineSize = maxLineSize ?? 100;
-    this.pool = new LRU(maxSize ?? 1000);
-    this.linkCache = new LRU(maxLinkCache ?? 1000);
+    this.maxLineSize = maxLineSize ?? DEFAULT_LINE_SIZE;
+    this.pool = new LRU(maxSize ?? DEFAULT_LINK_POOL_SIZE);
+    this.linkCache = new LRU(maxLinkCache ?? DEFAULT_LINK_CACHE_SIZE);
   }
 
   private getLine(linkKey: Readonly<LinkKey>): Readonly<LinkLookup> {
