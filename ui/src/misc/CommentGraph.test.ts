@@ -196,6 +196,7 @@ const createCommentGraph = (isSimple: boolean): CommentGraph => {
     100,
     100,
     100,
+    100,
     10,
   );
 };

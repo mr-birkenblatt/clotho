@@ -1,3 +1,6 @@
+import { BATCH_DELAY } from './constants';
+import LRU from './LRU';
+
 export type LoggerCB = (...msg: string[]) => void;
 
 export function maybeLog(
@@ -272,3 +275,135 @@ export class SafeSet<V> {
     return this.setValues.values();
   }
 } // SafeSet
+
+type BlockIndex = number & { _blockIndex: void };
+
+export type BlockResponse<I extends number, T> = {
+  values: Readonly<T[]>;
+  next: Readonly<I>;
+};
+export type BlockLoading<I extends number, T> = (
+  offset: Readonly<I>,
+  limit: number,
+) => Promise<BlockResponse<I, T>>;
+export type NotifyBlockCB<T> = (value: T) => void;
+
+export class BlockLoader<I extends number, T> {
+  private readonly loader: BlockLoading<I, T>;
+  private readonly blockSize: Readonly<number>;
+
+  private readonly cache: LRU<Readonly<I>, Readonly<T>>;
+  private readonly listeners: Map<Readonly<I>, NotifyBlockCB<T>[]>;
+  private readonly activeBlocks: Set<Readonly<BlockIndex>>;
+
+  constructor(
+    loader: BlockLoading<I, T>,
+    maxCacheSize: Readonly<number>,
+    blockSize: Readonly<number>,
+  ) {
+    this.loader = loader;
+    this.blockSize = blockSize;
+    this.cache = new LRU(maxCacheSize);
+    this.listeners = new Map();
+    this.activeBlocks = new Set<BlockIndex>();
+  }
+
+  private getBlock(index: Readonly<I>): BlockIndex {
+    return Math.floor(num(index) / this.blockSize) as BlockIndex;
+  }
+
+  private toIndex(offset: Readonly<number>, block: Readonly<BlockIndex>): I {
+    return (num(block) * this.blockSize + offset) as I;
+  }
+
+  private requestIndex(index: Readonly<I>): void {
+    this.fetchBlock(this.getBlock(index));
+  }
+
+  private fetchBlock(block: Readonly<BlockIndex>): void {
+    if (this.activeBlocks.has(block)) {
+      return;
+    }
+    this.activeBlocks.add(block);
+
+    const finish = () => {
+      this.activeBlocks.delete(block);
+    };
+
+    const fetchRange = (blockOffset: Readonly<number>): void => {
+      const fromOffset = this.toIndex(blockOffset, block);
+      const remainCount = this.blockSize - blockOffset;
+      this.loader(fromOffset, remainCount)
+        .then((obj: BlockResponse<I, T>) => {
+          const { values, next } = obj;
+          const curCount = num(next) - fromOffset;
+          const count = curCount > 0 ? curCount : remainCount;
+          range(count).forEach((curOffset) => {
+            const extIndex = (fromOffset + curOffset) as I;
+            const cur = values[curOffset];
+            this.cache.set(extIndex, cur);
+            this.note(extIndex);
+          });
+          if (count < remainCount) {
+            fetchRange(blockOffset + count);
+          } else {
+            finish();
+          }
+        })
+        .catch(
+          /* istanbul ignore next */
+          (e) => {
+            finish();
+            errHnd(e);
+          },
+        );
+    };
+
+    setTimeout(() => {
+      fetchRange(0);
+    }, BATCH_DELAY);
+  }
+
+  private waitFor(index: Readonly<I>, notify: NotifyBlockCB<T>): void {
+    let notes = this.listeners.get(index);
+    /* istanbul ignore else */
+    if (notes === undefined) {
+      notes = [];
+      this.listeners.set(index, notes);
+    }
+    notes.push(notify);
+    this.note(index);
+  }
+
+  private note(index: Readonly<I>): void {
+    const val = this.cache.get(index);
+    if (val !== undefined) {
+      const notes = this.listeners.get(index);
+      if (notes !== undefined) {
+        this.listeners.delete(index);
+        notes.forEach((cur) => cur(val));
+      }
+    }
+  }
+
+  retrieve(index: Readonly<I>, notify: NotifyBlockCB<T>): void {
+    this.waitFor(index, notify);
+    if (!this.cache.has(index)) {
+      this.requestIndex(index);
+    }
+  }
+
+  get(index: Readonly<I>, notify: NotifyBlockCB<T>): T | undefined {
+    const res = this.cache.get(index);
+    if (res !== undefined) {
+      return res;
+    }
+    this.waitFor(index, notify);
+    this.requestIndex(index);
+    return undefined;
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+} // BlockLoader

@@ -1,27 +1,31 @@
+import {
+  BATCH_DELAY,
+  DEFAULT_BLOCK_SIZE,
+  DEFAULT_COMMENT_POOL_SIZE,
+  DEFAULT_LINE_SIZE,
+  DEFAULT_LINK_CACHE_SIZE,
+  DEFAULT_LINK_POOL_SIZE,
+  DEFAULT_TOPIC_POOL_SIZE,
+  URL_PREFIX,
+} from './constants';
 import LRU from './LRU';
 import {
   assertTrue,
+  BlockLoader,
+  BlockResponse,
   errHnd,
   json,
   LoggerCB,
   maybeLog,
   num,
-  range,
   safeStringify,
   str,
   toJson,
 } from './util';
 
-const URL_PREFIX = `${window.location.origin}/api`;
-const BATCH_DELAY = 10;
-const DEFAULT_BLOCK_SIZE = 5;
-const DEFAULT_COMMENT_POOL_SIZE = 10000;
-const DEFAULT_LINE_SIZE = 100;
-const DEFAULT_LINK_POOL_SIZE = 1000;
-const DEFAULT_LINK_CACHE_SIZE = 1000;
-
 type ApiTopic = {
   topics: Readonly<{ [key: string]: string }>;
+  next: Readonly<number>;
 };
 
 type ApiRead = {
@@ -59,16 +63,11 @@ export type ApiProvider = {
 /* istanbul ignore next */
 export const DEFAULT_API: ApiProvider = {
   topic: async (offset, limit) => {
-    return fetch(`${URL_PREFIX}/topic`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        offset,
-        limit,
-      }),
-    }).then(json);
+    const query = new URLSearchParams({
+      offset: `${offset}`,
+      limit: `${limit}`,
+    });
+    return fetch(`${URL_PREFIX}/topic?${query}`, { method: 'GET' }).then(json);
   },
   read: async (hashes) => {
     return fetch(`${URL_PREFIX}/read`, {
@@ -111,7 +110,6 @@ export const DEFAULT_API: ApiProvider = {
   },
 };
 
-type LineBlock = number & { _lineBlock: void };
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 
 export function adj(index: number): Readonly<AdjustedLineIndex> {
@@ -150,6 +148,7 @@ interface UserKey {
   invalid?: Readonly<false>;
   topic?: Readonly<false>;
   user: Readonly<true>;
+  userId: Readonly<UserId>;
 }
 interface InvalidKey {
   invalid: Readonly<true>;
@@ -157,10 +156,8 @@ interface InvalidKey {
   user?: Readonly<false>;
 }
 export type LineKey = LinkKey | TopicKey | UserKey | InvalidKey;
-export type NonUserLineKey = LinkKey | TopicKey | InvalidKey;
 export const INVALID_KEY: Readonly<InvalidKey> = { invalid: true };
 export const TOPIC_KEY: Readonly<TopicKey> = { topic: true };
-export const USER_KEY: Readonly<UserKey> = { user: true };
 
 export function equalLineKey(
   keyA: Readonly<LineKey>,
@@ -179,7 +176,7 @@ export function equalLineKey(
     return false;
   }
   if (keyA.user && keyB.user) {
-    return true;
+    return keyA.userId === keyB.userId;
   }
   if (keyA.user || keyB.user) {
     return false;
@@ -202,7 +199,7 @@ export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
 export function toLineKey(
   hash: string,
   isGetParent: boolean,
-): Readonly<NonUserLineKey> {
+): Readonly<LineKey> {
   return {
     mhash: hash as MHash,
     isGetParent,
@@ -269,14 +266,14 @@ export function asLineKey(
     return TOPIC_KEY;
   }
   if (fullKey.user) {
-    return USER_KEY;
+    return { user: true, userId: fullKey.userId };
   }
   const { mhash, isGetParent } = fullKey;
   return { mhash, isGetParent };
 }
 
 export function toFullKey(
-  lineKey: Readonly<NonUserLineKey>,
+  lineKey: Readonly<LineKey>,
   index: Readonly<AdjustedLineIndex>,
 ): Readonly<FullIndirectKey> {
   if (lineKey.invalid) {
@@ -284,6 +281,12 @@ export function toFullKey(
   }
   if (lineKey.topic) {
     return { topic: true, index };
+  }
+  if (lineKey.user) {
+    if (num(index) === 0) {
+      return { user: true, userId: lineKey.userId };
+    }
+    return INVALID_FULL_KEY;
   }
   const { mhash, isGetParent } = lineKey;
   return {
@@ -424,9 +427,6 @@ export type NotifyContentCB = (
 ) => void;
 export type NotifyHashCB = (mhash: Readonly<MHash> | undefined) => void;
 export type NotifyLinkCB = (link: Readonly<Link>) => void;
-type TopicsCB = (
-  topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
-) => void;
 export type NextCB = (next: Readonly<LineKey>) => void;
 
 class CommentPool {
@@ -435,16 +435,47 @@ class CommentPool {
   private readonly hashQueue: Set<Readonly<MHash>>;
   private readonly inFlight: Set<Readonly<MHash>>;
   private readonly listeners: Map<Readonly<MHash>, NotifyContentCB[]>;
-  private topics: [Readonly<MHash>, Readonly<string>][] | undefined;
+  private readonly topics: BlockLoader<
+    AdjustedLineIndex,
+    [Readonly<MHash>, Readonly<string>]
+  >;
+
   private active: boolean;
 
-  constructor(api: ApiProvider, maxSize: number) {
+  constructor(
+    api: ApiProvider,
+    maxSize: number,
+    maxTopicSize: number,
+    blockSize: number,
+  ) {
     this.api = api;
     this.pool = new LRU(maxSize);
     this.hashQueue = new Set<Readonly<MHash>>();
     this.inFlight = new Set<Readonly<MHash>>();
     this.listeners = new Map();
-    this.topics = undefined;
+
+    async function loading(
+      offset: Readonly<AdjustedLineIndex>,
+      limit: number,
+    ): Promise<
+      BlockResponse<AdjustedLineIndex, [Readonly<MHash>, Readonly<string>]>
+    > {
+      const { topics, next } = await api.topic(num(offset), limit);
+      const entries = Object.entries(topics) as [MHash, string][];
+      const topicMap = new Map(entries);
+      const values: [Readonly<MHash>, Readonly<string>][] = Array.from(
+        topicMap.keys(),
+      )
+        .sort()
+        .map((mhash) => {
+          const topic = topicMap.get(mhash);
+          assertTrue(topic !== undefined);
+          return [mhash, topic];
+        });
+      return { values, next: adj(next) };
+    }
+
+    this.topics = new BlockLoader(loading, maxTopicSize, blockSize);
     this.active = false;
   }
 
@@ -533,52 +564,23 @@ class CommentPool {
     return undefined;
   }
 
-  getTopics(
-    notify: TopicsCB,
-    offset: number,
-    limit: number,
-  ): Readonly<[Readonly<MHash>, Readonly<string>][]> | undefined {
-    // FIXME: cannot cache like before
-    if (this.topics !== undefined) {
-      return this.topics;
-    }
-    this.api
-      .topic(offset, limit)
-      .then((obj: ApiTopic) => {
-        const { topics } = obj;
-        const entries = Object.entries(topics) as [MHash, string][];
-        const topicMap = new Map(entries);
-        const res: [MHash, string][] = Array.from(topicMap.keys())
-          .sort()
-          .map((mhash) => {
-            const topic = topicMap.get(mhash);
-            assertTrue(topic !== undefined);
-            return [mhash, topic];
-          });
-        this.topics = res;
-        notify(res);
-      })
-      .catch(
-        /* istanbul ignore next */
-        errHnd,
-      );
-    return undefined;
+  getTopic(
+    index: Readonly<AdjustedLineIndex>,
+    notify: NotifyContentCB,
+  ): Readonly<[Readonly<MHash>, Readonly<string>]> | undefined {
+    return this.topics.get(index, ([mhash, content]) =>
+      notify(mhash, content),
+    );
   }
 
   clearCache(): void {
-    this.topics = undefined;
+    this.topics.clear();
     this.pool.clear();
   }
 } // CommentPool
 
 class LinkLookup {
-  private readonly api: Readonly<ApiProvider>;
-  private readonly blockSize: Readonly<number>;
-  private readonly linkKey: Readonly<LinkKey>;
-
-  private readonly line: LRU<Readonly<AdjustedLineIndex>, Readonly<Link>>;
-  private readonly listeners: Map<Readonly<AdjustedLineIndex>, NotifyLinkCB[]>;
-  private readonly activeBlocks: Set<Readonly<LineBlock>>;
+  private readonly loader: Readonly<BlockLoader<AdjustedLineIndex, Link>>;
 
   constructor(
     api: Readonly<ApiProvider>,
@@ -586,144 +588,29 @@ class LinkLookup {
     maxLineSize: Readonly<number>,
     blockSize: Readonly<number>,
   ) {
-    this.api = api;
-    this.blockSize = blockSize;
-    this.linkKey = linkKey;
-    this.line = new LRU(maxLineSize);
-    this.listeners = new Map();
-    this.activeBlocks = new Set<LineBlock>();
-  }
-
-  /* istanbul ignore next: not used anywhere */
-  getLinkKey(): Readonly<LinkKey> {
-    return this.linkKey;
-  }
-
-  /* istanbul ignore next: not used anywhere */
-  getFullLinkKey(index: Readonly<AdjustedLineIndex>): Readonly<FullLinkKey> {
-    const { mhash, isGetParent } = this.getLinkKey();
-    return { mhash, isGetParent, index };
-  }
-
-  private getBlock(index: Readonly<AdjustedLineIndex>): LineBlock {
-    return Math.floor(num(index) / this.blockSize) as LineBlock;
-  }
-
-  private toIndex(
-    offset: Readonly<number>,
-    block: Readonly<LineBlock>,
-  ): AdjustedLineIndex {
-    return (num(block) * this.blockSize + offset) as AdjustedLineIndex;
-  }
-
-  private requestIndex(index: Readonly<AdjustedLineIndex>): void {
-    this.fetchLinks(this.getBlock(index));
-  }
-
-  private fetchLinks(block: Readonly<LineBlock>): void {
-    if (this.activeBlocks.has(block)) {
-      return;
+    async function loading(
+      offset: Readonly<AdjustedLineIndex>,
+      limit: number,
+    ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
+      const { links, next } = await api.link(linkKey, num(offset), limit);
+      return { values: links, next: adj(next) };
     }
-    this.activeBlocks.add(block);
 
-    const finish = () => {
-      this.activeBlocks.delete(block);
-    };
-
-    const fetchRange = (blockOffset: Readonly<number>): void => {
-      const fromOffset = this.toIndex(blockOffset, block);
-      const remainCount = this.blockSize - blockOffset;
-      this.api
-        .link(this.linkKey, fromOffset, remainCount)
-        .then((obj: ApiLinkList) => {
-          const { links, next } = obj;
-          const curCount = next - fromOffset;
-          const count = curCount > 0 ? curCount : remainCount;
-          range(count).forEach((curOffset) => {
-            const adjIndex = (fromOffset + curOffset) as AdjustedLineIndex;
-            const curLink = links[curOffset];
-            let res: Link;
-            if (curLink !== undefined) {
-              const { child, parent, first, user, votes } = curLink;
-              res = {
-                child,
-                parent,
-                first,
-                user,
-                votes,
-              };
-            } else {
-              res = INVALID_LINK;
-            }
-            this.line.set(adjIndex, res);
-            this.note(adjIndex);
-          });
-          if (count < remainCount) {
-            fetchRange(blockOffset + count);
-          } else {
-            finish();
-          }
-        })
-        .catch(
-          /* istanbul ignore next */
-          (e) => {
-            finish();
-            errHnd(e);
-          },
-        );
-    };
-
-    setTimeout(() => {
-      fetchRange(0);
-    }, BATCH_DELAY);
-  }
-
-  private waitFor(
-    index: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): void {
-    let notes = this.listeners.get(index);
-    /* istanbul ignore else */
-    if (notes === undefined) {
-      notes = [];
-      this.listeners.set(index, notes);
-    }
-    notes.push(notify);
-    this.note(index);
-  }
-
-  private note(index: Readonly<AdjustedLineIndex>): void {
-    const link = this.line.get(index);
-    if (link !== undefined) {
-      const notes = this.listeners.get(index);
-      if (notes !== undefined) {
-        this.listeners.delete(index);
-        notes.forEach((cur) => cur(link));
-      }
-    }
+    this.loader = new BlockLoader(loading, maxLineSize, blockSize);
   }
 
   retrieveLink(
     index: Readonly<AdjustedLineIndex>,
     notify: NotifyLinkCB,
   ): void {
-    this.waitFor(index, notify);
-    if (!this.line.has(index)) {
-      this.requestIndex(index);
-    }
+    this.loader.retrieve(index, notify);
   }
 
   getLink(
     index: Readonly<AdjustedLineIndex>,
     notify: NotifyLinkCB,
   ): Link | undefined {
-    const res = this.line.get(index);
-    if (res !== undefined) {
-      return res;
-    }
-    this.waitFor(index, notify);
-    this.requestIndex(index);
-    return undefined;
+    return this.loader.get(index, notify);
   }
 } // LinkLookup
 
@@ -837,6 +724,7 @@ export default class CommentGraph {
   constructor(
     api?: Readonly<ApiProvider>,
     maxCommentPoolSize?: Readonly<number>,
+    maxTopicSize?: Readonly<number>,
     maxLinkPoolSize?: Readonly<number>,
     maxLinkCache?: Readonly<number>,
     maxLineSize?: Readonly<number>,
@@ -846,6 +734,8 @@ export default class CommentGraph {
     this.msgPool = new CommentPool(
       actualApi,
       maxCommentPoolSize ?? DEFAULT_COMMENT_POOL_SIZE,
+      maxTopicSize ?? DEFAULT_TOPIC_POOL_SIZE,
+      blockSize ?? DEFAULT_BLOCK_SIZE,
     );
     this.linkPool = new LinkPool(
       actualApi,
@@ -872,27 +762,7 @@ export default class CommentGraph {
     notify: NotifyContentCB,
   ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
     const { index } = fullTopicKey;
-
-    const getTopicMessage = (
-      topics: Readonly<[Readonly<MHash>, Readonly<string>][]>,
-    ): Readonly<[Readonly<MHash> | undefined, Readonly<string>]> => {
-      const ix = num(index);
-      if (ix < 0 || ix >= topics.length) {
-        return [undefined, '[unavailable]'];
-      }
-      return topics[ix];
-    };
-
-    const notifyTopics: TopicsCB = (topics) => {
-      const [mhash, topic] = getTopicMessage(topics);
-      notify(mhash, topic);
-    };
-
-    const order = this.msgPool.getTopics(notifyTopics);
-    if (order === undefined) {
-      return undefined;
-    }
-    return getTopicMessage(order);
+    return this.msgPool.getTopic(index, notify);
   }
 
   private getFullLinkMessage(
@@ -944,10 +814,10 @@ export default class CommentGraph {
     if (fullKey.direct) {
       return this.getMessageByHash(fullKey, notify);
     }
-    if (!fullKey.topic) {
-      return this.getFullLinkMessage(fullKey, notify);
+    if (fullKey.topic) {
+      return this.getTopicMessage(fullKey, notify);
     }
-    return this.getTopicMessage(fullKey, notify);
+    return this.getFullLinkMessage(fullKey, notify);
   }
 
   getHash(fullKey: Readonly<FullKey>, notify: NotifyHashCB): void {
@@ -968,18 +838,11 @@ export default class CommentGraph {
         notifyLink(link);
       }
     } else {
-      const notifyTopics: TopicsCB = (topics) => {
-        const ix = fromAdjustedIndex(fullKey.index);
-        const res = topics[ix];
-        if (res === undefined) {
-          notify(undefined);
-        } else {
-          notify(res[0]);
-        }
-      };
-      const topics = this.msgPool.getTopics(notifyTopics);
-      if (topics !== undefined) {
-        notifyTopics(topics);
+      const topic = this.msgPool.getTopic(fullKey.index, (res, _) => {
+        notify(res);
+      });
+      if (topic !== undefined) {
+        notify(topic[0]);
       }
     }
   }

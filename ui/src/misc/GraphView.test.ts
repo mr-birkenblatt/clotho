@@ -130,6 +130,7 @@ test('test graph view init', async () => {
     100,
     100,
     100,
+    100,
     10,
   );
 
@@ -381,6 +382,7 @@ test('test graph view init', async () => {
 test('test graph infinite', async () => {
   const graph = new CommentGraph(
     new InfGraph(3).getApiProvider(),
+    100,
     100,
     100,
     100,
