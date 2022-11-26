@@ -139,6 +139,7 @@ def setup(
     def _post_topic(_req: QSRH, rargs: ReqArgs) -> TopicResponse:
         args = rargs["post"]
         user = get_user(args)
+        # FIXME: offset limit
         assert user.can_create_topic()
         topic = f"{args['topic']}"
         msg = Message(msg=topic)
@@ -166,6 +167,7 @@ def setup(
     @server.json_post(f"{prefix}/vote")
     def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
         args = rargs["post"]
+        # FIXME: add / remove vote
         votes = to_list(args["votes"])
         user = get_user(args)
         parent = MHash.parse(f"{args['parent']}")

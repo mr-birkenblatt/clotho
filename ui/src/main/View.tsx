@@ -11,7 +11,7 @@ import {
   scrollTopHorizontal,
   scrollVertical,
 } from '../misc/GraphView';
-import CommentGraph from '../misc/CommentGraph';
+import CommentGraph, { VoteType, VOTE_TYPES } from '../misc/CommentGraph';
 import { safeStringify, toReadableNumber } from '../misc/util';
 import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
@@ -173,13 +173,14 @@ const ItemMidVotes = styled.div`
   justify-content: center;
 `;
 
-const ButtonDiv = styled.div`
+const ButtonDiv = styled.div<ButtonDivProps>`
   display: inline-block;
   text-align: center;
   vertical-align: middle;
   pointer-events: auto;
   cursor: pointer;
   border: 0;
+  ${(props) => (props.isChecked ? 'background-color: #6c7078;' : '')}
 
   &:hover {
     background-color: #4a4e56;
@@ -239,6 +240,10 @@ type OverlayProps = {
 
 type NoScrollProps = {
   noScroll: boolean;
+};
+
+type ButtonDivProps = {
+  isChecked: boolean;
 };
 
 enum ResetView {
@@ -547,14 +552,27 @@ class View extends PureComponent<ViewProps, ViewState> {
       return (
         <ItemMid>
           <ItemMidVotes>
-            {Object.keys(link.votes).map((voteName) => (
-              <ItemMidContent key={voteName}>
-                {toReadableNumber(link.votes[voteName])}{' '}
-                {VOTE_SYMBOL.get(voteName) ?? `[${voteName}]`}
+            {VOTE_TYPES.map(
+              (
+                voteType: VoteType,
+              ): { voteType: VoteType; count: number; userVoted: boolean } => {
+                const res = link.votes[voteType];
+                if (res === undefined) {
+                  return { voteType, count: 0, userVoted: false };
+                }
+                const { count, userVoted } = res;
+                return { voteType, count, userVoted };
+              },
+            ).map(({ voteType, count, userVoted }) => (
+              <ItemMidContent
+                key={voteType}
+                isChecked={userVoted}>
+                {toReadableNumber(count)}{' '}
+                {VOTE_SYMBOL.get(voteType) ?? `[${voteType}]`}
               </ItemMidContent>
             ))}
           </ItemMidVotes>
-          <ItemMidName>{link.user}</ItemMidName>
+          <ItemMidName isChecked={false}>{link.user}</ItemMidName>
         </ItemMid>
       );
     };

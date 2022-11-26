@@ -24,6 +24,11 @@ VT_ACK: VoteType = "ack"
 VT_SKIP: VoteType = "skip"
 VT_HONOR: VoteType = "honor"
 
+VoteInfo = TypedDict('VoteInfo', {
+    "count": float,
+    "uservoted": bool,
+})
+
 LinkResponse = TypedDict('LinkResponse', {
     "parent": str,
     "child": str,
@@ -112,17 +117,23 @@ class Link:
             now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
+    def remove_vote(self, user_store: UserStore, vote_type: VoteType, who: User, now: pd.Timestamp) -> None:
+        raise NotImplementedError()
+
     def get_response(
             self, user_store: UserStore, now: pd.Timestamp) -> LinkResponse:
         user = self.get_user(user_store)
         user_str = None if user is None else user.get_id()
         first = now
-        votes: dict[VoteType, float] = {}
+        votes: dict[VoteType, VoteInfo] = {}
         for vtype in self.get_vote_types():
             cur_vote = self.get_votes(vtype)
             cur_total = cur_vote.get_total_votes()
             if cur_total > 0.0:
-                votes[vtype] = cur_total
+                votes[vtype] = {
+                    "count": cur_total,
+                    "uservoted": cur_vote.has_user_voted(user),
+                }
             cur_first = cur_vote.get_first_vote_time(now)
             if cur_first < first:
                 first = cur_first

@@ -18,7 +18,7 @@ import {
   scrollTopHorizontal,
   scrollVertical,
 } from './GraphView';
-import { advancedGraph } from './TestGraph';
+import { advancedGraph, InfGraph } from './TestGraph';
 import { assertFail, assertTrue, LoggerCB, safeStringify } from './util';
 
 async function execute(
@@ -375,5 +375,36 @@ test('test graph view init', async () => {
       'a1',
     ),
     13,
+  );
+});
+
+test('test graph infinite', async () => {
+  const graph = new CommentGraph(
+    new InfGraph(3).getApiProvider(),
+    100,
+    100,
+    100,
+    100,
+    10,
+  );
+
+  // FIXME: direct key left replacement
+  // FIXME: user key
+  await execute(
+    graph,
+    initView(undefined),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a0', asTopicKey(0)], ['a1', asTopicKey(1)]],
+      [
+        undefined,
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+      'a1',
+      undefined,
+    ),
+    6,
   );
 });

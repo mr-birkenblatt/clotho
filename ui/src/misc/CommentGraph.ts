@@ -32,7 +32,7 @@ type ApiRead = {
 type ApiLinkResponse = {
   parent: Readonly<MHash>;
   child: Readonly<MHash>;
-  user: Readonly<string> | undefined;
+  user: Readonly<UserId> | undefined;
   first: Readonly<number>;
   votes: Votes;
 };
@@ -43,7 +43,7 @@ type ApiLinkList = {
 };
 
 export type ApiProvider = {
-  topic: () => Promise<ApiTopic>;
+  topic: (offset: number, limit: number) => Promise<ApiTopic>;
   read: (hashes: Set<Readonly<MHash>>) => Promise<ApiRead>;
   link: (
     linkKey: Readonly<LinkKey>,
@@ -58,7 +58,18 @@ export type ApiProvider = {
 
 /* istanbul ignore next */
 export const DEFAULT_API: ApiProvider = {
-  topic: async () => fetch(`${URL_PREFIX}/topic`).then(json),
+  topic: async (offset, limit) => {
+    return fetch(`${URL_PREFIX}/topic`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        offset,
+        limit,
+      }),
+    }).then(json);
+  },
   read: async (hashes) => {
     return fetch(`${URL_PREFIX}/read`, {
       method: 'POST',
@@ -117,23 +128,39 @@ export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
   return str(mhash);
 }
 
+export type UserId = string & { _userId: void };
+
+export function fromUserId(userId: Readonly<UserId>): Readonly<string> {
+  return str(userId);
+}
+
 interface LinkKey {
   invalid?: Readonly<false>;
   topic?: Readonly<false>;
+  user?: Readonly<false>;
   mhash: Readonly<MHash>;
   isGetParent: Readonly<boolean>;
 }
 interface TopicKey {
   invalid?: Readonly<false>;
   topic: Readonly<true>;
+  user?: Readonly<false>;
+}
+interface UserKey {
+  invalid?: Readonly<false>;
+  topic?: Readonly<false>;
+  user: Readonly<true>;
 }
 interface InvalidKey {
   invalid: Readonly<true>;
   topic?: Readonly<false>;
+  user?: Readonly<false>;
 }
-export type LineKey = LinkKey | TopicKey | InvalidKey;
+export type LineKey = LinkKey | TopicKey | UserKey | InvalidKey;
+export type NonUserLineKey = LinkKey | TopicKey | InvalidKey;
 export const INVALID_KEY: Readonly<InvalidKey> = { invalid: true };
 export const TOPIC_KEY: Readonly<TopicKey> = { topic: true };
+export const USER_KEY: Readonly<UserKey> = { user: true };
 
 export function equalLineKey(
   keyA: Readonly<LineKey>,
@@ -149,6 +176,12 @@ export function equalLineKey(
     return true;
   }
   if (keyA.topic || keyB.topic) {
+    return false;
+  }
+  if (keyA.user && keyB.user) {
+    return true;
+  }
+  if (keyA.user || keyB.user) {
     return false;
   }
   if (keyA.mhash !== keyB.mhash) {
@@ -169,7 +202,7 @@ export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
 export function toLineKey(
   hash: string,
   isGetParent: boolean,
-): Readonly<LineKey> {
+): Readonly<NonUserLineKey> {
   return {
     mhash: hash as MHash,
     isGetParent,
@@ -180,6 +213,7 @@ interface FullDirectKey {
   direct: Readonly<true>;
   invalid?: Readonly<false>;
   topic?: Readonly<false>;
+  user?: Readonly<false>;
   mhash: Readonly<MHash>;
   topLink?: Readonly<Link>;
 }
@@ -187,6 +221,7 @@ interface FullLinkKey {
   direct?: Readonly<false>;
   invalid?: Readonly<false>;
   topic?: Readonly<false>;
+  user?: Readonly<false>;
   mhash: Readonly<MHash>;
   isGetParent: Readonly<boolean>;
   index: Readonly<AdjustedLineIndex>;
@@ -195,19 +230,33 @@ interface FullTopicKey {
   direct?: Readonly<false>;
   invalid?: Readonly<false>;
   topic: Readonly<true>;
+  user?: Readonly<false>;
   index: Readonly<AdjustedLineIndex>;
+}
+interface FullUserKey {
+  direct?: Readonly<false>;
+  invalid?: Readonly<false>;
+  topic?: Readonly<false>;
+  user: Readonly<true>;
+  userId: Readonly<UserId>;
 }
 interface FullInvalidKey {
   direct?: Readonly<false>;
   invalid: Readonly<true>;
   topic?: Readonly<false>;
+  user?: Readonly<false>;
 }
 export type FullKey =
   | FullDirectKey
   | FullLinkKey
   | FullTopicKey
+  | FullUserKey
   | FullInvalidKey;
-export type FullIndirectKey = FullLinkKey | FullTopicKey | FullInvalidKey;
+export type FullIndirectKey =
+  | FullLinkKey
+  | FullTopicKey
+  | FullUserKey
+  | FullInvalidKey;
 export const INVALID_FULL_KEY: Readonly<FullInvalidKey> = { invalid: true };
 
 export function asLineKey(
@@ -219,12 +268,15 @@ export function asLineKey(
   if (fullKey.topic) {
     return TOPIC_KEY;
   }
+  if (fullKey.user) {
+    return USER_KEY;
+  }
   const { mhash, isGetParent } = fullKey;
   return { mhash, isGetParent };
 }
 
 export function toFullKey(
-  lineKey: Readonly<LineKey>,
+  lineKey: Readonly<NonUserLineKey>,
   index: Readonly<AdjustedLineIndex>,
 ): Readonly<FullIndirectKey> {
   if (lineKey.invalid) {
@@ -282,6 +334,17 @@ export function equalFullKey(
     log(`keyA.direct:${keyA.direct} !== keyB.direct:${keyB.direct}`);
     return false;
   }
+  if (keyA.user && keyB.user) {
+    if (keyA.userId === keyB.userId) {
+      return true;
+    }
+    log(`direct: keyA.user:${keyA.user} !== keyB.user:${keyB.user}`);
+    return false;
+  }
+  if (keyA.user || keyB.user) {
+    log(`keyA.user:${keyA.user} !== keyB.user:${keyB.user}`);
+    return false;
+  }
   if (keyA.index !== keyB.index) {
     log(
       `keyA.index:${safeStringify(keyA)}`,
@@ -328,13 +391,23 @@ export function asDirectKey(hash: string): Readonly<FullKey> {
   return { direct: true, mhash: hash as MHash, topLink: INVALID_LINK };
 }
 
-export type Votes = Readonly<{ [key: string]: Readonly<number> }>;
+export function asUserKey(user: string): Readonly<FullKey> {
+  return { user: true, userId: user as UserId };
+}
+
+export type Vote = {
+  count: Readonly<number>;
+  userVoted: Readonly<boolean>;
+};
+export type VoteType = 'honor' | 'up' | 'down';
+export const VOTE_TYPES: VoteType[] = ['honor', 'up', 'down'];
+export type Votes = Readonly<{ [key in VoteType]: Readonly<Vote> }>;
 
 export type ValidLink = {
   invalid?: Readonly<false>;
   parent: Readonly<MHash>;
   child: Readonly<MHash>;
-  user: Readonly<string>;
+  user: Readonly<UserId> | undefined;
   first: Readonly<number>;
   votes: Votes;
 };
@@ -462,12 +535,15 @@ class CommentPool {
 
   getTopics(
     notify: TopicsCB,
+    offset: number,
+    limit: number,
   ): Readonly<[Readonly<MHash>, Readonly<string>][]> | undefined {
+    // FIXME: cannot cache like before
     if (this.topics !== undefined) {
       return this.topics;
     }
     this.api
-      .topic()
+      .topic(offset, limit)
       .then((obj: ApiTopic) => {
         const { topics } = obj;
         const entries = Object.entries(topics) as [MHash, string][];
@@ -573,7 +649,7 @@ class LinkLookup {
                 child,
                 parent,
                 first,
-                user: user ?? /* istanbul ignore next */ '[nouser]',
+                user,
                 votes,
               };
             } else {
@@ -735,7 +811,7 @@ class LinkPool {
             child,
             parent,
             first,
-            user: user ?? /* istanbul ignore next */ '[nouser]',
+            user,
             votes,
           };
           this.linkCache.set(key, link);

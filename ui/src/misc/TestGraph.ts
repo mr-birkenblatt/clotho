@@ -1,5 +1,5 @@
-import { ApiProvider, MHash, Votes } from './CommentGraph';
-import { assertTrue, str } from './util';
+import { ApiProvider, MHash, UserId, Votes } from './CommentGraph';
+import { assertTrue, range, str } from './util';
 
 export const simpleGraph = (): TestGraph => {
   const graph = new TestGraph(3);
@@ -116,20 +116,22 @@ export default class TestGraph {
         const links = ret.map((other) => ({
           parent: (isGetParent ? other : mhash) as MHash,
           child: (isGetParent ? mhash : other) as MHash,
-          user: 'abc',
+          user: 'abc' as UserId,
           first: 123,
-          votes: { up: 1 },
+          votes: { up: { count: 1, userVoted: false } },
         }));
         return { links, next };
       },
       singleLink: async (parent, child) => {
         const children = this.children[parent as MHash] ?? [];
         const exists = children.some((cur) => cur === str(child));
-        const votes: Votes = exists ? { up: 1 } : {};
+        const votes: Votes = exists
+          ? { up: { count: 1, userVoted: false } }
+          : {};
         return {
           parent,
           child,
-          user: exists ? 'abc' : undefined,
+          user: exists ? ('abc' as UserId) : undefined,
           first: exists ? 123 : 999,
           votes,
         };
@@ -137,3 +139,65 @@ export default class TestGraph {
     };
   }
 } // TestGraph
+
+export class InfGraph {
+  private readonly apiLimit: number;
+
+  constructor(apiLimit: number) {
+    this.apiLimit = apiLimit;
+  }
+
+  getApiProvider(): ApiProvider {
+    return {
+      topic: async () => {
+        const entries: [string, string][] = range(10).map((el) => [
+          `a${el}`,
+          `msg: a${el}`,
+        ]);
+        return {
+          topics: Object.fromEntries(entries),
+        };
+      },
+      read: async (hashes) => {
+        const ms: Readonly<MHash[]> = Array.from(hashes)
+          .sort()
+          .map((e) => e as MHash);
+        const msgArr: string[] = ms.slice(0, this.apiLimit);
+        const skipped: Readonly<MHash[]> = ms.slice(this.apiLimit, undefined);
+        const messages: Readonly<{ [key: string]: string }> =
+          Object.fromEntries(msgArr.map((el) => [el, `msg: ${el}`]));
+        return { messages, skipped };
+      },
+      link: async (linkKey, offset, limit) => {
+        const { mhash, isGetParent } = linkKey;
+        const code = mhash.charCodeAt(0);
+        const newCode = String.fromCharCode(code + (isGetParent ? -1 : 1));
+        const ret = range(offset, offset + Math.min(limit, this.apiLimit));
+        const next = offset + ret.length;
+        const links = ret.map((other) => ({
+          parent: (isGetParent ? `${newCode}${other}` : mhash) as MHash,
+          child: (isGetParent ? mhash : `${newCode}${other}`) as MHash,
+          user: 'abc' as UserId,
+          first: 123,
+          votes: { up: { count: 1, userVoted: false } },
+        }));
+        return { links, next };
+      },
+      singleLink: async (parent, child) => {
+        const pCode = parent.charCodeAt(0);
+        const cCode = child.charCodeAt(0);
+        const exists = pCode === cCode - 1;
+        const votes: Votes = exists
+          ? { up: { count: 1, userVoted: false } }
+          : {};
+        return {
+          parent,
+          child,
+          user: exists ? ('abc' as UserId) : undefined,
+          first: exists ? 123 : 999,
+          votes,
+        };
+      },
+    };
+  }
+} // InfGraph
