@@ -192,6 +192,8 @@ def test_scenario() -> None:
     assert rvotes.keys() == {VT_UP, VT_DOWN}
     assert int(rvotes[VT_UP]["count"]) == 1
     assert int(rvotes[VT_DOWN]["count"]) == 4
+    assert not rvotes[VT_UP]["uservoted"]
+    assert not rvotes[VT_DOWN]["uservoted"]
 
     assert get_link(0, 3).get_votes(VT_DOWN).get_voters(user_store) == {
         users[0], users[1], users[2], users[4]}
