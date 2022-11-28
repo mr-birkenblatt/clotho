@@ -44,8 +44,8 @@ async function execute(
   expectedTransitions: number,
   logger?: LoggerCB,
 ): Promise<Readonly<GraphView>> {
-  assertTrue(view !== undefined);
-  const marker = jest.fn();
+  assertTrue(view !== undefined, 'view is not set');
+  let transitionCount = 0;
   const transition: (
     view: Readonly<GraphView>,
     resolve: (
@@ -57,20 +57,24 @@ async function execute(
       graph,
       view,
       (newView) => {
-        marker();
+        transitionCount += 1;
         transition(newView, resolve, reject);
       },
       logger,
     );
     if (res !== undefined) {
-      expect(marker).toBeCalledTimes(expectedTransitions);
+      if (transitionCount !== expectedTransitions) {
+        reject(`${transitionCount} !== expected ${expectedTransitions}`);
+      }
       if (
         equalView(view, expected, console.warn) &&
         consistentLinks(view, console.warn)
       ) {
         resolve(res);
       } else {
-        reject(`${safeStringify(view)} !== ${safeStringify(expected)}`);
+        reject(
+          `${safeStringify(view)} !== expected ${safeStringify(expected)}`,
+        );
       }
     }
   };
@@ -140,15 +144,16 @@ function buildFullView(
 }
 
 test('test graph view init', async () => {
-  const graph = new CommentGraph(
-    advancedGraph().getApiProvider(),
-    100,
-    100,
-    100,
-    100,
-    100,
-    10,
-  );
+  const graph = new CommentGraph(advancedGraph().getApiProvider(), {
+    maxCommentPoolSize: 100,
+    maxTopicSize: 100,
+    maxLinkPoolSize: 100,
+    maxLinkCache: 100,
+    maxLineSize: 100,
+    maxUserCache: 100,
+    maxUserLineSize: 100,
+    blockSize: 10,
+  });
 
   const initGraph = await execute(
     graph,
@@ -163,7 +168,7 @@ test('test graph view init', async () => {
     ),
     13,
   );
-  assertTrue(initGraph !== undefined);
+  assertTrue(initGraph !== undefined, 'initGraph is undefined');
 
   assertTrue(
     equalView(
@@ -172,11 +177,21 @@ test('test graph view init', async () => {
       }),
       { centerTop: invalidCell() },
     ),
+    'should be invalid',
   );
 
-  assertTrue(scrollTopHorizontal(initGraph, false) === undefined);
-  assertTrue(scrollBottomHorizontal(initGraph, false) === undefined);
-  assertTrue(scrollBottomHorizontal(initGraph, true) === undefined);
+  assertTrue(
+    scrollTopHorizontal(initGraph, false) === undefined,
+    `${safeStringify(scrollTopHorizontal(initGraph, false))}`,
+  );
+  assertTrue(
+    scrollBottomHorizontal(initGraph, false) === undefined,
+    `${safeStringify(scrollBottomHorizontal(initGraph, false))}`,
+  );
+  assertTrue(
+    scrollBottomHorizontal(initGraph, true) === undefined,
+    `${safeStringify(scrollBottomHorizontal(initGraph, true))}`,
+  );
 
   await execute(
     graph,
@@ -214,9 +229,15 @@ test('test graph view init', async () => {
     13,
   );
 
-  assertTrue(a1Graph !== undefined);
-  assertTrue(scrollTopHorizontal(a1Graph, false) === undefined);
-  assertTrue(scrollBottomHorizontal(a1Graph, false) === undefined);
+  assertTrue(a1Graph !== undefined, 'a1Graph is undefined');
+  assertTrue(
+    scrollTopHorizontal(a1Graph, false) === undefined,
+    `${safeStringify(scrollTopHorizontal(a1Graph, false))}`,
+  );
+  assertTrue(
+    scrollBottomHorizontal(a1Graph, false) === undefined,
+    `${safeStringify(scrollBottomHorizontal(a1Graph, false))}`,
+  );
 
   const a1BRGraph = await execute(
     graph,
@@ -254,7 +275,10 @@ test('test graph view init', async () => {
     6,
   );
 
-  assertTrue(scrollVertical(a1BRBRGraph, false) === undefined);
+  assertTrue(
+    scrollVertical(a1BRBRGraph, false) === undefined,
+    `${safeStringify(scrollVertical(a1BRBRGraph, false))}`,
+  );
 
   await execute(
     graph,
@@ -378,7 +402,10 @@ test('test graph view init', async () => {
     6,
   );
 
-  assertTrue(scrollTopHorizontal(a1BRTRUTRTLBRGraph, true) === undefined);
+  assertTrue(
+    scrollTopHorizontal(a1BRTRUTRTLBRGraph, true) === undefined,
+    `${safeStringify(scrollTopHorizontal(a1BRTRUTRTLBRGraph, true))}`,
+  );
 
   await execute(
     graph,
@@ -396,15 +423,16 @@ test('test graph view init', async () => {
 });
 
 test('test graph infinite', async () => {
-  const graph = new CommentGraph(
-    new InfGraph(3).getApiProvider(),
-    100,
-    100,
-    100,
-    100,
-    100,
-    10,
-  );
+  const graph = new CommentGraph(new InfGraph(3).getApiProvider(), {
+    maxCommentPoolSize: 100,
+    maxTopicSize: 100,
+    maxLinkPoolSize: 100,
+    maxLinkCache: 100,
+    maxLineSize: 100,
+    maxUserCache: 100,
+    maxUserLineSize: 100,
+    blockSize: 10,
+  });
 
   // FIXME: direct key left replacement
   // FIXME: user key
@@ -412,17 +440,17 @@ test('test graph infinite', async () => {
     graph,
     initView(undefined),
     buildFullView(
-      ['a5', asFullKey('a1', true, 0)],
+      ['`0', asFullKey('a0', true, 0)],
       [undefined, ['a0', asTopicKey(0)], ['a1', asTopicKey(1)]],
       [
         undefined,
-        ['a2', asFullKey('a1', false, 0)],
-        ['b2', asFullKey('a1', false, 1)],
+        ['b0', asFullKey('a0', false, 0)],
+        ['b1', asFullKey('a0', false, 1)],
       ],
-      ['a3', asFullKey('a2', false, 0)],
-      'a1',
+      ['c0', asFullKey('b0', false, 0)],
+      undefined,
       undefined,
     ),
-    6,
+    13,
   );
 });

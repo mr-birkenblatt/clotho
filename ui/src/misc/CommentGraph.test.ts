@@ -25,7 +25,7 @@ import CommentGraph, {
   ValidLink,
 } from './CommentGraph';
 import { advancedGraph, simpleGraph } from './TestGraph';
-import { assertTrue, range } from './util';
+import { assertEqual, assertTrue, range, safeStringify } from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -63,7 +63,7 @@ async function execute<A extends any[], T extends any[], R>(
   convertDirect: ((res: Readonly<R>) => Readonly<T>) | undefined,
   alwaysExpectCall?: boolean,
 ): Promise<boolean> {
-  const marker = jest.fn();
+  let notifyCount = 0;
   return new Promise((resolve, reject) => {
     const cb: Callback<T> = (...cbArgs) => {
       try {
@@ -74,30 +74,33 @@ async function execute<A extends any[], T extends any[], R>(
       }
     };
     const notify: Callback<T> = (...cbArgs) => {
-      marker();
+      notifyCount += 1;
       if (convertDirect === undefined) {
         cb(...cbArgs);
       }
     };
-    expect(marker).not.toBeCalled();
+    if (notifyCount !== 0) {
+      reject(`notify called before function: ${notifyCount}`);
+    }
     const res = fun(notify, ...args);
     if (!alwaysExpectCall) {
-      expect(marker).not.toBeCalled();
+      if (notifyCount !== 0) {
+        reject(`notify called after function: ${notifyCount}`);
+      }
     }
     if (convertDirect === undefined) {
-      assertTrue(res === undefined);
+      assertTrue(res === undefined, `direct convert: ${safeStringify(res)}`);
     } else {
-      assertTrue(res !== undefined);
+      assertTrue(res !== undefined, 'expected direct convert');
       cb(...convertDirect(res));
     }
     // console.log('runAllTimers');
     // jest.runAllTimers();
   }).then(() => {
     if (convertDirect === undefined || alwaysExpectCall) {
-      expect(marker).toBeCalled();
-      expect(marker).toHaveBeenCalledTimes(1);
+      assertEqual(notifyCount, 1);
     } else {
-      expect(marker).not.toBeCalled();
+      assertEqual(notifyCount, 0);
     }
     return true;
   });
@@ -137,7 +140,7 @@ const convertLink = (link: Link): readonly [Readonly<Link>] => {
 };
 const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
   return (link) => {
-    assertTrue(!link.invalid);
+    assertTrue(!link.invalid, 'link should not be invalid');
     cb(link);
   };
 };
@@ -149,12 +152,20 @@ const checkLink = (parent: string, child: string): ((link: Link) => void) => {
 };
 const invalidLink = (): ((link: Link) => void) => {
   return (link) => {
-    assertTrue(!!link.invalid);
+    assertTrue(
+      !!link.invalid,
+      `link should not be valid: ${safeStringify(link)}`,
+    );
   };
 };
 const checkNext = (lineKey: Readonly<LineKey>): NextCB => {
   return (child) => {
-    assertTrue(equalLineKey(child, lineKey));
+    assertTrue(
+      equalLineKey(child, lineKey),
+      `mismatching line key: ${safeStringify(child)} !== ${safeStringify(
+        lineKey,
+      )}`,
+    );
   };
 };
 const toArgs = (
@@ -218,12 +229,16 @@ const createCommentGraph = (isSimple: boolean): CommentGraph => {
     isSimple
       ? simpleGraph().getApiProvider()
       : advancedGraph().getApiProvider(),
-    100,
-    100,
-    100,
-    100,
-    100,
-    10,
+    {
+      maxCommentPoolSize: 100,
+      maxTopicSize: 100,
+      maxLinkPoolSize: 100,
+      maxLinkCache: 100,
+      maxLineSize: 100,
+      maxUserCache: 100,
+      maxUserLineSize: 100,
+      blockSize: 10,
+    },
   );
 };
 
@@ -1059,6 +1074,7 @@ test('line keys', async () => {
         { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.parent },
       ],
     ),
+    'equality checks failed',
   );
   const comp: [Readonly<LineKey>, Readonly<LineKey>][] = [
     [INVALID_KEY, TOPIC_KEY],
@@ -1083,9 +1099,13 @@ test('line keys', async () => {
       const [a, b] = cur;
       return !equalLineKey(a, b);
     }),
+    'mismatched line keys',
   );
-  assertTrue(!equalLineKeys([], [INVALID_KEY]));
-  assertTrue(!equalLineKeys([TOPIC_KEY], [INVALID_KEY]));
+  assertTrue(!equalLineKeys([], [INVALID_KEY]), 'should not be equal');
+  assertTrue(
+    !equalLineKeys([TOPIC_KEY], [INVALID_KEY]),
+    'should not be equal',
+  );
   expect(toFullKey(toLineKey('a', true), -1 as AdjustedLineIndex)).toEqual(
     asFullKey('a', true, -1),
   );

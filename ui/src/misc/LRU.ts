@@ -66,7 +66,7 @@ export default class LRU<K, V> {
     if (entry === undefined) {
       return undefined;
     }
-    assertTrue(this.head !== undefined);
+    assertTrue(this.head !== undefined, 'head is not set');
     const head = this.head;
     assertEqual(head.prev, head);
     if (head !== entry) {
@@ -141,7 +141,10 @@ export default class LRU<K, V> {
     while (cur.next !== cur) {
       arr.push(cur.key);
       cur = cur.next;
-      assertTrue(arr.length <= this.objs.size);
+      assertTrue(
+        arr.length <= this.objs.size,
+        `${arr.length} <= ${this.objs.size}`,
+      );
     }
     arr.push(cur.key);
     return arr;
@@ -156,7 +159,10 @@ export default class LRU<K, V> {
     while (cur.next !== cur) {
       arr.push(cur.item);
       cur = cur.next;
-      assertTrue(arr.length <= this.objs.size);
+      assertTrue(
+        arr.length <= this.objs.size,
+        `${arr.length} <= ${this.objs.size}`,
+      );
     }
     arr.push(cur.item);
     return arr;

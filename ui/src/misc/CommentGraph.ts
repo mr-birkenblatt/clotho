@@ -522,6 +522,17 @@ export type NotifyHashCB = (mhash: Readonly<MHash> | undefined) => void;
 export type NotifyLinkCB = (link: Readonly<Link>) => void;
 export type NextCB = (next: Readonly<LineKey>) => void;
 
+export type CGSettings = {
+  maxCommentPoolSize?: Readonly<number>;
+  maxTopicSize?: Readonly<number>;
+  maxLinkPoolSize?: Readonly<number>;
+  maxLinkCache?: Readonly<number>;
+  maxLineSize?: Readonly<number>;
+  maxUserCache?: Readonly<number>;
+  maxUserLineSize?: Readonly<number>;
+  blockSize?: Readonly<number>;
+};
+
 class CommentPool {
   private readonly api: ApiProvider;
   private readonly pool: LRU<Readonly<MHash>, Readonly<string>>;
@@ -562,7 +573,7 @@ class CommentPool {
         .sort()
         .map((mhash) => {
           const topic = topicMap.get(mhash);
-          assertTrue(topic !== undefined);
+          assertTrue(topic !== undefined, `topic does not exist ${mhash}`);
           return [mhash, topic];
         });
       return { values, next: adj(next) };
@@ -863,32 +874,23 @@ export default class CommentGraph {
   private readonly msgPool: Readonly<CommentPool>;
   private readonly linkPool: Readonly<LinkPool>;
 
-  constructor(
-    api?: Readonly<ApiProvider>,
-    maxCommentPoolSize?: Readonly<number>,
-    maxTopicSize?: Readonly<number>,
-    maxLinkPoolSize?: Readonly<number>,
-    maxLinkCache?: Readonly<number>,
-    maxLineSize?: Readonly<number>,
-    maxUserCache?: Readonly<number>,
-    maxUserLineSize?: Readonly<number>,
-    blockSize?: Readonly<number>,
-  ) {
+  constructor(api?: Readonly<ApiProvider>, settings?: Readonly<CGSettings>) {
     const actualApi = api ?? /* istanbul ignore next */ DEFAULT_API;
+    const config = settings ?? {};
     this.msgPool = new CommentPool(
       actualApi,
-      maxCommentPoolSize ?? DEFAULT_COMMENT_POOL_SIZE,
-      maxTopicSize ?? DEFAULT_TOPIC_POOL_SIZE,
-      blockSize ?? DEFAULT_BLOCK_SIZE,
+      config.maxCommentPoolSize ?? DEFAULT_COMMENT_POOL_SIZE,
+      config.maxTopicSize ?? DEFAULT_TOPIC_POOL_SIZE,
+      config.blockSize ?? DEFAULT_BLOCK_SIZE,
     );
     this.linkPool = new LinkPool(
       actualApi,
-      maxLinkPoolSize ?? DEFAULT_LINK_POOL_SIZE,
-      maxLinkCache ?? DEFAULT_LINK_CACHE_SIZE,
-      maxLineSize ?? DEFAULT_LINE_SIZE,
-      maxUserCache ?? DEFAULT_LINK_CACHE_SIZE,
-      maxUserLineSize ?? DEFAULT_LINE_SIZE,
-      blockSize ?? DEFAULT_BLOCK_SIZE,
+      config.maxLinkPoolSize ?? DEFAULT_LINK_POOL_SIZE,
+      config.maxLinkCache ?? DEFAULT_LINK_CACHE_SIZE,
+      config.maxLineSize ?? DEFAULT_LINE_SIZE,
+      config.maxUserCache ?? DEFAULT_LINK_CACHE_SIZE,
+      config.maxUserLineSize ?? DEFAULT_LINE_SIZE,
+      config.blockSize ?? DEFAULT_BLOCK_SIZE,
     );
   }
 

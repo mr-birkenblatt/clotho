@@ -60,7 +60,7 @@ export default class TestGraph {
   }
 
   private addMessage(hash: string): void {
-    assertTrue(!hash.startsWith('msg:'));
+    assertTrue(!hash.startsWith('msg:'), `invalid hash: ${hash}`);
     this.messages[hash] = `msg: ${hash}`;
     this.allHash.push(hash);
   }

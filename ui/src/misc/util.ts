@@ -86,9 +86,9 @@ export function assertFail(e: any): never {
   throw new Error(`should not have happened: ${e}`);
 }
 
-export function assertTrue(value: boolean): asserts value {
+export function assertTrue(value: boolean, e: any): asserts value {
   if (!value) {
-    throw new Error('assertion was not true');
+    throw new Error(`assertion was not true: ${e}`);
   }
 }
 
@@ -169,7 +169,7 @@ export class SafeMap<K, V> {
     this.mapValues.forEach((value, key) => {
       const k = this.mapKeys.get(key);
       if (k === undefined) {
-        assertTrue(this.mapKeys.has(key));
+        assertTrue(this.mapKeys.has(key), `${key} not in map`);
         const uk = k as K; // NOTE: hack to allow undefined in a key type
         callbackfn.call(thisArg, value, uk, this);
         return;
@@ -212,7 +212,7 @@ export class SafeMap<K, V> {
       const [key, value] = entry;
       const k = this.mapKeys.get(key);
       if (k === undefined) {
-        assertTrue(this.mapKeys.has(key));
+        assertTrue(this.mapKeys.has(key), `${key} not in map`);
         const uk = k as K; // NOTE: hack to allow undefined in a key type
         return [uk, value];
       }
