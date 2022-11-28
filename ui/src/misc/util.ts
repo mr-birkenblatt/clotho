@@ -39,6 +39,27 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
   );
 }
 
+export function detectSlowCallback(
+  obj: any,
+  onSlow: (e: any) => void,
+): () => void {
+  let done = false;
+  setTimeout(() => {
+    if (done) {
+      return;
+    }
+    setTimeout(() => {
+      if (done) {
+        return;
+      }
+      onSlow(`slow callback detected with: ${safeStringify(obj)}`);
+    }, 999);
+  }, 1);
+  return () => {
+    done = true;
+  };
+}
+
 /* istanbul ignore next */
 export function errHnd(e: any): void {
   if (process.env.JEST_WORKER_ID !== undefined) {

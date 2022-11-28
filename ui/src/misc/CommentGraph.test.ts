@@ -25,7 +25,13 @@ import CommentGraph, {
   ValidLink,
 } from './CommentGraph';
 import { advancedGraph, simpleGraph } from './TestGraph';
-import { assertEqual, assertTrue, range, safeStringify } from './util';
+import {
+  assertEqual,
+  assertTrue,
+  detectSlowCallback,
+  range,
+  safeStringify,
+} from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -73,7 +79,9 @@ async function execute<A extends any[], T extends any[], R>(
         reject(e);
       }
     };
+    const done = detectSlowCallback(args, reject);
     const notify: Callback<T> = (...cbArgs) => {
+      done();
       notifyCount += 1;
       if (convertDirect === undefined) {
         cb(...cbArgs);

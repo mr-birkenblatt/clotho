@@ -22,7 +22,13 @@ import {
   scrollVertical,
 } from './GraphView';
 import { advancedGraph, InfGraph } from './TestGraph';
-import { assertFail, assertTrue, LoggerCB, safeStringify } from './util';
+import {
+  assertFail,
+  assertTrue,
+  detectSlowCallback,
+  LoggerCB,
+  safeStringify,
+} from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -44,6 +50,7 @@ async function execute(
   expectedTransitions: number,
   logger?: LoggerCB,
 ): Promise<Readonly<GraphView>> {
+  // console.warn('next test');
   assertTrue(view !== undefined, 'view is not set');
   let transitionCount = 0;
   const transition: (
@@ -53,10 +60,12 @@ async function execute(
     ) => void,
     reject: (reason: any) => void,
   ) => void = (view, resolve, reject) => {
+    const done = detectSlowCallback(view, reject);
     const res = progressView(
       graph,
       view,
       (newView) => {
+        done();
         transitionCount += 1;
         transition(newView, resolve, reject);
       },
@@ -167,6 +176,7 @@ test('test graph view init', async () => {
       undefined,
     ),
     13,
+    console.log,
   );
   assertTrue(initGraph !== undefined, 'initGraph is undefined');
 
@@ -210,7 +220,6 @@ test('test graph view init', async () => {
     ),
     8,
   );
-
   const a1Graph = await execute(
     graph,
     initView('a1' as MHash),
