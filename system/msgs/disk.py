@@ -89,7 +89,7 @@ class DiskStore(MessageStore):
         self._topic_cache = None
         return topic.get_hash()
 
-    def get_topics(self, offset: int, limit: int) -> Iterable[Message]:
+    def get_topics(self, offset: int, limit: int | None) -> Iterable[Message]:
         cur_time = time.monotonic()
         if (self._topic_cache is None
                 or cur_time >= self._topic_update + RELOAD_TOPICS_FREQ):
@@ -108,7 +108,9 @@ class DiskStore(MessageStore):
                 pass
             self._topic_cache = topic_cache
             self._topic_update = cur_time
-        yield from self._topic_cache[offset:offset + limit]
+        if limit is None:
+            return self._topic_cache[offset:]
+        return self._topic_cache[offset:offset + limit]
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:

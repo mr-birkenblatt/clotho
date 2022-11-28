@@ -146,7 +146,7 @@ def interpret_action(
                 is_topic = True
         msg = Message(msg=text)
         if is_topic:
-            topics = list(message_store.get_topics())
+            topics = list(message_store.get_topics(0, None))
             if msg not in topics:
                 message_store.add_topic(msg)
                 print(f"adding topic: {msg.get_text()}")

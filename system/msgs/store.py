@@ -20,7 +20,10 @@ class MessageStore:
     def add_topic(self, topic: Message) -> MHash:
         raise NotImplementedError()
 
-    def get_topics(self, offset: int, limit: int) -> Iterable[Message]:
+    def get_topics(
+            self,
+            offset: int,
+            limit: int | None) -> Iterable[Message]:
         raise NotImplementedError()
 
     def do_get_random_messages(

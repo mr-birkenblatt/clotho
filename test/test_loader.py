@@ -104,7 +104,7 @@ def test_loader() -> None:
     print(f"total actions: {count}")
 
     scorer_new = get_scorer("new")
-    root = list(message_store.get_topics())[0].get_hash()
+    root = list(message_store.get_topics(0, None))[0].get_hash()
 
     print_links(link_store, user_store, scorer_new, now, root, set())
 
