@@ -166,7 +166,7 @@ def setup(
     @server.json_post(f"{prefix}/vote")
     def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
         args = rargs["post"]
-        # FIXME: add / remove vote
+        is_add = bool(args["isadd"])
         votes = to_list(args["votes"])
         user = get_user(args)
         parent = MHash.parse(f"{args['parent']}")
@@ -174,7 +174,11 @@ def setup(
         link = link_store.get_link(parent, child)
         now = now_ts()
         for vtype in votes:
-            link.add_vote(user_store, parse_vote_type(f"{vtype}"), user, now)
+            vote_type = parse_vote_type(f"{vtype}")
+            if is_add:
+                link.add_vote(user_store, vote_type, user, now)
+            else:
+                link.remove_vote(user_store, vote_type, user)
         return link.get_response(user_store, now)
 
     # *** read only ***
