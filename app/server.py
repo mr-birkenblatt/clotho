@@ -181,11 +181,13 @@ def setup(
 
     @server.json_get(f"{prefix}/topic")
     def _get_topic(_req: QSRH, rargs: ReqArgs) -> TopicListResponse:
-        # FIXME: offset limit + next
+        args = rargs["query"]
+        offset = int(args["offset"])
+        limit = min(int(args["limit"]), MAX_LINKS)
         return {
             "topics": {
                 msg.get_hash().to_parseable(): msg.get_text()
-                for msg in message_store.get_topics()
+                for msg in message_store.get_topics(offset, limit)
             },
         }
 

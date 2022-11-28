@@ -113,6 +113,12 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
         with self._redis.get_connection(depth=1) as conn:
             return set(mem.decode("utf-8") for mem in conn.smembers(rkey))
 
+    def has_value(self, key: KT, value: str) -> bool:
+        rkey = self.get_redis_key(key)
+        val = value.encode("utf-8")
+        with self._redis.get_connection(depth=1) as conn:
+            return bool(conn.sismember(rkey, val))
+
 
 class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
     def __init__(

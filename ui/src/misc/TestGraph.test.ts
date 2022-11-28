@@ -1,4 +1,11 @@
-import { fromMHash, MHash } from './CommentGraph';
+import {
+  fromMHash,
+  IsGet,
+  KeyType,
+  MHash,
+  UserId,
+  Votes,
+} from './CommentGraph';
 import { simpleGraph } from './TestGraph';
 
 function asMHashSet(arr: string[]): Set<MHash> {
@@ -8,16 +15,24 @@ function asMHashSet(arr: string[]): Set<MHash> {
 function asLinkKey(
   hash: string,
   isGetParent: boolean,
-): { mhash: MHash; isGetParent: boolean } {
-  return { mhash: hash as MHash, isGetParent };
+): {
+  keyType: KeyType.link;
+  mhash: Readonly<MHash>;
+  isGet: Readonly<IsGet>;
+} {
+  return {
+    keyType: KeyType.link,
+    mhash: hash as MHash,
+    isGet: isGetParent ? IsGet.parent : IsGet.child,
+  };
 }
 
 type TestLink = {
   parent: Readonly<MHash>;
   child: Readonly<MHash>;
-  user: Readonly<string> | undefined;
+  user: Readonly<UserId> | undefined;
   first: Readonly<number>;
-  votes: { [key: string]: number };
+  votes: Votes;
 };
 
 function getParentHashs(links: readonly TestLink[]): string[] {
@@ -30,7 +45,7 @@ function getChildHashs(links: readonly TestLink[]): string[] {
 
 test('test messages', () => {
   const api = simpleGraph().getApiProvider();
-  api.topic().then((topics) => {
+  api.topic(0, 3).then((topics) => {
     expect(topics.topics).toEqual({ a: 'msg: a', h: 'msg: h' });
   });
   api.read(asMHashSet(['a', 'b', 'c', 'd'])).then((read) => {

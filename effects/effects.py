@@ -112,6 +112,9 @@ class SetRootType(Generic[KT, VT], EffectRoot[KT, set[VT]]):
     def do_remove_value(self, key: KT, value: VT) -> bool:
         raise NotImplementedError()
 
+    def has_value(self, key: KT, value: VT) -> bool:
+        raise NotImplementedError()
+
     def remove_value(self, key: KT, value: VT) -> bool:
         res = self.do_remove_value(key, value)
         self.on_update(key)

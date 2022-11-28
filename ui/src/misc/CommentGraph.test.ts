@@ -1,15 +1,18 @@
 import CommentGraph, {
+  adj,
   AdjustedLineIndex,
   asDirectKey,
-  asFullKey,
   asLineKey,
   asTopicKey,
   equalLineKey,
   equalLineKeys,
   FullIndirectKey,
   FullKey,
+  FullKeyType,
   INVALID_FULL_KEY,
   INVALID_KEY,
+  IsGet,
+  KeyType,
   LineKey,
   Link,
   MHash,
@@ -18,12 +21,35 @@ import CommentGraph, {
   NotifyHashCB,
   NotifyLinkCB,
   toFullKey,
-  toLineKey,
   TOPIC_KEY,
   ValidLink,
 } from './CommentGraph';
 import { advancedGraph, simpleGraph } from './TestGraph';
 import { assertTrue, range } from './util';
+
+function asFullKey(
+  hash: Readonly<string>,
+  isGetParent: boolean,
+  index: number,
+): Readonly<FullIndirectKey> {
+  return {
+    fullKeyType: FullKeyType.link,
+    mhash: hash as MHash,
+    isGet: isGetParent ? IsGet.parent : IsGet.child,
+    index: adj(index),
+  };
+}
+
+function toLineKey(
+  hash: Readonly<string>,
+  isGetParent: boolean,
+): Readonly<LineKey> {
+  return {
+    keyType: KeyType.link,
+    mhash: hash as MHash,
+    isGet: isGetParent ? IsGet.parent : IsGet.child,
+  };
+}
 
 // FIXME not using fake timers for now as they don't work well with async
 // jest.useFakeTimers();
@@ -1023,22 +1049,28 @@ test('line keys', async () => {
       [
         INVALID_KEY,
         TOPIC_KEY,
-        { mhash: 'a' as MHash, isGetParent: false },
-        { mhash: 'a' as MHash, isGetParent: true },
+        { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.child },
+        { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.parent },
       ],
       [
-        { invalid: true },
-        { topic: true },
-        { mhash: 'a' as MHash, isGetParent: false },
-        { mhash: 'a' as MHash, isGetParent: true },
+        { keyType: KeyType.invalid },
+        { keyType: KeyType.topic },
+        { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.child },
+        { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.parent },
       ],
     ),
   );
   const comp: [Readonly<LineKey>, Readonly<LineKey>][] = [
     [INVALID_KEY, TOPIC_KEY],
-    [INVALID_KEY, { mhash: 'a' as MHash, isGetParent: false }],
+    [
+      INVALID_KEY,
+      { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.child },
+    ],
     [TOPIC_KEY, INVALID_KEY],
-    [TOPIC_KEY, { mhash: 'a' as MHash, isGetParent: false }],
+    [
+      TOPIC_KEY,
+      { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.child },
+    ],
     [toLineKey('a', false), toLineKey('a', true)],
     [toLineKey('a', true), toLineKey('a', false)],
     [toLineKey('b', false), toLineKey('a', false)],

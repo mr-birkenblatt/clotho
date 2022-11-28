@@ -3,12 +3,15 @@ import CommentGraph, {
   AdjustedLineIndex,
   equalFullKey,
   FullKey,
+  FullKeyType,
   INVALID_FULL_KEY,
+  IsGet,
   Link,
   MHash,
   NotifyContentCB,
   toFullKey,
   TOPIC_KEY,
+  UserId,
 } from './CommentGraph';
 import { amend, LoggerCB, maybeLog, num, safeStringify } from './util';
 
@@ -268,20 +271,33 @@ type CellUpdateCB = (cell: Readonly<Cell>) => void;
 
 function cell(
   mhash: Readonly<MHash>,
-  isGetParent: boolean,
+  isGet: IsGet,
   index: Readonly<AdjustedLineIndex>,
 ): Readonly<Cell> {
   return {
-    fullKey: { mhash, isGetParent, index },
+    fullKey: { fullKeyType: FullKeyType.link, mhash, isGet, index },
   };
 }
 
 function directCell(mhash: Readonly<MHash>): Readonly<Cell> {
-  return { fullKey: { direct: true, mhash } };
+  return { fullKey: { fullKeyType: FullKeyType.direct, mhash } };
 }
 
 function topicCell(index: Readonly<AdjustedLineIndex>): Readonly<Cell> {
   return { fullKey: toFullKey(TOPIC_KEY, index) };
+}
+
+function userCell(userId: Readonly<UserId>): Readonly<Cell> {
+  return { fullKey: { fullKeyType: FullKeyType.user, userId } };
+}
+
+function userChildCell(
+  parentUser: Readonly<UserId>,
+  index: Readonly<AdjustedLineIndex>,
+): Readonly<Cell> {
+  return {
+    fullKey: { fullKeyType: FullKeyType.userchild, parentUser, index },
+  };
 }
 
 export function initView(
@@ -355,24 +371,32 @@ function getNextCell(
   updateCB: CellUpdateCB,
 ): void {
   const index =
-    sameLevel.direct || sameLevel.invalid
+    sameLevel.fullKeyType === FullKeyType.direct ||
+    sameLevel.fullKeyType === FullKeyType.invalid ||
+    sameLevel.fullKeyType === FullKeyType.user
       ? adj(isIncrease ? 0 : -1)
       : adj(num(sameLevel.index) + (isIncrease ? 1 : -1));
   getCellContent(
     graph,
-    num(index) < 0
+    num(index) === -1 && skip !== undefined
+      ? directCell(skip)
+      : num(index) < 0
       ? { fullKey: INVALID_FULL_KEY }
-      : sameLevel.topic
+      : sameLevel.fullKeyType === FullKeyType.topic
       ? topicCell(index)
-      : cell(otherLevel, isTop, index),
+      : sameLevel.fullKeyType === FullKeyType.user
+      ? userCell(sameLevel.userId)
+      : sameLevel.fullKeyType === FullKeyType.userchild
+      ? userChildCell(sameLevel.parentUser, index)
+      : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, index),
     (res) => {
       if (skip !== undefined && res.mhash === skip && num(index) >= 0) {
         const skipIndex = adj(num(index) + 1);
         getCellContent(
           graph,
-          sameLevel.topic
+          sameLevel.fullKeyType === FullKeyType.topic
             ? topicCell(skipIndex)
-            : cell(otherLevel, isTop, skipIndex),
+            : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, skipIndex),
           updateCB,
         );
         return;
@@ -411,7 +435,7 @@ export function progressView(
       graph,
       view.centerBottom !== undefined
         ? view.centerBottom
-        : cell(view.centerTop.mhash, false, adj(0)),
+        : cell(view.centerTop.mhash, IsGet.child, adj(0)),
       (cell) => {
         updateCB({ ...view, centerBottom: cell });
       },
@@ -475,14 +499,18 @@ export function progressView(
     );
   } else if (view.top === undefined) {
     log('top content');
-    getCellContent(graph, cell(view.centerTop.mhash, true, adj(0)), (cell) => {
-      updateCB({ ...view, top: cell });
-    });
+    getCellContent(
+      graph,
+      cell(view.centerTop.mhash, IsGet.parent, adj(0)),
+      (cell) => {
+        updateCB({ ...view, top: cell });
+      },
+    );
   } else if (view.bottom === undefined) {
     log('bottom content');
     getCellContent(
       graph,
-      cell(view.centerBottom.mhash, false, adj(0)),
+      cell(view.centerBottom.mhash, IsGet.child, adj(0)),
       (cell) => {
         updateCB({ ...view, bottom: cell });
       },
@@ -541,7 +569,10 @@ export function scrollVertical(
       topRight: undefined,
       bottomLeft: view.topLeft,
       bottomRight: view.topRight,
-      topSkip: view.top.fullKey.direct ? view.top.mhash : undefined,
+      topSkip:
+        view.top.fullKey.fullKeyType === FullKeyType.direct
+          ? view.top.mhash
+          : undefined,
       bottomSkip: view.topSkip,
     };
   } else {
@@ -562,7 +593,8 @@ export function scrollVertical(
       bottomRight: undefined,
       topSkip: view.bottomSkip,
       bottomSkip:
-        view.bottom !== undefined && view.bottom.fullKey.direct
+        view.bottom !== undefined &&
+        view.bottom.fullKey.fullKeyType === FullKeyType.direct
           ? view.bottom.mhash
           : undefined,
     };

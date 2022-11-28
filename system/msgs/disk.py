@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Iterable
 
 import numpy as np
@@ -11,6 +12,7 @@ from system.msgs.store import MessageStore
 
 
 MSG_EXT = ".msg"
+RELOAD_TOPICS_FREQ = 60 * 60  # 1h
 
 
 class DiskStore(MessageStore):
@@ -19,6 +21,8 @@ class DiskStore(MessageStore):
         self._topics = envload_path(
             "MSG_TOPICS", default="userdata/topics.list")
         self._cache: LRU[MHash, Message] = LRU(10000)
+        self._topic_cache: list[Message] | None = None
+        self._topic_update: float = 0.0
 
     @staticmethod
     def _escape(text: str) -> str:
@@ -82,21 +86,29 @@ class DiskStore(MessageStore):
             raise ValueError(f"{topic}(\"{topic.get_text()}\") is not a topic")
         with open_append(self._topics, text=True) as fout:
             fout.write(f"{self._escape(topic.get_text())}\n")
+        self._topic_cache = None
         return topic.get_hash()
 
-    def get_topics(self) -> Iterable[Message]:
-        try:
-            with open_read(self._topics, text=True) as fin:
-                for line in fin:
-                    line = line.rstrip()
-                    if not line:
-                        continue
-                    text = self._unescape(line)
-                    msg = Message(msg=text)
-                    assert msg.is_topic()
-                    yield msg
-        except FileNotFoundError:
-            pass
+    def get_topics(self, offset: int, limit: int) -> Iterable[Message]:
+        cur_time = time.monotonic()
+        if (self._topic_cache is None
+                or cur_time >= self._topic_update + RELOAD_TOPICS_FREQ):
+            topic_cache = []
+            try:
+                with open_read(self._topics, text=True) as fin:
+                    for line in fin:
+                        line = line.rstrip()
+                        if not line:
+                            continue
+                        text = self._unescape(line)
+                        msg = Message(msg=text)
+                        assert msg.is_topic()
+                        topic_cache.append(msg)
+            except FileNotFoundError:
+                pass
+            self._topic_cache = topic_cache
+            self._topic_update = cur_time
+        yield from self._topic_cache[offset:offset + limit]
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:

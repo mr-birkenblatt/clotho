@@ -1,10 +1,13 @@
 import CommentGraph, {
+  adj,
   asDirectKey,
-  asFullKey,
   asTopicKey,
+  FullIndirectKey,
   FullKey,
+  FullKeyType,
   INVALID_FULL_KEY,
   INVALID_LINK,
+  IsGet,
   MHash,
 } from './CommentGraph';
 import {
@@ -20,6 +23,19 @@ import {
 } from './GraphView';
 import { advancedGraph, InfGraph } from './TestGraph';
 import { assertFail, assertTrue, LoggerCB, safeStringify } from './util';
+
+function asFullKey(
+  hash: Readonly<string>,
+  isGetParent: boolean,
+  index: number,
+): Readonly<FullIndirectKey> {
+  return {
+    fullKeyType: FullKeyType.link,
+    mhash: hash as MHash,
+    isGet: isGetParent ? IsGet.parent : IsGet.child,
+    index: adj(index),
+  };
+}
 
 async function execute(
   graph: CommentGraph,

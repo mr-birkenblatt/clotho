@@ -148,13 +148,17 @@ class RedisLink(Link):
         else:
             last = from_timestamp(float(vlast))
 
+        def check_voter(user: User) -> bool:
+            return store.r_voted.has_value(key, user.get_id())
+
         def get_voters(user_store: UserStore) -> Iterable[User]:
             return (
                 user_store.get_user_by_id(user_id)
                 for user_id in store.r_voted.get_value(key, set())
             )
 
-        return Votes(vote_type, vdaily, vtotal, first, last, get_voters)
+        return Votes(
+            vote_type, vdaily, vtotal, first, last, check_voter, get_voters)
 
     def add_vote(
             self,
@@ -168,6 +172,17 @@ class RedisLink(Link):
         weighted_value = who.get_weighted_vote(self.get_user(user_store))
         nows = to_timestamp(now)
         store.add_vote(key, who, vote_type, weighted_value, nows)
+
+    def remove_vote(
+            self,
+            user_store: UserStore,
+            vote_type: VoteType,
+            who: User) -> None:
+        store = self._s
+        key = RLink(
+            vote_type=vote_type, parent=self._parent, child=self._child)
+        weighted_value = who.get_weighted_vote(self.get_user(user_store))
+        store.remove_vote(key, who, weighted_value)
 
 
 class RedisLinkStore(LinkStore):
@@ -317,6 +332,7 @@ class RedisLinkStore(LinkStore):
         # add_vote lua script
         self._conn = RedisConnection("link")
         self._add_vote = self.create_add_vote_script()
+        self._remove_vote = self.create_remove_vote_script()
 
     def add_vote(
             self,
@@ -391,6 +407,47 @@ class RedisLinkStore(LinkStore):
 
         is_user_link, _ = mseq.if_(is_new.and_(vote_type.eq(VT_UP)))
         is_user_link.add(RedisFn("SADD", r_user_links, plink))
+
+        return script
+
+    def remove_vote(
+            self,
+            link: RLink,
+            user: User,
+            weighted_value: float) -> None:
+        user_id = user.get_id()
+        self._remove_vote.execute(
+            args={
+                "user_id": user_id,
+                "weighted_value": weighted_value,
+            },
+            keys={
+                "r_voted": link,
+                "r_total": link,
+                "r_daily": link,
+            },
+            conn=self._conn,
+            depth=1)
+
+    def create_remove_vote_script(self) -> Script:
+        script = Script()
+        user_id = script.add_arg("user_id")
+        weighted_value = script.add_arg("weighted_value")
+        r_voted: RootSet[RLink] = script.add_key(
+            "r_voted", RootSet(self.r_voted))
+        r_total: RootValue[RLink, float] = script.add_key(
+            "r_total", RootValue(self.r_total))
+        r_daily: RootValue[RLink, float] = script.add_key(
+            "r_daily", RootValue(self.r_daily))
+
+        mseq, _ = script.if_(RedisFn("SISMEMBER", r_voted, user_id).neq(0))
+        mseq.add(RedisFn("SREM", r_voted, user_id))
+
+        total_sum = RedisFn("GET", r_total).or_(0) - weighted_value
+        mseq.add(RedisFn("SET", r_total, total_sum))
+
+        daily_sum = RedisFn("GET", r_daily).or_(0) - weighted_value
+        mseq.add(RedisFn("SET", r_daily, daily_sum))
 
         return script
 

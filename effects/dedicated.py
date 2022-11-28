@@ -53,8 +53,14 @@ class Expr:
     def __add__(self, other: MixedType) -> 'Expr':
         return AddOp(self, other)
 
+    def __sub__(self, other: MixedType) -> 'Expr':
+        return SubOp(self, other)
+
     def eq(self, other: MixedType) -> 'Expr':  # pylint: disable=invalid-name
         return EqOp(self, other)
+
+    def neq(self, other: MixedType) -> 'Expr':
+        return NeqOp(self, other)
 
     def lt(self, other: MixedType) -> 'Expr':  # pylint: disable=invalid-name
         return LtOp(self, other)
@@ -322,6 +328,11 @@ class AddOp(Op):  # pylint: disable=too-few-public-methods
         return f"({self.get_left()} + {self.get_right()})"
 
 
+class SubOp(Op):  # pylint: disable=too-few-public-methods
+    def compile(self) -> str:
+        return f"({self.get_left()} - {self.get_right()})"
+
+
 class LtOp(Op):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         return f"({self.get_left()} < {self.get_right()})"
@@ -330,6 +341,11 @@ class LtOp(Op):  # pylint: disable=too-few-public-methods
 class EqOp(Op):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         return f"({self.get_left()} == {self.get_right()})"
+
+
+class NeqOp(Op):  # pylint: disable=too-few-public-methods
+    def compile(self) -> str:
+        return f"({self.get_left()} ~= {self.get_right()})"
 
 
 class CallFn(Expr):  # pylint: disable=too-few-public-methods

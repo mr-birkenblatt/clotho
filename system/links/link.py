@@ -34,7 +34,7 @@ LinkResponse = TypedDict('LinkResponse', {
     "child": str,
     "user": str | None,
     "first": float,
-    "votes": dict[VoteType, float],
+    "votes": dict[VoteType, VoteInfo],
 })
 
 
@@ -52,6 +52,7 @@ class Votes:
             total: float,
             first: pd.Timestamp | None,
             last: pd.Timestamp | None,
+            voter_check_fn: Callable[[User], bool],
             voters_fn: Callable[[UserStore], Iterable[User]]) -> None:
         assert daily >= 0
         assert total >= 0
@@ -61,6 +62,7 @@ class Votes:
         self._first = first
         self._last = last
         self._voters: set[User] | None = None
+        self._voter_check_fn = voter_check_fn
         self._voters_fn = voters_fn
 
     def get_daily_votes(self) -> float:
@@ -83,6 +85,9 @@ class Votes:
             return 0.0
         diff = (now - self._last) / pd.Timedelta("1d")
         return self._daily * np.exp(-diff)
+
+    def has_user_voted(self, user: User) -> bool:
+        return self._voter_check_fn(user)
 
     def get_voters(self, user_store: UserStore) -> set[User]:
         voters = self._voters
@@ -117,7 +122,11 @@ class Link:
             now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
-    def remove_vote(self, user_store: UserStore, vote_type: VoteType, who: User, now: pd.Timestamp) -> None:
+    def remove_vote(
+            self,
+            user_store: UserStore,
+            vote_type: VoteType,
+            who: User) -> None:
         raise NotImplementedError()
 
     def get_response(
@@ -130,9 +139,10 @@ class Link:
             cur_vote = self.get_votes(vtype)
             cur_total = cur_vote.get_total_votes()
             if cur_total > 0.0:
+                uservoted = user is not None and cur_vote.has_user_voted(user)
                 votes[vtype] = {
                     "count": cur_total,
-                    "uservoted": cur_vote.has_user_voted(user),
+                    "uservoted": uservoted,
                 }
             cur_first = cur_vote.get_first_vote_time(now)
             if cur_first < first:

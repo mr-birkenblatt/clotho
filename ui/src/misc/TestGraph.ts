@@ -1,4 +1,4 @@
-import { ApiProvider, MHash, UserId, Votes } from './CommentGraph';
+import { ApiProvider, IsGet, MHash, UserId, Votes } from './CommentGraph';
 import { assertTrue, range, str } from './util';
 
 export const simpleGraph = (): TestGraph => {
@@ -43,6 +43,7 @@ export default class TestGraph {
   private readonly messages: { [key: string]: string };
   private readonly children: { [key: string]: string[] };
   private readonly parents: { [key: string]: string[] };
+  private readonly allHash: string[];
 
   constructor(apiLimit: number) {
     this.apiLimit = apiLimit;
@@ -50,6 +51,7 @@ export default class TestGraph {
     this.messages = {};
     this.children = {};
     this.parents = {};
+    this.allHash = [];
   }
 
   private addTopic(hash: string): void {
@@ -60,6 +62,7 @@ export default class TestGraph {
   private addMessage(hash: string): void {
     assertTrue(!hash.startsWith('msg:'));
     this.messages[hash] = `msg: ${hash}`;
+    this.allHash.push(hash);
   }
 
   private addLink(from: string, to: string): void {
@@ -85,13 +88,15 @@ export default class TestGraph {
 
   getApiProvider(): ApiProvider {
     return {
-      topic: async () => {
-        const entries: [string, string][] = this.topics.map((el) => [
-          el,
-          this.messages[el],
-        ]);
+      topic: async (offset, limit) => {
+        const entries: [string, string][] = this.topics
+          .slice(offset, offset + Math.min(limit, this.apiLimit))
+          .map((el) => [el, this.messages[el]]);
+        const endIx = offset + entries.length;
+        const next = endIx === this.topics.length ? 0 : endIx;
         return {
           topics: Object.fromEntries(entries),
+          next,
         };
       },
       read: async (hashes) => {
@@ -107,16 +112,34 @@ export default class TestGraph {
         return { messages, skipped };
       },
       link: async (linkKey, offset, limit) => {
-        const { mhash, isGetParent } = linkKey;
-        const map = isGetParent ? this.parents : this.children;
+        const { mhash, isGet } = linkKey;
+        const map = isGet === IsGet.parent ? this.parents : this.children;
         const arr = map[mhash as MHash] ?? [];
         const ret = arr.slice(offset, offset + Math.min(limit, this.apiLimit));
         const endIx = offset + ret.length;
         const next = endIx === arr.length ? 0 : endIx;
         const links = ret.map((other) => ({
-          parent: (isGetParent ? other : mhash) as MHash,
-          child: (isGetParent ? mhash : other) as MHash,
+          parent: (isGet === IsGet.parent ? other : mhash) as MHash,
+          child: (isGet === IsGet.parent ? mhash : other) as MHash,
           user: 'abc' as UserId,
+          first: 123,
+          votes: { up: { count: 1, userVoted: false } },
+        }));
+        return { links, next };
+      },
+      userLink: async (userKey, offset, limit) => {
+        const { userId } = userKey;
+        if (str(userId) !== 'abc') {
+          return { links: [], next: 0 };
+        }
+        const arr = this.allHash;
+        const ret = arr.slice(offset, offset + Math.min(limit, this.apiLimit));
+        const endIx = offset + ret.length;
+        const next = endIx === arr.length ? 0 : endIx;
+        const links = ret.map((mhash) => ({
+          parent: `[user: ${userId}]` as MHash,
+          child: mhash as MHash,
+          user: userId,
           first: 123,
           votes: { up: { count: 1, userVoted: false } },
         }));
@@ -149,13 +172,14 @@ export class InfGraph {
 
   getApiProvider(): ApiProvider {
     return {
-      topic: async () => {
-        const entries: [string, string][] = range(10).map((el) => [
-          `a${el}`,
-          `msg: a${el}`,
-        ]);
+      topic: async (offset, limit) => {
+        const entries: [string, string][] = range(
+          offset,
+          offset + Math.min(limit, this.apiLimit),
+        ).map((el) => [`a${el}`, `msg: a${el}`]);
         return {
           topics: Object.fromEntries(entries),
+          next: offset + entries.length,
         };
       },
       read: async (hashes) => {
@@ -169,7 +193,8 @@ export class InfGraph {
         return { messages, skipped };
       },
       link: async (linkKey, offset, limit) => {
-        const { mhash, isGetParent } = linkKey;
+        const { mhash, isGet } = linkKey;
+        const isGetParent = isGet === IsGet.parent;
         const code = mhash.charCodeAt(0);
         const newCode = String.fromCharCode(code + (isGetParent ? -1 : 1));
         const ret = range(offset, offset + Math.min(limit, this.apiLimit));
@@ -178,6 +203,27 @@ export class InfGraph {
           parent: (isGetParent ? `${newCode}${other}` : mhash) as MHash,
           child: (isGetParent ? mhash : `${newCode}${other}`) as MHash,
           user: 'abc' as UserId,
+          first: 123,
+          votes: { up: { count: 1, userVoted: false } },
+        }));
+        return { links, next };
+      },
+      userLink: async (userKey, offset, limit) => {
+        const { userId } = userKey;
+        if (str(userId) !== 'abc') {
+          return { links: [], next: 0 };
+        }
+        const arr: string[] = range(
+          offset,
+          offset + Math.min(limit, this.apiLimit),
+        ).map((el) => `b${el}`);
+        const ret = arr.slice(offset, offset + Math.min(limit, this.apiLimit));
+        const endIx = offset + ret.length;
+        const next = endIx === arr.length ? 0 : endIx;
+        const links = ret.map((mhash) => ({
+          parent: `[user: ${userId}]` as MHash,
+          child: mhash as MHash,
+          user: userId,
           first: 123,
           votes: { up: { count: 1, userVoted: false } },
         }));
