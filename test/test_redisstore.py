@@ -171,7 +171,7 @@ def test_scenario() -> None:
 
     assert len(get_sorted(0, "top", is_children=False, full=False)) == 0
 
-    resp = get_link(0, 1).get_response(user_store, now)
+    resp = get_link(0, 1).get_response(user_store, who=None, now=now)
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[1].to_parseable()
     assert resp["user"] == users[0].get_id()
@@ -181,7 +181,7 @@ def test_scenario() -> None:
     assert int(rvotes[VT_UP]["count"]) == 3
     assert int(rvotes[VT_DOWN]["count"]) == 1
 
-    resp = get_link(0, 3).get_response(user_store, now)
+    resp = get_link(0, 3).get_response(user_store, who=None, now=now)
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[3].to_parseable()
     assert resp["user"] == users[0].get_id()

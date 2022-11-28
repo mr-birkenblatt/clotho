@@ -130,7 +130,11 @@ class Link:
         raise NotImplementedError()
 
     def get_response(
-            self, user_store: UserStore, now: pd.Timestamp) -> LinkResponse:
+            self,
+            user_store: UserStore,
+            *,
+            who: User | None,
+            now: pd.Timestamp) -> LinkResponse:
         user = self.get_user(user_store)
         user_str = None if user is None else user.get_id()
         first = now
@@ -139,7 +143,7 @@ class Link:
             cur_vote = self.get_votes(vtype)
             cur_total = cur_vote.get_total_votes()
             if cur_total > 0.0:
-                uservoted = user is not None and cur_vote.has_user_voted(user)
+                uservoted = who is not None and cur_vote.has_user_voted(who)
                 votes[vtype] = {
                     "count": cur_total,
                     "uservoted": uservoted,

@@ -83,6 +83,11 @@ def setup(
             return user_store.get_user_by_id(
                 user_store.get_id_from_name(obj["user"]))
 
+    def get_maybe_user(args: WorkerArgs) -> User | None:
+        if args.get("token") is None:
+            return None
+        return get_user(args)
+
     # *** user management ***
 
     @server.json_post(f"{prefix}/login")
@@ -161,7 +166,7 @@ def setup(
         link = link_store.get_link(parent, child)
         now = now_ts()
         link.add_vote(user_store, VT_UP, user, now)
-        return link.get_response(user_store, now)
+        return link.get_response(user_store, who=user, now=now)
 
     @server.json_post(f"{prefix}/vote")
     def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
@@ -179,7 +184,7 @@ def setup(
                 link.add_vote(user_store, vote_type, user, now)
             else:
                 link.remove_vote(user_store, vote_type, user)
-        return link.get_response(user_store, now)
+        return link.get_response(user_store, who=user, now=now)
 
     # *** read only ***
 
@@ -260,13 +265,14 @@ def setup(
     @server.json_post(f"{prefix}/children")
     def _post_children(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         parent = MHash.parse(args["parent"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_children(parent, **link_query))
         links = enrich_links(parent, link_query, is_parent=True, links=links)
         return {
             "links": [
-                link.get_response(user_store, link_query["now"])
+                link.get_response(user_store, who=muser, now=link_query["now"])
                 for link in links
             ],
             "next": link_query["offset"] + len(links),
@@ -275,13 +281,14 @@ def setup(
     @server.json_post(f"{prefix}/parents")
     def _post_parents(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         child = MHash.parse(args["child"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_parents(child, **link_query))
         links = enrich_links(child, link_query, is_parent=False, links=links)
         return {
             "links": [
-                link.get_response(user_store, link_query["now"])
+                link.get_response(user_store, who=muser, now=link_query["now"])
                 for link in links
             ],
             "next": link_query["offset"] + len(links),
@@ -290,13 +297,14 @@ def setup(
     @server.json_post(f"{prefix}/userlinks")
     def _post_userlinks(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         user = user_store.get_user_by_id(
             user_store.get_id_from_name(args["user"]))
         link_query = get_link_query_params(args)
         links = list(link_store.get_user_links(user, **link_query))
         return {
             "links": [
-                link.get_response(user_store, link_query["now"])
+                link.get_response(user_store, who=muser, now=link_query["now"])
                 for link in links
             ],
             "next": link_query["offset"] + len(links),
@@ -305,11 +313,12 @@ def setup(
     @server.json_post(f"{prefix}/link")
     def _post_link(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         parent = MHash.parse(args["parent"])
         child = MHash.parse(args["child"])
         now = now_ts()
         link = link_store.get_link(parent, child)
-        return link.get_response(user_store, now)
+        return link.get_response(user_store, who=muser, now=now)
 
     return server, prefix
 
