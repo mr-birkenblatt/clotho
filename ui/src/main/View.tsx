@@ -11,11 +11,12 @@ import {
   scrollTopHorizontal,
   scrollVertical,
 } from '../misc/GraphView';
-import CommentGraph, { VoteType, VOTE_TYPES } from '../misc/CommentGraph';
+import CommentGraph from '../misc/CommentGraph';
 import { safeStringify, toReadableNumber } from '../misc/util';
 import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
+import { RichVote, VoteType, VOTE_TYPES } from '../misc/keys';
 
 const Outer = styled.div`
   position: relative;
@@ -247,10 +248,10 @@ type ButtonDivProps = {
 };
 
 enum ResetView {
-  StopScroll,
-  ResetBottom,
-  ResetTop,
-  Done,
+  StopScroll = 'StopScroll',
+  ResetBottom = 'ResetBottom',
+  ResetTop = 'ResetTop',
+  Done = 'Done',
 }
 
 type Refs = {
@@ -552,18 +553,14 @@ class View extends PureComponent<ViewProps, ViewState> {
       return (
         <ItemMid>
           <ItemMidVotes>
-            {VOTE_TYPES.map(
-              (
-                voteType: VoteType,
-              ): { voteType: VoteType; count: number; userVoted: boolean } => {
-                const res = link.votes[voteType];
-                if (res === undefined) {
-                  return { voteType, count: 0, userVoted: false };
-                }
-                const { count, userVoted } = res;
-                return { voteType, count, userVoted };
-              },
-            ).map(({ voteType, count, userVoted }) => (
+            {VOTE_TYPES.map((voteType: VoteType): RichVote => {
+              const res = link.votes[voteType];
+              if (res === undefined) {
+                return { voteType, count: 0, userVoted: false };
+              }
+              const { count, userVoted } = res;
+              return { voteType, count, userVoted };
+            }).map(({ voteType, count, userVoted }) => (
               <ItemMidContent
                 key={voteType}
                 isChecked={userVoted}>

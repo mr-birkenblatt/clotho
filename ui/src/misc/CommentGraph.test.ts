@@ -1,4 +1,10 @@
 import CommentGraph, {
+  NextCB,
+  NotifyContentCB,
+  NotifyHashCB,
+  NotifyLinkCB,
+} from './CommentGraph';
+import {
   adj,
   AdjustedLineIndex,
   asDirectKey,
@@ -16,21 +22,17 @@ import CommentGraph, {
   LineKey,
   Link,
   MHash,
-  NextCB,
-  NotifyContentCB,
-  NotifyHashCB,
-  NotifyLinkCB,
   toFullKey,
   TOPIC_KEY,
   ValidLink,
-} from './CommentGraph';
+} from './keys';
 import { advancedGraph, simpleGraph } from './TestGraph';
 import {
   assertEqual,
   assertTrue,
+  debugJSON,
   detectSlowCallback,
   range,
-  safeStringify,
 } from './util';
 
 function asFullKey(
@@ -97,7 +99,7 @@ async function execute<A extends any[], T extends any[], R>(
       }
     }
     if (convertDirect === undefined) {
-      assertTrue(res === undefined, `direct convert: ${safeStringify(res)}`);
+      assertTrue(res === undefined, `direct convert: ${debugJSON(res)}`);
     } else {
       assertTrue(res !== undefined, 'expected direct convert');
       cb(...convertDirect(res));
@@ -160,19 +162,14 @@ const checkLink = (parent: string, child: string): ((link: Link) => void) => {
 };
 const invalidLink = (): ((link: Link) => void) => {
   return (link) => {
-    assertTrue(
-      !!link.invalid,
-      `link should not be valid: ${safeStringify(link)}`,
-    );
+    assertTrue(!!link.invalid, `link should not be valid: ${debugJSON(link)}`);
   };
 };
 const checkNext = (lineKey: Readonly<LineKey>): NextCB => {
   return (child) => {
     assertTrue(
       equalLineKey(child, lineKey),
-      `mismatching line key: ${safeStringify(child)} !== ${safeStringify(
-        lineKey,
-      )}`,
+      `mismatching line key: ${debugJSON(child)} !== ${debugJSON(lineKey)}`,
     );
   };
 };

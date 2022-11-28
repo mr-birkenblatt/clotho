@@ -52,7 +52,7 @@ export function detectSlowCallback(
       if (done) {
         return;
       }
-      onSlow(`slow callback detected with: ${safeStringify(obj)}`);
+      onSlow(`slow callback detected with: ${debugJSON(obj)}`);
     }, 999);
   }, 1);
   return () => {
@@ -128,7 +128,7 @@ export function assertNotEqual(actual: unknown, expected: unknown): void {
   }
 }
 
-export function safeStringify(obj: any): string {
+function stringify(obj: any, space: string): string {
   return JSON.stringify(
     obj,
     (_k, value) => {
@@ -147,8 +147,16 @@ export function safeStringify(obj: any): string {
       }
       return value;
     },
-    '',
+    space,
   );
+}
+
+export function debugJSON(obj: any): string {
+  return stringify(obj, '  ');
+}
+
+export function safeStringify(obj: any): string {
+  return stringify(obj, '');
 }
 
 export class SafeMap<K, V> {

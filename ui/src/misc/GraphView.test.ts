@@ -1,15 +1,4 @@
-import CommentGraph, {
-  adj,
-  asDirectKey,
-  asTopicKey,
-  FullIndirectKey,
-  FullKey,
-  FullKeyType,
-  INVALID_FULL_KEY,
-  INVALID_LINK,
-  IsGet,
-  MHash,
-} from './CommentGraph';
+import CommentGraph from './CommentGraph';
 import {
   Cell,
   consistentLinks,
@@ -21,13 +10,25 @@ import {
   scrollTopHorizontal,
   scrollVertical,
 } from './GraphView';
+import {
+  adj,
+  asDirectKey,
+  asTopicKey,
+  FullIndirectKey,
+  FullKey,
+  FullKeyType,
+  INVALID_FULL_KEY,
+  INVALID_LINK,
+  IsGet,
+  MHash,
+} from './keys';
 import { advancedGraph, InfGraph } from './TestGraph';
 import {
   assertFail,
   assertTrue,
+  debugJSON,
   detectSlowCallback,
   LoggerCB,
-  safeStringify,
 } from './util';
 
 function asFullKey(
@@ -81,9 +82,7 @@ async function execute(
       ) {
         resolve(res);
       } else {
-        reject(
-          `${safeStringify(view)} !== expected ${safeStringify(expected)}`,
-        );
+        reject(`${debugJSON(view)} !== expected ${debugJSON(expected)}`);
       }
     }
   };
@@ -192,15 +191,15 @@ test('test graph view init', async () => {
 
   assertTrue(
     scrollTopHorizontal(initGraph, false) === undefined,
-    `${safeStringify(scrollTopHorizontal(initGraph, false))}`,
+    `${debugJSON(scrollTopHorizontal(initGraph, false))}`,
   );
   assertTrue(
     scrollBottomHorizontal(initGraph, false) === undefined,
-    `${safeStringify(scrollBottomHorizontal(initGraph, false))}`,
+    `${debugJSON(scrollBottomHorizontal(initGraph, false))}`,
   );
   assertTrue(
     scrollBottomHorizontal(initGraph, true) === undefined,
-    `${safeStringify(scrollBottomHorizontal(initGraph, true))}`,
+    `${debugJSON(scrollBottomHorizontal(initGraph, true))}`,
   );
 
   await execute(
@@ -241,11 +240,11 @@ test('test graph view init', async () => {
   assertTrue(a1Graph !== undefined, 'a1Graph is undefined');
   assertTrue(
     scrollTopHorizontal(a1Graph, false) === undefined,
-    `${safeStringify(scrollTopHorizontal(a1Graph, false))}`,
+    `${debugJSON(scrollTopHorizontal(a1Graph, false))}`,
   );
   assertTrue(
     scrollBottomHorizontal(a1Graph, false) === undefined,
-    `${safeStringify(scrollBottomHorizontal(a1Graph, false))}`,
+    `${debugJSON(scrollBottomHorizontal(a1Graph, false))}`,
   );
 
   const a1BRGraph = await execute(
@@ -286,7 +285,7 @@ test('test graph view init', async () => {
 
   assertTrue(
     scrollVertical(a1BRBRGraph, false) === undefined,
-    `${safeStringify(scrollVertical(a1BRBRGraph, false))}`,
+    `${debugJSON(scrollVertical(a1BRBRGraph, false))}`,
   );
 
   await execute(
@@ -413,7 +412,7 @@ test('test graph view init', async () => {
 
   assertTrue(
     scrollTopHorizontal(a1BRTRUTRTLBRGraph, true) === undefined,
-    `${safeStringify(scrollTopHorizontal(a1BRTRUTRTLBRGraph, true))}`,
+    `${debugJSON(scrollTopHorizontal(a1BRTRUTRTLBRGraph, true))}`,
   );
 
   await execute(

@@ -1,4 +1,5 @@
-import { ApiProvider, IsGet, MHash, UserId, Votes } from './CommentGraph';
+import { ApiProvider } from './api';
+import { IsGet, MHash, UserId, Votes } from './keys';
 import { assertTrue, range, str } from './util';
 
 export const simpleGraph = (): TestGraph => {

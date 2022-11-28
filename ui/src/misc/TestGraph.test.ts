@@ -1,25 +1,11 @@
-import {
-  fromMHash,
-  IsGet,
-  KeyType,
-  MHash,
-  UserId,
-  Votes,
-} from './CommentGraph';
+import { fromMHash, IsGet, KeyType, LinkKey, MHash, ValidLink } from './keys';
 import { simpleGraph } from './TestGraph';
 
 function asMHashSet(arr: string[]): Set<MHash> {
   return new Set(arr as MHash[]);
 }
 
-function asLinkKey(
-  hash: string,
-  isGetParent: boolean,
-): {
-  keyType: KeyType.link;
-  mhash: Readonly<MHash>;
-  isGet: Readonly<IsGet>;
-} {
+function asLinkKey(hash: string, isGetParent: boolean): LinkKey {
   return {
     keyType: KeyType.link,
     mhash: hash as MHash,
@@ -27,19 +13,11 @@ function asLinkKey(
   };
 }
 
-type TestLink = {
-  parent: Readonly<MHash>;
-  child: Readonly<MHash>;
-  user: Readonly<UserId> | undefined;
-  first: Readonly<number>;
-  votes: Votes;
-};
-
-function getParentHashs(links: readonly TestLink[]): string[] {
+function getParentHashs(links: readonly ValidLink[]): string[] {
   return links.map((l) => fromMHash(l.parent));
 }
 
-function getChildHashs(links: readonly TestLink[]): string[] {
+function getChildHashs(links: readonly ValidLink[]): string[] {
   return links.map((l) => fromMHash(l.child));
 }
 

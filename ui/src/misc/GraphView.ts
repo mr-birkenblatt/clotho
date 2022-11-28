@@ -1,4 +1,5 @@
-import CommentGraph, {
+import CommentGraph, { NotifyContentCB } from './CommentGraph';
+import {
   adj,
   AdjustedLineIndex,
   equalFullKey,
@@ -8,12 +9,11 @@ import CommentGraph, {
   IsGet,
   Link,
   MHash,
-  NotifyContentCB,
   toFullKey,
   TOPIC_KEY,
   UserId,
-} from './CommentGraph';
-import { amend, LoggerCB, maybeLog, num, safeStringify } from './util';
+} from './keys';
+import { amend, debugJSON, LoggerCB, maybeLog, num } from './util';
 
 export type Cell = {
   fullKey: Readonly<FullKey>;
@@ -47,7 +47,7 @@ export function equalCell(
     return true;
   }
   if (cell === undefined || expected === undefined) {
-    log(`cell:${safeStringify(cell)} !== expected:${safeStringify(expected)}`);
+    log(`cell:${debugJSON(cell)} !== expected:${debugJSON(expected)}`);
     return false;
   }
   if (cell.invalid && expected.invalid) {
@@ -55,9 +55,9 @@ export function equalCell(
   }
   if (cell.invalid || expected.invalid) {
     log(
-      `cell.invalid:${safeStringify(cell)}`,
+      `cell.invalid:${debugJSON(cell)}`,
       '!==',
-      `expected.invalid:${safeStringify(expected)}`,
+      `expected.invalid:${debugJSON(expected)}`,
     );
     return false;
   }
@@ -87,22 +87,22 @@ export function equalView(
     return true;
   }
   if (view === undefined || expected === undefined) {
-    log(`view:${safeStringify(view)} !== expected:${safeStringify(expected)}`);
+    log(`view:${debugJSON(view)} !== expected:${debugJSON(expected)}`);
     return false;
   }
   if (view.topSkip !== expected.topSkip) {
     log(
-      `view.topSkip:${safeStringify(view.topSkip)}`,
+      `view.topSkip:${debugJSON(view.topSkip)}`,
       '!==',
-      `expected.topSkip:${safeStringify(expected.topSkip)}`,
+      `expected.topSkip:${debugJSON(expected.topSkip)}`,
     );
     return false;
   }
   if (view.bottomSkip !== expected.bottomSkip) {
     log(
-      `view.bottomSkip:${safeStringify(view.bottomSkip)}`,
+      `view.bottomSkip:${debugJSON(view.bottomSkip)}`,
       '!==',
-      `expected.bottomSkip:${safeStringify(expected.bottomSkip)}`,
+      `expected.bottomSkip:${debugJSON(expected.bottomSkip)}`,
     );
     return false;
   }
@@ -156,14 +156,14 @@ function checkLink(
     if (cell.topLink === undefined) {
       return true;
     }
-    logger(`cell:${safeStringify(cell)} !== other:${safeStringify(other)}`);
+    logger(`cell:${debugJSON(cell)} !== other:${debugJSON(other)}`);
     return false;
   }
   if (cell.invalid && cell.topLink !== undefined && cell.topLink.invalid) {
     return true;
   }
   if (cell.topLink === undefined || cell.topLink.invalid) {
-    logger(`invalid topLink: ${safeStringify(cell.topLink)}`);
+    logger(`invalid topLink: ${debugJSON(cell.topLink)}`);
     return false;
   }
   if (cell.mhash === undefined || other.mhash === undefined) {
@@ -176,7 +176,7 @@ function checkLink(
   }
   logger(
     'mismatching link:',
-    safeStringify(topLink),
+    debugJSON(topLink),
     `!== parent:${other.mhash} child:${cell.mhash}`,
   );
   return false;
