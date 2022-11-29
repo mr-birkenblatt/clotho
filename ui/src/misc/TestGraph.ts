@@ -38,7 +38,7 @@ export const advancedGraph = (): TestGraph => {
   return graph;
 };
 
-export default class TestGraph {
+class TestGraph {
   private readonly apiLimit: number;
   private readonly topics: string[];
   private readonly messages: { [key: string]: string };

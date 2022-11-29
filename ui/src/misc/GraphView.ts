@@ -37,7 +37,7 @@ export type GraphView = {
 };
 
 /* istanbul ignore next */
-export function equalCell(
+function equalCell(
   cell: Readonly<Cell> | undefined,
   expected: Readonly<Cell> | undefined,
   logger?: LoggerCB,

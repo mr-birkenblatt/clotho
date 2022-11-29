@@ -34,16 +34,12 @@ import {
 import LRU from './LRU';
 import { assertTrue, BlockLoader, BlockResponse, errHnd, num } from './util';
 
-export type ReadyCB = () => void;
 export type NotifyContentCB = (
   mhash: Readonly<MHash>,
   content: Readonly<string>,
 ) => void;
-export type NotifyHashCB = (mhash: Readonly<MHash> | undefined) => void;
-export type NotifyLinkCB = (link: Readonly<Link>) => void;
-export type NextCB = (next: Readonly<LineKey>) => void;
 
-export type CGSettings = {
+type CGSettings = {
   maxCommentPoolSize?: Readonly<number>;
   maxTopicSize?: Readonly<number>;
   maxLinkPoolSize?: Readonly<number>;
@@ -54,7 +50,7 @@ export type CGSettings = {
   blockSize?: Readonly<number>;
 };
 
-export type ContentValue = readonly [Readonly<MHash>, Readonly<string>];
+type ContentValue = readonly [Readonly<MHash>, Readonly<string>];
 export type ContentValueExt = readonly [
   Readonly<MHash> | undefined,
   Readonly<string>,

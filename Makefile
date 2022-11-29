@@ -23,6 +23,7 @@ help:
 	@echo "clean	clean test data"
 	@echo "pytest	run all test with pytest (requires a running test redis server)"
 	@echo "test-ts	run all typescript tests"
+	@echo "ts-unused	check for unused exports in typescript"
 	@echo "ts-build	build the ui code"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
@@ -133,7 +134,10 @@ pytest:
 	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
 
 test-ts:
-	cd ui && yarn test --all --coverage
+	cd ui && yarn testall
+
+ts-unused:
+	cd ui && yarn unused
 
 ts-build:
 	cd ui && yarn build

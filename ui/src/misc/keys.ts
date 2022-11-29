@@ -1,4 +1,4 @@
-import { assertFail, debugJSON, LoggerCB, maybeLog, num, str } from './util';
+import { assertFail, debugJSON, LoggerCB, maybeLog, str } from './util';
 
 export type MHash = string & { _mHash: void };
 
@@ -8,10 +8,6 @@ export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
 
 export type UserId = string & { _userId: void };
 
-export function fromUserId(userId: Readonly<UserId>): Readonly<string> {
-  return str(userId);
-}
-
 export function userMHash(key: FullUserKey | UserKey): MHash {
   return `${key.userId}` as MHash;
 }
@@ -20,10 +16,6 @@ export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 
 export function adj(index: number): Readonly<AdjustedLineIndex> {
   return index as AdjustedLineIndex;
-}
-
-export function fromAdjustedIndex(index: Readonly<AdjustedLineIndex>): number {
-  return num(index);
 }
 
 export enum KeyType {
@@ -43,18 +35,18 @@ export interface LinkKey {
   mhash: Readonly<MHash>;
   isGet: Readonly<IsGet>;
 }
-export interface TopicKey {
+interface TopicKey {
   keyType: KeyType.topic;
 }
 export interface UserKey {
   keyType: KeyType.user;
   userId: Readonly<UserId>;
 }
-export interface UserChildKey {
+interface UserChildKey {
   keyType: KeyType.userchild;
   parentUser: Readonly<UserId>;
 }
-export interface InvalidKey {
+interface InvalidKey {
   keyType: KeyType.invalid;
 }
 export type LineKey = LinkKey | TopicKey | UserKey | UserChildKey | InvalidKey;
@@ -101,17 +93,6 @@ export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
   }, true);
 }
 
-export function toLineKey(
-  hash: Readonly<string>,
-  isGet: Readonly<IsGet>,
-): Readonly<LineKey> {
-  return {
-    keyType: KeyType.link,
-    mhash: hash as MHash,
-    isGet,
-  };
-}
-
 export enum FullKeyType {
   invalid = 'full-invalid',
   direct = 'full-direct',
@@ -136,16 +117,16 @@ export interface FullTopicKey {
   fullKeyType: FullKeyType.topic;
   index: Readonly<AdjustedLineIndex>;
 }
-export interface FullUserKey {
+interface FullUserKey {
   fullKeyType: FullKeyType.user;
   userId: Readonly<UserId>;
 }
-export interface FullUserChildKey {
+interface FullUserChildKey {
   fullKeyType: FullKeyType.userchild;
   parentUser: Readonly<UserId>;
   index: Readonly<AdjustedLineIndex>;
 }
-export interface FullInvalidKey {
+interface FullInvalidKey {
   fullKeyType: FullKeyType.invalid;
 }
 export type FullUserlikeKey = FullUserKey | FullUserChildKey;
@@ -320,19 +301,6 @@ export function asTopicKey(index: number): Readonly<FullIndirectKey> {
   };
 }
 
-export function asFullKey(
-  hash: Readonly<string>,
-  isGet: Readonly<IsGet>,
-  index: number,
-): Readonly<FullIndirectKey> {
-  return {
-    fullKeyType: FullKeyType.link,
-    mhash: hash as MHash,
-    isGet,
-    index: adj(index),
-  };
-}
-
 export function asDirectKey(hash: Readonly<string>): Readonly<FullKey> {
   return {
     fullKeyType: FullKeyType.direct,
@@ -341,22 +309,7 @@ export function asDirectKey(hash: Readonly<string>): Readonly<FullKey> {
   };
 }
 
-export function asUserKey(user: Readonly<string>): Readonly<FullKey> {
-  return { fullKeyType: FullKeyType.user, userId: user as UserId };
-}
-
-export function asUserChildKey(
-  user: Readonly<string>,
-  index: number,
-): Readonly<FullKey> {
-  return {
-    fullKeyType: FullKeyType.userchild,
-    parentUser: user as UserId,
-    index: adj(index),
-  };
-}
-
-export type Vote = {
+type Vote = {
   count: Readonly<number>;
   userVoted: Readonly<boolean>;
 };
@@ -377,7 +330,7 @@ export type ValidLink = {
   first: Readonly<number>;
   votes: Votes;
 };
-export type InvalidLink = {
+type InvalidLink = {
   invalid: Readonly<true>;
 };
 export type Link = ValidLink | InvalidLink;

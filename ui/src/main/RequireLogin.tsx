@@ -11,6 +11,7 @@ type RequireLoginState = {
   token: string | null;
 };
 
+// ts-unused-exports:disable-next-line
 export default class RequireLogin extends PureComponent<
   RequireLoginProps,
   RequireLoginState

@@ -18,7 +18,7 @@ type ViewReducers = {
   setView: (state: ViewState, action: SetAction) => void;
 };
 
-export const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
+const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
   name: 'viewState',
   initialState: {
     currentView: initView(undefined, undefined),

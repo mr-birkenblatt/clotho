@@ -1,4 +1,4 @@
-import CommentGraph, { ContentValueExt, NextCB, NotifyContentCB, NotifyHashCB } from './CommentGraph';
+import CommentGraph, { ContentValueExt, NotifyContentCB } from './CommentGraph';
 import {
   adj,
   AdjustedLineIndex,

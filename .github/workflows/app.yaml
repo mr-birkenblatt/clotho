@@ -38,6 +38,10 @@ jobs:
       run: |
         make install-ts
 
+    - name: Unused exports (ts)
+      run: |
+        make ts-unused
+
     - name: Lint Code (ts)
       run: |
         make lint-ts
