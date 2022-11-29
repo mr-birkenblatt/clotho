@@ -2,6 +2,7 @@ import CommentGraph from './CommentGraph';
 import {
   Cell,
   consistentLinks,
+  Direction,
   equalView,
   GraphView,
   initView,
@@ -23,13 +24,7 @@ import {
   MHash,
 } from './keys';
 import { advancedGraph, InfGraph } from './TestGraph';
-import {
-  assertFail,
-  assertTrue,
-  debugJSON,
-  detectSlowCallback,
-  LoggerCB,
-} from './util';
+import { assertTrue, debugJSON, detectSlowCallback, LoggerCB } from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -56,40 +51,29 @@ async function execute(
   let transitionCount = 0;
   const transition: (
     view: Readonly<GraphView>,
-    resolve: (
-      value: Readonly<GraphView> | PromiseLike<Readonly<GraphView>>,
-    ) => void,
-    reject: (reason: any) => void,
-  ) => void = (view, resolve, reject) => {
-    const done = detectSlowCallback(view, reject);
-    const res = progressView(
-      graph,
-      view,
-      (newView) => {
-        done();
-        transitionCount += 1;
-        transition(newView, resolve, reject);
-      },
-      logger,
-    );
-    if (res !== undefined) {
-      if (transitionCount !== expectedTransitions) {
-        reject(`${transitionCount} !== expected ${expectedTransitions}`);
-      }
-      if (
-        equalView(view, expected, console.warn) &&
-        consistentLinks(view, console.warn)
-      ) {
-        resolve(res);
-      } else {
-        reject(`${debugJSON(view)} !== expected ${debugJSON(expected)}`);
-      }
+  ) => Promise<Readonly<GraphView>> = async (oldView) => {
+    const done = detectSlowCallback(oldView);
+    const { view, change } = await progressView(graph, oldView, logger);
+    done();
+    if (change) {
+      transitionCount += 1;
+      return transition(view);
     }
+    if (transitionCount !== expectedTransitions) {
+      throw new Error(
+        `${transitionCount} !== expected ${expectedTransitions}`,
+      );
+    }
+    if (
+      equalView(view, expected, console.warn) &&
+      consistentLinks(view, console.warn)
+    ) {
+      return view;
+    }
+    throw new Error(`${debugJSON(view)} !== expected ${debugJSON(expected)}`);
   };
 
-  return new Promise((resolve, reject) => {
-    transition(view, resolve, reject);
-  });
+  return transition(view);
 }
 
 function cellFromString(key: string, fullKey: FullKey): Cell {
@@ -175,36 +159,35 @@ test('test graph view init', async () => {
       undefined,
     ),
     13,
-    console.log,
   );
   assertTrue(initGraph !== undefined, 'initGraph is undefined');
 
+  const { view: invalidView, change: invalidChange } = await progressView(
+    graph,
+    { centerTop: invalidCell() },
+  );
+  assertTrue(!invalidChange, 'no change allowed for invalid');
   assertTrue(
-    equalView(
-      progressView(graph, { centerTop: invalidCell() }, (_) => {
-        assertFail('no progress should happen');
-      }),
-      { centerTop: invalidCell() },
-    ),
+    equalView(invalidView, { centerTop: invalidCell() }),
     'should be invalid',
   );
 
   assertTrue(
-    scrollTopHorizontal(initGraph, false) === undefined,
-    `${debugJSON(scrollTopHorizontal(initGraph, false))}`,
+    scrollTopHorizontal(initGraph, Direction.BottomLeft) === undefined,
+    `${debugJSON(scrollTopHorizontal(initGraph, Direction.BottomLeft))}`,
   );
   assertTrue(
-    scrollBottomHorizontal(initGraph, false) === undefined,
-    `${debugJSON(scrollBottomHorizontal(initGraph, false))}`,
+    scrollBottomHorizontal(initGraph, Direction.BottomLeft) === undefined,
+    `${debugJSON(scrollBottomHorizontal(initGraph, Direction.BottomLeft))}`,
   );
   assertTrue(
-    scrollBottomHorizontal(initGraph, true) === undefined,
-    `${debugJSON(scrollBottomHorizontal(initGraph, true))}`,
+    scrollBottomHorizontal(initGraph, Direction.UpRight) === undefined,
+    `${debugJSON(scrollBottomHorizontal(initGraph, Direction.UpRight))}`,
   );
 
   await execute(
     graph,
-    scrollTopHorizontal(initGraph, true),
+    scrollTopHorizontal(initGraph, Direction.UpRight),
     buildFullView(
       ['a1', asFullKey('b2', true, 0)],
       [['a2', asTopicKey(0)], ['b2', asTopicKey(1)], undefined],
@@ -239,17 +222,17 @@ test('test graph view init', async () => {
 
   assertTrue(a1Graph !== undefined, 'a1Graph is undefined');
   assertTrue(
-    scrollTopHorizontal(a1Graph, false) === undefined,
-    `${debugJSON(scrollTopHorizontal(a1Graph, false))}`,
+    scrollTopHorizontal(a1Graph, Direction.BottomLeft) === undefined,
+    `${debugJSON(scrollTopHorizontal(a1Graph, Direction.BottomLeft))}`,
   );
   assertTrue(
-    scrollBottomHorizontal(a1Graph, false) === undefined,
-    `${debugJSON(scrollBottomHorizontal(a1Graph, false))}`,
+    scrollBottomHorizontal(a1Graph, Direction.BottomLeft) === undefined,
+    `${debugJSON(scrollBottomHorizontal(a1Graph, Direction.BottomLeft))}`,
   );
 
   const a1BRGraph = await execute(
     graph,
-    scrollBottomHorizontal(a1Graph, true),
+    scrollBottomHorizontal(a1Graph, Direction.UpRight),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
       [undefined, ['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)]],
@@ -267,7 +250,7 @@ test('test graph view init', async () => {
 
   const a1BRBRGraph = await execute(
     graph,
-    scrollBottomHorizontal(a1BRGraph, true),
+    scrollBottomHorizontal(a1BRGraph, Direction.UpRight),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
       [undefined, ['a1', asDirectKey('a1')], undefined],
@@ -284,13 +267,13 @@ test('test graph view init', async () => {
   );
 
   assertTrue(
-    scrollVertical(a1BRBRGraph, false) === undefined,
-    `${debugJSON(scrollVertical(a1BRBRGraph, false))}`,
+    scrollVertical(a1BRBRGraph, Direction.BottomLeft) === undefined,
+    `${debugJSON(scrollVertical(a1BRBRGraph, Direction.BottomLeft))}`,
   );
 
   await execute(
     graph,
-    scrollBottomHorizontal(a1BRGraph, false),
+    scrollBottomHorizontal(a1BRGraph, Direction.BottomLeft),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
       [undefined, ['a1', asDirectKey('a1')], undefined],
@@ -308,7 +291,7 @@ test('test graph view init', async () => {
 
   const a1BRTRGraph = await execute(
     graph,
-    scrollTopHorizontal(a1BRGraph, true),
+    scrollTopHorizontal(a1BRGraph, Direction.UpRight),
     buildFullView(
       ['a3', asFullKey('b4', true, 0)],
       [['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)], undefined],
@@ -322,7 +305,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUGraph = await execute(
     graph,
-    scrollVertical(a1BRTRGraph, true),
+    scrollVertical(a1BRTRGraph, Direction.UpRight),
     buildFullView(
       ['a2', asFullKey('a3', true, 0)],
       [
@@ -340,7 +323,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUTRGraph = await execute(
     graph,
-    scrollTopHorizontal(a1BRTRUGraph, true),
+    scrollTopHorizontal(a1BRTRUGraph, Direction.UpRight),
     buildFullView(
       ['a1', asFullKey('b2', true, 0)],
       [
@@ -358,7 +341,7 @@ test('test graph view init', async () => {
 
   await execute(
     graph,
-    scrollVertical(a1BRTRUTRGraph, false),
+    scrollVertical(a1BRTRUTRGraph, Direction.BottomLeft),
     buildFullView(
       ['b2', asFullKey('b4', true, 1)],
       [undefined, ['b4', asDirectKey('b4')], undefined],
@@ -372,7 +355,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUTRTLGraph = await execute(
     graph,
-    scrollTopHorizontal(a1BRTRUTRGraph, false),
+    scrollTopHorizontal(a1BRTRUTRGraph, Direction.BottomLeft),
     buildFullView(
       ['a2', asFullKey('a3', true, 0)],
       [
@@ -394,7 +377,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUTRTLBRGraph = await execute(
     graph,
-    scrollBottomHorizontal(a1BRTRUTRTLGraph, true),
+    scrollBottomHorizontal(a1BRTRUTRTLGraph, Direction.UpRight),
     buildFullView(
       ['a2', asFullKey('a3', true, 0)],
       [undefined, ['a3', asDirectKey('a3')], undefined],
@@ -411,8 +394,8 @@ test('test graph view init', async () => {
   );
 
   assertTrue(
-    scrollTopHorizontal(a1BRTRUTRTLBRGraph, true) === undefined,
-    `${debugJSON(scrollTopHorizontal(a1BRTRUTRTLBRGraph, true))}`,
+    scrollTopHorizontal(a1BRTRUTRTLBRGraph, Direction.UpRight) === undefined,
+    `${debugJSON(scrollTopHorizontal(a1BRTRUTRTLBRGraph, Direction.UpRight))}`,
   );
 
   await execute(

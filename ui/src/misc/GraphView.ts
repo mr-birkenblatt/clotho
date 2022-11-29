@@ -1,4 +1,4 @@
-import CommentGraph, { NotifyContentCB } from './CommentGraph';
+import CommentGraph from './CommentGraph';
 import {
   adj,
   AdjustedLineIndex,
@@ -266,9 +266,6 @@ export function consistentLinks(
   );
 }
 
-export type ViewUpdateCB = (view: Readonly<GraphView>) => void;
-type CellUpdateCB = (cell: Readonly<Cell>) => void;
-
 function cell(
   mhash: Readonly<MHash>,
   isGet: IsGet,
@@ -316,67 +313,46 @@ export function initView(
   };
 }
 
-// function getCellHash(
-//   graph: CommentGraph,
-//   cell: Readonly<Cell>,
-//   updateCB: CellUpdateCB,
-// ): void {
-//   graph.getHash(cell.fullKey, (mhash) => {
-//     const res =
-//       mhash !== undefined ? { ...cell, mhash } : { ...cell, invalid: true };
-//     updateCB(res);
-//   });
-// }
-
-function getCellContent(
+async function getCellContent(
   graph: CommentGraph,
   cell: Readonly<Cell>,
-  updateCB: CellUpdateCB,
-) {
-  const getMessage: NotifyContentCB = (mhash, content) => {
-    const res = mhash !== undefined ? { mhash } : { invalid: true };
-    updateCB({
-      ...cell,
-      ...res,
-      content,
-    });
+): Promise<Readonly<Cell>> {
+  const [mhash, content] = await graph.getMessage(cell.fullKey);
+  const res = mhash !== undefined ? { mhash } : { invalid: true };
+  return {
+    ...cell,
+    ...res,
+    content,
   };
-  const res = graph.getMessage(cell.fullKey, getMessage);
-  if (res !== undefined) {
-    getMessage(...res);
-  }
 }
 
-function getTopLink(
+async function getTopLink(
   graph: CommentGraph,
   cell: Readonly<Cell>,
   parent: Readonly<FullKey>,
-  updateCB: CellUpdateCB,
-) {
-  graph.getSingleLink(parent, cell.fullKey, (link) => {
-    updateCB({
-      ...cell,
-      topLink: link,
-    });
-  });
+): Promise<Readonly<Cell>> {
+  const link = await graph.getSingleLink(parent, cell.fullKey);
+  return {
+    ...cell,
+    topLink: link,
+  };
 }
 
-function getNextCell(
+async function getNextCell(
   graph: CommentGraph,
   sameLevel: Readonly<FullKey>,
   otherLevel: Readonly<MHash>,
   skip: Readonly<MHash> | undefined,
   isTop: boolean,
   isIncrease: boolean,
-  updateCB: CellUpdateCB,
-): void {
+): Promise<Readonly<Cell>> {
   const index =
     sameLevel.fullKeyType === FullKeyType.direct ||
     sameLevel.fullKeyType === FullKeyType.invalid ||
     sameLevel.fullKeyType === FullKeyType.user
       ? adj(isIncrease ? 0 : -1)
       : adj(num(sameLevel.index) + (isIncrease ? 1 : -1));
-  getCellContent(
+  const res = await getCellContent(
     graph,
     num(index) === -1 && skip !== undefined
       ? directCell(skip)
@@ -389,157 +365,223 @@ function getNextCell(
       : sameLevel.fullKeyType === FullKeyType.userchild
       ? userChildCell(sameLevel.parentUser, index)
       : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, index),
-    (res) => {
-      if (skip !== undefined && res.mhash === skip && num(index) >= 0) {
-        const skipIndex = adj(num(index) + 1);
-        getCellContent(
-          graph,
-          sameLevel.fullKeyType === FullKeyType.topic
-            ? topicCell(skipIndex)
-            : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, skipIndex),
-          updateCB,
-        );
-        return;
-      }
-      updateCB(res);
-    },
   );
+  if (skip !== undefined && res.mhash === skip && num(index) >= 0) {
+    const skipIndex = adj(num(index) + 1);
+    return getCellContent(
+      graph,
+      sameLevel.fullKeyType === FullKeyType.topic
+        ? topicCell(skipIndex)
+        : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, skipIndex),
+    );
+  }
+  return res;
 }
 
-export function progressView(
+export async function progressView(
   graph: CommentGraph,
   view: Readonly<GraphView>,
-  updateCB: ViewUpdateCB,
   logger?: LoggerCB,
-): Readonly<GraphView> | undefined {
+): Promise<Readonly<{ view: Readonly<GraphView>; change: boolean }>> {
   const log = maybeLog(logger, 'progress');
   if (view.centerTop.invalid) {
     log('invalid');
-    return view;
+    return { view, change: false };
   }
   if (
     view.centerTop.content === undefined ||
     view.centerTop.mhash === undefined
   ) {
     log('centerTop content');
-    getCellContent(graph, view.centerTop, (cell) => {
-      updateCB({ ...view, centerTop: cell });
-    });
-  } else if (
+    return {
+      view: {
+        ...view,
+        centerTop: await getCellContent(graph, view.centerTop),
+      },
+      change: true,
+    };
+  }
+  if (
     view.centerBottom === undefined ||
     view.centerBottom.mhash === undefined ||
     view.centerBottom.content === undefined
   ) {
     log('centerBottom content');
-    getCellContent(
-      graph,
-      view.centerBottom !== undefined
-        ? view.centerBottom
-        : cell(view.centerTop.mhash, IsGet.child, adj(0)),
-      (cell) => {
-        updateCB({ ...view, centerBottom: cell });
+    return {
+      view: {
+        ...view,
+        centerBottom: await getCellContent(
+          graph,
+          view.centerBottom !== undefined
+            ? view.centerBottom
+            : cell(view.centerTop.mhash, IsGet.child, adj(0)),
+        ),
       },
-    );
-  } else if (view.centerBottom.topLink === undefined) {
-    log('centerBottom topLink');
-    getTopLink(graph, view.centerBottom, view.centerTop.fullKey, (cell) => {
-      updateCB({ ...view, centerBottom: cell });
-    });
-  } else if (view.topRight === undefined) {
-    log('centerTop neighbor right');
-    getNextCell(
-      graph,
-      view.centerTop.fullKey,
-      view.centerBottom.mhash,
-      view.topSkip,
-      true,
-      true,
-      (cell) => {
-        updateCB({ ...view, topRight: cell });
-      },
-    );
-  } else if (view.bottomRight === undefined) {
-    log('centerBottom neighbor right');
-    getNextCell(
-      graph,
-      view.centerBottom.fullKey,
-      view.centerTop.mhash,
-      view.bottomSkip,
-      false,
-      true,
-      (cell) => {
-        updateCB({ ...view, bottomRight: cell });
-      },
-    );
-  } else if (view.topLeft === undefined) {
-    log('centerTop neighbor left');
-    getNextCell(
-      graph,
-      view.centerTop.fullKey,
-      view.centerBottom.mhash,
-      undefined,
-      true,
-      false,
-      (cell) => {
-        updateCB({ ...view, topLeft: cell });
-      },
-    );
-  } else if (view.bottomLeft === undefined) {
-    log('centerBottom neighbor left');
-    getNextCell(
-      graph,
-      view.centerBottom.fullKey,
-      view.centerTop.mhash,
-      undefined,
-      false,
-      false,
-      (cell) => {
-        updateCB({ ...view, bottomLeft: cell });
-      },
-    );
-  } else if (view.top === undefined) {
-    log('top content');
-    getCellContent(
-      graph,
-      cell(view.centerTop.mhash, IsGet.parent, adj(0)),
-      (cell) => {
-        updateCB({ ...view, top: cell });
-      },
-    );
-  } else if (view.bottom === undefined) {
-    log('bottom content');
-    getCellContent(
-      graph,
-      cell(view.centerBottom.mhash, IsGet.child, adj(0)),
-      (cell) => {
-        updateCB({ ...view, bottom: cell });
-      },
-    );
-  } else if (view.centerTop.topLink === undefined) {
-    log('centerTop topLink');
-    getTopLink(graph, view.centerTop, view.top.fullKey, (cell) => {
-      updateCB({ ...view, centerTop: cell });
-    });
-  } else if (view.bottom.topLink === undefined) {
-    log('bottom topLink');
-    getTopLink(graph, view.bottom, view.centerBottom.fullKey, (cell) => {
-      updateCB({ ...view, bottom: cell });
-    });
-  } else if (view.bottomRight.topLink === undefined) {
-    log('bottomRight topLink');
-    getTopLink(graph, view.bottomRight, view.centerTop.fullKey, (cell) => {
-      updateCB({ ...view, bottomRight: cell });
-    });
-  } else if (view.bottomLeft.topLink === undefined) {
-    log('bottomLeft topLink');
-    getTopLink(graph, view.bottomLeft, view.centerTop.fullKey, (cell) => {
-      updateCB({ ...view, bottomLeft: cell });
-    });
-  } else {
-    log('no change');
-    return view;
+      change: true,
+    };
   }
-  return undefined;
+  if (view.centerBottom.topLink === undefined) {
+    log('centerBottom topLink');
+    return {
+      view: {
+        ...view,
+        centerBottom: await getTopLink(
+          graph,
+          view.centerBottom,
+          view.centerTop.fullKey,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.topRight === undefined) {
+    log('centerTop neighbor right');
+    return {
+      view: {
+        ...view,
+        topRight: await getNextCell(
+          graph,
+          view.centerTop.fullKey,
+          view.centerBottom.mhash,
+          view.topSkip,
+          true,
+          true,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.bottomRight === undefined) {
+    log('centerBottom neighbor right');
+    return {
+      view: {
+        ...view,
+        bottomRight: await getNextCell(
+          graph,
+          view.centerBottom.fullKey,
+          view.centerTop.mhash,
+          view.bottomSkip,
+          false,
+          true,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.topLeft === undefined) {
+    log('centerTop neighbor left');
+    return {
+      view: {
+        ...view,
+        topLeft: await getNextCell(
+          graph,
+          view.centerTop.fullKey,
+          view.centerBottom.mhash,
+          undefined,
+          true,
+          false,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.bottomLeft === undefined) {
+    log('centerBottom neighbor left');
+    return {
+      view: {
+        ...view,
+        bottomLeft: await getNextCell(
+          graph,
+          view.centerBottom.fullKey,
+          view.centerTop.mhash,
+          undefined,
+          false,
+          false,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.top === undefined) {
+    log('top content');
+    return {
+      view: {
+        ...view,
+        top: await getCellContent(
+          graph,
+          cell(view.centerTop.mhash, IsGet.parent, adj(0)),
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.bottom === undefined) {
+    log('bottom content');
+    return {
+      view: {
+        ...view,
+        bottom: await getCellContent(
+          graph,
+          cell(view.centerBottom.mhash, IsGet.child, adj(0)),
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.centerTop.topLink === undefined) {
+    log('centerTop topLink');
+    return {
+      view: {
+        ...view,
+        centerTop: await getTopLink(graph, view.centerTop, view.top.fullKey),
+      },
+      change: true,
+    };
+  }
+  if (view.bottom.topLink === undefined) {
+    log('bottom topLink');
+    return {
+      view: {
+        ...view,
+        bottom: await getTopLink(
+          graph,
+          view.bottom,
+          view.centerBottom.fullKey,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.bottomRight.topLink === undefined) {
+    log('bottomRight topLink');
+    return {
+      view: {
+        ...view,
+        bottomRight: await getTopLink(
+          graph,
+          view.bottomRight,
+          view.centerTop.fullKey,
+        ),
+      },
+      change: true,
+    };
+  }
+  if (view.bottomLeft.topLink === undefined) {
+    log('bottomLeft topLink');
+    return {
+      view: {
+        ...view,
+        bottomLeft: await getTopLink(
+          graph,
+          view.bottomLeft,
+          view.centerTop.fullKey,
+        ),
+      },
+      change: true,
+    };
+  }
+  log('no change');
+  return { view, change: false };
 }
 
 function removeLink<T extends Readonly<Cell> | undefined>(
@@ -552,11 +594,16 @@ function removeLink<T extends Readonly<Cell> | undefined>(
   return { ...rest };
 }
 
+export enum Direction {
+  UpRight = 'UpRight',
+  BottomLeft = 'BottomLeft',
+}
+
 export function scrollVertical(
   view: Readonly<GraphView>,
-  up: boolean,
+  direction: Direction,
 ): Readonly<GraphView> | undefined {
-  if (up) {
+  if (direction === Direction.UpRight) {
     if (view.top === undefined || view.top.invalid) {
       return undefined;
     }
@@ -615,10 +662,10 @@ function convertToDirect<T extends Readonly<Cell> | undefined>(
 
 export function scrollTopHorizontal(
   view: Readonly<GraphView>,
-  right: boolean,
+  direction: Direction,
 ): Readonly<GraphView> | undefined {
   const centerBottom = removeLink(convertToDirect(view.centerBottom));
-  if (right) {
+  if (direction == Direction.UpRight) {
     if (view.topRight === undefined || view.topRight.invalid) {
       return undefined;
     }
@@ -655,10 +702,10 @@ export function scrollTopHorizontal(
 
 export function scrollBottomHorizontal(
   view: Readonly<GraphView>,
-  right: boolean,
+  direction: Direction,
 ): Readonly<GraphView> | undefined {
   const centerTop = convertToDirect(view.centerTop);
-  if (right) {
+  if (direction === Direction.UpRight) {
     if (view.bottomRight === undefined || view.bottomRight.invalid) {
       return undefined;
     }

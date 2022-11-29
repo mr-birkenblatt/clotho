@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { RootState } from '../store';
 import {
   Cell,
+  Direction,
   GraphView,
   progressView,
   scrollBottomHorizontal,
@@ -278,16 +279,16 @@ type ObsKey = keyof Obs;
 
 type NavigationCB = (
   view: Readonly<GraphView>,
-  upRight: boolean,
+  direction: Direction,
 ) => Readonly<GraphView> | undefined;
 
-const navigationCBs: { [Property in ObsKey]: [NavigationCB, boolean] } = {
-  top: [scrollVertical, true],
-  topLeft: [scrollTopHorizontal, false],
-  topRight: [scrollTopHorizontal, true],
-  bottomLeft: [scrollBottomHorizontal, false],
-  bottomRight: [scrollBottomHorizontal, true],
-  bottom: [scrollVertical, false],
+const navigationCBs: { [Property in ObsKey]: [NavigationCB, Direction] } = {
+  top: [scrollVertical, Direction.UpRight],
+  topLeft: [scrollTopHorizontal, Direction.BottomLeft],
+  topRight: [scrollTopHorizontal, Direction.UpRight],
+  bottomLeft: [scrollBottomHorizontal, Direction.BottomLeft],
+  bottomRight: [scrollBottomHorizontal, Direction.UpRight],
+  bottom: [scrollVertical, Direction.BottomLeft],
 };
 
 const scrollBlocks: { [Property in ObsKey]: ScrollLogicalPosition } = {
@@ -311,7 +312,7 @@ type ViewState = {
   resetView: ResetView;
   redraw: boolean;
   tempContent: [Readonly<Cell> | undefined, Readonly<Cell> | undefined];
-  pending: [NavigationCB, boolean] | undefined;
+  pending: [NavigationCB, Direction] | undefined;
 };
 
 class View extends PureComponent<ViewProps, ViewState> {
@@ -359,17 +360,24 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { graph, view, changes, dispatch } = this.props;
     const { resetView, redraw, pending } = this.state;
     if (view !== prevProps.view || pending !== undefined) {
-      const finalView = progressView(graph, view, (newView) => {
-        dispatch(setView({ view: newView, changes, progress: true }));
-      });
-      if (finalView !== undefined && pending !== undefined) {
-        const [navigator, upRight] = pending;
-        const nextView = navigator(view, upRight);
-        if (nextView !== undefined) {
-          dispatch(setView({ view: nextView, changes, progress: false }));
-        }
-        this.setState({ pending: undefined });
-      }
+      progressView(graph, view)
+        .then(({ view: newView, change }) => {
+          if (change) {
+            dispatch(setView({ view: newView, changes, progress: true }));
+            return;
+          }
+          if (pending !== undefined) {
+            const [navigator, direction] = pending;
+            const nextView = navigator(newView, direction);
+            if (nextView !== undefined) {
+              dispatch(setView({ view: nextView, changes, progress: false }));
+            }
+            this.setState({ pending: undefined });
+          }
+        })
+        .catch((e) => {
+          console.warn(e);
+        });
     }
     if (resetView !== ResetView.Done) {
       if (resetView === ResetView.StopScroll) {
@@ -480,14 +488,14 @@ class View extends PureComponent<ViewProps, ViewState> {
   private navigate(
     key: ObsKey,
     navigator: NavigationCB,
-    upRight: boolean,
+    direction: Direction,
   ): void {
     const { dispatch, view, changes } = this.props;
-    const newView = navigator(view, upRight);
+    const newView = navigator(view, direction);
     if (newView !== undefined) {
       dispatch(setView({ view: newView, changes, progress: false }));
     } else {
-      this.setState({ pending: [navigator, upRight] });
+      this.setState({ pending: [navigator, direction] });
     }
     this.setState({
       resetView: ResetView.StopScroll,
