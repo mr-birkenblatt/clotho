@@ -454,7 +454,7 @@ export default class CommentGraph {
     if (notifyOnHit && res !== undefined) {
       notify(...res);
     }
-    return res !== undefined ? res : undefined;
+    return res;
   }
 
   private getUserMessage(
@@ -462,7 +462,7 @@ export default class CommentGraph {
     notify: NotifyContentCB,
   ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
     if (key.fullKeyType === FullKeyType.user) {
-      return [undefined, `${key.userId}`];
+      return [`${key.userId}` as MHash, `${key.userId}`];
     }
     const { parentUser, index } = key;
 
