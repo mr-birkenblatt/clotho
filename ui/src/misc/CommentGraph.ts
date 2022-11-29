@@ -29,13 +29,14 @@ import {
   MHash,
   UserId,
   UserKey,
+  userMHash,
 } from './keys';
 import LRU from './LRU';
 import { assertTrue, BlockLoader, BlockResponse, errHnd, num } from './util';
 
 export type ReadyCB = () => void;
 export type NotifyContentCB = (
-  mhash: Readonly<MHash> | undefined,
+  mhash: Readonly<MHash>,
   content: Readonly<string>,
 ) => void;
 export type NotifyHashCB = (mhash: Readonly<MHash> | undefined) => void;
@@ -53,16 +54,20 @@ export type CGSettings = {
   blockSize?: Readonly<number>;
 };
 
+export type ContentValue = readonly [Readonly<MHash>, Readonly<string>];
+export type ContentValueExt = readonly [
+  Readonly<MHash> | undefined,
+  Readonly<string>,
+];
+type LinkCacheKey = readonly [Readonly<MHash>, Readonly<MHash>];
+
 class CommentPool {
   private readonly api: ApiProvider;
   private readonly pool: LRU<Readonly<MHash>, Readonly<string>>;
   private readonly hashQueue: Set<Readonly<MHash>>;
   private readonly inFlight: Set<Readonly<MHash>>;
   private readonly listeners: Map<Readonly<MHash>, NotifyContentCB[]>;
-  private readonly topics: BlockLoader<
-    AdjustedLineIndex,
-    [Readonly<MHash>, Readonly<string>]
-  >;
+  private readonly topics: BlockLoader<AdjustedLineIndex, ContentValue>;
 
   private active: boolean;
 
@@ -81,15 +86,11 @@ class CommentPool {
     async function loading(
       offset: Readonly<AdjustedLineIndex>,
       limit: number,
-    ): Promise<
-      BlockResponse<AdjustedLineIndex, [Readonly<MHash>, Readonly<string>]>
-    > {
+    ): Promise<BlockResponse<AdjustedLineIndex, ContentValue>> {
       const { topics, next } = await api.topic(num(offset), limit);
       const entries = Object.entries(topics) as [MHash, string][];
       const topicMap = new Map(entries);
-      const values: [Readonly<MHash>, Readonly<string>][] = Array.from(
-        topicMap.keys(),
-      )
+      const values: ContentValue[] = Array.from(topicMap.keys())
         .sort()
         .map((mhash) => {
           const topic = topicMap.get(mhash);
@@ -165,36 +166,22 @@ class CommentPool {
     }
   }
 
-  /* istanbul ignore next: not used anywhere */
-  retrieveMessage(mhash: Readonly<MHash>, notify: NotifyContentCB): void {
-    this.waitFor(mhash, notify);
-    if (!this.pool.has(mhash)) {
-      this.hashQueue.add(mhash);
-      this.fetchMessages();
-    }
-  }
-
-  getMessage(
-    mhash: Readonly<MHash>,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash>, Readonly<string>] | undefined {
+  async getMessage(mhash: Readonly<MHash>): Promise<ContentValue> {
     const res = this.pool.get(mhash);
     if (res !== undefined) {
       return [mhash, res];
     }
-    this.waitFor(mhash, notify);
-    this.hashQueue.add(mhash);
-    this.fetchMessages();
-    return undefined;
+    return new Promise((resolve) => {
+      this.waitFor(mhash, (mhash, content) => {
+        resolve([mhash, content]);
+      });
+      this.hashQueue.add(mhash);
+      this.fetchMessages();
+    });
   }
 
-  getTopic(
-    index: Readonly<AdjustedLineIndex>,
-    notify: NotifyContentCB,
-  ): Readonly<[Readonly<MHash>, Readonly<string>]> | undefined {
-    return this.topics.get(index, ([mhash, content]) =>
-      notify(mhash, content),
-    );
+  async getTopic(index: Readonly<AdjustedLineIndex>): Promise<ContentValue> {
+    return this.topics.get(index);
   }
 
   clearCache(): void {
@@ -223,18 +210,8 @@ class LinkLookup {
     this.loader = new BlockLoader(loading, maxLineSize, blockSize);
   }
 
-  retrieveLink(
-    index: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): void {
-    this.loader.retrieve(index, notify);
-  }
-
-  getLink(
-    index: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): Link | undefined {
-    return this.loader.get(index, notify);
+  async getLink(index: Readonly<AdjustedLineIndex>): Promise<Link> {
+    return this.loader.get(index);
   }
 } // LinkLookup
 
@@ -243,10 +220,7 @@ class LinkPool {
   private readonly maxLineSize: Readonly<number>;
   private readonly maxUserLineSize: Readonly<number>;
   private readonly blockSize: Readonly<number>;
-  private readonly linkCache: LRU<
-    Readonly<[Readonly<MHash>, Readonly<MHash>]>,
-    Readonly<Link>
-  >;
+  private readonly linkCache: LRU<LinkCacheKey, Readonly<Link>>;
 
   private readonly pool: LRU<Readonly<LinkKey>, LinkLookup>;
   private readonly userLinks: LRU<
@@ -308,79 +282,48 @@ class LinkPool {
     return res;
   }
 
-  private constructNotify = (notify: NotifyLinkCB): NotifyLinkCB => {
-    return (link) => {
-      if (!link.invalid) {
-        this.linkCache.set([link.parent, link.child], link);
-      }
-      notify(link);
-    };
-  };
-
-  retrieveLink(
-    fullLinkKey: Readonly<FullLinkKey>,
-    notify: NotifyLinkCB,
-  ): void {
+  async getLink(fullLinkKey: Readonly<FullLinkKey>): Promise<Readonly<Link>> {
     const { mhash, isGet } = fullLinkKey;
     const line = this.getLine({
       keyType: KeyType.link,
       mhash,
       isGet,
     });
-    line.retrieveLink(fullLinkKey.index, this.constructNotify(notify));
+    const link = await line.getLink(fullLinkKey.index);
+    if (!link.invalid) {
+      this.linkCache.set([link.parent, link.child], link);
+    }
+    return link;
   }
 
-  getLink(
-    fullLinkKey: Readonly<FullLinkKey>,
-    notify: NotifyLinkCB,
-  ): Link | undefined {
-    const { mhash, isGet } = fullLinkKey;
-    const line = this.getLine({
-      keyType: KeyType.link,
-      mhash,
-      isGet,
-    });
-    return line.getLink(fullLinkKey.index, this.constructNotify(notify));
-  }
-
-  getUserLink(
+  async getUserLink(
     key: Readonly<UserKey>,
     index: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): Link | undefined {
+  ): Promise<Readonly<Link>> {
     const userLine = this.getUserLine(key);
-    return userLine.get(index, notify);
+    return userLine.get(index);
   }
 
-  getSingleLink(
-    parent: Readonly<MHash>,
-    child: Readonly<MHash>,
-    notify: NotifyLinkCB,
-  ): void {
-    const key: [Readonly<MHash>, Readonly<MHash>] = [parent, child];
+  async getSingleLink(
+    parentHash: Readonly<MHash>,
+    childHash: Readonly<MHash>,
+  ): Promise<Readonly<Link>> {
+    const key: LinkCacheKey = [parentHash, childHash];
     const res = this.linkCache.get(key);
     if (res !== undefined) {
-      notify(res);
-    } else {
-      this.api
-        .singleLink(parent, child)
-        .then((linkRes) => {
-          const { child, parent, first, user, votes } = linkRes;
-          const link = {
-            child,
-            parent,
-            first,
-            user,
-            votes,
-          };
-          this.linkCache.set(key, link);
-          notify(link);
-        })
-        .catch(
-          /* istanbul ignore next */
-          errHnd,
-        );
+      return res;
     }
+    const linkRes = await this.api.singleLink(parentHash, childHash);
+    const { child, parent, first, user, votes } = linkRes;
+    const link = {
+      child,
+      parent,
+      first,
+      user,
+      votes,
+    };
+    this.linkCache.set(key, link);
+    return link;
   }
 
   clearCache(): void {
@@ -414,92 +357,52 @@ export default class CommentGraph {
     );
   }
 
-  private getMessageByHash(
+  private async getMessageByHash(
     fullDirectKey: Readonly<FullDirectKey>,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
-    const res = this.msgPool.getMessage(fullDirectKey.mhash, notify);
-    if (res === undefined) {
-      return undefined;
-    }
-    return res;
+  ): Promise<ContentValue> {
+    return this.msgPool.getMessage(fullDirectKey.mhash);
   }
 
-  private getTopicMessage(
+  private async getTopicMessage(
     fullTopicKey: Readonly<FullTopicKey>,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
+  ): Promise<ContentValue> {
     const { index } = fullTopicKey;
-    return this.msgPool.getTopic(index, notify);
+    return this.msgPool.getTopic(index);
   }
 
-  private getMessageFromLink(
+  private async getMessageFromLink(
     link: Readonly<Link>,
     isGet: Readonly<IsGet>,
-    notifyOnHit: boolean,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
+  ): Promise<ContentValueExt> {
     if (link.invalid) {
-      const res: [Readonly<MHash> | undefined, Readonly<string>] = [
-        undefined,
-        '[deleted]',
-      ];
-      if (notifyOnHit) {
-        notify(...res);
-      }
-      return res;
+      return [undefined, '[deleted]'];
     }
     const mhash = isGet === IsGet.parent ? link.parent : link.child;
-    const res = this.msgPool.getMessage(mhash, notify);
-    if (notifyOnHit && res !== undefined) {
-      notify(...res);
-    }
-    return res;
+    return this.msgPool.getMessage(mhash);
   }
 
-  private getUserMessage(
+  private async getUserMessage(
     key: Readonly<FullUserlikeKey>,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
+  ): Promise<ContentValueExt> {
     if (key.fullKeyType === FullKeyType.user) {
-      return [`${key.userId}` as MHash, `${key.userId}`];
+      return [userMHash(key), `${key.userId}`];
     }
     const { parentUser, index } = key;
-
-    const notifyLink: NotifyLinkCB = (link) => {
-      this.getMessageFromLink(link, IsGet.child, true, notify);
-    };
-
-    const res = this.linkPool.getUserLink(
+    const res = await this.linkPool.getUserLink(
       { keyType: KeyType.user, userId: parentUser },
       index,
-      notifyLink,
     );
-    if (res === undefined) {
-      return undefined;
-    }
-    return this.getMessageFromLink(res, IsGet.child, false, notify);
+    return this.getMessageFromLink(res, IsGet.child);
   }
 
-  private getFullLinkMessage(
+  private async getFullLinkMessage(
     fullLinkKey: Readonly<FullLinkKey>,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
-    const notifyLink: NotifyLinkCB = (link) => {
-      this.getMessageFromLink(link, fullLinkKey.isGet, true, notify);
-    };
-
-    const link = this.linkPool.getLink(fullLinkKey, notifyLink);
-    if (link === undefined) {
-      return undefined;
-    }
-    return this.getMessageFromLink(link, fullLinkKey.isGet, false, notify);
+  ): Promise<ContentValueExt> {
+    const link = await this.linkPool.getLink(fullLinkKey);
+    return this.getMessageFromLink(link, fullLinkKey.isGet);
   }
 
-  getMessage(
-    fullKey: Readonly<FullKey>,
-    notify: NotifyContentCB,
-  ): readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined {
+  async getMessage(fullKey: Readonly<FullKey>): Promise<ContentValueExt> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
       return [undefined, '[invalid]'];
     }
@@ -507,128 +410,92 @@ export default class CommentGraph {
       fullKey.fullKeyType === FullKeyType.user ||
       fullKey.fullKeyType === FullKeyType.userchild
     ) {
-      return this.getUserMessage(fullKey, notify);
+      return this.getUserMessage(fullKey);
     }
     if (fullKey.fullKeyType === FullKeyType.direct) {
-      return this.getMessageByHash(fullKey, notify);
+      return this.getMessageByHash(fullKey);
     }
     if (fullKey.fullKeyType === FullKeyType.topic) {
-      return this.getTopicMessage(fullKey, notify);
+      return this.getTopicMessage(fullKey);
     }
-    return this.getFullLinkMessage(fullKey, notify);
+    return this.getFullLinkMessage(fullKey);
   }
 
-  getHash(fullKey: Readonly<FullKey>, notify: NotifyHashCB): void {
+  async getHash(
+    fullKey: Readonly<FullKey>,
+  ): Promise<Readonly<MHash> | undefined> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
-      notify(undefined);
-    } else if (
-      fullKey.fullKeyType === FullKeyType.user ||
-      fullKey.fullKeyType === FullKeyType.userchild
-    ) {
-      notify(undefined);
-    } else if (fullKey.fullKeyType === FullKeyType.direct) {
-      notify(fullKey.mhash);
-    } else if (fullKey.fullKeyType === FullKeyType.topic) {
-      const topic = this.msgPool.getTopic(fullKey.index, (res, _) => {
-        notify(res);
-      });
-      if (topic !== undefined) {
-        notify(topic[0]);
+      return undefined;
+    }
+    if (fullKey.fullKeyType === FullKeyType.user) {
+      return userMHash(fullKey);
+    }
+    if (fullKey.fullKeyType === FullKeyType.userchild) {
+      const link = await this.linkPool.getUserLink(
+        { keyType: KeyType.user, userId: fullKey.parentUser },
+        fullKey.index,
+      );
+      if (link.invalid) {
+        return undefined;
       }
+      return link.child;
+    }
+    if (fullKey.fullKeyType === FullKeyType.direct) {
+      return fullKey.mhash;
+    }
+    if (fullKey.fullKeyType === FullKeyType.topic) {
+      const [topic, _] = await this.msgPool.getTopic(fullKey.index);
+      return topic;
+    }
+    const link = await this.linkPool.getLink(fullKey);
+    if (link.invalid) {
+      return undefined;
     } else {
-      const notifyLink: NotifyLinkCB = (link) => {
-        if (link.invalid) {
-          notify(undefined);
-        } else {
-          notify(fullKey.isGet === IsGet.parent ? link.parent : link.child);
-        }
-      };
-      const link = this.linkPool.getLink(fullKey, notifyLink);
-      if (link !== undefined) {
-        notifyLink(link);
-      }
+      return fullKey.isGet === IsGet.parent ? link.parent : link.child;
     }
   }
 
-  getSingleLink(
+  async getSingleLink(
     parent: Readonly<FullKey>,
     child: Readonly<FullKey>,
-    callback: NotifyLinkCB,
-  ): void {
-    this.getHash(parent, (parentHash) => {
-      if (parentHash === undefined) {
-        callback(INVALID_LINK);
-        return;
-      }
-      const phash = parentHash;
-      this.getHash(child, (childHash) => {
-        if (childHash === undefined) {
-          callback(INVALID_LINK);
-          return;
-        }
-        this.linkPool.getSingleLink(phash, childHash, callback);
-      });
-    });
+  ): Promise<Readonly<Link>> {
+    const parentHash = await this.getHash(parent);
+    if (parentHash === undefined) {
+      return INVALID_LINK;
+    }
+    const phash = parentHash;
+    const childHash = await this.getHash(child);
+    if (childHash === undefined) {
+      return INVALID_LINK;
+    }
+    return this.linkPool.getSingleLink(phash, childHash);
   }
 
-  private getTopicNextLink(
+  private async getTopicNextLink(
     fullTopicKey: Readonly<FullTopicKey>,
     nextIndex: Readonly<AdjustedLineIndex>,
     isTop: boolean,
-    notify: NotifyLinkCB,
-  ): Link | undefined {
+  ): Promise<Readonly<Link>> {
     const { index } = fullTopicKey;
-
-    const getTopicNextLink = (
-      mhash: Readonly<MHash> | undefined,
-      notifyOnHit: boolean,
-    ): Link | undefined => {
-      if (mhash === undefined) {
-        const res = INVALID_LINK;
-        if (notifyOnHit) {
-          notify(res);
-        }
-        return res;
-      }
-      const res = this.linkPool.getLink(
-        {
-          fullKeyType: FullKeyType.link,
-          mhash,
-          isGet: isTop ? IsGet.parent : IsGet.child,
-          index: nextIndex,
-        },
-        (link) => {
-          notify(link);
-        },
-      );
-      if (res !== undefined && notifyOnHit) {
-        notify(res);
-      }
-      return res;
-    };
-
-    const res = this.msgPool.getTopic(index, (mhash, _) => {
-      getTopicNextLink(mhash, true);
-    });
-    if (res === undefined) {
-      return undefined;
+    const [mhash, _] = await this.msgPool.getTopic(index);
+    if (mhash === undefined) {
+      return INVALID_LINK;
     }
-    const [curMHash, _] = res;
-    return getTopicNextLink(curMHash, false);
+    return this.linkPool.getLink({
+      fullKeyType: FullKeyType.link,
+      mhash,
+      isGet: isTop ? IsGet.parent : IsGet.child,
+      index: nextIndex,
+    });
   }
 
-  private getNextLinkFromLink(
+  private async getNextLinkFromLink(
     link: Readonly<Link>,
     isGet: Readonly<IsGet>,
     isTop: boolean,
     nextIndex: Readonly<AdjustedLineIndex>,
-    notifyOnHit: boolean,
-    notify: NotifyLinkCB,
-  ): Link | undefined {
+  ): Promise<Readonly<Link>> {
     if (link.invalid) {
-      if (notifyOnHit) {
-        notify(link);
-      }
       return link;
     }
     const topKey: Readonly<FullLinkKey> = {
@@ -637,93 +504,45 @@ export default class CommentGraph {
       isGet: isTop ? IsGet.parent : IsGet.child,
       index: nextIndex,
     };
-    const res = this.linkPool.getLink(topKey, (topLink) => {
-      notify(topLink);
-    });
-    if (notifyOnHit && res !== undefined) {
-      notify(res);
-    }
-    return res;
+    return this.linkPool.getLink(topKey);
   }
 
-  private getFullNextLink(
+  private async getFullNextLink(
     fullLinkKey: Readonly<FullLinkKey>,
     nextIndex: Readonly<AdjustedLineIndex>,
     isTop: boolean,
-    notify: NotifyLinkCB,
-  ): Link | undefined {
+  ): Promise<Readonly<Link>> {
     const isGet = fullLinkKey.isGet;
-
-    const notifyLink: NotifyLinkCB = (link) => {
-      this.getNextLinkFromLink(link, isGet, isTop, nextIndex, true, notify);
-    };
-
-    const link = this.linkPool.getLink(fullLinkKey, notifyLink);
-    if (link === undefined) {
-      return undefined;
-    }
-    return this.getNextLinkFromLink(
-      link,
-      isGet,
-      isTop,
-      nextIndex,
-      false,
-      notify,
-    );
+    const link = await this.linkPool.getLink(fullLinkKey);
+    return this.getNextLinkFromLink(link, isGet, isTop, nextIndex);
   }
 
-  private getUserBottomLink(
+  private async getUserBottomLink(
     fullKey: Readonly<FullUserlikeKey>,
     childIndex: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): Readonly<Link> | undefined {
+  ): Promise<Readonly<Link>> {
     if (fullKey.fullKeyType === FullKeyType.user) {
       const { userId } = fullKey;
       return this.linkPool.getUserLink(
         { keyType: KeyType.user, userId },
         childIndex,
-        notify,
       );
     }
-
-    const notifyLink: NotifyLinkCB = (link) => {
-      this.getNextLinkFromLink(
-        link,
-        IsGet.child,
-        false,
-        childIndex,
-        true,
-        notify,
-      );
-    };
-
-    const res = this.linkPool.getUserLink(
+    const res = await this.linkPool.getUserLink(
       { keyType: KeyType.user, userId: fullKey.parentUser },
       fullKey.index,
-      notifyLink,
     );
-    if (res === undefined) {
-      return undefined;
-    }
-    return this.getNextLinkFromLink(
-      res,
-      IsGet.child,
-      false,
-      childIndex,
-      false,
-      notify,
-    );
+    return this.getNextLinkFromLink(res, IsGet.child, false, childIndex);
   }
 
-  getTopLink(
+  async getTopLink(
     fullKey: Readonly<FullIndirectKey>,
     parentIndex: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): Readonly<Link> | undefined {
-    if (
-      fullKey.fullKeyType === FullKeyType.invalid ||
-      fullKey.fullKeyType === FullKeyType.user
-    ) {
+  ): Promise<Readonly<Link>> {
+    if (fullKey.fullKeyType === FullKeyType.invalid) {
+      return INVALID_LINK;
+    }
+    if (fullKey.fullKeyType === FullKeyType.user) {
       return INVALID_LINK;
     }
     if (fullKey.fullKeyType === FullKeyType.userchild) {
@@ -734,148 +553,114 @@ export default class CommentGraph {
       return this.getUserBottomLink(
         { fullKeyType: FullKeyType.user, userId: parentUser },
         index,
-        notify,
       );
     }
     if (fullKey.fullKeyType === FullKeyType.topic) {
-      return this.getTopicNextLink(fullKey, parentIndex, true, notify);
+      return this.getTopicNextLink(fullKey, parentIndex, true);
     }
-    return this.getFullNextLink(fullKey, parentIndex, true, notify);
+    return this.getFullNextLink(fullKey, parentIndex, true);
   }
 
-  getBottomLink(
+  async getBottomLink(
     fullKey: Readonly<FullIndirectKey>,
     childIndex: Readonly<AdjustedLineIndex>,
-    notify: NotifyLinkCB,
-  ): Readonly<Link> | undefined {
+  ): Promise<Readonly<Link>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
       return INVALID_LINK;
-    }
-    if (fullKey.fullKeyType === FullKeyType.topic) {
-      return this.getTopicNextLink(fullKey, childIndex, false, notify);
     }
     if (
       fullKey.fullKeyType === FullKeyType.user ||
       fullKey.fullKeyType === FullKeyType.userchild
     ) {
-      return this.getUserBottomLink(fullKey, childIndex, notify);
+      return this.getUserBottomLink(fullKey, childIndex);
     }
-    return this.getFullNextLink(fullKey, childIndex, false, notify);
+    if (fullKey.fullKeyType === FullKeyType.topic) {
+      return this.getTopicNextLink(fullKey, childIndex, false);
+    }
+    return this.getFullNextLink(fullKey, childIndex, false);
   }
 
-  private getTopicNext(
+  private async getTopicNext(
     fullTopicKey: Readonly<FullTopicKey>,
     isGet: Readonly<IsGet>,
-    notify: NextCB,
-  ): void {
+  ): Promise<Readonly<LineKey>> {
     const { index } = fullTopicKey;
-
-    const getTopicNext = (mhash: Readonly<MHash> | undefined): void => {
-      if (mhash === undefined) {
-        const res = INVALID_KEY;
-        notify(res);
-        return;
-      }
-      const res: LineKey = { keyType: KeyType.link, mhash, isGet };
-      notify(res);
-    };
-
-    const res = this.msgPool.getTopic(index, (mhash, _) => {
-      getTopicNext(mhash);
-    });
-    if (res !== undefined) {
-      const [curMHash, _] = res;
-      getTopicNext(curMHash);
+    const [mhash, _] = await this.msgPool.getTopic(index);
+    if (mhash === undefined) {
+      return INVALID_KEY;
     }
+    return { keyType: KeyType.link, mhash, isGet };
   }
 
-  private getFullNext(
+  private async getFullNext(
     fullLinkKey: Readonly<FullLinkKey>,
     isGet: Readonly<IsGet>,
-    notify: NextCB,
-  ): void {
-    const notifyLink: NotifyLinkCB = (link) => {
-      if (link.invalid) {
-        const res = INVALID_KEY;
-        notify(res);
-        return;
-      }
-      const res: LineKey = {
-        keyType: KeyType.link,
-        mhash: fullLinkKey.isGet == IsGet.parent ? link.parent : link.child,
-        isGet,
-      };
-      notify(res);
+  ): Promise<Readonly<LineKey>> {
+    const link = await this.linkPool.getLink(fullLinkKey);
+    if (link.invalid) {
+      return INVALID_KEY;
+    }
+    return {
+      keyType: KeyType.link,
+      mhash: fullLinkKey.isGet == IsGet.parent ? link.parent : link.child,
+      isGet,
     };
-
-    this.linkPool.retrieveLink(fullLinkKey, notifyLink);
   }
 
-  private getUserNext(
+  private async getUserNext(
     fullKey: Readonly<FullUserlikeKey>,
-    notify: NextCB,
-  ): void {
+  ): Promise<Readonly<LineKey>> {
     if (fullKey.fullKeyType === FullKeyType.user) {
-      notify({ keyType: KeyType.userchild, parentUser: fullKey.userId });
-      return;
+      return { keyType: KeyType.userchild, parentUser: fullKey.userId };
     }
-
-    const notifyLink: NotifyLinkCB = (link) => {
-      if (link.invalid) {
-        notify(INVALID_KEY);
-        return;
-      }
-      notify({ keyType: KeyType.link, isGet: IsGet.child, mhash: link.child });
-    };
-
-    const res = this.linkPool.getUserLink(
+    const link = await this.linkPool.getUserLink(
       { keyType: KeyType.user, userId: fullKey.parentUser },
       fullKey.index,
-      notifyLink,
     );
-    if (res !== undefined) {
-      notifyLink(res);
+    if (link.invalid) {
+      return INVALID_KEY;
     }
+    return { keyType: KeyType.link, isGet: IsGet.child, mhash: link.child };
   }
 
-  getParent(fullKey: Readonly<FullKey>, callback: NextCB): void {
+  async getParent(fullKey: Readonly<FullKey>): Promise<Readonly<LineKey>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
-      callback(asLineKey(fullKey));
+      return asLineKey(fullKey);
     } else if (fullKey.fullKeyType === FullKeyType.user) {
-      callback(INVALID_KEY);
+      return INVALID_KEY;
     } else if (fullKey.fullKeyType === FullKeyType.userchild) {
-      callback({ keyType: KeyType.user, userId: fullKey.parentUser });
+      return { keyType: KeyType.user, userId: fullKey.parentUser };
     } else if (fullKey.fullKeyType === FullKeyType.direct) {
-      callback({
+      return {
         keyType: KeyType.link,
         mhash: fullKey.mhash,
         isGet: IsGet.parent,
-      });
-    } else if (fullKey.fullKeyType === FullKeyType.topic) {
-      this.getTopicNext(fullKey, IsGet.parent, callback);
-    } else {
-      this.getFullNext(fullKey, IsGet.parent, callback);
+      };
     }
+    if (fullKey.fullKeyType === FullKeyType.topic) {
+      return this.getTopicNext(fullKey, IsGet.parent);
+    }
+    return this.getFullNext(fullKey, IsGet.parent);
   }
 
-  getChild(fullKey: Readonly<FullKey>, callback: NextCB): void {
+  async getChild(fullKey: Readonly<FullKey>): Promise<Readonly<LineKey>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
-      callback(asLineKey(fullKey));
+      return asLineKey(fullKey);
     } else if (fullKey.fullKeyType === FullKeyType.direct) {
-      callback({
+      return {
         keyType: KeyType.link,
         mhash: fullKey.mhash,
         isGet: IsGet.child,
-      });
+      };
     } else if (fullKey.fullKeyType === FullKeyType.topic) {
-      this.getTopicNext(fullKey, IsGet.child, callback);
+      return await this.getTopicNext(fullKey, IsGet.child);
     } else if (
       fullKey.fullKeyType === FullKeyType.user ||
       fullKey.fullKeyType === FullKeyType.userchild
     ) {
-      this.getUserNext(fullKey, callback);
+      return await this.getUserNext(fullKey);
     } else {
-      this.getFullNext(fullKey, IsGet.child, callback);
+      return await this.getFullNext(fullKey, IsGet.child);
     }
   }
 

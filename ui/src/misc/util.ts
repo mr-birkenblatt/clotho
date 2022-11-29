@@ -41,7 +41,7 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
 
 export function detectSlowCallback(
   obj: any,
-  onSlow: (e: any) => void,
+  onSlow?: (e: any) => void,
 ): () => void {
   let done = false;
   setTimeout(() => {
@@ -52,9 +52,14 @@ export function detectSlowCallback(
       if (done) {
         return;
       }
-      onSlow(`slow callback detected with: ${debugJSON(obj)}`);
-    }, 999);
-  }, 1);
+      const msg = `slow callback detected with: ${debugJSON(obj)}`;
+      if (onSlow !== undefined) {
+        onSlow(msg);
+      } else {
+        throw new Error(msg);
+      }
+    }, 900);
+  }, 100);
   return () => {
     done = true;
   };
@@ -311,11 +316,11 @@ export type BlockResponse<I extends number, T> = {
   values: Readonly<T[]>;
   next: Readonly<I>;
 };
-export type BlockLoading<I extends number, T> = (
+type BlockLoading<I extends number, T> = (
   offset: Readonly<I>,
   limit: number,
 ) => Promise<BlockResponse<I, T>>;
-export type NotifyBlockCB<T> = (value: T) => void;
+type NotifyBlockCB<T> = (value: T) => void;
 
 export class BlockLoader<I extends number, T> {
   private readonly loader: BlockLoading<I, T>;
@@ -415,21 +420,15 @@ export class BlockLoader<I extends number, T> {
     }
   }
 
-  retrieve(index: Readonly<I>, notify: NotifyBlockCB<T>): void {
-    this.waitFor(index, notify);
-    if (!this.cache.has(index)) {
-      this.requestIndex(index);
-    }
-  }
-
-  get(index: Readonly<I>, notify: NotifyBlockCB<T>): T | undefined {
+  async get(index: Readonly<I>): Promise<T> {
     const res = this.cache.get(index);
     if (res !== undefined) {
       return res;
     }
-    this.waitFor(index, notify);
-    this.requestIndex(index);
-    return undefined;
+    return new Promise((resolve) => {
+      this.waitFor(index, resolve);
+      this.requestIndex(index);
+    });
   }
 
   clear(): void {

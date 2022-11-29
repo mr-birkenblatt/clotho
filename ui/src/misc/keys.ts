@@ -12,6 +12,10 @@ export function fromUserId(userId: Readonly<UserId>): Readonly<string> {
   return str(userId);
 }
 
+export function userMHash(key: FullUserKey | UserKey): MHash {
+  return `${key.userId}` as MHash;
+}
+
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
 
 export function adj(index: number): Readonly<AdjustedLineIndex> {

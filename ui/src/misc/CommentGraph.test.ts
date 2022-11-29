@@ -1,9 +1,4 @@
-import CommentGraph, {
-  NextCB,
-  NotifyContentCB,
-  NotifyHashCB,
-  NotifyLinkCB,
-} from './CommentGraph';
+import CommentGraph, { ContentValueExt, NextCB, NotifyContentCB, NotifyHashCB } from './CommentGraph';
 import {
   adj,
   AdjustedLineIndex,
@@ -13,7 +8,6 @@ import {
   equalLineKey,
   equalLineKeys,
   FullIndirectKey,
-  FullKey,
   FullKeyType,
   INVALID_FULL_KEY,
   INVALID_KEY,
@@ -27,13 +21,7 @@ import {
   ValidLink,
 } from './keys';
 import { advancedGraph, simpleGraph } from './TestGraph';
-import {
-  assertEqual,
-  assertTrue,
-  debugJSON,
-  detectSlowCallback,
-  range,
-} from './util';
+import { assertTrue, debugJSON, detectSlowCallback, range } from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -59,66 +47,21 @@ function toLineKey(
   };
 }
 
-// FIXME not using fake timers for now as they don't work well with async
-// jest.useFakeTimers();
-
 type Callback<T extends any[]> = (...args: T) => void;
 
 async function execute<A extends any[], T extends any[], R>(
-  fun: (notify: Callback<T>, ...args: A) => R | undefined,
+  fun: (...args: A) => Promise<R>,
   args: Readonly<A>,
   callback: Callback<T>,
-  convertDirect: ((res: Readonly<R>) => Readonly<T>) | undefined,
-  alwaysExpectCall?: boolean,
-): Promise<boolean> {
-  let notifyCount = 0;
-  return new Promise((resolve, reject) => {
-    const cb: Callback<T> = (...cbArgs) => {
-      try {
-        callback(...cbArgs);
-        resolve(true);
-      } catch (e) {
-        reject(e);
-      }
-    };
-    const done = detectSlowCallback(args, reject);
-    const notify: Callback<T> = (...cbArgs) => {
-      done();
-      notifyCount += 1;
-      if (convertDirect === undefined) {
-        cb(...cbArgs);
-      }
-    };
-    if (notifyCount !== 0) {
-      reject(`notify called before function: ${notifyCount}`);
-    }
-    const res = fun(notify, ...args);
-    if (!alwaysExpectCall) {
-      if (notifyCount !== 0) {
-        reject(`notify called after function: ${notifyCount}`);
-      }
-    }
-    if (convertDirect === undefined) {
-      assertTrue(res === undefined, `direct convert: ${debugJSON(res)}`);
-    } else {
-      assertTrue(res !== undefined, 'expected direct convert');
-      cb(...convertDirect(res));
-    }
-    // console.log('runAllTimers');
-    // jest.runAllTimers();
-  }).then(() => {
-    if (convertDirect === undefined || alwaysExpectCall) {
-      assertEqual(notifyCount, 1);
-    } else {
-      assertEqual(notifyCount, 0);
-    }
-    return true;
-  });
+  convertDirect: (res: Readonly<R>) => Readonly<T>,
+): Promise<void> {
+  const done = detectSlowCallback(args);
+  const res = await fun(...args);
+  done();
+  callback(...convertDirect(res));
 }
 
-const convertMessage = (
-  res: readonly [Readonly<MHash> | undefined, Readonly<string>],
-): readonly [Readonly<MHash> | undefined, Readonly<string>] => {
+const convertMessage = (res: ContentValueExt): ContentValueExt => {
   return res;
 };
 const checkMessage = (
@@ -180,55 +123,6 @@ const toArgs = (
   return [fullKey, nextIx as AdjustedLineIndex];
 };
 
-const createGetTopLink = (
-  pool: CommentGraph,
-): ((
-  notify: NotifyLinkCB,
-  fullKey: Readonly<FullIndirectKey>,
-  parentIndex: Readonly<AdjustedLineIndex>,
-) => Readonly<Link> | undefined) => {
-  return (notify, fullKey, parentIndex) =>
-    pool.getTopLink(fullKey, parentIndex, notify);
-};
-
-const createGetBottomLink = (
-  pool: CommentGraph,
-): ((
-  notify: NotifyLinkCB,
-  fullKey: Readonly<FullIndirectKey>,
-  childIndex: Readonly<AdjustedLineIndex>,
-) => Link | undefined) => {
-  return (notify, fullKey, childIndex) =>
-    pool.getBottomLink(fullKey, childIndex, notify);
-};
-
-const createGetMessage = (
-  pool: CommentGraph,
-): ((
-  notify: NotifyContentCB,
-  fullKey: Readonly<FullKey>,
-) => readonly [Readonly<MHash> | undefined, Readonly<string>] | undefined) => {
-  return (notify, fullKey) => pool.getMessage(fullKey, notify);
-};
-
-const createGetHash = (
-  pool: CommentGraph,
-): ((notify: NotifyHashCB, fullKey: Readonly<FullKey>) => void) => {
-  return (notify, fullKey) => pool.getHash(fullKey, notify);
-};
-
-const createGetParent = (
-  pool: CommentGraph,
-): ((notify: NextCB, fullKey: Readonly<FullKey>) => undefined) => {
-  return (notify, fullKey) => pool.getParent(fullKey, notify) as undefined;
-};
-
-const createGetChild = (
-  pool: CommentGraph,
-): ((notify: NextCB, fullKey: Readonly<FullKey>) => undefined) => {
-  return (notify, fullKey) => pool.getChild(fullKey, notify) as undefined;
-};
-
 const createCommentGraph = (isSimple: boolean): CommentGraph => {
   return new CommentGraph(
     isSimple
@@ -249,77 +143,76 @@ const createCommentGraph = (isSimple: boolean): CommentGraph => {
 
 test('simple test comment graph', async () => {
   const pool = createCommentGraph(true);
-  const getMessage = createGetMessage(pool);
 
-  await execute(getMessage, [asTopicKey(0)], checkMessage('a'), undefined);
+  await execute(pool.getMessage, [asTopicKey(0)], checkMessage('a'), convertMessage);
   await execute(
-    getMessage,
+    pool.getMessage,
     [asTopicKey(1)],
     checkMessage('h', 'msg: h'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asTopicKey(-1)],
     checkMessage(undefined, '[unavailable]'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asTopicKey(2)],
     checkMessage(undefined, '[unavailable]'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a', false, 0)],
     checkMessage('b'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a', false, 2)],
     checkMessage('d'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a', false, 2)],
     checkMessage('d', 'msg: d'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a', false, 4)],
     checkMessage('f'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a', false, 5)],
     checkMessage(undefined, '[deleted]'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asDirectKey('a')],
     checkMessage('a', 'msg: a'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asDirectKey('a')],
     checkMessage('a', 'msg: a'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asDirectKey('d')],
     checkMessage('d', 'msg: d'),
     convertMessage,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asDirectKey('foo')],
     checkMessage('foo', '[missing]'),
     undefined,
@@ -328,7 +221,7 @@ test('simple test comment graph', async () => {
 
 test('get hash graph', async () => {
   const pool = createCommentGraph(true);
-  const getHash = createGetHash(pool);
+  const getHash = pool.getHash(pool);
 
   await execute(getHash, [asTopicKey(1)], checkHash('h'), undefined);
   await execute(getHash, [asTopicKey(2)], checkHash(undefined), undefined);
@@ -351,14 +244,14 @@ test('get hash graph', async () => {
 
 test('simple bulk message reading', async () => {
   const pool = createCommentGraph(true);
-  const getMessage = createGetMessage(pool);
+  const pool.getMessage = pool.pool.getMessage(pool);
 
   const hashes = ['b', 'c', 'd', 'e', 'f'];
   const contents = hashes.map((el) => `msg: ${el}`);
   await Promise.all(
     range(5).map((ix) => {
       return execute(
-        getMessage,
+        pool.getMessage,
         [asFullKey('a', false, ix)],
         checkMessage(hashes[ix]),
         undefined,
@@ -368,7 +261,7 @@ test('simple bulk message reading', async () => {
   await Promise.all(
     range(5).map((ix) => {
       return execute(
-        getMessage,
+        pool.getMessage,
         [asFullKey('a', false, ix)],
         checkMessage(hashes[ix], contents[ix]),
         convertMessage,
@@ -376,32 +269,32 @@ test('simple bulk message reading', async () => {
     }),
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('b', true, 0)],
     checkMessage('a'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('b', true, 1)],
     checkMessage('g'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('b', true, 2)],
     checkMessage(undefined, '[deleted]'),
     convertMessage,
   );
   pool.clearCache();
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('b', true, 2)],
     checkMessage(undefined, '[deleted]'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [INVALID_FULL_KEY],
     checkMessage(undefined, '[invalid]'),
     convertMessage,
@@ -410,7 +303,7 @@ test('simple bulk message reading', async () => {
 
 test('topic comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getTopLink = createGetTopLink(pool);
+  const getTopLink = pool.getTopLink(pool);
 
   await execute(
     getTopLink,
@@ -459,7 +352,7 @@ test('topic comment graph', async () => {
 
 test('parent comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getTopLink = createGetTopLink(pool);
+  const getTopLink = pool.getTopLink(pool);
   await execute(
     getTopLink,
     toArgs(asFullKey('d2', true, 0), 0),
@@ -494,9 +387,9 @@ test('parent comment graph', async () => {
 
 test('cache edge cases for comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getTopLink = createGetTopLink(pool);
-  const getBottomLink = createGetBottomLink(pool);
-  const getMessage = createGetMessage(pool);
+  const getTopLink = pool.getTopLink(pool);
+  const getBottomLink = pool.getBottomLink(pool);
+  const pool.getMessage = pool.pool.getMessage(pool);
   await execute(
     getTopLink,
     toArgs(asFullKey('a4', false, 0), 0),
@@ -590,13 +483,13 @@ test('cache edge cases for comment graph', async () => {
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a4', true, 0)],
     checkMessage('a3'),
     undefined,
   );
   await execute(
-    getMessage,
+    pool.getMessage,
     [asFullKey('a2', false, 0)],
     checkMessage('a3'),
     undefined,
@@ -635,7 +528,7 @@ test('cache edge cases for comment graph', async () => {
     undefined,
   );
   pool.clearCache();
-  await execute(getMessage, [asTopicKey(1)], checkMessage('b2'), undefined);
+  await execute(pool.getMessage, [asTopicKey(1)], checkMessage('b2'), undefined);
   await execute(
     getBottomLink,
     toArgs(asTopicKey(-1), 0),
@@ -664,7 +557,7 @@ test('cache edge cases for comment graph', async () => {
 
 test('child comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getBottomLink = createGetBottomLink(pool);
+  const getBottomLink = pool.getBottomLink(pool);
 
   await execute(
     getBottomLink,
@@ -762,8 +655,8 @@ test('child comment graph', async () => {
 
 test('get parent / child comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getParent = createGetParent(pool);
-  const getChild = createGetChild(pool);
+  const getParent = pool.getParent(pool);
+  const getChild = pool.getChild(pool);
 
   await execute(
     getChild,
@@ -951,8 +844,8 @@ test('get parent / child comment graph', async () => {
 
 test('get parent / child of topic', async () => {
   const pool = createCommentGraph(false);
-  const getParent = createGetParent(pool);
-  const getChild = createGetChild(pool);
+  const getParent = pool.getParent(pool);
+  const getChild = pool.getChild(pool);
 
   await execute(
     getChild,
