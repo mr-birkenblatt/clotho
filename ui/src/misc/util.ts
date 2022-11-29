@@ -65,6 +65,28 @@ export function detectSlowCallback(
   };
 }
 
+export type OnCacheMiss = (() => void) | undefined;
+export type HasCacheMiss = () => boolean;
+
+export function reportCacheMiss(onCacheMiss: OnCacheMiss): void {
+  if (onCacheMiss !== undefined) {
+    onCacheMiss();
+  }
+}
+
+export function cacheHitProbe(): {
+  onCacheMiss: OnCacheMiss;
+  hasCacheMiss: HasCacheMiss;
+} {
+  let cacheMiss = false;
+  return {
+    onCacheMiss: () => {
+      cacheMiss = true;
+    },
+    hasCacheMiss: () => cacheMiss,
+  };
+}
+
 /* istanbul ignore next */
 export function errHnd(e: any): void {
   if (process.env.JEST_WORKER_ID !== undefined) {
@@ -420,11 +442,12 @@ export class BlockLoader<I extends number, T> {
     }
   }
 
-  async get(index: Readonly<I>): Promise<T> {
+  async get(index: Readonly<I>, ocm: OnCacheMiss): Promise<T> {
     const res = this.cache.get(index);
     if (res !== undefined) {
       return res;
     }
+    reportCacheMiss(ocm);
     return new Promise((resolve) => {
       this.waitFor(index, resolve);
       this.requestIndex(index);

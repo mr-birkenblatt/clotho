@@ -13,7 +13,14 @@ import {
   TOPIC_KEY,
   UserId,
 } from './keys';
-import { amend, debugJSON, LoggerCB, maybeLog, num } from './util';
+import {
+  amend,
+  debugJSON,
+  LoggerCB,
+  maybeLog,
+  num,
+  OnCacheMiss,
+} from './util';
 
 export type Cell = {
   fullKey: Readonly<FullKey>;
@@ -316,8 +323,9 @@ export function initView(
 async function getCellContent(
   graph: CommentGraph,
   cell: Readonly<Cell>,
+  ocm: OnCacheMiss,
 ): Promise<Readonly<Cell>> {
-  const [mhash, content] = await graph.getMessage(cell.fullKey);
+  const [mhash, content] = await graph.getMessage(cell.fullKey, ocm);
   const res = mhash !== undefined ? { mhash } : { invalid: true };
   return {
     ...cell,
@@ -330,8 +338,9 @@ async function getTopLink(
   graph: CommentGraph,
   cell: Readonly<Cell>,
   parent: Readonly<FullKey>,
+  ocm: OnCacheMiss,
 ): Promise<Readonly<Cell>> {
-  const link = await graph.getSingleLink(parent, cell.fullKey);
+  const link = await graph.getSingleLink(parent, cell.fullKey, ocm);
   return {
     ...cell,
     topLink: link,
@@ -345,6 +354,7 @@ async function getNextCell(
   skip: Readonly<MHash> | undefined,
   isTop: boolean,
   isIncrease: boolean,
+  ocm: OnCacheMiss,
 ): Promise<Readonly<Cell>> {
   const index =
     sameLevel.fullKeyType === FullKeyType.direct ||
@@ -365,6 +375,7 @@ async function getNextCell(
       : sameLevel.fullKeyType === FullKeyType.userchild
       ? userChildCell(sameLevel.parentUser, index)
       : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, index),
+    ocm,
   );
   if (skip !== undefined && res.mhash === skip && num(index) >= 0) {
     const skipIndex = adj(num(index) + 1);
@@ -373,6 +384,7 @@ async function getNextCell(
       sameLevel.fullKeyType === FullKeyType.topic
         ? topicCell(skipIndex)
         : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, skipIndex),
+      ocm,
     );
   }
   return res;
@@ -381,6 +393,7 @@ async function getNextCell(
 export async function progressView(
   graph: CommentGraph,
   view: Readonly<GraphView>,
+  ocm?: OnCacheMiss,
   logger?: LoggerCB,
 ): Promise<Readonly<{ view: Readonly<GraphView>; change: boolean }>> {
   const log = maybeLog(logger, 'progress');
@@ -396,7 +409,7 @@ export async function progressView(
     return {
       view: {
         ...view,
-        centerTop: await getCellContent(graph, view.centerTop),
+        centerTop: await getCellContent(graph, view.centerTop, ocm),
       },
       change: true,
     };
@@ -415,6 +428,7 @@ export async function progressView(
           view.centerBottom !== undefined
             ? view.centerBottom
             : cell(view.centerTop.mhash, IsGet.child, adj(0)),
+          ocm,
         ),
       },
       change: true,
@@ -429,6 +443,7 @@ export async function progressView(
           graph,
           view.centerBottom,
           view.centerTop.fullKey,
+          ocm,
         ),
       },
       change: true,
@@ -446,6 +461,7 @@ export async function progressView(
           view.topSkip,
           true,
           true,
+          ocm,
         ),
       },
       change: true,
@@ -463,6 +479,7 @@ export async function progressView(
           view.bottomSkip,
           false,
           true,
+          ocm,
         ),
       },
       change: true,
@@ -480,6 +497,7 @@ export async function progressView(
           undefined,
           true,
           false,
+          ocm,
         ),
       },
       change: true,
@@ -497,6 +515,7 @@ export async function progressView(
           undefined,
           false,
           false,
+          ocm,
         ),
       },
       change: true,
@@ -510,6 +529,7 @@ export async function progressView(
         top: await getCellContent(
           graph,
           cell(view.centerTop.mhash, IsGet.parent, adj(0)),
+          ocm,
         ),
       },
       change: true,
@@ -523,6 +543,7 @@ export async function progressView(
         bottom: await getCellContent(
           graph,
           cell(view.centerBottom.mhash, IsGet.child, adj(0)),
+          ocm,
         ),
       },
       change: true,
@@ -533,7 +554,12 @@ export async function progressView(
     return {
       view: {
         ...view,
-        centerTop: await getTopLink(graph, view.centerTop, view.top.fullKey),
+        centerTop: await getTopLink(
+          graph,
+          view.centerTop,
+          view.top.fullKey,
+          ocm,
+        ),
       },
       change: true,
     };
@@ -547,6 +573,7 @@ export async function progressView(
           graph,
           view.bottom,
           view.centerBottom.fullKey,
+          ocm,
         ),
       },
       change: true,
@@ -561,6 +588,7 @@ export async function progressView(
           graph,
           view.bottomRight,
           view.centerTop.fullKey,
+          ocm,
         ),
       },
       change: true,
@@ -575,6 +603,7 @@ export async function progressView(
           graph,
           view.bottomLeft,
           view.centerTop.fullKey,
+          ocm,
         ),
       },
       change: true,

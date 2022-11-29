@@ -13,7 +13,7 @@ import {
   scrollVertical,
 } from '../misc/GraphView';
 import CommentGraph from '../misc/CommentGraph';
-import { safeStringify, toReadableNumber } from '../misc/util';
+import { errHnd, safeStringify, toReadableNumber } from '../misc/util';
 import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
@@ -376,7 +376,7 @@ class View extends PureComponent<ViewProps, ViewState> {
           }
         })
         .catch((e) => {
-          console.warn(e);
+          errHnd(e);
         });
     }
     if (resetView !== ResetView.Done) {

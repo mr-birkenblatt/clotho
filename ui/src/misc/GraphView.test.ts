@@ -53,7 +53,12 @@ async function execute(
     view: Readonly<GraphView>,
   ) => Promise<Readonly<GraphView>> = async (oldView) => {
     const done = detectSlowCallback(oldView);
-    const { view, change } = await progressView(graph, oldView, logger);
+    const { view, change } = await progressView(
+      graph,
+      oldView,
+      undefined,
+      logger,
+    );
     done();
     if (change) {
       transitionCount += 1;

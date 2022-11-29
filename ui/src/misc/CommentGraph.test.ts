@@ -21,7 +21,7 @@ import {
   ValidLink,
 } from './keys';
 import { advancedGraph, simpleGraph } from './TestGraph';
-import { assertTrue, debugJSON, detectSlowCallback, range } from './util';
+import { assertTrue, cacheHitProbe, debugJSON, detectSlowCallback, OnCacheMiss, range } from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -47,18 +47,19 @@ function toLineKey(
   };
 }
 
-type Callback<T extends any[]> = (...args: T) => void;
-
-async function execute<A extends any[], T extends any[], R>(
-  fun: (...args: A) => Promise<R>,
-  args: Readonly<A>,
-  callback: Callback<T>,
-  convertDirect: (res: Readonly<R>) => Readonly<T>,
+async function execute<A extends any[], T extends A, R>(
+  fun: (...args: T) => Promise<R>,
+  args: A,
+  callback: (value: R) => void,
+  expectsCacheMiss: boolean,
 ): Promise<void> {
+  const {onCacheMiss, hasCacheMiss} = cacheHitProbe();
+  assertTrue(hasCacheMiss() === expectsCacheMiss, `actual: ${hasCacheMiss()} !== expected: ${expectsCacheMiss}`);
   const done = detectSlowCallback(args);
-  const res = await fun(...args);
+  const fargs = [...args, onCacheMiss];
+  const res = await fun(...fargs);
   done();
-  callback(...convertDirect(res));
+  callback(res);
 }
 
 const convertMessage = (res: ContentValueExt): ContentValueExt => {
@@ -79,7 +80,7 @@ const checkMessage = (
     );
   };
 };
-const checkHash = (mhash: string | undefined): NotifyHashCB => {
+const checkHash = (mhash: string | undefined): ((mhash: Readonly<MHash> | undefined) => void) => {
   return (otherMhash) => {
     if (mhash !== undefined) {
       expect(otherMhash).toEqual(mhash);
@@ -108,7 +109,7 @@ const invalidLink = (): ((link: Link) => void) => {
     assertTrue(!!link.invalid, `link should not be valid: ${debugJSON(link)}`);
   };
 };
-const checkNext = (lineKey: Readonly<LineKey>): NextCB => {
+const checkNext = (lineKey: Readonly<LineKey>): ((lineKey: LineKey) => void) => {
   return (child) => {
     assertTrue(
       equalLineKey(child, lineKey),
@@ -144,7 +145,7 @@ const createCommentGraph = (isSimple: boolean): CommentGraph => {
 test('simple test comment graph', async () => {
   const pool = createCommentGraph(true);
 
-  await execute(pool.getMessage, [asTopicKey(0)], checkMessage('a'), convertMessage);
+  await execute(pool.getMessage, [asTopicKey(0)], checkMessage('a'), true);
   await execute(
     pool.getMessage,
     [asTopicKey(1)],
