@@ -39,46 +39,79 @@ function asFullKey(
   };
 }
 
+const RERUN_ON_ERROR = false;
+
 async function execute(
   graph: CommentGraph,
   view: Readonly<GraphView> | undefined,
   expected: Readonly<GraphView>,
   expectedTransitions: number,
-  logger?: LoggerCB,
 ): Promise<Readonly<GraphView>> {
-  // console.warn('next test');
-  assertTrue(view !== undefined, 'view is not set');
-  let transitionCount = 0;
-  const transition: (
-    view: Readonly<GraphView>,
-  ) => Promise<Readonly<GraphView>> = async (oldView) => {
-    const done = detectSlowCallback(oldView);
-    const { view, change } = await progressView(
-      graph,
-      oldView,
-      undefined,
-      logger,
-    );
-    done();
-    if (change) {
-      transitionCount += 1;
-      return transition(view);
-    }
-    if (transitionCount !== expectedTransitions) {
-      throw new Error(
-        `${transitionCount} !== expected ${expectedTransitions}`,
+  const stack = new Error().stack;
+
+  const process = (
+    resolve: (
+      value: Readonly<GraphView> | PromiseLike<Readonly<GraphView>>,
+    ) => void,
+    onErr: (reason: any, transitionCount: number) => void,
+    logger: LoggerCB | undefined,
+  ): void => {
+    let transitionCount = 0;
+    assertTrue(view !== undefined, 'view is not set');
+
+    const transition: (
+      view: Readonly<GraphView>,
+    ) => Promise<Readonly<GraphView>> = async (oldView) => {
+      const done = detectSlowCallback(oldView, (e) => {
+        onErr(e, transitionCount);
+      });
+      const { view, change } = await progressView(
+        graph,
+        oldView,
+        undefined,
+        logger,
       );
-    }
-    if (
-      equalView(view, expected, console.warn) &&
-      consistentLinks(view, console.warn)
-    ) {
-      return view;
-    }
-    throw new Error(`${debugJSON(view)} !== expected ${debugJSON(expected)}`);
+      done();
+      if (change) {
+        transitionCount += 1;
+        return transition(view);
+      }
+      if (transitionCount !== expectedTransitions) {
+        throw new Error(
+          `${transitionCount} !== expected ${expectedTransitions}`,
+        );
+      }
+      if (
+        equalView(view, expected, console.warn) &&
+        consistentLinks(view, console.warn)
+      ) {
+        return view;
+      }
+      throw new Error(
+        `${debugJSON(view)} !== expected ${debugJSON(expected)}`,
+      );
+    };
+    transition(view).then(resolve, (e) => {
+      onErr(e, transitionCount);
+    });
   };
 
-  return transition(view);
+  return new Promise((resolve, reject) => {
+    const onErr = (e: any, transitionCount: number): void => {
+      console.group('rerun');
+      const afterRerun = () => {
+        console.groupEnd();
+        console.log(`error after ${transitionCount} transitions`, stack);
+        reject(e);
+      };
+      if (RERUN_ON_ERROR) {
+        process(afterRerun, afterRerun, console.log);
+      } else {
+        afterRerun();
+      }
+    };
+    process(resolve, onErr, undefined);
+  });
 }
 
 function cellFromString(key: string, fullKey: FullKey): Cell {

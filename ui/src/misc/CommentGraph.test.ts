@@ -62,13 +62,25 @@ async function execute<A extends any[], R>(
   callback: (value: R) => void,
   expectCacheMiss: boolean,
 ): Promise<void> {
-  const done = detectSlowCallback(args);
-  const { onCacheMiss, hasCacheMiss } = cacheHitProbe();
-  const res = await fun(onCacheMiss, ...args);
-  done();
-  const hcm = hasCacheMiss();
-  assertEqual(hcm, expectCacheMiss);
-  callback(res);
+  const stack = new Error().stack;
+  return new Promise((resolve, reject) => {
+    const onErr = (e: any): void => {
+      console.warn(stack);
+      reject(e);
+    };
+    const compute = async () => {
+      const done = detectSlowCallback(args, onErr);
+      const { onCacheMiss, hasCacheMiss } = cacheHitProbe();
+      const res = await fun(onCacheMiss, ...args);
+      done();
+      const hcm = hasCacheMiss();
+      assertEqual(hcm, expectCacheMiss);
+      callback(res);
+    };
+    compute().then((res) => {
+      resolve(res);
+    }, onErr);
+  });
 }
 
 const checkMessage = (

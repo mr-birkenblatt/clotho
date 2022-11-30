@@ -15,6 +15,7 @@ import {
 } from './keys';
 import {
   amend,
+  assertFail,
   debugJSON,
   LoggerCB,
   maybeLog,
@@ -283,6 +284,10 @@ function cell(
   };
 }
 
+function invalidCell(): Readonly<Cell> {
+  return { fullKey: INVALID_FULL_KEY };
+}
+
 function directCell(mhash: Readonly<MHash>): Readonly<Cell> {
   return { fullKey: { fullKeyType: FullKeyType.direct, mhash } };
 }
@@ -320,6 +325,12 @@ export function initView(
   };
 }
 
+export function initUserView(userId: Readonly<UserId>): Readonly<GraphView> {
+  return {
+    centerTop: userCell(userId),
+  };
+}
+
 async function getCellContent(
   graph: CommentGraph,
   cell: Readonly<Cell>,
@@ -352,42 +363,72 @@ async function getNextCell(
   sameLevel: Readonly<FullKey>,
   otherLevel: Readonly<MHash>,
   skip: Readonly<MHash> | undefined,
-  isTop: boolean,
+  isGet: IsGet,
   isIncrease: boolean,
   ocm: OnCacheMiss,
+  logger: LoggerCB,
 ): Promise<Readonly<Cell>> {
-  const index =
-    sameLevel.fullKeyType === FullKeyType.direct ||
-    sameLevel.fullKeyType === FullKeyType.invalid ||
-    sameLevel.fullKeyType === FullKeyType.user
-      ? adj(isIncrease ? 0 : -1)
-      : adj(num(sameLevel.index) + (isIncrease ? 1 : -1));
-  const res = await getCellContent(
-    graph,
-    num(index) === -1 && skip !== undefined
-      ? directCell(skip)
-      : num(index) < 0
-      ? { fullKey: INVALID_FULL_KEY }
-      : sameLevel.fullKeyType === FullKeyType.topic
-      ? topicCell(index)
-      : sameLevel.fullKeyType === FullKeyType.user
-      ? userCell(sameLevel.userId)
-      : sameLevel.fullKeyType === FullKeyType.userchild
-      ? userChildCell(sameLevel.parentUser, index)
-      : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, index),
-    ocm,
-  );
-  if (skip !== undefined && res.mhash === skip && num(index) >= 0) {
-    const skipIndex = adj(num(index) + 1);
-    return getCellContent(
-      graph,
-      sameLevel.fullKeyType === FullKeyType.topic
-        ? topicCell(skipIndex)
-        : cell(otherLevel, isTop ? IsGet.parent : IsGet.child, skipIndex),
-      ocm,
+  const log = maybeLog(logger, 'nextCell');
+  const fullKeyType = sameLevel.fullKeyType;
+  const change = isIncrease ? 1 : -1;
+  if (fullKeyType === FullKeyType.invalid) {
+    log('invalid');
+    return getCellContent(graph, invalidCell(), ocm);
+  }
+  if (fullKeyType === FullKeyType.user) {
+    log('user');
+    return getCellContent(graph, invalidCell(), ocm);
+  }
+
+  const getIndexedContent = async (
+    oldIndex: Readonly<AdjustedLineIndex>,
+    skip: Readonly<MHash> | undefined,
+    initCell: (index: Readonly<AdjustedLineIndex>) => Readonly<Cell>,
+  ): Promise<Readonly<Cell>> => {
+    const index = adj(num(oldIndex) + change);
+    if (num(index) === -1 && skip !== undefined) {
+      log('direct -1');
+      return getCellContent(graph, directCell(skip), ocm);
+    }
+    if (num(index) < 0) {
+      log('invalid negative');
+      return getCellContent(graph, invalidCell(), ocm);
+    }
+    const res = await getCellContent(graph, initCell(index), ocm);
+    if (skip === undefined || res.mhash !== skip) {
+      return res;
+    }
+    log(`skip at ${index}`);
+    return getIndexedContent(index, undefined, initCell);
+  };
+
+  if (fullKeyType === FullKeyType.userchild) {
+    log('userchild');
+    return getIndexedContent(sameLevel.index, skip, (index) =>
+      userChildCell(sameLevel.parentUser, index),
     );
   }
-  return res;
+  if (fullKeyType === FullKeyType.topic) {
+    log('topic');
+    return getIndexedContent(sameLevel.index, skip, (index) =>
+      topicCell(index),
+    );
+  }
+  if (fullKeyType === FullKeyType.link) {
+    log('link');
+    return getIndexedContent(sameLevel.index, skip, (index) =>
+      cell(otherLevel, isGet, index),
+    );
+  }
+
+  if (fullKeyType === FullKeyType.direct) {
+    log('direct');
+    if (!isIncrease) {
+      return getCellContent(graph, invalidCell(), ocm);
+    }
+    return getCellContent(graph, cell(otherLevel, isGet, adj(0)), ocm);
+  }
+  assertFail(`unkown FullKeyType: ${fullKeyType}`);
 }
 
 export async function progressView(
@@ -459,9 +500,10 @@ export async function progressView(
           view.centerTop.fullKey,
           view.centerBottom.mhash,
           view.topSkip,
-          true,
+          IsGet.parent,
           true,
           ocm,
+          log,
         ),
       },
       change: true,
@@ -477,9 +519,10 @@ export async function progressView(
           view.centerBottom.fullKey,
           view.centerTop.mhash,
           view.bottomSkip,
-          false,
+          IsGet.child,
           true,
           ocm,
+          log,
         ),
       },
       change: true,
@@ -495,9 +538,10 @@ export async function progressView(
           view.centerTop.fullKey,
           view.centerBottom.mhash,
           undefined,
-          true,
+          IsGet.parent,
           false,
           ocm,
+          log,
         ),
       },
       change: true,
@@ -513,9 +557,10 @@ export async function progressView(
           view.centerBottom.fullKey,
           view.centerTop.mhash,
           undefined,
-          false,
+          IsGet.child,
           false,
           ocm,
+          log,
         ),
       },
       change: true,

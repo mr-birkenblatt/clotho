@@ -71,7 +71,7 @@ class CommentPool {
   private readonly hashQueue: Set<Readonly<MHash>>;
   private readonly inFlight: Set<Readonly<MHash>>;
   private readonly listeners: Map<Readonly<MHash>, NotifyContentCB[]>;
-  private readonly topics: BlockLoader<AdjustedLineIndex, ContentValue>;
+  private readonly topics: BlockLoader<AdjustedLineIndex, ContentValueExt>;
 
   private active: boolean;
 
@@ -90,7 +90,7 @@ class CommentPool {
     async function loading(
       offset: Readonly<AdjustedLineIndex>,
       limit: number,
-    ): Promise<BlockResponse<AdjustedLineIndex, ContentValue>> {
+    ): Promise<BlockResponse<AdjustedLineIndex, ContentValueExt>> {
       const { topics, next } = await api.topic(num(offset), limit);
       const entries = Object.entries(topics) as [MHash, string][];
       const topicMap = new Map(entries);
@@ -104,7 +104,12 @@ class CommentPool {
       return { values, next: adj(next) };
     }
 
-    this.topics = new BlockLoader(loading, maxTopicSize, blockSize);
+    this.topics = new BlockLoader(
+      maxTopicSize,
+      blockSize,
+      [undefined, '[not a topic]'],
+      loading,
+    );
     this.active = false;
   }
 
@@ -118,9 +123,8 @@ class CommentPool {
         this.inFlight.add(val);
       });
       this.hashQueue.clear();
-      this.api
-        .read(this.inFlight)
-        .then((obj) => {
+      this.api.read(this.inFlight).then(
+        (obj) => {
           const { messages, skipped } = obj;
           // FIXME: how can we make sure it is not active when note is called
           this.active = false;
@@ -136,14 +140,13 @@ class CommentPool {
           if (this.inFlight.size > 0) {
             this.fetchMessages();
           }
-        })
-        .catch(
-          /* istanbul ignore next */
-          (e) => {
-            this.active = false;
-            errHnd(e);
-          },
-        );
+        },
+        /* istanbul ignore next */
+        (e) => {
+          this.active = false;
+          errHnd(e);
+        },
+      );
     }, BATCH_DELAY);
   }
 
@@ -191,7 +194,7 @@ class CommentPool {
   async getTopic(
     index: Readonly<AdjustedLineIndex>,
     ocm: OnCacheMiss,
-  ): Promise<ContentValue> {
+  ): Promise<ContentValueExt> {
     return this.topics.get(index, ocm);
   }
 
@@ -218,7 +221,12 @@ class LinkLookup {
       return { values: links, next: adj(next) };
     }
 
-    this.loader = new BlockLoader(loading, maxLineSize, blockSize);
+    this.loader = new BlockLoader(
+      maxLineSize,
+      blockSize,
+      INVALID_LINK,
+      loading,
+    );
   }
 
   async getLink(
@@ -296,7 +304,12 @@ class LinkPool {
 
     if (res === undefined) {
       reportCacheMiss(ocm);
-      res = new BlockLoader(loading, this.maxUserLineSize, this.blockSize);
+      res = new BlockLoader(
+        this.maxUserLineSize,
+        this.blockSize,
+        INVALID_LINK,
+        loading,
+      );
       this.userLinks.set(userId, res);
     }
     return res;
@@ -396,7 +409,7 @@ export default class CommentGraph {
   private async getTopicMessage(
     fullTopicKey: Readonly<FullTopicKey>,
     ocm: OnCacheMiss,
-  ): Promise<ContentValue> {
+  ): Promise<ContentValueExt> {
     const { index } = fullTopicKey;
     return this.msgPool.getTopic(index, ocm);
   }

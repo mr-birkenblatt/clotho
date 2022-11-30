@@ -41,7 +41,7 @@ export function union<K, V>(left: Map<K, V>, right: Map<K, V>): Map<K, V> {
 
 export function detectSlowCallback(
   obj: any,
-  onSlow?: (e: any) => void,
+  onSlow: (e: any) => void,
 ): () => void {
   let done = false;
   setTimeout(() => {
@@ -53,11 +53,7 @@ export function detectSlowCallback(
         return;
       }
       const msg = `slow callback detected with: ${debugJSON(obj)}`;
-      if (onSlow !== undefined) {
-        onSlow(msg);
-      } else {
-        throw new Error(msg);
-      }
+      onSlow(msg);
     }, 900);
   }, 100);
   return () => {
@@ -346,6 +342,7 @@ type NotifyBlockCB<T> = (value: T) => void;
 
 export class BlockLoader<I extends number, T> {
   private readonly loader: BlockLoading<I, T>;
+  private readonly defaultValue: Readonly<T>;
   private readonly blockSize: Readonly<number>;
 
   private readonly cache: LRU<Readonly<I>, Readonly<T>>;
@@ -353,11 +350,13 @@ export class BlockLoader<I extends number, T> {
   private readonly activeBlocks: Set<Readonly<BlockIndex>>;
 
   constructor(
-    loader: BlockLoading<I, T>,
     maxCacheSize: Readonly<number>,
     blockSize: Readonly<number>,
+    defaultValue: Readonly<T>,
+    loader: BlockLoading<I, T>,
   ) {
     this.loader = loader;
+    this.defaultValue = defaultValue;
     this.blockSize = blockSize;
     this.cache = new LRU(maxCacheSize);
     this.listeners = new Map();
@@ -389,14 +388,17 @@ export class BlockLoader<I extends number, T> {
     const fetchRange = (blockOffset: Readonly<number>): void => {
       const fromOffset = this.toIndex(blockOffset, block);
       const remainCount = this.blockSize - blockOffset;
-      this.loader(fromOffset, remainCount)
-        .then((obj: BlockResponse<I, T>) => {
+      this.loader(fromOffset, remainCount).then(
+        (obj: BlockResponse<I, T>) => {
           const { values, next } = obj;
           const curCount = num(next) - fromOffset;
           const count = curCount > 0 ? curCount : remainCount;
           range(count).forEach((curOffset) => {
             const extIndex = (fromOffset + curOffset) as I;
-            const cur = values[curOffset];
+            const cur =
+              curOffset < values.length
+                ? values[curOffset]
+                : this.defaultValue;
             this.cache.set(extIndex, cur);
             this.note(extIndex);
           });
@@ -405,14 +407,13 @@ export class BlockLoader<I extends number, T> {
           } else {
             finish();
           }
-        })
-        .catch(
-          /* istanbul ignore next */
-          (e) => {
-            finish();
-            errHnd(e);
-          },
-        );
+        },
+        /* istanbul ignore next */
+        (e) => {
+          finish();
+          errHnd(e);
+        },
+      );
     };
 
     setTimeout(() => {

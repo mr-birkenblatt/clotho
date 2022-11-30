@@ -360,8 +360,8 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { graph, view, changes, dispatch } = this.props;
     const { resetView, redraw, pending } = this.state;
     if (view !== prevProps.view || pending !== undefined) {
-      progressView(graph, view)
-        .then(({ view: newView, change }) => {
+      progressView(graph, view).then(
+        ({ view: newView, change }) => {
           if (change) {
             dispatch(setView({ view: newView, changes, progress: true }));
             return;
@@ -374,10 +374,11 @@ class View extends PureComponent<ViewProps, ViewState> {
             }
             this.setState({ pending: undefined });
           }
-        })
-        .catch((e) => {
+        },
+        (e) => {
           errHnd(e);
-        });
+        },
+      );
     }
     if (resetView !== ResetView.Done) {
       if (resetView === ResetView.StopScroll) {
