@@ -174,7 +174,8 @@ def test_scenario() -> None:
     resp = get_link(0, 1).get_response(user_store, who=users[0], now=now)
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[1].to_parseable()
-    assert resp["user"] == users[0].get_id()
+    assert resp["user"] == users[0].get_name()
+    assert resp["userid"] == users[0].get_id()
     assert int(resp["first"]) == int(first_s)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
@@ -186,7 +187,8 @@ def test_scenario() -> None:
     resp = get_link(0, 3).get_response(user_store, who=None, now=now)
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[3].to_parseable()
-    assert resp["user"] == users[0].get_id()
+    assert resp["user"] == users[0].get_name()
+    assert resp["userid"] == users[0].get_id()
     assert int(resp["first"]) == int(first_s + 10.0)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
