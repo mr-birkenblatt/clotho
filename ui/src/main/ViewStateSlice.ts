@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { GraphView, initView } from '../misc/GraphView';
+import { GraphView, initView } from '../graph/GraphView';
 
 type ViewState = {
   currentView: Readonly<GraphView>;

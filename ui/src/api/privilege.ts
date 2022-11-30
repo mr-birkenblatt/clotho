@@ -1,4 +1,4 @@
-import { MHash, VoteType } from '../misc/keys';
+import { MHash, VoteType } from '../graph/keys';
 import { ApiLinkResponse, LoginResponse, Token, Username } from './types';
 
 // FIXME use

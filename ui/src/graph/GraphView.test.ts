@@ -25,7 +25,12 @@ import {
   MHash,
 } from './keys';
 import { advancedGraph, InfGraph } from './TestGraph';
-import { assertTrue, debugJSON, detectSlowCallback, LoggerCB } from './util';
+import {
+  assertTrue,
+  debugJSON,
+  detectSlowCallback,
+  LoggerCB,
+} from '../misc/util';
 
 function asFullKey(
   hash: Readonly<string>,

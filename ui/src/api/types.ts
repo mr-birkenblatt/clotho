@@ -1,4 +1,4 @@
-import { Link, MHash, Votes } from '../misc/keys';
+import { MHash, ValidLink, Votes } from '../graph/keys';
 
 export type Token = string & { _token: void };
 
@@ -40,7 +40,7 @@ export type ApiLinkResponse = {
   votes: Votes;
 };
 
-export function toLink(link: Readonly<ApiLinkResponse>): Readonly<Link> {
+export function toLink(link: Readonly<ApiLinkResponse>): Readonly<ValidLink> {
   const { user, userid, ...rest } = link;
   return {
     username: user,
@@ -56,7 +56,7 @@ export type ApiLinkList = {
 
 export function toLinks(
   links: Readonly<Readonly<ApiLinkResponse>[]>,
-): Readonly<Readonly<Link>[]> {
+): Readonly<Readonly<ValidLink>[]> {
   return links.map((link) => toLink(link));
 }
 

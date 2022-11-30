@@ -30,7 +30,7 @@ import {
   detectSlowCallback,
   OnCacheMiss,
   range,
-} from './util';
+} from '../misc/util';
 
 function asFullKey(
   hash: Readonly<string>,

@@ -1,3 +1,4 @@
+import { toLinks } from '../api/types';
 import { fromMHash, IsGet, KeyType, LinkKey, MHash, ValidLink } from './keys';
 import { simpleGraph } from './TestGraph';
 
@@ -47,38 +48,45 @@ test('test messages', () => {
 test('test links', () => {
   const api = simpleGraph().getApiProvider();
   api.link(asLinkKey('a', false), 0, 5).then((link) => {
-    expect(getParentHashs(link.links)).toEqual(['a', 'a', 'a']);
-    expect(getChildHashs(link.links)).toEqual(['b', 'c', 'd']);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual(['a', 'a', 'a']);
+    expect(getChildHashs(links)).toEqual(['b', 'c', 'd']);
     expect(link.next).toBe(3);
   });
   api.link(asLinkKey('a', false), 3, 5).then((link) => {
-    expect(getParentHashs(link.links)).toEqual(['a', 'a']);
-    expect(getChildHashs(link.links)).toEqual(['e', 'f']);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual(['a', 'a']);
+    expect(getChildHashs(links)).toEqual(['e', 'f']);
     expect(link.next).toBe(0);
   });
   api.link(asLinkKey('g', false), 0, 1).then((link) => {
-    expect(getParentHashs(link.links)).toEqual(['g']);
-    expect(getChildHashs(link.links)).toEqual(['a']);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual(['g']);
+    expect(getChildHashs(links)).toEqual(['a']);
     expect(link.next).toBe(1);
   });
   api.link(asLinkKey('g', false), 1, 1).then((link) => {
-    expect(getParentHashs(link.links)).toEqual(['g']);
-    expect(getChildHashs(link.links)).toEqual(['b']);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual(['g']);
+    expect(getChildHashs(links)).toEqual(['b']);
     expect(link.next).toBe(0);
   });
   api.link(asLinkKey('a', true), 0, 5).then((link) => {
-    expect(getParentHashs(link.links)).toEqual(['g']);
-    expect(getChildHashs(link.links)).toEqual(['a']);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual(['g']);
+    expect(getChildHashs(links)).toEqual(['a']);
     expect(link.next).toBe(0);
   });
   api.link(asLinkKey('b', true), 0, 5).then((link) => {
-    expect(getParentHashs(link.links)).toEqual(['a', 'g']);
-    expect(getChildHashs(link.links)).toEqual(['b', 'b']);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual(['a', 'g']);
+    expect(getChildHashs(links)).toEqual(['b', 'b']);
     expect(link.next).toBe(0);
   });
   api.link(asLinkKey('foo', true), 0, 5).then((link) => {
-    expect(getParentHashs(link.links)).toEqual([]);
-    expect(getChildHashs(link.links)).toEqual([]);
+    const links = toLinks(link.links);
+    expect(getParentHashs(links)).toEqual([]);
+    expect(getChildHashs(links)).toEqual([]);
     expect(link.next).toBe(0);
   });
 });

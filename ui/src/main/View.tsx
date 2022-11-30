@@ -13,13 +13,13 @@ import {
   scrollTopHorizontal,
   scrollVertical,
   vertical,
-} from '../misc/GraphView';
-import CommentGraph from '../misc/CommentGraph';
+} from '../graph/GraphView';
+import CommentGraph from '../graph/CommentGraph';
 import { errHnd, safeStringify, toReadableNumber } from '../misc/util';
 import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
-import { RichVote, VoteType, VOTE_TYPES } from '../misc/keys';
+import { RichVote, VoteType, VOTE_TYPES } from '../graph/keys';
 
 const Outer = styled.div`
   position: relative;

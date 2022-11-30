@@ -21,7 +21,7 @@ import {
   maybeLog,
   num,
   OnCacheMiss,
-} from './util';
+} from '../misc/util';
 
 export type Cell = {
   fullKey: Readonly<FullKey>;

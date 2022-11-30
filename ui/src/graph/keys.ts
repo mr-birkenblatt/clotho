@@ -1,5 +1,5 @@
 import { UserId, Username } from '../api/types';
-import { assertFail, debugJSON, LoggerCB, maybeLog, str } from './util';
+import { assertFail, debugJSON, LoggerCB, maybeLog, str } from '../misc/util';
 
 export type MHash = string & { _mHash: void };
 

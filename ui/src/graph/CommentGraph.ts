@@ -8,7 +8,7 @@ import {
   DEFAULT_LINK_CACHE_SIZE,
   DEFAULT_LINK_POOL_SIZE,
   DEFAULT_TOPIC_POOL_SIZE,
-} from './constants';
+} from '../misc/constants';
 import {
   adj,
   AdjustedLineIndex,
@@ -31,7 +31,7 @@ import {
   UserKey,
   userMHash,
 } from './keys';
-import LRU from './LRU';
+import LRU from '../misc/LRU';
 import {
   assertTrue,
   BlockLoader,
@@ -40,7 +40,7 @@ import {
   num,
   OnCacheMiss,
   reportCacheMiss,
-} from './util';
+} from '../misc/util';
 
 type NotifyContentCB = (
   mhash: Readonly<MHash>,

@@ -1,7 +1,7 @@
 import { GraphApiProvider } from '../api/graph';
 import { UserId, Username } from '../api/types';
 import { IsGet, MHash, Votes } from './keys';
-import { assertTrue, range, str } from './util';
+import { assertTrue, range, str } from '../misc/util';
 
 export const simpleGraph = (): TestGraph => {
   const graph = new TestGraph(3);

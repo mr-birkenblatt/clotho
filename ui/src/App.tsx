@@ -1,8 +1,8 @@
 import React, { PureComponent } from 'react';
 import styled from 'styled-components';
 import View from './main/View';
-import CommentGraph from './misc/CommentGraph';
-import { advancedGraph } from './misc/TestGraph';
+import CommentGraph from './graph/CommentGraph';
+import { advancedGraph } from './graph/TestGraph';
 
 const DEBUG = false;
 
