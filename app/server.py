@@ -102,6 +102,7 @@ def setup(
         return {
             "token": token,
             "user": user.get_name(),
+            "userid": user.get_id(),
             "permissions": user.get_permissions(),
         }
 
@@ -125,6 +126,7 @@ def setup(
         return {
             "token": token,
             "user": user.get_name(),
+            "userid": user.get_id(),
             "permissions": user.get_permissions(),
         }
 
@@ -135,6 +137,7 @@ def setup(
         return {
             "token": args["token"],
             "user": user.get_name(),
+            "userid": user.get_id(),
             "permissions": user.get_permissions(),
         }
 

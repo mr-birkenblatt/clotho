@@ -7,7 +7,9 @@ export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
   return str(mhash);
 }
 
-export function userMHash(key: FullUserKey | UserKey): MHash {
+export function userMHash(
+  key: Readonly<FullUserKey> | Readonly<UserKey>,
+): MHash {
   return `${key.userId}` as MHash;
 }
 

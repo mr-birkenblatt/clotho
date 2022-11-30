@@ -1,5 +1,5 @@
 import { GraphApiProvider, DEFAULT_API } from '../api/graph';
-import { UserId } from '../api/types';
+import { toLink, toLinks, UserId } from '../api/types';
 import {
   BATCH_DELAY,
   DEFAULT_BLOCK_SIZE,
@@ -222,14 +222,7 @@ class LinkLookup {
     ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
       const { links, next } = await api.link(linkKey, num(offset), limit);
       return {
-        values: links.map((link) => {
-          const { user, userid, ...rest } = link;
-          return {
-            username: user,
-            userId: userid,
-            ...rest,
-          };
-        }),
+        values: toLinks(links),
         next: adj(next),
       };
     }
@@ -313,14 +306,7 @@ class LinkPool {
     ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
       const { links, next } = await api.userLink(key, num(offset), limit);
       return {
-        values: links.map((link) => {
-          const { user, userid, ...rest } = link;
-          return {
-            username: user,
-            userId: userid,
-            ...rest,
-          };
-        }),
+        values: toLinks(links),
         next: adj(next),
       };
     }
@@ -379,12 +365,7 @@ class LinkPool {
     }
     reportCacheMiss(ocm);
     const linkRes = await this.api.singleLink(parentHash, childHash);
-    const { user, userid, ...rest } = linkRes;
-    const link = {
-      username: user,
-      userId: userid,
-      ...rest,
-    };
+    const link = toLink(linkRes);
     this.linkCache.set(key, link);
     return link;
   }

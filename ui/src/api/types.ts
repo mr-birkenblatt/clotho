@@ -1,4 +1,4 @@
-import { MHash, Votes } from '../misc/keys';
+import { Link, MHash, Votes } from '../misc/keys';
 
 export type Token = string & { _token: void };
 
@@ -40,13 +40,29 @@ export type ApiLinkResponse = {
   votes: Votes;
 };
 
+export function toLink(link: Readonly<ApiLinkResponse>): Readonly<Link> {
+  const { user, userid, ...rest } = link;
+  return {
+    username: user,
+    userId: userid,
+    ...rest,
+  };
+}
+
 export type ApiLinkList = {
-  links: Readonly<ApiLinkResponse[]>;
+  links: Readonly<Readonly<ApiLinkResponse>[]>;
   next: Readonly<number>;
 };
+
+export function toLinks(
+  links: Readonly<Readonly<ApiLinkResponse>[]>,
+): Readonly<Readonly<Link>[]> {
+  return links.map((link) => toLink(link));
+}
 
 export type LoginResponse = {
   token: Readonly<Token>;
   user: Readonly<Username>;
+  userid: Readonly<UserId>;
   permissions: Readonly<ApiUserPermissions>;
 };
