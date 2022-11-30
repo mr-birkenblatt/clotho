@@ -66,7 +66,7 @@ export function detectSlowCallback(
 }
 
 export type OnCacheMiss = (() => void) | undefined;
-export type HasCacheMiss = () => boolean;
+type HasCacheMiss = () => boolean;
 
 export function reportCacheMiss(onCacheMiss: OnCacheMiss): void {
   if (onCacheMiss !== undefined) {

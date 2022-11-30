@@ -42,7 +42,7 @@ import {
   reportCacheMiss,
 } from './util';
 
-export type NotifyContentCB = (
+type NotifyContentCB = (
   mhash: Readonly<MHash>,
   content: Readonly<string>,
 ) => void;

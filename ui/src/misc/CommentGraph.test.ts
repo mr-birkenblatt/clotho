@@ -1,4 +1,4 @@
-import CommentGraph, { ContentValueExt, NotifyContentCB } from './CommentGraph';
+import CommentGraph, { ContentValueExt } from './CommentGraph';
 import {
   adj,
   AdjustedLineIndex,
@@ -8,6 +8,7 @@ import {
   equalLineKey,
   equalLineKeys,
   FullIndirectKey,
+  FullKey,
   FullKeyType,
   INVALID_FULL_KEY,
   INVALID_KEY,
@@ -21,7 +22,15 @@ import {
   ValidLink,
 } from './keys';
 import { advancedGraph, simpleGraph } from './TestGraph';
-import { assertTrue, cacheHitProbe, debugJSON, detectSlowCallback, OnCacheMiss, range } from './util';
+import {
+  assertEqual,
+  assertTrue,
+  cacheHitProbe,
+  debugJSON,
+  detectSlowCallback,
+  OnCacheMiss,
+  range,
+} from './util';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -47,29 +56,27 @@ function toLineKey(
   };
 }
 
-async function execute<A extends any[], T extends A, R>(
-  fun: (...args: T) => Promise<R>,
-  args: A,
+async function execute<A extends any[], R>(
+  fun: (ocm: OnCacheMiss, ...args: A) => Promise<R>,
+  args: Readonly<A>,
   callback: (value: R) => void,
-  expectsCacheMiss: boolean,
+  expectCacheMiss: boolean,
 ): Promise<void> {
-  const {onCacheMiss, hasCacheMiss} = cacheHitProbe();
-  assertTrue(hasCacheMiss() === expectsCacheMiss, `actual: ${hasCacheMiss()} !== expected: ${expectsCacheMiss}`);
   const done = detectSlowCallback(args);
-  const fargs = [...args, onCacheMiss];
-  const res = await fun(...fargs);
+  const { onCacheMiss, hasCacheMiss } = cacheHitProbe();
+  const res = await fun(onCacheMiss, ...args);
   done();
+  const hcm = hasCacheMiss();
+  assertEqual(hcm, expectCacheMiss);
   callback(res);
 }
 
-const convertMessage = (res: ContentValueExt): ContentValueExt => {
-  return res;
-};
 const checkMessage = (
   mhash: string | undefined,
   content?: string,
-): NotifyContentCB => {
-  return (otherMhash, otherContent) => {
+): ((value: ContentValueExt) => void) => {
+  return (value) => {
+    const [otherMhash, otherContent] = value;
     if (mhash !== undefined) {
       expect(otherMhash).toEqual(mhash);
     } else {
@@ -80,7 +87,9 @@ const checkMessage = (
     );
   };
 };
-const checkHash = (mhash: string | undefined): ((mhash: Readonly<MHash> | undefined) => void) => {
+const checkHash = (
+  mhash: string | undefined,
+): ((mhash: Readonly<MHash> | undefined) => void) => {
   return (otherMhash) => {
     if (mhash !== undefined) {
       expect(otherMhash).toEqual(mhash);
@@ -89,12 +98,9 @@ const checkHash = (mhash: string | undefined): ((mhash: Readonly<MHash> | undefi
     }
   };
 };
-const convertLink = (link: Link): readonly [Readonly<Link>] => {
-  return [link];
-};
 const validLink = (cb: (vlink: ValidLink) => void): ((link: Link) => void) => {
   return (link) => {
-    assertTrue(!link.invalid, 'link should not be invalid');
+    assertTrue(!link.invalid, 'link should be valid');
     cb(link);
   };
 };
@@ -106,14 +112,16 @@ const checkLink = (parent: string, child: string): ((link: Link) => void) => {
 };
 const invalidLink = (): ((link: Link) => void) => {
   return (link) => {
-    assertTrue(!!link.invalid, `link should not be valid: ${debugJSON(link)}`);
+    assertTrue(!!link.invalid, 'link should be invalid');
   };
 };
-const checkNext = (lineKey: Readonly<LineKey>): ((lineKey: LineKey) => void) => {
+const checkNext = (
+  lineKey: Readonly<LineKey>,
+): ((next: Readonly<LineKey>) => void) => {
   return (child) => {
     assertTrue(
       equalLineKey(child, lineKey),
-      `mismatching line key: ${debugJSON(child)} !== ${debugJSON(lineKey)}`,
+      `actual: ${debugJSON(child)} expected ${debugJSON(lineKey)}`,
     );
   };
 };
@@ -122,6 +130,64 @@ const toArgs = (
   nextIx: number,
 ): readonly [Readonly<FullIndirectKey>, Readonly<AdjustedLineIndex>] => {
   return [fullKey, nextIx as AdjustedLineIndex];
+};
+
+const createGetTopLink = (
+  pool: CommentGraph,
+): ((
+  ocm: OnCacheMiss,
+  fullKey: Readonly<FullIndirectKey>,
+  parentIndex: Readonly<AdjustedLineIndex>,
+) => Promise<Readonly<Link>>) => {
+  return (ocm, fullKey, parentIndex) =>
+    pool.getTopLink(fullKey, parentIndex, ocm);
+};
+
+const createGetBottomLink = (
+  pool: CommentGraph,
+): ((
+  ocm: OnCacheMiss,
+  fullKey: Readonly<FullIndirectKey>,
+  childIndex: Readonly<AdjustedLineIndex>,
+) => Promise<Readonly<Link>>) => {
+  return (ocm, fullKey, childIndex) =>
+    pool.getBottomLink(fullKey, childIndex, ocm);
+};
+
+const createGetMessage = (
+  pool: CommentGraph,
+): ((
+  ocm: OnCacheMiss,
+  fullKey: Readonly<FullKey>,
+) => Promise<Readonly<ContentValueExt>>) => {
+  return (ocm, fullKey) => pool.getMessage(fullKey, ocm);
+};
+
+const createGetHash = (
+  pool: CommentGraph,
+): ((
+  ocm: OnCacheMiss,
+  fullKey: Readonly<FullKey>,
+) => Promise<Readonly<MHash> | undefined>) => {
+  return (ocm, fullKey) => pool.getHash(fullKey, ocm);
+};
+
+const createGetParent = (
+  pool: CommentGraph,
+): ((
+  ocm: OnCacheMiss,
+  fullKey: Readonly<FullKey>,
+) => Promise<Readonly<LineKey>>) => {
+  return (ocm, fullKey) => pool.getParent(fullKey, ocm);
+};
+
+const createGetChild = (
+  pool: CommentGraph,
+): ((
+  ocm: OnCacheMiss,
+  fullKey: Readonly<FullKey>,
+) => Promise<Readonly<LineKey>>) => {
+  return (ocm, fullKey) => pool.getChild(fullKey, ocm);
 };
 
 const createCommentGraph = (isSimple: boolean): CommentGraph => {
@@ -144,356 +210,337 @@ const createCommentGraph = (isSimple: boolean): CommentGraph => {
 
 test('simple test comment graph', async () => {
   const pool = createCommentGraph(true);
+  const getMessage = createGetMessage(pool);
 
-  await execute(pool.getMessage, [asTopicKey(0)], checkMessage('a'), true);
+  await execute(getMessage, [asTopicKey(0)], checkMessage('a'), true);
   await execute(
-    pool.getMessage,
+    getMessage,
     [asTopicKey(1)],
     checkMessage('h', 'msg: h'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asTopicKey(-1)],
     checkMessage(undefined, '[unavailable]'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asTopicKey(2)],
     checkMessage(undefined, '[unavailable]'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a', false, 0)],
     checkMessage('b'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a', false, 2)],
     checkMessage('d'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a', false, 2)],
     checkMessage('d', 'msg: d'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a', false, 4)],
     checkMessage('f'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a', false, 5)],
     checkMessage(undefined, '[deleted]'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asDirectKey('a')],
     checkMessage('a', 'msg: a'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asDirectKey('a')],
     checkMessage('a', 'msg: a'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asDirectKey('d')],
     checkMessage('d', 'msg: d'),
-    convertMessage,
+    false,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asDirectKey('foo')],
     checkMessage('foo', '[missing]'),
-    undefined,
+    true,
   );
 });
 
 test('get hash graph', async () => {
   const pool = createCommentGraph(true);
-  const getHash = pool.getHash(pool);
+  const getHash = createGetHash(pool);
 
-  await execute(getHash, [asTopicKey(1)], checkHash('h'), undefined);
-  await execute(getHash, [asTopicKey(2)], checkHash(undefined), undefined);
-  await execute(getHash, [asDirectKey('foo')], checkHash('foo'), undefined);
-  await execute(
-    getHash,
-    [asFullKey('a', false, 2)],
-    checkHash('d'),
-    undefined,
-  );
-  await execute(getHash, [asFullKey('a', true, 0)], checkHash('g'), undefined);
+  await execute(getHash, [asTopicKey(1)], checkHash('h'), true);
+  await execute(getHash, [asTopicKey(2)], checkHash(undefined), true);
+  await execute(getHash, [asDirectKey('foo')], checkHash('foo'), true);
+  await execute(getHash, [asFullKey('a', false, 2)], checkHash('d'), true);
+  await execute(getHash, [asFullKey('a', true, 0)], checkHash('g'), true);
   await execute(
     getHash,
     [asFullKey('a', true, 1)],
     checkHash(undefined),
-    undefined,
+    true,
   );
-  await execute(getHash, [INVALID_FULL_KEY], checkHash(undefined), undefined);
+  await execute(getHash, [INVALID_FULL_KEY], checkHash(undefined), true);
 });
 
 test('simple bulk message reading', async () => {
   const pool = createCommentGraph(true);
-  const pool.getMessage = pool.pool.getMessage(pool);
+  const getMessage = createGetMessage(pool);
 
   const hashes = ['b', 'c', 'd', 'e', 'f'];
   const contents = hashes.map((el) => `msg: ${el}`);
   await Promise.all(
     range(5).map((ix) => {
       return execute(
-        pool.getMessage,
+        getMessage,
         [asFullKey('a', false, ix)],
         checkMessage(hashes[ix]),
-        undefined,
+        true,
       );
     }),
   );
   await Promise.all(
     range(5).map((ix) => {
       return execute(
-        pool.getMessage,
+        getMessage,
         [asFullKey('a', false, ix)],
         checkMessage(hashes[ix], contents[ix]),
-        convertMessage,
+        false,
       );
     }),
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('b', true, 0)],
     checkMessage('a'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('b', true, 1)],
     checkMessage('g'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('b', true, 2)],
     checkMessage(undefined, '[deleted]'),
-    convertMessage,
+    false,
   );
   pool.clearCache();
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('b', true, 2)],
     checkMessage(undefined, '[deleted]'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [INVALID_FULL_KEY],
     checkMessage(undefined, '[invalid]'),
-    convertMessage,
+    false,
   );
 });
 
 test('topic comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getTopLink = pool.getTopLink(pool);
+  const getTopLink = createGetTopLink(pool);
 
   await execute(
     getTopLink,
     toArgs(asTopicKey(0), 0),
     checkLink('a1', 'a2'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asTopicKey(0), 0),
     checkLink('a1', 'a2'),
-    convertLink,
+    false,
   );
   await execute(
     getTopLink,
     toArgs(asTopicKey(1), 0),
     checkLink('a1', 'b2'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asTopicKey(1), 1),
     checkLink('b4', 'b2'),
-    convertLink,
+    false,
   );
-  await execute(
-    getTopLink,
-    toArgs(asTopicKey(1), 2),
-    invalidLink(),
-    convertLink,
-  );
-  await execute(
-    getTopLink,
-    toArgs(asTopicKey(2), 0),
-    invalidLink(),
-    convertLink,
-  );
+  await execute(getTopLink, toArgs(asTopicKey(1), 2), invalidLink(), false);
+  await execute(getTopLink, toArgs(asTopicKey(2), 0), invalidLink(), false);
   pool.clearCache();
-  await execute(
-    getTopLink,
-    toArgs(asTopicKey(2), 1),
-    invalidLink(),
-    undefined,
-  );
+  await execute(getTopLink, toArgs(asTopicKey(2), 1), invalidLink(), true);
 });
 
 test('parent comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getTopLink = pool.getTopLink(pool);
+  const getTopLink = createGetTopLink(pool);
   await execute(
     getTopLink,
     toArgs(asFullKey('d2', true, 0), 0),
     checkLink('a5', 'a1'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b4', true, 1), 0),
     checkLink('a1', 'b2'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b4', true, 1), 1),
     checkLink('b4', 'b2'),
-    convertLink,
+    false,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b4', true, 0), 0),
     checkLink('a2', 'a3'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b4', true, 0), 1),
     invalidLink(),
-    convertLink,
+    false,
   );
 });
 
 test('cache edge cases for comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getTopLink = pool.getTopLink(pool);
-  const getBottomLink = pool.getBottomLink(pool);
-  const pool.getMessage = pool.pool.getMessage(pool);
+  const getTopLink = createGetTopLink(pool);
+  const getBottomLink = createGetBottomLink(pool);
+  const getMessage = createGetMessage(pool);
   await execute(
     getTopLink,
     toArgs(asFullKey('a4', false, 0), 0),
     checkLink('a4', 'a5'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('a1', false, 1), 0),
     checkLink('a1', 'b2'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('a1', false, 1), 1),
     checkLink('b4', 'b2'),
-    convertLink,
+    false,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('a3', false, 0), 0),
     checkLink('a3', 'a4'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('a3', false, 1), 0),
     checkLink('a3', 'b4'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('a3', false, 1), 1),
     checkLink('b2', 'b4'),
-    convertLink,
+    false,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b2', false, 0), 0),
     checkLink('a3', 'b4'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b2', false, 0), 0),
     checkLink('a3', 'b4'),
-    convertLink,
+    false,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b2', false, 0), 1),
     checkLink('b2', 'b4'),
-    convertLink,
+    false,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b2', false, 0), 2),
     invalidLink(),
-    convertLink,
+    false,
   );
   pool.clearCache();
   await execute(
     getTopLink,
     toArgs(asFullKey('b2', false, 1), 0),
     invalidLink(),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('b2', false, 1), 0),
     invalidLink(),
-    convertLink,
+    false,
   );
   pool.clearCache();
   await execute(
     getTopLink,
     toArgs(asFullKey('b4', false, 0), 1),
     checkLink('b4', 'b2'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asTopicKey(1), 1),
     checkLink('b4', 'b2'),
-    undefined,
+    true,
   );
   await execute(
     getTopLink,
     toArgs(asFullKey('a5', true, 0), 0),
     checkLink('a3', 'a4'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a4', true, 0)],
     checkMessage('a3'),
-    undefined,
+    true,
   );
   await execute(
-    pool.getMessage,
+    getMessage,
     [asFullKey('a2', false, 0)],
     checkMessage('a3'),
-    undefined,
+    true,
   );
 
   pool.clearCache();
@@ -501,88 +548,68 @@ test('cache edge cases for comment graph', async () => {
     getBottomLink,
     toArgs(asTopicKey(0), 0),
     checkLink('a2', 'a3'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asTopicKey(0), 0),
     checkLink('a2', 'a3'),
-    convertLink,
+    false,
   );
   pool.clearCache();
-  await execute(
-    getBottomLink,
-    toArgs(asTopicKey(0), 1),
-    invalidLink(),
-    undefined,
-  );
-  await execute(
-    getBottomLink,
-    toArgs(asTopicKey(0), 1),
-    invalidLink(),
-    convertLink,
-  );
+  await execute(getBottomLink, toArgs(asTopicKey(0), 1), invalidLink(), true);
+  await execute(getBottomLink, toArgs(asTopicKey(0), 1), invalidLink(), false);
   await execute(
     getBottomLink,
     toArgs(asTopicKey(1), 0),
     checkLink('b2', 'b4'),
-    undefined,
+    true,
   );
   pool.clearCache();
-  await execute(pool.getMessage, [asTopicKey(1)], checkMessage('b2'), undefined);
+  await execute(getMessage, [asTopicKey(1)], checkMessage('b2'), true);
   await execute(
     getBottomLink,
     toArgs(asTopicKey(-1), 0),
     invalidLink(),
-    convertLink,
+    false,
   );
-  await execute(
-    getBottomLink,
-    toArgs(asTopicKey(2), 0),
-    invalidLink(),
-    convertLink,
-  );
-  await execute(
-    getTopLink,
-    toArgs(INVALID_FULL_KEY, 0),
-    invalidLink(),
-    convertLink,
-  );
+  await execute(getBottomLink, toArgs(asTopicKey(2), 0), invalidLink(), false);
+  await execute(getTopLink, toArgs(INVALID_FULL_KEY, 0), invalidLink(), false);
   await execute(
     getBottomLink,
     toArgs(INVALID_FULL_KEY, 0),
     invalidLink(),
-    convertLink,
+    false,
   );
 });
 
 test('child comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getBottomLink = pool.getBottomLink(pool);
+  const getBottomLink = createGetBottomLink(pool);
 
   await execute(
     getBottomLink,
     toArgs(asFullKey('a1', false, 1), 0),
     checkLink('b2', 'b4'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('b4', true, 1), 0),
     checkLink('b2', 'b4'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('b4', true, 0), 0),
     checkLink('a3', 'a4'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('b4', true, 0), 1),
     checkLink('a3', 'b4'),
-    convertLink,
+    false,
   );
 
   pool.clearCache();
@@ -590,368 +617,307 @@ test('child comment graph', async () => {
     getBottomLink,
     toArgs(asFullKey('a5', false, 0), 0),
     checkLink('a1', 'a2'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a5', false, 0), 1),
     checkLink('a1', 'b2'),
-    convertLink,
+    false,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a5', false, 0), 2),
     checkLink('a1', 'c2'),
-    convertLink,
+    false,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a5', false, 0), 3),
     checkLink('a1', 'd2'),
-    convertLink,
+    false,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a5', false, 0), 4),
     invalidLink(),
-    convertLink,
+    false,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a5', false, 0), -1),
     invalidLink(),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('c2', true, 0), 1),
     checkLink('a1', 'b2'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('c2', true, 1), 1),
     invalidLink(),
-    convertLink,
+    false,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('c2', true, 0), 2),
     checkLink('a1', 'c2'),
-    convertLink,
+    false,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a2', false, 0), 0),
     checkLink('a3', 'a4'),
-    undefined,
+    true,
   );
   await execute(
     getBottomLink,
     toArgs(asFullKey('a2', false, 0), 1),
     checkLink('a3', 'b4'),
-    convertLink,
+    false,
   );
 });
 
 test('get parent / child comment graph', async () => {
   const pool = createCommentGraph(false);
-  const getParent = pool.getParent(pool);
-  const getChild = pool.getChild(pool);
+  const getParent = createGetParent(pool);
+  const getChild = createGetChild(pool);
 
   await execute(
     getChild,
     [asFullKey('a2', false, 0)],
     checkNext(toLineKey('a3', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('c2', true, 0)],
     checkNext(toLineKey('a1', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('c2', false, 0)],
     checkNext(INVALID_KEY),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 0)],
     checkNext(toLineKey('a2', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 1)],
     checkNext(toLineKey('b2', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 2)],
     checkNext(toLineKey('c2', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 2)],
     checkNext(toLineKey('c2', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 4)],
     checkNext(INVALID_KEY),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('b2', true, 0)],
     checkNext(toLineKey('a1', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('b2', true, 1)],
     checkNext(toLineKey('b4', true)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', false)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('a1', false, 1)],
     checkNext(toLineKey('b2', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('a1', false, 0)],
     checkNext(toLineKey('a2', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 1)],
     checkNext(toLineKey('b2', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 2)],
     checkNext(INVALID_KEY),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asFullKey('b4', true, 1)],
     checkNext(toLineKey('b2', false)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asDirectKey('a1')],
     checkNext(toLineKey('a1', true)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asDirectKey('a1')],
     checkNext(toLineKey('a1', false)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asDirectKey('d2')],
     checkNext(toLineKey('d2', true)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asDirectKey('d2')],
     checkNext(toLineKey('d2', false)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asDirectKey('foo')],
     checkNext(toLineKey('foo', true)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asDirectKey('foo')],
     checkNext(toLineKey('foo', false)),
-    undefined,
     true,
   );
 });
 
 test('get parent / child of topic', async () => {
   const pool = createCommentGraph(false);
-  const getParent = pool.getParent(pool);
-  const getChild = pool.getChild(pool);
+  const getParent = createGetParent(pool);
+  const getChild = createGetChild(pool);
 
   await execute(
     getChild,
     [asTopicKey(0)],
     checkNext(toLineKey('a2', false)),
-    undefined,
     true,
   );
   await execute(
     getChild,
     [asTopicKey(1)],
     checkNext(toLineKey('b2', false)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asTopicKey(0)],
     checkNext(toLineKey('a2', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asTopicKey(1)],
     checkNext(toLineKey('b2', true)),
-    undefined,
     true,
   );
   await execute(
     getParent,
     [asTopicKey(1)],
     checkNext(toLineKey('b2', true)),
-    undefined,
     true,
   );
-  await execute(
-    getParent,
-    [asTopicKey(2)],
-    checkNext(INVALID_KEY),
-    undefined,
-    true,
-  );
-  await execute(
-    getChild,
-    [asTopicKey(-1)],
-    checkNext(INVALID_KEY),
-    undefined,
-    true,
-  );
-  await execute(
-    getChild,
-    [INVALID_FULL_KEY],
-    checkNext(INVALID_KEY),
-    undefined,
-    true,
-  );
-  await execute(
-    getParent,
-    [INVALID_FULL_KEY],
-    checkNext(INVALID_KEY),
-    undefined,
-    true,
-  );
+  await execute(getParent, [asTopicKey(2)], checkNext(INVALID_KEY), true);
+  await execute(getChild, [asTopicKey(-1)], checkNext(INVALID_KEY), true);
+  await execute(getChild, [INVALID_FULL_KEY], checkNext(INVALID_KEY), true);
+  await execute(getParent, [INVALID_FULL_KEY], checkNext(INVALID_KEY), true);
   await Promise.all([
     execute(
       getParent,
       [asTopicKey(0)],
       checkNext(toLineKey('a2', true)),
-      undefined,
       true,
     ),
     execute(
       getParent,
       [asTopicKey(0)],
       checkNext(toLineKey('a2', true)),
-      undefined,
       true,
     ),
     execute(
       getParent,
       [asTopicKey(1)],
       checkNext(toLineKey('b2', true)),
-      undefined,
       true,
     ),
     execute(
       getChild,
       [asTopicKey(0)],
       checkNext(toLineKey('a2', false)),
-      undefined,
       true,
     ),
     execute(
       getChild,
       [asTopicKey(0)],
       checkNext(toLineKey('a2', false)),
-      undefined,
       true,
     ),
     execute(
       getChild,
       [asTopicKey(1)],
       checkNext(toLineKey('b2', false)),
-      undefined,
       true,
     ),
   ]);
@@ -973,7 +939,7 @@ test('line keys', async () => {
         { keyType: KeyType.link, mhash: 'a' as MHash, isGet: IsGet.parent },
       ],
     ),
-    'equality checks failed',
+    'equal line keys',
   );
   const comp: [Readonly<LineKey>, Readonly<LineKey>][] = [
     [INVALID_KEY, TOPIC_KEY],
@@ -998,13 +964,10 @@ test('line keys', async () => {
       const [a, b] = cur;
       return !equalLineKey(a, b);
     }),
-    'mismatched line keys',
+    'unequal line keys',
   );
-  assertTrue(!equalLineKeys([], [INVALID_KEY]), 'should not be equal');
-  assertTrue(
-    !equalLineKeys([TOPIC_KEY], [INVALID_KEY]),
-    'should not be equal',
-  );
+  assertTrue(!equalLineKeys([], [INVALID_KEY]), 'mismatching length');
+  assertTrue(!equalLineKeys([TOPIC_KEY], [INVALID_KEY]), 'unequal static');
   expect(toFullKey(toLineKey('a', true), -1 as AdjustedLineIndex)).toEqual(
     asFullKey('a', true, -1),
   );
