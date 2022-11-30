@@ -426,7 +426,9 @@ async function getNextCell(
     if (!isIncrease) {
       return getCellContent(graph, invalidCell(), ocm);
     }
-    return getCellContent(graph, cell(otherLevel, isGet, adj(0)), ocm);
+    return getIndexedContent(adj(-1), skip, (index) =>
+      cell(otherLevel, isGet, index),
+    );
   }
   assertFail(`unkown FullKeyType: ${fullKeyType}`);
 }

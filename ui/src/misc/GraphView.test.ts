@@ -88,7 +88,7 @@ async function execute(
         return view;
       }
       throw new Error(
-        `${debugJSON(view)} !== expected ${debugJSON(expected)}`,
+        `${debugJSON(view)}\n!==\nexpected ${debugJSON(expected)}`,
       );
     };
     transition(view).then(resolve, (e) => {

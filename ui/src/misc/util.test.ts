@@ -178,11 +178,11 @@ test('assert tests', () => {
   };
   expect(at).toThrow(Error);
   const ae = () => {
-    assertEqual(3, 5);
+    assertEqual(3, 5, 'expected throw');
   };
   expect(ae).toThrow(Error);
   const an = () => {
-    assertNotEqual(2, 2);
+    assertNotEqual(2, 2, 'expected throw');
   };
   expect(an).toThrow(Error);
   const err = () => {

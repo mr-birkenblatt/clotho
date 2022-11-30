@@ -74,7 +74,7 @@ async function execute<A extends any[], R>(
       const res = await fun(onCacheMiss, ...args);
       done();
       const hcm = hasCacheMiss();
-      assertEqual(hcm, expectCacheMiss);
+      assertEqual(hcm, expectCacheMiss, 'hasCacheMiss');
       callback(res);
     };
     compute().then((res) => {
@@ -304,17 +304,17 @@ test('get hash graph', async () => {
   const getHash = createGetHash(pool);
 
   await execute(getHash, [asTopicKey(1)], checkHash('h'), true);
-  await execute(getHash, [asTopicKey(2)], checkHash(undefined), true);
-  await execute(getHash, [asDirectKey('foo')], checkHash('foo'), true);
+  await execute(getHash, [asTopicKey(2)], checkHash(undefined), false);
+  await execute(getHash, [asDirectKey('foo')], checkHash('foo'), false);
   await execute(getHash, [asFullKey('a', false, 2)], checkHash('d'), true);
   await execute(getHash, [asFullKey('a', true, 0)], checkHash('g'), true);
   await execute(
     getHash,
     [asFullKey('a', true, 1)],
     checkHash(undefined),
-    true,
+    false,
   );
-  await execute(getHash, [INVALID_FULL_KEY], checkHash(undefined), true);
+  await execute(getHash, [INVALID_FULL_KEY], checkHash(undefined), false);
 });
 
 test('simple bulk message reading', async () => {
@@ -726,25 +726,25 @@ test('get parent / child comment graph', async () => {
     getChild,
     [asFullKey('a1', false, 1)],
     checkNext(toLineKey('b2', false)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 2)],
     checkNext(toLineKey('c2', false)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 2)],
     checkNext(toLineKey('c2', false)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asFullKey('a1', false, 4)],
     checkNext(INVALID_KEY),
-    true,
+    false,
   );
   await execute(
     getParent,
@@ -756,7 +756,7 @@ test('get parent / child comment graph', async () => {
     getParent,
     [asFullKey('b2', true, 1)],
     checkNext(toLineKey('b4', true)),
-    true,
+    false,
   );
   await execute(
     getChild,
@@ -768,91 +768,91 @@ test('get parent / child comment graph', async () => {
     getChild,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', false)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', false)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asFullKey('a1', false, 1)],
     checkNext(toLineKey('b2', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asFullKey('a1', false, 0)],
     checkNext(toLineKey('a2', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 1)],
     checkNext(toLineKey('b2', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 0)],
     checkNext(toLineKey('a3', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asFullKey('b4', true, 2)],
     checkNext(INVALID_KEY),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asFullKey('b4', true, 1)],
     checkNext(toLineKey('b2', false)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asDirectKey('a1')],
     checkNext(toLineKey('a1', true)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asDirectKey('a1')],
     checkNext(toLineKey('a1', false)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asDirectKey('d2')],
     checkNext(toLineKey('d2', true)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asDirectKey('d2')],
     checkNext(toLineKey('d2', false)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asDirectKey('foo')],
     checkNext(toLineKey('foo', true)),
-    true,
+    false,
   );
   await execute(
     getChild,
     [asDirectKey('foo')],
     checkNext(toLineKey('foo', false)),
-    true,
+    false,
   );
 });
 
@@ -871,30 +871,31 @@ test('get parent / child of topic', async () => {
     getChild,
     [asTopicKey(1)],
     checkNext(toLineKey('b2', false)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asTopicKey(0)],
     checkNext(toLineKey('a2', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asTopicKey(1)],
     checkNext(toLineKey('b2', true)),
-    true,
+    false,
   );
   await execute(
     getParent,
     [asTopicKey(1)],
     checkNext(toLineKey('b2', true)),
-    true,
+    false,
   );
-  await execute(getParent, [asTopicKey(2)], checkNext(INVALID_KEY), true);
-  await execute(getChild, [asTopicKey(-1)], checkNext(INVALID_KEY), true);
-  await execute(getChild, [INVALID_FULL_KEY], checkNext(INVALID_KEY), true);
-  await execute(getParent, [INVALID_FULL_KEY], checkNext(INVALID_KEY), true);
+  await execute(getParent, [asTopicKey(2)], checkNext(INVALID_KEY), false);
+  await execute(getChild, [asTopicKey(-1)], checkNext(INVALID_KEY), false);
+  await execute(getChild, [INVALID_FULL_KEY], checkNext(INVALID_KEY), false);
+  await execute(getParent, [INVALID_FULL_KEY], checkNext(INVALID_KEY), false);
+  pool.clearCache();
   await Promise.all([
     execute(
       getParent,

@@ -107,7 +107,7 @@ class CommentPool {
     this.topics = new BlockLoader(
       maxTopicSize,
       blockSize,
-      [undefined, '[not a topic]'],
+      [undefined, '[unavailable]'],
       loading,
     );
     this.active = false;
@@ -195,6 +195,9 @@ class CommentPool {
     index: Readonly<AdjustedLineIndex>,
     ocm: OnCacheMiss,
   ): Promise<ContentValueExt> {
+    if (num(index) < 0) {
+      return [undefined, '[unavailable]'];
+    }
     return this.topics.get(index, ocm);
   }
 

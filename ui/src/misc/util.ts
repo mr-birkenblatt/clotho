@@ -139,15 +139,20 @@ export function assertTrue(value: boolean, e: any): asserts value {
 export function assertEqual<T>(
   actual: unknown,
   expected: T,
+  name: string,
 ): asserts actual is T {
   if (actual !== expected) {
-    throw new Error(`actual:${actual} !== expected:${expected}`);
+    throw new Error(`${name}: actual:${actual} !== expected:${expected}`);
   }
 }
 
-export function assertNotEqual(actual: unknown, expected: unknown): void {
+export function assertNotEqual(
+  actual: unknown,
+  expected: unknown,
+  name: string,
+): void {
   if (actual === expected) {
-    throw new Error(`actual:${actual} === expected:${expected}`);
+    throw new Error(`${name}: actual:${actual} === expected:${expected}`);
   }
 }
 
