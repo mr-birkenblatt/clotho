@@ -33,6 +33,7 @@ LinkResponse = TypedDict('LinkResponse', {
     "parent": str,
     "child": str,
     "user": str | None,
+    "userid": str | None,
     "first": float,
     "votes": dict[VoteType, VoteInfo],
 })
@@ -136,7 +137,8 @@ class Link:
             who: User | None,
             now: pd.Timestamp) -> LinkResponse:
         user = self.get_user(user_store)
-        user_str = None if user is None else user.get_id()
+        user_str = None if user is None else user.get_name()
+        userid_str = None if user is None else user.get_id()
         first = now
         votes: dict[VoteType, VoteInfo] = {}
         for vtype in self.get_vote_types():
@@ -155,6 +157,7 @@ class Link:
             "parent": self.get_parent().to_parseable(),
             "child": self.get_child().to_parseable(),
             "user": user_str,
+            "userid": userid_str,
             "first": to_timestamp(first),
             "votes": votes,
         }

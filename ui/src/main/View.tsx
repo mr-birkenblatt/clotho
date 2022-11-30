@@ -567,6 +567,7 @@ class View extends PureComponent<ViewProps, ViewState> {
               const { count, userVoted } = res;
               return { voteType, count, userVoted };
             }).map(({ voteType, count, userVoted }) => (
+              // FIXME: use token for voting
               <ItemMidContent
                 key={voteType}
                 isChecked={userVoted}>
@@ -575,7 +576,8 @@ class View extends PureComponent<ViewProps, ViewState> {
               </ItemMidContent>
             ))}
           </ItemMidVotes>
-          <ItemMidName isChecked={false}>{link.user}</ItemMidName>
+          {/* FIXME: use userId to go to user view */}
+          <ItemMidName isChecked={false}>{link.username}</ItemMidName>
         </ItemMid>
       );
     };

@@ -14,6 +14,7 @@
 /.mypy_cache
 /example/creds.json
 /example/reddit*.jsonl
+/example/*.log.txt
 /userdata/*
 
 # misc

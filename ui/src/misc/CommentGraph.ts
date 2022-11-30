@@ -1,4 +1,5 @@
-import { ApiProvider, DEFAULT_API } from './api';
+import { GraphApiProvider, DEFAULT_API } from '../api/graph';
+import { UserId } from '../api/types';
 import {
   BATCH_DELAY,
   DEFAULT_BLOCK_SIZE,
@@ -27,7 +28,6 @@ import {
   Link,
   LinkKey,
   MHash,
-  UserId,
   UserKey,
   userMHash,
 } from './keys';
@@ -66,7 +66,7 @@ export type ContentValueExt = readonly [
 type LinkCacheKey = readonly [Readonly<MHash>, Readonly<MHash>];
 
 class CommentPool {
-  private readonly api: ApiProvider;
+  private readonly api: GraphApiProvider;
   private readonly pool: LRU<Readonly<MHash>, Readonly<string>>;
   private readonly hashQueue: Set<Readonly<MHash>>;
   private readonly inFlight: Set<Readonly<MHash>>;
@@ -76,7 +76,7 @@ class CommentPool {
   private active: boolean;
 
   constructor(
-    api: ApiProvider,
+    api: GraphApiProvider,
     maxSize: number,
     maxTopicSize: number,
     blockSize: number,
@@ -211,7 +211,7 @@ class LinkLookup {
   private readonly loader: Readonly<BlockLoader<AdjustedLineIndex, Link>>;
 
   constructor(
-    api: Readonly<ApiProvider>,
+    api: Readonly<GraphApiProvider>,
     linkKey: Readonly<LinkKey>,
     maxLineSize: Readonly<number>,
     blockSize: Readonly<number>,
@@ -221,7 +221,17 @@ class LinkLookup {
       limit: number,
     ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
       const { links, next } = await api.link(linkKey, num(offset), limit);
-      return { values: links, next: adj(next) };
+      return {
+        values: links.map((link) => {
+          const { user, userid, ...rest } = link;
+          return {
+            username: user,
+            userId: userid,
+            ...rest,
+          };
+        }),
+        next: adj(next),
+      };
     }
 
     this.loader = new BlockLoader(
@@ -241,7 +251,7 @@ class LinkLookup {
 } // LinkLookup
 
 class LinkPool {
-  private readonly api: Readonly<ApiProvider>;
+  private readonly api: Readonly<GraphApiProvider>;
   private readonly maxLineSize: Readonly<number>;
   private readonly maxUserLineSize: Readonly<number>;
   private readonly blockSize: Readonly<number>;
@@ -254,7 +264,7 @@ class LinkPool {
   >;
 
   constructor(
-    api: Readonly<ApiProvider>,
+    api: Readonly<GraphApiProvider>,
     maxSize: Readonly<number>,
     maxLinkCache: Readonly<number>,
     maxLineSize: Readonly<number>,
@@ -302,7 +312,17 @@ class LinkPool {
       limit: number,
     ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
       const { links, next } = await api.userLink(key, num(offset), limit);
-      return { values: links, next: adj(next) };
+      return {
+        values: links.map((link) => {
+          const { user, userid, ...rest } = link;
+          return {
+            username: user,
+            userId: userid,
+            ...rest,
+          };
+        }),
+        next: adj(next),
+      };
     }
 
     if (res === undefined) {
@@ -359,13 +379,11 @@ class LinkPool {
     }
     reportCacheMiss(ocm);
     const linkRes = await this.api.singleLink(parentHash, childHash);
-    const { child, parent, first, user, votes } = linkRes;
+    const { user, userid, ...rest } = linkRes;
     const link = {
-      child,
-      parent,
-      first,
-      user,
-      votes,
+      username: user,
+      userId: userid,
+      ...rest,
     };
     this.linkCache.set(key, link);
     return link;
@@ -382,7 +400,10 @@ export default class CommentGraph {
   private readonly msgPool: Readonly<CommentPool>;
   private readonly linkPool: Readonly<LinkPool>;
 
-  constructor(api?: Readonly<ApiProvider>, settings?: Readonly<CGSettings>) {
+  constructor(
+    api?: Readonly<GraphApiProvider>,
+    settings?: Readonly<CGSettings>,
+  ) {
     const actualApi = api ?? /* istanbul ignore next */ DEFAULT_API;
     const config = settings ?? /* istanbul ignore next */ {};
     this.msgPool = new CommentPool(

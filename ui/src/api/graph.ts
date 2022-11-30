@@ -1,31 +1,15 @@
-import { URL_PREFIX } from './constants';
-import { IsGet, LinkKey, MHash, UserId, UserKey, Votes } from './keys';
-import { json, toJson } from './util';
+import { URL_PREFIX } from '../misc/constants';
+import { IsGet, LinkKey, MHash, UserKey } from '../misc/keys';
+import { json, toJson } from '../misc/util';
+import {
+  ApiLinkList,
+  ApiLinkResponse,
+  ApiRead,
+  ApiTopic,
+  Token,
+} from './types';
 
-type ApiTopic = {
-  topics: Readonly<{ [key: string]: string }>;
-  next: Readonly<number>;
-};
-
-type ApiRead = {
-  messages: Readonly<{ [key: string]: string }>;
-  skipped: Readonly<MHash[]>;
-};
-
-type ApiLinkResponse = {
-  parent: Readonly<MHash>;
-  child: Readonly<MHash>;
-  user: Readonly<UserId> | undefined;
-  first: Readonly<number>;
-  votes: Votes;
-};
-
-type ApiLinkList = {
-  links: Readonly<ApiLinkResponse[]>;
-  next: Readonly<number>;
-};
-
-export type ApiProvider = {
+export type GraphApiProvider = {
   topic: (offset: number, limit: number) => Promise<ApiTopic>;
   read: (hashes: Set<Readonly<MHash>>) => Promise<ApiRead>;
   link: (
@@ -41,11 +25,12 @@ export type ApiProvider = {
   singleLink: (
     parent: Readonly<MHash>,
     child: Readonly<MHash>,
+    token?: Readonly<Token>,
   ) => Promise<ApiLinkResponse>;
 };
 
 /* istanbul ignore next */
-export const DEFAULT_API: ApiProvider = {
+export const DEFAULT_API: GraphApiProvider = {
   topic: async (offset, limit) => {
     const query = new URLSearchParams({
       offset: `${offset}`,
@@ -98,7 +83,7 @@ export const DEFAULT_API: ApiProvider = {
       }),
     }).then(json);
   },
-  singleLink: async (parent, child) => {
+  singleLink: async (parent, child, token) => {
     const url = `${URL_PREFIX}/link`;
     return fetch(url, {
       method: 'POST',
@@ -108,6 +93,7 @@ export const DEFAULT_API: ApiProvider = {
       body: JSON.stringify({
         parent,
         child,
+        token,
       }),
     }).then(json);
   },

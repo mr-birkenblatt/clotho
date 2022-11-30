@@ -1,5 +1,6 @@
-import { ApiProvider } from './api';
-import { IsGet, MHash, UserId, Votes } from './keys';
+import { GraphApiProvider } from '../api/graph';
+import { UserId, Username } from '../api/types';
+import { IsGet, MHash, Votes } from './keys';
 import { assertTrue, range, str } from './util';
 
 export const simpleGraph = (): TestGraph => {
@@ -87,7 +88,7 @@ class TestGraph {
     links.forEach(([from, to]) => this.addLink(from, to));
   }
 
-  getApiProvider(): ApiProvider {
+  getApiProvider(): GraphApiProvider {
     return {
       topic: async (offset, limit) => {
         const entries: [string, string][] = this.topics
@@ -122,7 +123,8 @@ class TestGraph {
         const links = ret.map((other) => ({
           parent: (isGet === IsGet.parent ? other : mhash) as MHash,
           child: (isGet === IsGet.parent ? mhash : other) as MHash,
-          user: 'abc' as UserId,
+          user: 'u/abc' as Username,
+          userid: 'abc' as UserId,
           first: 123,
           votes: { up: { count: 1, userVoted: false } },
         }));
@@ -140,13 +142,14 @@ class TestGraph {
         const links = ret.map((mhash) => ({
           parent: `[user: ${userId}]` as MHash,
           child: mhash as MHash,
-          user: userId,
+          user: `u/${userId}` as Username,
+          userid: userId,
           first: 123,
           votes: { up: { count: 1, userVoted: false } },
         }));
         return { links, next };
       },
-      singleLink: async (parent, child) => {
+      singleLink: async (parent, child, _token) => {
         const children = this.children[parent as MHash] ?? [];
         const exists = children.some((cur) => cur === str(child));
         const votes: Votes = exists
@@ -155,7 +158,8 @@ class TestGraph {
         return {
           parent,
           child,
-          user: exists ? ('abc' as UserId) : undefined,
+          user: exists ? ('u/abc' as Username) : undefined,
+          userid: exists ? ('abc' as UserId) : undefined,
           first: exists ? 123 : 999,
           votes,
         };
@@ -171,7 +175,7 @@ export class InfGraph {
     this.apiLimit = apiLimit;
   }
 
-  getApiProvider(): ApiProvider {
+  getApiProvider(): GraphApiProvider {
     return {
       topic: async (offset, limit) => {
         const entries: [string, string][] = range(
@@ -203,7 +207,8 @@ export class InfGraph {
         const links = ret.map((other) => ({
           parent: (isGetParent ? `${newCode}${other}` : mhash) as MHash,
           child: (isGetParent ? mhash : `${newCode}${other}`) as MHash,
-          user: 'abc' as UserId,
+          user: 'u/abc' as Username,
+          userid: 'abc' as UserId,
           first: 123,
           votes: { up: { count: 1, userVoted: false } },
         }));
@@ -224,13 +229,14 @@ export class InfGraph {
         const links = ret.map((mhash) => ({
           parent: `[user: ${userId}]` as MHash,
           child: mhash as MHash,
-          user: userId,
+          user: `u/${userId}` as Username,
+          userid: userId,
           first: 123,
           votes: { up: { count: 1, userVoted: false } },
         }));
         return { links, next };
       },
-      singleLink: async (parent, child) => {
+      singleLink: async (parent, child, _token) => {
         const pCode = parent.charCodeAt(0);
         const cCode = child.charCodeAt(0);
         const exists = pCode === cCode - 1;
@@ -240,7 +246,8 @@ export class InfGraph {
         return {
           parent,
           child,
-          user: exists ? ('abc' as UserId) : undefined,
+          user: exists ? ('u/abc' as Username) : undefined,
+          userid: exists ? ('abc' as UserId) : undefined,
           first: exists ? 123 : 999,
           votes,
         };

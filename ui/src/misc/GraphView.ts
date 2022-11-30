@@ -1,3 +1,4 @@
+import { UserId } from '../api/types';
 import CommentGraph from './CommentGraph';
 import {
   adj,
@@ -11,7 +12,6 @@ import {
   MHash,
   toFullKey,
   TOPIC_KEY,
-  UserId,
 } from './keys';
 import {
   amend,

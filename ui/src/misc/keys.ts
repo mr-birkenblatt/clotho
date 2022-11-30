@@ -1,3 +1,4 @@
+import { UserId, Username } from '../api/types';
 import { assertFail, debugJSON, LoggerCB, maybeLog, str } from './util';
 
 export type MHash = string & { _mHash: void };
@@ -5,8 +6,6 @@ export type MHash = string & { _mHash: void };
 export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
   return str(mhash);
 }
-
-export type UserId = string & { _userId: void };
 
 export function userMHash(key: FullUserKey | UserKey): MHash {
   return `${key.userId}` as MHash;
@@ -329,7 +328,8 @@ export type ValidLink = {
   invalid?: Readonly<false>;
   parent: Readonly<MHash>;
   child: Readonly<MHash>;
-  user: Readonly<UserId> | undefined;
+  username: Readonly<Username> | undefined;
+  userId: Readonly<UserId> | undefined;
   first: Readonly<number>;
   votes: Votes;
 };
