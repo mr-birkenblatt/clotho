@@ -30,7 +30,7 @@ export type GraphApiProvider = {
 };
 
 /* istanbul ignore next */
-export const DEFAULT_API: GraphApiProvider = {
+export const DEFAULT_GRAPH_API: GraphApiProvider = {
   topic: async (offset, limit) => {
     const query = new URLSearchParams({
       offset: `${offset}`,
@@ -59,7 +59,7 @@ export const DEFAULT_API: GraphApiProvider = {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+      body: toJson({
         ...query,
         offset,
         limit,
@@ -75,7 +75,7 @@ export const DEFAULT_API: GraphApiProvider = {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+      body: toJson({
         user: userId,
         offset,
         limit,
@@ -90,7 +90,7 @@ export const DEFAULT_API: GraphApiProvider = {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
+      body: toJson({
         parent,
         child,
         token,

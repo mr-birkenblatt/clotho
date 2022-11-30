@@ -1,4 +1,4 @@
-import { GraphApiProvider, DEFAULT_API } from '../api/graph';
+import { GraphApiProvider, DEFAULT_GRAPH_API } from '../api/graph';
 import { Token, toLink, toLinks, UserId } from '../api/types';
 import {
   BATCH_DELAY,
@@ -386,7 +386,7 @@ export default class CommentGraph {
     api?: Readonly<GraphApiProvider>,
     settings?: Readonly<CGSettings>,
   ) {
-    const actualApi = api ?? /* istanbul ignore next */ DEFAULT_API;
+    const actualApi = api ?? /* istanbul ignore next */ DEFAULT_GRAPH_API;
     const config = settings ?? /* istanbul ignore next */ {};
     this.msgPool = new CommentPool(
       actualApi,
