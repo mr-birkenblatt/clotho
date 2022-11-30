@@ -134,7 +134,7 @@ pytest:
 	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
 
 test-ts:
-	cd ui && yarn testall
+	cd ui && yarn testwall
 
 ts-unused:
 	cd ui && yarn unused

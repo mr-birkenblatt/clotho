@@ -325,6 +325,7 @@ export function initView(
   };
 }
 
+// FIXME use
 // ts-unused-exports:disable-next-line
 export function initUserView(userId: Readonly<UserId>): Readonly<GraphView> {
   return {
@@ -397,6 +398,7 @@ async function getNextCell(
     }
     const res = await getCellContent(graph, initCell(index), ocm);
     if (skip === undefined || res.mhash !== skip) {
+      log(`no skip:${skip}`);
       return res;
     }
     log(`skip at ${index}`);
@@ -540,7 +542,7 @@ export async function progressView(
           graph,
           view.centerTop.fullKey,
           view.centerBottom.mhash,
-          undefined,
+          view.topSkip,
           IsGet.parent,
           false,
           ocm,
@@ -559,7 +561,7 @@ export async function progressView(
           graph,
           view.centerBottom.fullKey,
           view.centerTop.mhash,
-          undefined,
+          view.bottomSkip,
           IsGet.child,
           false,
           ocm,
@@ -673,14 +675,55 @@ function removeLink<T extends Readonly<Cell> | undefined>(
 
 export enum Direction {
   UpRight = 'UpRight',
-  BottomLeft = 'BottomLeft',
+  DownLeft = 'DownLeft',
+}
+
+export type NavigationCB = (
+  view: Readonly<GraphView>,
+  direction: Direction,
+) => Readonly<GraphView> | undefined;
+
+type HNavigationCB = (
+  view: Readonly<GraphView>,
+  direction: HDirection,
+) => Readonly<GraphView> | undefined;
+
+type VNavigationCB = (
+  view: Readonly<GraphView>,
+  direction: VDirection,
+) => Readonly<GraphView> | undefined;
+
+export function horizontal(cb: HNavigationCB): NavigationCB {
+  return (view, direction) =>
+    cb(
+      view,
+      direction === Direction.UpRight ? HDirection.Right : HDirection.Left,
+    );
+}
+
+export function vertical(cb: VNavigationCB): NavigationCB {
+  return (view, direction) =>
+    cb(
+      view,
+      direction === Direction.UpRight ? VDirection.Up : VDirection.Down,
+    );
+}
+
+export enum HDirection {
+  Right = 'Right',
+  Left = 'Left',
+}
+
+export enum VDirection {
+  Up = 'Up',
+  Down = 'Down',
 }
 
 export function scrollVertical(
   view: Readonly<GraphView>,
-  direction: Direction,
+  direction: VDirection,
 ): Readonly<GraphView> | undefined {
-  if (direction === Direction.UpRight) {
+  if (direction === VDirection.Up) {
     if (view.top === undefined || view.top.invalid) {
       return undefined;
     }
@@ -739,10 +782,10 @@ function convertToDirect<T extends Readonly<Cell> | undefined>(
 
 export function scrollTopHorizontal(
   view: Readonly<GraphView>,
-  direction: Direction,
+  direction: HDirection,
 ): Readonly<GraphView> | undefined {
   const centerBottom = removeLink(convertToDirect(view.centerBottom));
-  if (direction == Direction.UpRight) {
+  if (direction == HDirection.Right) {
     if (view.topRight === undefined || view.topRight.invalid) {
       return undefined;
     }
@@ -779,10 +822,10 @@ export function scrollTopHorizontal(
 
 export function scrollBottomHorizontal(
   view: Readonly<GraphView>,
-  direction: Direction,
+  direction: HDirection,
 ): Readonly<GraphView> | undefined {
   const centerTop = convertToDirect(view.centerTop);
-  if (direction === Direction.UpRight) {
+  if (direction === HDirection.Right) {
     if (view.bottomRight === undefined || view.bottomRight.invalid) {
       return undefined;
     }

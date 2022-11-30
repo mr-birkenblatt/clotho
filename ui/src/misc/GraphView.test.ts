@@ -2,14 +2,15 @@ import CommentGraph from './CommentGraph';
 import {
   Cell,
   consistentLinks,
-  Direction,
   equalView,
   GraphView,
+  HDirection,
   initView,
   progressView,
   scrollBottomHorizontal,
   scrollTopHorizontal,
   scrollVertical,
+  VDirection,
 } from './GraphView';
 import {
   adj,
@@ -39,7 +40,7 @@ function asFullKey(
   };
 }
 
-const RERUN_ON_ERROR = false;
+const RERUN_ON_ERROR = true;
 
 async function execute(
   graph: CommentGraph,
@@ -107,6 +108,10 @@ async function execute(
       if (RERUN_ON_ERROR) {
         process(afterRerun, afterRerun, console.log);
       } else {
+        console.log(
+          'set RERUN_ON_ERROR to true to get a detailed replay.',
+          'note, that caching behavior might be different in the rerun',
+        );
         afterRerun();
       }
     };
@@ -211,21 +216,21 @@ test('test graph view init', async () => {
   );
 
   assertTrue(
-    scrollTopHorizontal(initGraph, Direction.BottomLeft) === undefined,
-    `${debugJSON(scrollTopHorizontal(initGraph, Direction.BottomLeft))}`,
+    scrollTopHorizontal(initGraph, HDirection.Left) === undefined,
+    `${debugJSON(scrollTopHorizontal(initGraph, HDirection.Left))}`,
   );
   assertTrue(
-    scrollBottomHorizontal(initGraph, Direction.BottomLeft) === undefined,
-    `${debugJSON(scrollBottomHorizontal(initGraph, Direction.BottomLeft))}`,
+    scrollBottomHorizontal(initGraph, HDirection.Left) === undefined,
+    `${debugJSON(scrollBottomHorizontal(initGraph, HDirection.Left))}`,
   );
   assertTrue(
-    scrollBottomHorizontal(initGraph, Direction.UpRight) === undefined,
-    `${debugJSON(scrollBottomHorizontal(initGraph, Direction.UpRight))}`,
+    scrollBottomHorizontal(initGraph, HDirection.Right) === undefined,
+    `${debugJSON(scrollBottomHorizontal(initGraph, HDirection.Right))}`,
   );
 
   await execute(
     graph,
-    scrollTopHorizontal(initGraph, Direction.UpRight),
+    scrollTopHorizontal(initGraph, HDirection.Right),
     buildFullView(
       ['a1', asFullKey('b2', true, 0)],
       [['a2', asTopicKey(0)], ['b2', asTopicKey(1)], undefined],
@@ -260,17 +265,17 @@ test('test graph view init', async () => {
 
   assertTrue(a1Graph !== undefined, 'a1Graph is undefined');
   assertTrue(
-    scrollTopHorizontal(a1Graph, Direction.BottomLeft) === undefined,
-    `${debugJSON(scrollTopHorizontal(a1Graph, Direction.BottomLeft))}`,
+    scrollTopHorizontal(a1Graph, HDirection.Left) === undefined,
+    `${debugJSON(scrollTopHorizontal(a1Graph, HDirection.Left))}`,
   );
   assertTrue(
-    scrollBottomHorizontal(a1Graph, Direction.BottomLeft) === undefined,
-    `${debugJSON(scrollBottomHorizontal(a1Graph, Direction.BottomLeft))}`,
+    scrollBottomHorizontal(a1Graph, HDirection.Left) === undefined,
+    `${debugJSON(scrollBottomHorizontal(a1Graph, HDirection.Left))}`,
   );
 
   const a1BRGraph = await execute(
     graph,
-    scrollBottomHorizontal(a1Graph, Direction.UpRight),
+    scrollBottomHorizontal(a1Graph, HDirection.Right),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
       [undefined, ['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)]],
@@ -288,7 +293,7 @@ test('test graph view init', async () => {
 
   const a1BRBRGraph = await execute(
     graph,
-    scrollBottomHorizontal(a1BRGraph, Direction.UpRight),
+    scrollBottomHorizontal(a1BRGraph, HDirection.Right),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
       [undefined, ['a1', asDirectKey('a1')], undefined],
@@ -305,13 +310,13 @@ test('test graph view init', async () => {
   );
 
   assertTrue(
-    scrollVertical(a1BRBRGraph, Direction.BottomLeft) === undefined,
-    `${debugJSON(scrollVertical(a1BRBRGraph, Direction.BottomLeft))}`,
+    scrollVertical(a1BRBRGraph, VDirection.Down) === undefined,
+    `${debugJSON(scrollVertical(a1BRBRGraph, VDirection.Down))}`,
   );
 
   await execute(
     graph,
-    scrollBottomHorizontal(a1BRGraph, Direction.BottomLeft),
+    scrollBottomHorizontal(a1BRGraph, HDirection.Left),
     buildFullView(
       ['a5', asFullKey('a1', true, 0)],
       [undefined, ['a1', asDirectKey('a1')], undefined],
@@ -329,7 +334,7 @@ test('test graph view init', async () => {
 
   const a1BRTRGraph = await execute(
     graph,
-    scrollTopHorizontal(a1BRGraph, Direction.UpRight),
+    scrollTopHorizontal(a1BRGraph, HDirection.Right),
     buildFullView(
       ['a3', asFullKey('b4', true, 0)],
       [['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)], undefined],
@@ -343,7 +348,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUGraph = await execute(
     graph,
-    scrollVertical(a1BRTRGraph, Direction.UpRight),
+    scrollVertical(a1BRTRGraph, VDirection.Up),
     buildFullView(
       ['a2', asFullKey('a3', true, 0)],
       [
@@ -361,7 +366,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUTRGraph = await execute(
     graph,
-    scrollTopHorizontal(a1BRTRUGraph, Direction.UpRight),
+    scrollTopHorizontal(a1BRTRUGraph, HDirection.Right),
     buildFullView(
       ['a1', asFullKey('b2', true, 0)],
       [
@@ -379,7 +384,7 @@ test('test graph view init', async () => {
 
   await execute(
     graph,
-    scrollVertical(a1BRTRUTRGraph, Direction.BottomLeft),
+    scrollVertical(a1BRTRUTRGraph, VDirection.Down),
     buildFullView(
       ['b2', asFullKey('b4', true, 1)],
       [undefined, ['b4', asDirectKey('b4')], undefined],
@@ -393,7 +398,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUTRTLGraph = await execute(
     graph,
-    scrollTopHorizontal(a1BRTRUTRGraph, Direction.BottomLeft),
+    scrollTopHorizontal(a1BRTRUTRGraph, HDirection.Left),
     buildFullView(
       ['a2', asFullKey('a3', true, 0)],
       [
@@ -415,7 +420,7 @@ test('test graph view init', async () => {
 
   const a1BRTRUTRTLBRGraph = await execute(
     graph,
-    scrollBottomHorizontal(a1BRTRUTRTLGraph, Direction.UpRight),
+    scrollBottomHorizontal(a1BRTRUTRTLGraph, HDirection.Right),
     buildFullView(
       ['a2', asFullKey('a3', true, 0)],
       [undefined, ['a3', asDirectKey('a3')], undefined],
@@ -432,8 +437,8 @@ test('test graph view init', async () => {
   );
 
   assertTrue(
-    scrollTopHorizontal(a1BRTRUTRTLBRGraph, Direction.UpRight) === undefined,
-    `${debugJSON(scrollTopHorizontal(a1BRTRUTRTLBRGraph, Direction.UpRight))}`,
+    scrollTopHorizontal(a1BRTRUTRTLBRGraph, HDirection.Right) === undefined,
+    `${debugJSON(scrollTopHorizontal(a1BRTRUTRTLBRGraph, HDirection.Right))}`,
   );
 
   await execute(
@@ -463,9 +468,7 @@ test('test graph infinite', async () => {
     blockSize: 10,
   });
 
-  // FIXME: direct key left replacement
-  // FIXME: user key
-  await execute(
+  const v1 = await execute(
     graph,
     initView(undefined),
     buildFullView(
@@ -481,5 +484,267 @@ test('test graph infinite', async () => {
       undefined,
     ),
     13,
+  );
+  const v2 = await execute(
+    graph,
+    scrollBottomHorizontal(v1, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a0', true, 0)],
+      [undefined, ['a0', asDirectKey('a0')], ['a1', asFullKey('b1', true, 1)]],
+      [
+        ['b0', asFullKey('a0', false, 0)],
+        ['b1', asFullKey('a0', false, 1)],
+        ['b2', asFullKey('a0', false, 2)],
+      ],
+      ['c0', asFullKey('b1', false, 0)],
+      'a0',
+      undefined,
+    ),
+    6,
+  );
+  const v3 = await execute(
+    graph,
+    scrollBottomHorizontal(v2, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a0', true, 0)],
+      [undefined, ['a0', asDirectKey('a0')], ['a1', asFullKey('b2', true, 1)]],
+      [
+        ['b1', asFullKey('a0', false, 1)],
+        ['b2', asFullKey('a0', false, 2)],
+        ['b3', asFullKey('a0', false, 3)],
+      ],
+      ['c0', asFullKey('b2', false, 0)],
+      'a0',
+      undefined,
+    ),
+    6,
+  );
+  const v4 = await execute(
+    graph,
+    scrollBottomHorizontal(v3, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a0', true, 0)],
+      [undefined, ['a0', asDirectKey('a0')], ['a1', asFullKey('b3', true, 1)]],
+      [
+        ['b2', asFullKey('a0', false, 2)],
+        ['b3', asFullKey('a0', false, 3)],
+        ['b4', asFullKey('a0', false, 4)],
+      ],
+      ['c0', asFullKey('b3', false, 0)],
+      'a0',
+      undefined,
+    ),
+    6,
+  );
+  const v5 = await execute(
+    graph,
+    scrollTopHorizontal(v4, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [
+        ['a0', asDirectKey('a0')],
+        ['a1', asFullKey('b3', true, 1)],
+        ['a2', asFullKey('b3', true, 2)],
+      ],
+      [
+        undefined,
+        ['b3', asDirectKey('b3')],
+        ['b0', asFullKey('a1', false, 0)],
+      ],
+      ['c0', asFullKey('b3', false, 0)],
+      'a0',
+      'b3',
+    ),
+    8,
+  );
+  const v6 = await execute(
+    graph,
+    scrollBottomHorizontal(v5, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a0', asFullKey('b0', true, 0)]],
+      [
+        ['b3', asDirectKey('b3')],
+        ['b0', asFullKey('a1', false, 0)],
+        ['b1', asFullKey('a1', false, 1)],
+      ],
+      ['c0', asFullKey('b0', false, 0)],
+      'a1',
+      'b3',
+    ),
+    6,
+  );
+  const v7 = await execute(
+    graph,
+    scrollBottomHorizontal(v6, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a0', asFullKey('b1', true, 0)]],
+      [
+        ['b0', asFullKey('a1', false, 0)],
+        ['b1', asFullKey('a1', false, 1)],
+        ['b2', asFullKey('a1', false, 2)],
+      ],
+      ['c0', asFullKey('b1', false, 0)],
+      'a1',
+      'b3',
+    ),
+    6,
+  );
+  const v8 = await execute(
+    graph,
+    scrollBottomHorizontal(v7, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a0', asFullKey('b2', true, 0)]],
+      [
+        ['b1', asFullKey('a1', false, 1)],
+        ['b2', asFullKey('a1', false, 2)],
+        ['b4', asFullKey('a1', false, 4)],
+      ],
+      ['c0', asFullKey('b2', false, 0)],
+      'a1',
+      'b3',
+    ),
+    6,
+  );
+  const v9 = await execute(
+    graph,
+    scrollBottomHorizontal(v8, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a0', asFullKey('b4', true, 0)]],
+      [
+        ['b2', asFullKey('a1', false, 2)],
+        ['b4', asFullKey('a1', false, 4)],
+        ['b5', asFullKey('a1', false, 5)],
+      ],
+      ['c0', asFullKey('b4', false, 0)],
+      'a1',
+      'b3',
+    ),
+    6,
+  );
+  const v10 = await execute(
+    graph,
+    scrollBottomHorizontal(v9, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a0', asFullKey('b5', true, 0)]],
+      [
+        ['b4', asFullKey('a1', false, 4)],
+        ['b5', asFullKey('a1', false, 5)],
+        ['b6', asFullKey('a1', false, 6)],
+      ],
+      ['c0', asFullKey('b5', false, 0)],
+      'a1',
+      'b3',
+    ),
+    6,
+  );
+
+  await execute(graph, scrollBottomHorizontal(v10, HDirection.Left), v9, 6);
+  await execute(graph, scrollBottomHorizontal(v9, HDirection.Left), v8, 6);
+  await execute(graph, scrollBottomHorizontal(v8, HDirection.Left), v7, 6);
+  await execute(graph, scrollBottomHorizontal(v7, HDirection.Left), v6, 6);
+
+  const v11 = await execute(
+    graph,
+    scrollBottomHorizontal(v6, HDirection.Left),
+    buildFullView(
+      ['`0', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['a0', asFullKey('b3', true, 0)]],
+      [
+        undefined,
+        ['b3', asDirectKey('b3')],
+        ['b0', asFullKey('a1', false, 0)],
+      ],
+      ['c0', asFullKey('b3', false, 0)],
+      'a1',
+      'b3',
+    ),
+    6,
+  );
+
+  assertTrue(
+    scrollBottomHorizontal(v11, HDirection.Left) === undefined,
+    `${debugJSON(scrollBottomHorizontal(v11, HDirection.Left))}`,
+  );
+
+  const v12 = await execute(
+    graph,
+    scrollTopHorizontal(v11, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a0', true, 0)],
+      [
+        ['a1', asDirectKey('a1')],
+        ['a0', asFullKey('b3', true, 0)],
+        ['a2', asFullKey('b3', true, 2)],
+      ],
+      [
+        undefined,
+        ['b3', asDirectKey('b3')],
+        ['b0', asFullKey('a0', false, 0)],
+      ],
+      ['c0', asFullKey('b3', false, 0)],
+      'a1',
+      'b3',
+    ),
+    8,
+  );
+  const v13 = await execute(
+    graph,
+    scrollTopHorizontal(v12, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a2', true, 0)],
+      [
+        ['a0', asFullKey('b3', true, 0)],
+        ['a2', asFullKey('b3', true, 2)],
+        ['a3', asFullKey('b3', true, 3)],
+      ],
+      [
+        undefined,
+        ['b3', asDirectKey('b3')],
+        ['b0', asFullKey('a2', false, 0)],
+      ],
+      ['c0', asFullKey('b3', false, 0)],
+      'a1',
+      'b3',
+    ),
+    8,
+  );
+  const v14 = await execute(
+    graph,
+    scrollTopHorizontal(v13, HDirection.Right),
+    buildFullView(
+      ['`0', asFullKey('a3', true, 0)],
+      [
+        ['a2', asFullKey('b3', true, 2)],
+        ['a3', asFullKey('b3', true, 3)],
+        ['a4', asFullKey('b3', true, 4)],
+      ],
+      [
+        undefined,
+        ['b3', asDirectKey('b3')],
+        ['b0', asFullKey('a3', false, 0)],
+      ],
+      ['c0', asFullKey('b3', false, 0)],
+      'a1',
+      'b3',
+    ),
+    8,
+  );
+
+  await execute(graph, scrollTopHorizontal(v14, HDirection.Left), v13, 8);
+  await execute(graph, scrollTopHorizontal(v13, HDirection.Left), v12, 8);
+  await execute(graph, scrollTopHorizontal(v12, HDirection.Left), v11, 8);
+
+  assertTrue(
+    scrollTopHorizontal(v11, HDirection.Left) === undefined,
+    `${debugJSON(scrollTopHorizontal(v11, HDirection.Left))}`,
+  );
+  assertTrue(
+    scrollBottomHorizontal(v14, HDirection.Left) === undefined,
+    `${debugJSON(scrollBottomHorizontal(v14, HDirection.Left))}`,
   );
 });

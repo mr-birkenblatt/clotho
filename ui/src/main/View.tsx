@@ -6,11 +6,13 @@ import { RootState } from '../store';
 import {
   Cell,
   Direction,
-  GraphView,
+  horizontal,
+  NavigationCB,
   progressView,
   scrollBottomHorizontal,
   scrollTopHorizontal,
   scrollVertical,
+  vertical,
 } from '../misc/GraphView';
 import CommentGraph from '../misc/CommentGraph';
 import { errHnd, safeStringify, toReadableNumber } from '../misc/util';
@@ -277,18 +279,13 @@ type Obs = {
 
 type ObsKey = keyof Obs;
 
-type NavigationCB = (
-  view: Readonly<GraphView>,
-  direction: Direction,
-) => Readonly<GraphView> | undefined;
-
 const navigationCBs: { [Property in ObsKey]: [NavigationCB, Direction] } = {
-  top: [scrollVertical, Direction.UpRight],
-  topLeft: [scrollTopHorizontal, Direction.BottomLeft],
-  topRight: [scrollTopHorizontal, Direction.UpRight],
-  bottomLeft: [scrollBottomHorizontal, Direction.BottomLeft],
-  bottomRight: [scrollBottomHorizontal, Direction.UpRight],
-  bottom: [scrollVertical, Direction.BottomLeft],
+  top: [vertical(scrollVertical), Direction.UpRight],
+  topLeft: [horizontal(scrollTopHorizontal), Direction.DownLeft],
+  topRight: [horizontal(scrollTopHorizontal), Direction.UpRight],
+  bottomLeft: [horizontal(scrollBottomHorizontal), Direction.DownLeft],
+  bottomRight: [horizontal(scrollBottomHorizontal), Direction.UpRight],
+  bottom: [vertical(scrollVertical), Direction.DownLeft],
 };
 
 const scrollBlocks: { [Property in ObsKey]: ScrollLogicalPosition } = {

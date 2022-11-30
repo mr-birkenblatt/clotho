@@ -10,5 +10,6 @@ const store = configureStore({
 export default store;
 
 export type RootState = ReturnType<typeof store.getState>;
+// FIXME for reference
 // ts-unused-exports:disable-next-line
 export type AppDispatch = typeof store.dispatch;
