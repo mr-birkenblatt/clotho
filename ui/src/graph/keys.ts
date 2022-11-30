@@ -54,47 +54,6 @@ export type LineKey = LinkKey | TopicKey | UserKey | UserChildKey | InvalidKey;
 export const INVALID_KEY: Readonly<InvalidKey> = { keyType: KeyType.invalid };
 export const TOPIC_KEY: Readonly<TopicKey> = { keyType: KeyType.topic };
 
-export function equalLineKey(
-  keyA: Readonly<LineKey>,
-  keyB: Readonly<LineKey>,
-): boolean {
-  if (keyA.keyType !== keyB.keyType) {
-    return false;
-  }
-  if (keyA.keyType === KeyType.invalid && keyB.keyType === KeyType.invalid) {
-    return true;
-  }
-  if (keyA.keyType === KeyType.topic && keyB.keyType === KeyType.topic) {
-    return true;
-  }
-  if (keyA.keyType === KeyType.user && keyB.keyType === KeyType.user) {
-    return keyA.userId === keyB.userId;
-  }
-  if (
-    keyA.keyType === KeyType.userchild &&
-    keyB.keyType === KeyType.userchild
-  ) {
-    return keyA.parentUser === keyB.parentUser;
-  }
-  if (keyA.keyType === KeyType.link && keyB.keyType === KeyType.link) {
-    if (keyA.mhash !== keyB.mhash) {
-      return false;
-    }
-    return keyA.isGet === keyB.isGet;
-  }
-  /* istanbul ignore next */
-  assertFail('unreachable');
-}
-
-export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
-  if (keysA.length !== keysB.length) {
-    return false;
-  }
-  return keysA.reduce((prev, cur, ix) => {
-    return prev && equalLineKey(cur, keysB[ix]);
-  }, true);
-}
-
 export enum FullKeyType {
   invalid = 'full-invalid',
   direct = 'full-direct',
@@ -203,6 +162,90 @@ export function toFullKey(
   assertFail('unreachable');
 }
 
+export function asTopicKey(index: number): Readonly<FullIndirectKey> {
+  return {
+    fullKeyType: FullKeyType.topic,
+    index: adj(index),
+  };
+}
+
+export function asDirectKey(hash: Readonly<string>): Readonly<FullKey> {
+  return {
+    fullKeyType: FullKeyType.direct,
+    mhash: hash as MHash,
+    topLink: INVALID_LINK,
+  };
+}
+
+type Vote = {
+  count: Readonly<number>;
+  userVoted: Readonly<boolean>;
+};
+export type VoteType = 'honor' | 'up' | 'down';
+export type RichVote = {
+  voteType: VoteType;
+  count: number;
+  userVoted: boolean;
+};
+export const VOTE_TYPES: VoteType[] = ['honor', 'up', 'down'];
+export type Votes = Readonly<{ [key in VoteType]?: Readonly<Vote> }>;
+
+export type ValidLink = {
+  invalid?: Readonly<false>;
+  parent: Readonly<MHash>;
+  child: Readonly<MHash>;
+  username: Readonly<Username> | undefined;
+  userId: Readonly<UserId> | undefined;
+  first: Readonly<number>;
+  votes: Votes;
+};
+type InvalidLink = {
+  invalid: Readonly<true>;
+};
+export type Link = ValidLink | InvalidLink;
+export const INVALID_LINK: Readonly<InvalidLink> = { invalid: true };
+
+export function equalLineKey(
+  keyA: Readonly<LineKey>,
+  keyB: Readonly<LineKey>,
+): boolean {
+  if (keyA.keyType !== keyB.keyType) {
+    return false;
+  }
+  if (keyA.keyType === KeyType.invalid && keyB.keyType === KeyType.invalid) {
+    return true;
+  }
+  if (keyA.keyType === KeyType.topic && keyB.keyType === KeyType.topic) {
+    return true;
+  }
+  if (keyA.keyType === KeyType.user && keyB.keyType === KeyType.user) {
+    return keyA.userId === keyB.userId;
+  }
+  if (
+    keyA.keyType === KeyType.userchild &&
+    keyB.keyType === KeyType.userchild
+  ) {
+    return keyA.parentUser === keyB.parentUser;
+  }
+  if (keyA.keyType === KeyType.link && keyB.keyType === KeyType.link) {
+    if (keyA.mhash !== keyB.mhash) {
+      return false;
+    }
+    return keyA.isGet === keyB.isGet;
+  }
+  /* istanbul ignore next */
+  assertFail('unreachable');
+}
+
+export function equalLineKeys(keysA: LineKey[], keysB: LineKey[]): boolean {
+  if (keysA.length !== keysB.length) {
+    return false;
+  }
+  return keysA.reduce((prev, cur, ix) => {
+    return prev && equalLineKey(cur, keysB[ix]);
+  }, true);
+}
+
 export function equalFullKey(
   keyA: Readonly<FullKey>,
   keyB: Readonly<FullKey>,
@@ -297,46 +340,3 @@ export function equalFullKey(
   /* istanbul ignore next */
   assertFail('unreachable');
 }
-
-export function asTopicKey(index: number): Readonly<FullIndirectKey> {
-  return {
-    fullKeyType: FullKeyType.topic,
-    index: adj(index),
-  };
-}
-
-export function asDirectKey(hash: Readonly<string>): Readonly<FullKey> {
-  return {
-    fullKeyType: FullKeyType.direct,
-    mhash: hash as MHash,
-    topLink: INVALID_LINK,
-  };
-}
-
-type Vote = {
-  count: Readonly<number>;
-  userVoted: Readonly<boolean>;
-};
-export type VoteType = 'honor' | 'up' | 'down';
-export type RichVote = {
-  voteType: VoteType;
-  count: number;
-  userVoted: boolean;
-};
-export const VOTE_TYPES: VoteType[] = ['honor', 'up', 'down'];
-export type Votes = Readonly<{ [key in VoteType]?: Readonly<Vote> }>;
-
-export type ValidLink = {
-  invalid?: Readonly<false>;
-  parent: Readonly<MHash>;
-  child: Readonly<MHash>;
-  username: Readonly<Username> | undefined;
-  userId: Readonly<UserId> | undefined;
-  first: Readonly<number>;
-  votes: Votes;
-};
-type InvalidLink = {
-  invalid: Readonly<true>;
-};
-export type Link = ValidLink | InvalidLink;
-export const INVALID_LINK: Readonly<InvalidLink> = { invalid: true };

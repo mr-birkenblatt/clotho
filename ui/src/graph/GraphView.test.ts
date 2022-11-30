@@ -75,6 +75,7 @@ async function execute(
         graph,
         oldView,
         undefined,
+        undefined,
         logger,
       );
       done();
@@ -213,6 +214,7 @@ test('test graph view init', async () => {
   const { view: invalidView, change: invalidChange } = await progressView(
     graph,
     { centerTop: invalidCell() },
+    undefined,
   );
   assertTrue(!invalidChange, 'no change allowed for invalid');
   assertTrue(

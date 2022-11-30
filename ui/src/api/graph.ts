@@ -25,7 +25,7 @@ export type GraphApiProvider = {
   singleLink: (
     parent: Readonly<MHash>,
     child: Readonly<MHash>,
-    token?: Readonly<Token>,
+    token: Readonly<Token> | undefined,
   ) => Promise<ApiLinkResponse>;
 };
 

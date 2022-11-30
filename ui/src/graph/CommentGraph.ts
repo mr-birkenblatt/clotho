@@ -1,5 +1,5 @@
 import { GraphApiProvider, DEFAULT_API } from '../api/graph';
-import { toLink, toLinks, UserId } from '../api/types';
+import { Token, toLink, toLinks, UserId } from '../api/types';
 import {
   BATCH_DELAY,
   DEFAULT_BLOCK_SIZE,
@@ -356,6 +356,7 @@ class LinkPool {
   async getSingleLink(
     parentHash: Readonly<MHash>,
     childHash: Readonly<MHash>,
+    token: Readonly<Token> | undefined,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     const key: LinkCacheKey = [parentHash, childHash];
@@ -364,7 +365,7 @@ class LinkPool {
       return res;
     }
     reportCacheMiss(ocm);
-    const linkRes = await this.api.singleLink(parentHash, childHash);
+    const linkRes = await this.api.singleLink(parentHash, childHash, token);
     const link = toLink(linkRes);
     this.linkCache.set(key, link);
     return link;
@@ -521,6 +522,7 @@ export default class CommentGraph {
   async getSingleLink(
     parent: Readonly<FullKey>,
     child: Readonly<FullKey>,
+    token: Readonly<Token> | undefined,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     const parentHash = await this.getHash(parent, ocm);
@@ -532,7 +534,7 @@ export default class CommentGraph {
     if (childHash === undefined) {
       return INVALID_LINK;
     }
-    return this.linkPool.getSingleLink(phash, childHash, ocm);
+    return this.linkPool.getSingleLink(phash, childHash, token, ocm);
   }
 
   private async getTopicNextLink(

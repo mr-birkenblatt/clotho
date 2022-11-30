@@ -20,6 +20,7 @@ import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 import { RichVote, VoteType, VOTE_TYPES } from '../graph/keys';
+import { Token } from '../api/types';
 
 const Outer = styled.div`
   position: relative;
@@ -299,6 +300,7 @@ const scrollBlocks: { [Property in ObsKey]: ScrollLogicalPosition } = {
 
 interface ViewProps extends ConnectView {
   graph: CommentGraph;
+  token: Readonly<Token> | undefined;
 }
 
 type EmptyViewProps = {
@@ -354,10 +356,10 @@ class View extends PureComponent<ViewProps, ViewState> {
     prevProps: Readonly<ViewProps> | EmptyViewProps,
     _prevState: Readonly<ViewState> | undefined,
   ): void {
-    const { graph, view, changes, dispatch } = this.props;
+    const { graph, view, changes, token, dispatch } = this.props;
     const { resetView, redraw, pending } = this.state;
     if (view !== prevProps.view || pending !== undefined) {
-      progressView(graph, view).then(
+      progressView(graph, view, token).then(
         ({ view: newView, change }) => {
           if (change) {
             dispatch(setView({ view: newView, changes, progress: true }));
