@@ -103,8 +103,6 @@ export function initUserView(userId: Readonly<UserId>): Readonly<GraphView> {
   };
 }
 
-// FIXME use
-// ts-unused-exports:disable-next-line
 export function removeAllLinks(
   view: Readonly<GraphView>,
 ): Readonly<GraphView> {

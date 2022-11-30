@@ -9,6 +9,7 @@ import {
   horizontal,
   NavigationCB,
   progressView,
+  removeAllLinks,
   scrollBottomHorizontal,
   scrollTopHorizontal,
   scrollVertical,
@@ -20,7 +21,6 @@ import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 import { RichVote, VoteType, VOTE_TYPES } from '../graph/keys';
-import { Token } from '../api/types';
 
 const Outer = styled.div`
   position: relative;
@@ -228,10 +228,11 @@ const Link = styled.a`
   }
 `;
 
-const VOTE_SYMBOL = new Map();
-VOTE_SYMBOL.set('up', '👍');
-VOTE_SYMBOL.set('down', '👎');
-VOTE_SYMBOL.set('honor', '⭐');
+const VOTE_SYMBOL = new Map([
+  ['up', '👍'],
+  ['down', '👎'],
+  ['honor', '⭐'],
+]);
 
 const MD_COMPONENTS: Partial<
   Omit<NormalComponents, keyof SpecialComponents> & SpecialComponents
@@ -300,11 +301,11 @@ const scrollBlocks: { [Property in ObsKey]: ScrollLogicalPosition } = {
 
 interface ViewProps extends ConnectView {
   graph: CommentGraph;
-  token: Readonly<Token> | undefined;
 }
 
 type EmptyViewProps = {
   view: undefined;
+  user: undefined;
 };
 
 type ViewState = {
@@ -349,15 +350,21 @@ class View extends PureComponent<ViewProps, ViewState> {
   }
 
   componentDidMount(): void {
-    this.componentDidUpdate({ view: undefined }, undefined);
+    this.componentDidUpdate({ view: undefined, user: undefined }, undefined);
   }
 
   componentDidUpdate(
     prevProps: Readonly<ViewProps> | EmptyViewProps,
     _prevState: Readonly<ViewState> | undefined,
   ): void {
-    const { graph, view, changes, token, dispatch } = this.props;
+    const { graph, view, changes, user, dispatch } = this.props;
     const { resetView, redraw, pending } = this.state;
+    const token = user !== undefined ? user.token : undefined;
+    if (user !== prevProps.user) {
+      dispatch(
+        setView({ view: removeAllLinks(view), changes, progress: false }),
+      );
+    }
     if (view !== prevProps.view || pending !== undefined) {
       progressView(graph, view, token).then(
         ({ view: newView, change }) => {
@@ -675,6 +682,7 @@ class View extends PureComponent<ViewProps, ViewState> {
 } // View
 
 const connector = connect((state: RootState) => ({
+  user: state.userState.currentUser,
   view: state.viewState.currentView,
   changes: state.viewState.currentChanges,
 }));

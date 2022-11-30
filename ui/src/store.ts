@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import viewStateSliceReducer from './main/ViewStateSlice';
+import userStateSliceReducer from './users/UserStateSlice';
 
 const store = configureStore({
   reducer: {
     viewState: viewStateSliceReducer,
+    userState: userStateSliceReducer,
   },
 });
 

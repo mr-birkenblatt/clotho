@@ -60,10 +60,7 @@ export default class App extends PureComponent<AppProps, AppState> {
           <RequireLogin />
         </MainHeader> */}
         <MainColumn>
-          <View
-            graph={this.graph}
-            token={undefined}
-          />
+          <View graph={this.graph} />
         </MainColumn>
       </Main>
     );
