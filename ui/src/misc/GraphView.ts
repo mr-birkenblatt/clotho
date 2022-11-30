@@ -325,6 +325,7 @@ export function initView(
   };
 }
 
+// ts-unused-exports:disable-next-line
 export function initUserView(userId: Readonly<UserId>): Readonly<GraphView> {
   return {
     centerTop: userCell(userId),
