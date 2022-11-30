@@ -44,7 +44,6 @@ export type GraphView = {
   bottomSkip?: Readonly<MHash>;
 };
 
-/* istanbul ignore next */
 function equalCell(
   cell: Readonly<Cell> | undefined,
   expected: Readonly<Cell> | undefined,
@@ -84,7 +83,6 @@ function equalCell(
   return false;
 }
 
-/* istanbul ignore next */
 export function equalView(
   view: Readonly<GraphView> | undefined,
   expected: Readonly<GraphView> | undefined,
@@ -154,7 +152,6 @@ export function equalView(
   return equalCell(view.bottom, expected.bottom, amend(log, 'bottom'));
 }
 
-/* istanbul ignore next */
 function checkLink(
   cell: Readonly<Cell>,
   other: Readonly<Cell> | undefined,
@@ -190,7 +187,6 @@ function checkLink(
   return false;
 }
 
-/* istanbul ignore next */
 export function consistentLinks(
   view: Readonly<GraphView>,
   logger?: LoggerCB,
@@ -433,6 +429,7 @@ async function getNextCell(
       cell(otherLevel, isGet, index),
     );
   }
+  /* istanbul ignore next */
   assertFail(`unkown FullKeyType: ${fullKeyType}`);
 }
 

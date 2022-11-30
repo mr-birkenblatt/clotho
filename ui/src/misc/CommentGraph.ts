@@ -384,21 +384,26 @@ export default class CommentGraph {
 
   constructor(api?: Readonly<ApiProvider>, settings?: Readonly<CGSettings>) {
     const actualApi = api ?? /* istanbul ignore next */ DEFAULT_API;
-    const config = settings ?? {};
+    const config = settings ?? /* istanbul ignore next */ {};
     this.msgPool = new CommentPool(
       actualApi,
-      config.maxCommentPoolSize ?? DEFAULT_COMMENT_POOL_SIZE,
-      config.maxTopicSize ?? DEFAULT_TOPIC_POOL_SIZE,
-      config.blockSize ?? DEFAULT_BLOCK_SIZE,
+      config.maxCommentPoolSize ??
+        /* istanbul ignore next */ DEFAULT_COMMENT_POOL_SIZE,
+      config.maxTopicSize ??
+        /* istanbul ignore next */ DEFAULT_TOPIC_POOL_SIZE,
+      config.blockSize ?? /* istanbul ignore next */ DEFAULT_BLOCK_SIZE,
     );
     this.linkPool = new LinkPool(
       actualApi,
-      config.maxLinkPoolSize ?? DEFAULT_LINK_POOL_SIZE,
-      config.maxLinkCache ?? DEFAULT_LINK_CACHE_SIZE,
-      config.maxLineSize ?? DEFAULT_LINE_SIZE,
-      config.maxUserCache ?? DEFAULT_LINK_CACHE_SIZE,
-      config.maxUserLineSize ?? DEFAULT_LINE_SIZE,
-      config.blockSize ?? DEFAULT_BLOCK_SIZE,
+      config.maxLinkPoolSize ??
+        /* istanbul ignore next */ DEFAULT_LINK_POOL_SIZE,
+      config.maxLinkCache ??
+        /* istanbul ignore next */ DEFAULT_LINK_CACHE_SIZE,
+      config.maxLineSize ?? /* istanbul ignore next */ DEFAULT_LINE_SIZE,
+      config.maxUserCache ??
+        /* istanbul ignore next */ DEFAULT_LINK_CACHE_SIZE,
+      config.maxUserLineSize ?? /* istanbul ignore next */ DEFAULT_LINE_SIZE,
+      config.blockSize ?? /* istanbul ignore next */ DEFAULT_BLOCK_SIZE,
     );
   }
 

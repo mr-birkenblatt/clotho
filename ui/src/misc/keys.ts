@@ -81,6 +81,7 @@ export function equalLineKey(
     }
     return keyA.isGet === keyB.isGet;
   }
+  /* istanbul ignore next */
   assertFail('unreachable');
 }
 
@@ -164,6 +165,7 @@ export function asLineKey(
     const { mhash, isGet } = fullKey;
     return { keyType: KeyType.link, mhash, isGet };
   }
+  /* istanbul ignore next */
   assertFail('unreachable');
 }
 
@@ -196,10 +198,10 @@ export function toFullKey(
       index,
     };
   }
+  /* istanbul ignore next */
   assertFail('unreachable');
 }
 
-/* istanbul ignore next */
 export function equalFullKey(
   keyA: Readonly<FullKey>,
   keyB: Readonly<FullKey>,
@@ -291,6 +293,7 @@ export function equalFullKey(
     }
     return true;
   }
+  /* istanbul ignore next */
   assertFail('unreachable');
 }
 
