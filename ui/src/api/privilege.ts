@@ -1,7 +1,13 @@
-import { MHash, VoteTypeExt } from '../graph/keys';
 import { URL_PREFIX } from '../misc/constants';
 import { json, toJson } from '../misc/util';
-import { ApiLinkResponse, ApiLoginResponse, Token, Username } from './types';
+import {
+  ApiLinkResponse,
+  ApiLoginResponse,
+  MHash,
+  Token,
+  Username,
+  VoteTypeExt,
+} from './types';
 
 export type PrivilegeApiProvider = {
   login: (user: Readonly<Username>) => Promise<ApiLoginResponse>;

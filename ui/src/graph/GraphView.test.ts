@@ -20,9 +20,7 @@ import {
   FullKey,
   FullKeyType,
   INVALID_FULL_KEY,
-  INVALID_LINK,
   IsGet,
-  MHash,
 } from './keys';
 import { advancedGraph, InfGraph } from './TestGraph';
 import {
@@ -31,6 +29,7 @@ import {
   detectSlowCallback,
   LoggerCB,
 } from '../misc/util';
+import { INVALID_LINK, MHash } from '../api/types';
 
 function asFullKey(
   hash: Readonly<string>,

@@ -28,8 +28,8 @@ import {
 import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
-import { RichVote, VoteType, VOTE_TYPES } from './keys';
 import UserActions from '../users/UserActions';
+import { RichVote, VoteType, VOTE_TYPES } from '../api/types';
 
 const Outer = styled.div`
   position: relative;
@@ -386,6 +386,7 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { resetView, redraw, pending } = this.state;
     const token = user !== undefined ? user.token : undefined;
     if (user !== prevProps.user) {
+      // graph.clearCache();
       dispatch(
         setView({ view: removeAllLinks(view), changes, progress: false }),
       );

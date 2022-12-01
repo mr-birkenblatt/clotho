@@ -28,8 +28,6 @@ const userStateSlice = createSlice<UserState, UserReducers, string>({
   },
 });
 
-// FIXME use
-// ts-unused-exports:disable-next-line
 export const { setUser } = userStateSlice.actions;
 
 export default userStateSlice.reducer;

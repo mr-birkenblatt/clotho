@@ -1,5 +1,13 @@
 import { GraphApiProvider, DEFAULT_GRAPH_API } from '../api/graph';
-import { Token, toLink, toLinks, UserId } from '../api/types';
+import {
+  INVALID_LINK,
+  Link,
+  MHash,
+  Token,
+  toLink,
+  toLinks,
+  UserId,
+} from '../api/types';
 import {
   BATCH_DELAY,
   DEFAULT_BLOCK_SIZE,
@@ -21,13 +29,10 @@ import {
   FullTopicKey,
   FullUserlikeKey,
   INVALID_KEY,
-  INVALID_LINK,
   IsGet,
   KeyType,
   LineKey,
-  Link,
   LinkKey,
-  MHash,
   UserKey,
   userMHash,
 } from './keys';

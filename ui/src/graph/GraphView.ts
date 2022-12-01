@@ -1,4 +1,4 @@
-import { Token, UserId } from '../api/types';
+import { Link, MHash, Token, UserId } from '../api/types';
 import CommentGraph from './CommentGraph';
 import {
   adj,
@@ -8,8 +8,6 @@ import {
   FullKeyType,
   INVALID_FULL_KEY,
   IsGet,
-  Link,
-  MHash,
   toFullKey,
   TOPIC_KEY,
 } from './keys';

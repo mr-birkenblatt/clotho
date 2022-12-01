@@ -15,11 +15,8 @@ import {
   IsGet,
   KeyType,
   LineKey,
-  Link,
-  MHash,
   toFullKey,
   TOPIC_KEY,
-  ValidLink,
 } from './keys';
 import { advancedGraph, simpleGraph } from './TestGraph';
 import {
@@ -31,6 +28,7 @@ import {
   OnCacheMiss,
   range,
 } from '../misc/util';
+import { Link, MHash, ValidLink } from '../api/types';
 
 function asFullKey(
   hash: Readonly<string>,

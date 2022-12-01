@@ -1,7 +1,5 @@
-import { UserId, Username } from '../api/types';
+import { INVALID_LINK, Link, MHash, UserId } from '../api/types';
 import { assertFail, debugJSON, LoggerCB, maybeLog, str } from '../misc/util';
-
-export type MHash = string & { _mHash: void };
 
 export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
   return str(mhash);
@@ -180,35 +178,6 @@ export function asDirectKey(hash: Readonly<string>): Readonly<FullKey> {
     topLink: INVALID_LINK,
   };
 }
-
-type Vote = {
-  count: Readonly<number>;
-  userVoted: Readonly<boolean>;
-};
-export type VoteType = 'honor' | 'up' | 'down';
-export type VoteTypeExt = VoteType | 'view' | 'ack' | 'skip';
-export type RichVote = {
-  voteType: VoteType;
-  count: number;
-  userVoted: boolean;
-};
-export const VOTE_TYPES: VoteType[] = ['honor', 'up', 'down'];
-export type Votes = Readonly<{ [key in VoteType]?: Readonly<Vote> }>;
-
-export type ValidLink = {
-  invalid?: Readonly<false>;
-  parent: Readonly<MHash>;
-  child: Readonly<MHash>;
-  username: Readonly<Username> | undefined;
-  userId: Readonly<UserId> | undefined;
-  first: Readonly<number>;
-  votes: Votes;
-};
-type InvalidLink = {
-  invalid: Readonly<true>;
-};
-export type Link = ValidLink | InvalidLink;
-export const INVALID_LINK: Readonly<InvalidLink> = { invalid: true };
 
 export function equalLineKey(
   keyA: Readonly<LineKey>,

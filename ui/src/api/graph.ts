@@ -1,11 +1,12 @@
 import { URL_PREFIX } from '../misc/constants';
-import { IsGet, LinkKey, MHash, UserKey } from '../graph/keys';
+import { IsGet, LinkKey, UserKey } from '../graph/keys';
 import { json, toJson } from '../misc/util';
 import {
   ApiLinkList,
   ApiLinkResponse,
   ApiRead,
   ApiTopic,
+  MHash,
   Token,
 } from './types';
 

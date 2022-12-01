@@ -1,5 +1,5 @@
-import { toLinks } from '../api/types';
-import { fromMHash, IsGet, KeyType, LinkKey, MHash, ValidLink } from './keys';
+import { MHash, toLinks, ValidLink } from '../api/types';
+import { fromMHash, IsGet, KeyType, LinkKey } from './keys';
 import { simpleGraph } from './TestGraph';
 
 function asMHashSet(arr: string[]): Set<MHash> {

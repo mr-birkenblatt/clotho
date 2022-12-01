@@ -1,6 +1,14 @@
 import { DEFAULT_PRIVILEGE_API, PrivilegeApiProvider } from '../api/privilege';
-import { Token, toLink, toUser, User, Username } from '../api/types';
-import { Link, MHash, VoteTypeExt } from '../graph/keys';
+import {
+  Link,
+  MHash,
+  Token,
+  toLink,
+  toUser,
+  User,
+  Username,
+  VoteTypeExt,
+} from '../api/types';
 
 export default class UserActions {
   private readonly api: PrivilegeApiProvider;

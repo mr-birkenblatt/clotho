@@ -1,6 +1,6 @@
 import { GraphApiProvider } from '../api/graph';
-import { UserId, Username } from '../api/types';
-import { IsGet, MHash, userMHash, Votes } from './keys';
+import { ApiVotes, MHash, UserId, Username } from '../api/types';
+import { IsGet, userMHash } from './keys';
 import { assertTrue, range, str } from '../misc/util';
 
 export const simpleGraph = (): TestGraph => {
@@ -126,7 +126,7 @@ class TestGraph {
           user: 'u/abc' as Username,
           userid: 'abc' as UserId,
           first: 123,
-          votes: { up: { count: 1, userVoted: false } },
+          votes: { up: { count: 1, uservoted: false } },
         }));
         return { links, next };
       },
@@ -145,15 +145,15 @@ class TestGraph {
           user: `u/${userId}` as Username,
           userid: userId,
           first: 123,
-          votes: { up: { count: 1, userVoted: false } },
+          votes: { up: { count: 1, uservoted: false } },
         }));
         return { links, next };
       },
       singleLink: async (parent, child, _token) => {
         const children = this.children[parent as MHash] ?? [];
         const exists = children.some((cur) => cur === str(child));
-        const votes: Votes = exists
-          ? { up: { count: 1, userVoted: false } }
+        const votes: ApiVotes = exists
+          ? { up: { count: 1, uservoted: false } }
           : {};
         return {
           parent,
@@ -210,7 +210,7 @@ export class InfGraph {
           user: 'u/abc' as Username,
           userid: 'abc' as UserId,
           first: 123,
-          votes: { up: { count: 1, userVoted: false } },
+          votes: { up: { count: 1, uservoted: false } },
         }));
         return { links, next };
       },
@@ -232,7 +232,7 @@ export class InfGraph {
           user: `u/${userId}` as Username,
           userid: userId,
           first: 123,
-          votes: { up: { count: 1, userVoted: false } },
+          votes: { up: { count: 1, uservoted: false } },
         }));
         return { links, next };
       },
@@ -240,8 +240,8 @@ export class InfGraph {
         const pCode = parent.charCodeAt(0);
         const cCode = child.charCodeAt(0);
         const exists = pCode === cCode - 1;
-        const votes: Votes = exists
-          ? { up: { count: 1, userVoted: false } }
+        const votes: ApiVotes = exists
+          ? { up: { count: 1, uservoted: false } }
           : {};
         return {
           parent,
