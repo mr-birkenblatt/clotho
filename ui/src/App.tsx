@@ -15,8 +15,8 @@ const Main = styled.div`
   width: 100vw;
   display: flex;
   flex-direction: column;
-  background-color: #282c34;
-  color: white;
+  background-color: var(--main-background);
+  color: var(--main-text);
 `;
 
 const MainColumn = styled.div`

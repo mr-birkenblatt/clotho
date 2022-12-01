@@ -442,7 +442,7 @@ export default class CommentGraph {
     ocm: OnCacheMiss,
   ): Promise<ContentValueExt> {
     if (key.fullKeyType === FullKeyType.user) {
-      return [userMHash(key), `${key.userId}`];
+      return [userMHash(key), `u/${key.userId}`]; // FIXME: use real name
     }
     const { parentUser, index } = key;
     const res = await this.linkPool.getUserLink(

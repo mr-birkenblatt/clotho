@@ -50,17 +50,17 @@ const NavButton = styled.button`
   cursor: pointer;
   border: 0;
   opacity: 0.8;
-  color: #5b5f67;
+  color: var(--button-text-dim);
   border-radius: var(--button-radius);
   width: var(--button-size);
   height: var(--button-size);
-  background-color: #393d45;
+  background-color: var(--button-background);
 
   &:hover {
-    background-color: #4a4e56;
+    background-color: var(--button-hover);
   }
   &:active {
-    background-color: #5b5f67;
+    background-color: var(--button-active);
   }
 `;
 
@@ -104,7 +104,7 @@ const VBand = styled.div<NoScrollProps>`
   width: 100%;
   height: 100%;
   vertical-align: top;
-  background-color: #282c34;
+  background-color: var(--main-background);
   overflow-x: hidden;
   overflow-y: ${(props) => (props.noScroll ? 'hidden' : 'scroll')};
 
@@ -162,8 +162,7 @@ const ItemContent = styled.div`
   padding: var(--item-padding);
   white-space: normal;
   overflow: hidden;
-
-  background-color: #393d45;
+  background-color: var(--item-background);
 `;
 
 const ItemMid = styled.div`
@@ -194,13 +193,14 @@ const ButtonDiv = styled.div<ButtonDivProps>`
   pointer-events: auto;
   cursor: pointer;
   border: 0;
-  ${(props) => (props.isChecked ? 'background-color: #6c7078;' : '')}
+  ${(props) =>
+    props.isChecked ? 'background-color: --button-background-lit;' : ''}
 
   &:hover {
-    background-color: #4a4e56;
+    background-color: var(--button-hover);
   }
   &:active {
-    background-color: #5b5f67;
+    background-color: var(--button-active);
   }
 `;
 
@@ -224,16 +224,16 @@ const ItemMidContent = styled(ButtonDiv)`
 `;
 
 const Link = styled.a`
-  color: silver;
+  color: var(--md-anchor);
 
   &:visited {
-    color: silver;
+    color: var(--md-anchor);
   }
   &:active {
-    color: silver;
+    color: var(--md-anchor);
   }
   &:hover {
-    color: #ddd;
+    color: var(--md-anchor-hover);
   }
 `;
 

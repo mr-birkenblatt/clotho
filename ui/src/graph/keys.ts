@@ -8,9 +8,13 @@ export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
 }
 
 export function userMHash(
-  key: Readonly<FullUserKey> | Readonly<UserKey>,
+  key:
+    | Readonly<FullUserKey>
+    | Readonly<UserKey>
+    | Readonly<{ userId: Readonly<UserId> }>,
 ): MHash {
-  return `${key.userId}` as MHash;
+  // FIXME: don't use MHash for users
+  return `[user: ${key.userId}]` as MHash;
 }
 
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };

@@ -1,6 +1,6 @@
 import { GraphApiProvider } from '../api/graph';
 import { UserId, Username } from '../api/types';
-import { IsGet, MHash, Votes } from './keys';
+import { IsGet, MHash, userMHash, Votes } from './keys';
 import { assertTrue, range, str } from '../misc/util';
 
 export const simpleGraph = (): TestGraph => {
@@ -140,7 +140,7 @@ class TestGraph {
         const endIx = offset + ret.length;
         const next = endIx === arr.length ? 0 : endIx;
         const links = ret.map((mhash) => ({
-          parent: `[user: ${userId}]` as MHash,
+          parent: userMHash({ userId }),
           child: mhash as MHash,
           user: `u/${userId}` as Username,
           userid: userId,
@@ -227,7 +227,7 @@ export class InfGraph {
         const endIx = offset + ret.length;
         const next = endIx === arr.length ? 0 : endIx;
         const links = ret.map((mhash) => ({
-          parent: `[user: ${userId}]` as MHash,
+          parent: userMHash({ userId }),
           child: mhash as MHash,
           user: `u/${userId}` as Username,
           userid: userId,
