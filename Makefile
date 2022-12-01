@@ -143,7 +143,7 @@ ts-build:
 	cd ui && yarn build
 
 run-test-redis:
-	cd test && redis-server
+	cd test && redis-server --port 6380
 
 run-redis:
 	cd userdata && redis-server ../redis.main.conf

@@ -106,9 +106,10 @@ class RedisWrapper:
             "health_check_interval": 45,
             "client_name": f"api-{uuid.uuid4().hex}",
         }
+        default_port = 6380 if is_test() else 6379
         return StrictRedis(  # pylint: disable=unexpected-keyword-arg
             host=envload_str("REDIS_HOST", default="localhost"),
-            port=envload_int("REDIS_PORT", default=6379),
+            port=envload_int("REDIS_PORT", default=default_port),
             db=0,
             password=envload_str("REDIS_PASS", default=""),
             **config)
