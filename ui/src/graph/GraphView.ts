@@ -44,6 +44,13 @@ export type GraphView = {
   bottomSkip?: Readonly<MHash>;
 };
 
+export type TopLinkKey =
+  | 'bottom'
+  | 'bottomRight'
+  | 'centerBottom'
+  | 'bottomLeft'
+  | 'centerTop';
+
 function cell(
   mhash: Readonly<MHash>,
   isGet: IsGet,
@@ -95,8 +102,6 @@ export function initView(
   };
 }
 
-// FIXME use
-// ts-unused-exports:disable-next-line
 export function initUserView(userId: Readonly<UserId>): Readonly<GraphView> {
   return {
     centerTop: userCell(userId),
@@ -128,6 +133,29 @@ export function removeAllLinks(
     bottom: removeLink(bottom),
     ...rest,
   };
+}
+
+export function replaceLink(
+  view: Readonly<GraphView>,
+  position: Readonly<TopLinkKey>,
+  link: Readonly<Link>,
+): Readonly<GraphView> {
+  const oldCell = view[position];
+  if (oldCell === undefined) {
+    return view;
+  }
+  const cell = {
+    ...oldCell,
+    topLink: link,
+  };
+  const newView = {
+    ...view,
+    [position]: cell,
+  };
+  if (consistentLinks(newView, undefined)) {
+    return newView;
+  }
+  return view;
 }
 
 async function getCellContent(

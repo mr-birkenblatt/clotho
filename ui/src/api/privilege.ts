@@ -1,24 +1,20 @@
-import { MHash, VoteType } from '../graph/keys';
+import { MHash, VoteTypeExt } from '../graph/keys';
 import { URL_PREFIX } from '../misc/constants';
 import { json, toJson } from '../misc/util';
-import { ApiLinkResponse, LoginResponse, Token, Username } from './types';
+import { ApiLinkResponse, ApiLoginResponse, Token, Username } from './types';
 
-// FIXME use
-// ts-unused-exports:disable-next-line
 export type PrivilegeApiProvider = {
-  login: (user: Readonly<Username>) => Promise<LoginResponse>;
-  userInfo: (token: Readonly<Token>) => Promise<LoginResponse>;
+  login: (user: Readonly<Username>) => Promise<ApiLoginResponse>;
+  userInfo: (token: Readonly<Token>) => Promise<ApiLoginResponse>;
   vote: (
     token: Readonly<Token>,
     parent: Readonly<MHash>,
     child: Readonly<MHash>,
-    votes: Readonly<VoteType[]>,
+    votes: Readonly<VoteTypeExt[]>,
     isadd: Readonly<boolean>,
   ) => Promise<ApiLinkResponse>;
 };
 
-// FIXME use
-// ts-unused-exports:disable-next-line
 export const DEFAULT_PRIVILEGE_API: PrivilegeApiProvider = {
   login: async (user) => {
     return fetch(`${URL_PREFIX}/login`, {

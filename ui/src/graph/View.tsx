@@ -7,20 +7,29 @@ import {
   Cell,
   Direction,
   horizontal,
+  initUserView,
   NavigationCB,
   progressView,
   removeAllLinks,
+  replaceLink,
   scrollBottomHorizontal,
   scrollTopHorizontal,
   scrollVertical,
+  TopLinkKey,
   vertical,
-} from '../graph/GraphView';
-import CommentGraph from '../graph/CommentGraph';
-import { errHnd, safeStringify, toReadableNumber } from '../misc/util';
+} from './GraphView';
+import CommentGraph from './CommentGraph';
+import {
+  errHnd,
+  SafeMap,
+  safeStringify,
+  toReadableNumber,
+} from '../misc/util';
 import { setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
-import { RichVote, VoteType, VOTE_TYPES } from '../graph/keys';
+import { RichVote, VoteType, VOTE_TYPES } from './keys';
+import UserActions from '../users/UserActions';
 
 const Outer = styled.div`
   position: relative;
@@ -228,11 +237,13 @@ const Link = styled.a`
   }
 `;
 
-const VOTE_SYMBOL = new Map([
-  ['up', '👍'],
-  ['down', '👎'],
-  ['honor', '⭐'],
-]);
+const VOTE_SYMBOL: Readonly<Map<Readonly<string>, Readonly<string>>> = new Map(
+  [
+    ['up', '👍'],
+    ['down', '👎'],
+    ['honor', '⭐'],
+  ],
+);
 
 const MD_COMPONENTS: Partial<
   Omit<NormalComponents, keyof SpecialComponents> & SpecialComponents
@@ -301,6 +312,7 @@ const scrollBlocks: { [Property in ObsKey]: ScrollLogicalPosition } = {
 
 interface ViewProps extends ConnectView {
   graph: CommentGraph;
+  userActions: UserActions;
 }
 
 type EmptyViewProps = {
@@ -315,10 +327,21 @@ type ViewState = {
   pending: [NavigationCB, Direction] | undefined;
 };
 
+type VoteCallbackKey = {
+  position: TopLinkKey;
+  voteType: VoteType;
+  isAdd: boolean;
+};
+
+type VoteCallback = (event: React.MouseEvent<HTMLElement>) => void;
+type UserCallback = (event: React.MouseEvent<HTMLElement>) => void;
+
 class View extends PureComponent<ViewProps, ViewState> {
-  rootRef: React.RefObject<HTMLDivElement>;
-  curRefs: Refs;
-  curObs: Obs;
+  private readonly rootRef: React.RefObject<HTMLDivElement>;
+  private readonly curRefs: Refs;
+  private readonly curObs: Obs;
+  private readonly voteCallbacks: SafeMap<VoteCallbackKey, VoteCallback>;
+  private readonly userCallbacks: SafeMap<TopLinkKey, UserCallback>;
 
   constructor(props: Readonly<ViewProps>) {
     super(props);
@@ -347,6 +370,8 @@ class View extends PureComponent<ViewProps, ViewState> {
       bottomRight: undefined,
       bottom: undefined,
     };
+    this.voteCallbacks = new SafeMap();
+    this.userCallbacks = new SafeMap();
   }
 
   componentDidMount(): void {
@@ -510,6 +535,64 @@ class View extends PureComponent<ViewProps, ViewState> {
     });
   }
 
+  private getVoteHandle(key: Readonly<VoteCallbackKey>): VoteCallback {
+    let res = this.voteCallbacks.get(key);
+    if (res === undefined) {
+      res = (event) => {
+        const { position, voteType, isAdd } = key;
+        const { view, user, changes, userActions, dispatch } = this.props;
+        const cell = view[position];
+        const link =
+          cell !== undefined && !cell.invalid ? cell.topLink : undefined;
+        if (user !== undefined && link !== undefined && !link.invalid) {
+          userActions
+            .vote(user.token, link.parent, link.child, [voteType], isAdd)
+            .then(
+              (newLink) => {
+                dispatch(
+                  setView({
+                    view: replaceLink(view, position, newLink),
+                    changes,
+                    progress: false,
+                  }),
+                );
+              },
+              (e) => {
+                errHnd(e);
+              },
+            );
+        }
+        event.preventDefault();
+      };
+      this.voteCallbacks.set(key, res);
+    }
+    return res;
+  }
+
+  private getUserHandle(key: Readonly<TopLinkKey>): UserCallback {
+    let res = this.userCallbacks.get(key);
+    if (res === undefined) {
+      res = (event) => {
+        const { view, changes, dispatch } = this.props;
+        const cell = view[key];
+        const link =
+          cell !== undefined && !cell.invalid ? cell.topLink : undefined;
+        if (link !== undefined && !link.invalid && link.userId !== undefined) {
+          dispatch(
+            setView({
+              view: initUserView(link.userId),
+              changes,
+              progress: false,
+            }),
+          );
+        }
+        event.preventDefault();
+      };
+      this.userCallbacks.set(key, res);
+    }
+    return res;
+  }
+
   private handleButtons(
     event: React.MouseEvent<HTMLElement>,
     key: ObsKey,
@@ -554,7 +637,10 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { tempContent } = this.state;
     const noScroll = this.isNoScroll();
 
-    const getTopLink = (cell: Cell | undefined): JSX.Element | null => {
+    const getTopLink = (
+      cell: Cell | undefined,
+      position: TopLinkKey | undefined,
+    ): JSX.Element | null => {
       if (cell === undefined) {
         return null;
       }
@@ -565,6 +651,10 @@ class View extends PureComponent<ViewProps, ViewState> {
       if (link.invalid) {
         return null;
       }
+      const userCB =
+        !noScroll && position !== undefined
+          ? this.getUserHandle(position)
+          : undefined;
       return (
         <ItemMid>
           <ItemMidVotes>
@@ -575,18 +665,31 @@ class View extends PureComponent<ViewProps, ViewState> {
               }
               const { count, userVoted } = res;
               return { voteType, count, userVoted };
-            }).map(({ voteType, count, userVoted }) => (
-              // FIXME: use token for voting
-              <ItemMidContent
-                key={voteType}
-                isChecked={userVoted}>
-                {toReadableNumber(count)}{' '}
-                {VOTE_SYMBOL.get(voteType) ?? `[${voteType}]`}
-              </ItemMidContent>
-            ))}
+            }).map(({ voteType, count, userVoted }) => {
+              const voteCB =
+                !noScroll && position !== undefined
+                  ? this.getVoteHandle({
+                      position,
+                      voteType,
+                      isAdd: !userVoted,
+                    })
+                  : undefined;
+              return (
+                <ItemMidContent
+                  key={voteType}
+                  onClick={voteCB}
+                  isChecked={userVoted}>
+                  {toReadableNumber(count)}{' '}
+                  {VOTE_SYMBOL.get(voteType) ?? `[${voteType}]`}
+                </ItemMidContent>
+              );
+            })}
           </ItemMidVotes>
-          {/* FIXME: use userId to go to user view */}
-          <ItemMidName isChecked={false}>{link.username}</ItemMidName>
+          <ItemMidName
+            onClick={userCB}
+            isChecked={false}>
+            {link.username}
+          </ItemMidName>
         </ItemMid>
       );
     };
@@ -611,11 +714,11 @@ class View extends PureComponent<ViewProps, ViewState> {
       <Outer ref={this.rootRef}>
         <Temp noScroll={noScroll}>
           <Item>
-            {getTopLink(tempContent[0])}
+            {getTopLink(tempContent[0], undefined)}
             <ItemContent>{getContent(tempContent[0])}</ItemContent>
           </Item>
           <Item>
-            {getTopLink(tempContent[1])}
+            {getTopLink(tempContent[1], undefined)}
             <ItemContent>{getContent(tempContent[1])}</ItemContent>
           </Item>
         </Temp>
@@ -630,7 +733,7 @@ class View extends PureComponent<ViewProps, ViewState> {
               <ItemContent>{getContent(view.topLeft)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.centerTop}>
-              {getTopLink(view.centerTop)}
+              {getTopLink(view.centerTop, 'centerTop')}
               <ItemContent>{getContent(view.centerTop)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.topRight}>
@@ -639,21 +742,21 @@ class View extends PureComponent<ViewProps, ViewState> {
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.bottomLeft}>
-              {getTopLink(view.bottomLeft)}
+              {getTopLink(view.bottomLeft, 'bottomLeft')}
               <ItemContent>{getContent(view.bottomLeft)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.centerBottom}>
-              {getTopLink(view.centerBottom)}
+              {getTopLink(view.centerBottom, 'centerBottom')}
               <ItemContent>{getContent(view.centerBottom)}</ItemContent>
             </Item>
             <Item ref={this.curRefs.bottomRight}>
-              {getTopLink(view.bottomRight)}
+              {getTopLink(view.bottomRight, 'bottomRight')}
               <ItemContent>{getContent(view.bottomRight)}</ItemContent>
             </Item>
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.bottom}>
-              {getTopLink(view.bottom)}
+              {getTopLink(view.bottom, 'bottom')}
               <ItemContent>{getContent(view.bottom)}</ItemContent>
             </Item>
           </HBand>

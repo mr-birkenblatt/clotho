@@ -4,22 +4,38 @@ export type Token = string & { _token: void };
 
 export type UserId = string & { _userId: void };
 export type Username = string & { _username: void };
-// FIXME use
-// ts-unused-exports:disable-next-line
-export type UserPermissions = {
+
+type UserPermissions = {
   canCreateTopic: Readonly<boolean>;
 };
+export type User = {
+  token: Readonly<Token>;
+  name: Readonly<Username>;
+  userId: Readonly<UserId>;
+  permissions: Readonly<UserPermissions>;
+};
+
 type ApiUserPermissions = {
   can_create_topic: Readonly<boolean>;
 };
-// FIXME use
-// ts-unused-exports:disable-next-line
-export type User = {
-  userId: Readonly<UserId>;
-  name: Readonly<Username>;
+export type ApiLoginResponse = {
   token: Readonly<Token>;
-  permissions: Readonly<UserPermissions>;
+  user: Readonly<Username>;
+  userid: Readonly<UserId>;
+  permissions: Readonly<ApiUserPermissions>;
 };
+
+export function toUser(userResp: Readonly<ApiLoginResponse>): Readonly<User> {
+  const { user, userid, permissions, ...rest } = userResp;
+  return {
+    name: user,
+    userId: userid,
+    permissions: {
+      canCreateTopic: permissions.can_create_topic,
+    },
+    ...rest,
+  };
+}
 
 export type ApiTopic = {
   topics: Readonly<{ [key: string]: string }>;
@@ -59,10 +75,3 @@ export function toLinks(
 ): Readonly<Readonly<ValidLink>[]> {
   return links.map((link) => toLink(link));
 }
-
-export type LoginResponse = {
-  token: Readonly<Token>;
-  user: Readonly<Username>;
-  userid: Readonly<UserId>;
-  permissions: Readonly<ApiUserPermissions>;
-};

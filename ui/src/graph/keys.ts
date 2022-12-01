@@ -182,6 +182,7 @@ type Vote = {
   userVoted: Readonly<boolean>;
 };
 export type VoteType = 'honor' | 'up' | 'down';
+export type VoteTypeExt = VoteType | 'view' | 'ack' | 'skip';
 export type RichVote = {
   voteType: VoteType;
   count: number;

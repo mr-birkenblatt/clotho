@@ -1,8 +1,9 @@
 import React, { PureComponent } from 'react';
 import styled from 'styled-components';
-import View from './main/View';
+import View from './graph/View';
 import CommentGraph from './graph/CommentGraph';
 import { advancedGraph } from './graph/TestGraph';
+import UserActions from './users/UserActions';
 
 const DEBUG = false;
 
@@ -43,11 +44,13 @@ type AppProps = Record<string, never>;
 type AppState = Record<string, never>;
 
 export default class App extends PureComponent<AppProps, AppState> {
-  graph: CommentGraph;
+  private readonly graph: CommentGraph;
+  private readonly userActions: UserActions;
 
   constructor(props: AppProps) {
     super(props);
     this.state = {};
+    this.userActions = new UserActions(undefined);
     this.graph = new CommentGraph(
       DEBUG ? advancedGraph().getApiProvider() : undefined,
     );
@@ -60,7 +63,10 @@ export default class App extends PureComponent<AppProps, AppState> {
           <RequireLogin />
         </MainHeader> */}
         <MainColumn>
-          <View graph={this.graph} />
+          <View
+            graph={this.graph}
+            userActions={this.userActions}
+          />
         </MainColumn>
       </Main>
     );
