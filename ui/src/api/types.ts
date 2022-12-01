@@ -23,6 +23,9 @@ export type ApiLoginResponse = {
   userid: Readonly<UserId>;
   permissions: Readonly<ApiUserPermissions>;
 };
+export type ApiLogout = {
+  success: boolean;
+};
 
 export function toUser(userResp: Readonly<ApiLoginResponse>): Readonly<User> {
   const { user, userid, permissions, ...rest } = userResp;

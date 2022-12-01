@@ -18,7 +18,7 @@ import {
   TopLinkKey,
   vertical,
 } from './GraphView';
-import CommentGraph from './CommentGraph';
+import CommentGraph, { toActiveUser } from './CommentGraph';
 import {
   errHnd,
   SafeMap,
@@ -194,13 +194,15 @@ const ButtonDiv = styled.div<ButtonDivProps>`
   cursor: pointer;
   border: 0;
   ${(props) =>
-    props.isChecked ? 'background-color: --button-background-lit;' : ''}
+    props.isChecked ? 'background-color: var(--button-background-lit);' : ''}
 
   &:hover {
-    background-color: var(--button-hover);
+    background-color: ${(props) =>
+      props.isChecked ? 'var(--button-active)' : 'var(--button-hover)'};
   }
   &:active {
-    background-color: var(--button-active);
+    background-color: ${(props) =>
+      props.isChecked ? 'var(--button-hover)' : 'var(--button-active)'};
   }
 `;
 
@@ -384,15 +386,14 @@ class View extends PureComponent<ViewProps, ViewState> {
   ): void {
     const { graph, view, changes, user, dispatch } = this.props;
     const { resetView, redraw, pending } = this.state;
-    const token = user !== undefined ? user.token : undefined;
+    const activeUser = toActiveUser(user);
     if (user !== prevProps.user) {
-      graph.clearCache();
       dispatch(
         setView({ view: removeAllLinks(view), changes, progress: false }),
       );
     }
     if (view !== prevProps.view || pending !== undefined) {
-      progressView(graph, view, token).then(
+      progressView(graph, view, activeUser).then(
         ({ view: newView, change }) => {
           if (change) {
             dispatch(setView({ view: newView, changes, progress: true }));

@@ -10,6 +10,9 @@ LoginResponse = TypedDict('LoginResponse', {
     "userid": str,
     "permissions": Permissions,
 })
+LogoutResponse = TypedDict('LogoutResponse', {
+    "success": bool,
+})
 TopicResponse = TypedDict('TopicResponse', {
     "topic": str,
     "hash": str,

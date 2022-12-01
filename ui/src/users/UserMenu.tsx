@@ -244,9 +244,22 @@ class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
   };
 
   handleLogoutClick = (event: React.MouseEvent<HTMLElement>): void => {
-    const { dispatch } = this.props;
-    dispatch(setUser({ user: undefined }));
-    this.closeModal();
+    const { userActions, user } = this.props;
+    if (user !== undefined) {
+      userActions.logout(user.token).then(
+        (success) => {
+          if (!success) {
+            console.warn('logout was not successful!');
+          }
+          const { dispatch } = this.props;
+          dispatch(setUser({ user: undefined }));
+          this.closeModal();
+        },
+        (e) => {
+          errHnd(e);
+        },
+      );
+    }
     event.preventDefault();
   };
 

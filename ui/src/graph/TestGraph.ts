@@ -113,7 +113,7 @@ class TestGraph {
           );
         return { messages, skipped };
       },
-      link: async (linkKey, offset, limit) => {
+      link: async (linkKey, offset, limit, _token) => {
         const { mhash, isGet } = linkKey;
         const map = isGet === IsGet.parent ? this.parents : this.children;
         const arr = map[mhash as MHash] ?? [];
@@ -130,7 +130,7 @@ class TestGraph {
         }));
         return { links, next };
       },
-      userLink: async (userKey, offset, limit) => {
+      userLink: async (userKey, offset, limit, _token) => {
         const { userId } = userKey;
         if (str(userId) !== 'abc') {
           return { links: [], next: 0 };
@@ -197,7 +197,7 @@ export class InfGraph {
           Object.fromEntries(msgArr.map((el) => [el, `msg: ${el}`]));
         return { messages, skipped };
       },
-      link: async (linkKey, offset, limit) => {
+      link: async (linkKey, offset, limit, _token) => {
         const { mhash, isGet } = linkKey;
         const isGetParent = isGet === IsGet.parent;
         const code = mhash.charCodeAt(0);
@@ -214,7 +214,7 @@ export class InfGraph {
         }));
         return { links, next };
       },
-      userLink: async (userKey, offset, limit) => {
+      userLink: async (userKey, offset, limit, _token) => {
         const { userId } = userKey;
         if (str(userId) !== 'abc') {
           return { links: [], next: 0 };

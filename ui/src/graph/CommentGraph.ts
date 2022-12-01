@@ -6,6 +6,7 @@ import {
   Token,
   toLink,
   toLinks,
+  User,
   UserId,
 } from '../api/types';
 import {
@@ -68,7 +69,41 @@ export type ContentValueExt = readonly [
   Readonly<MHash> | undefined,
   Readonly<string>,
 ];
-type LinkCacheKey = readonly [Readonly<MHash>, Readonly<MHash>];
+
+export type ActiveUser =
+  | {
+      userId: Readonly<UserId>;
+      token: Readonly<Token>;
+    }
+  | undefined;
+type LinkUserKey = {
+  activeUser: Readonly<UserId> | undefined;
+  linkUser: Readonly<UserId>;
+};
+type LinkLineKey = readonly [Readonly<UserId> | undefined, Readonly<LinkKey>];
+type LinkCacheKey = readonly [
+  Readonly<UserId> | undefined,
+  Readonly<MHash>,
+  Readonly<MHash>,
+];
+
+export function toActiveUser(
+  user: Readonly<User> | undefined,
+): Readonly<ActiveUser> {
+  if (user === undefined) {
+    return undefined;
+  }
+  const { userId, token } = user;
+  return { userId, token };
+}
+
+function getUserId(activeUser: ActiveUser): Readonly<UserId> | undefined {
+  return activeUser !== undefined ? activeUser.userId : undefined;
+}
+
+function getToken(activeUser: ActiveUser): Readonly<Token> | undefined {
+  return activeUser !== undefined ? activeUser.token : undefined;
+}
 
 class CommentPool {
   private readonly api: GraphApiProvider;
@@ -218,6 +253,7 @@ class LinkLookup {
   constructor(
     api: Readonly<GraphApiProvider>,
     linkKey: Readonly<LinkKey>,
+    activeUser: ActiveUser,
     maxLineSize: Readonly<number>,
     blockSize: Readonly<number>,
   ) {
@@ -225,7 +261,12 @@ class LinkLookup {
       offset: Readonly<AdjustedLineIndex>,
       limit: number,
     ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
-      const { links, next } = await api.link(linkKey, num(offset), limit);
+      const { links, next } = await api.link(
+        linkKey,
+        num(offset),
+        limit,
+        getToken(activeUser),
+      );
       return {
         values: toLinks(links),
         next: adj(next),
@@ -255,9 +296,9 @@ class LinkPool {
   private readonly blockSize: Readonly<number>;
   private readonly linkCache: LRU<LinkCacheKey, Readonly<Link>>;
 
-  private readonly pool: LRU<Readonly<LinkKey>, LinkLookup>;
+  private readonly pool: LRU<LinkLineKey, LinkLookup>;
   private readonly userLinks: LRU<
-    Readonly<UserId>,
+    Readonly<LinkUserKey>,
     BlockLoader<AdjustedLineIndex, Link>
   >;
 
@@ -281,35 +322,48 @@ class LinkPool {
 
   private getLine(
     linkKey: Readonly<LinkKey>,
+    activeUser: ActiveUser,
     ocm: OnCacheMiss,
   ): Readonly<LinkLookup> {
-    let res = this.pool.get(linkKey);
+    const key: LinkLineKey = [getUserId(activeUser), linkKey];
+    let res = this.pool.get(key);
     if (res === undefined) {
       reportCacheMiss(ocm);
       res = new LinkLookup(
         this.api,
         linkKey,
+        activeUser,
         this.maxLineSize,
         this.blockSize,
       );
-      this.pool.set(linkKey, res);
+      this.pool.set(key, res);
     }
     return res;
   }
 
   private getUserLine(
     key: Readonly<UserKey>,
+    activeUser: ActiveUser,
     ocm: OnCacheMiss,
   ): Readonly<BlockLoader<AdjustedLineIndex, Link>> {
     const { userId } = key;
-    let res = this.userLinks.get(userId);
+    const cacheKey: LinkUserKey = {
+      activeUser: getUserId(activeUser),
+      linkUser: userId,
+    };
+    let res = this.userLinks.get(cacheKey);
     const api = this.api;
 
     async function loading(
       offset: Readonly<AdjustedLineIndex>,
       limit: number,
     ): Promise<BlockResponse<AdjustedLineIndex, Link>> {
-      const { links, next } = await api.userLink(key, num(offset), limit);
+      const { links, next } = await api.userLink(
+        key,
+        num(offset),
+        limit,
+        getToken(activeUser),
+      );
       return {
         values: toLinks(links),
         next: adj(next),
@@ -324,13 +378,14 @@ class LinkPool {
         INVALID_LINK,
         loading,
       );
-      this.userLinks.set(userId, res);
+      this.userLinks.set(cacheKey, res);
     }
     return res;
   }
 
   async getLink(
     fullLinkKey: Readonly<FullLinkKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     const { mhash, isGet } = fullLinkKey;
@@ -340,11 +395,15 @@ class LinkPool {
         mhash,
         isGet,
       },
+      activeUser,
       ocm,
     );
     const link = await line.getLink(fullLinkKey.index, ocm);
     if (!link.invalid) {
-      this.linkCache.set([link.parent, link.child], link);
+      this.linkCache.set(
+        [getUserId(activeUser), link.parent, link.child],
+        link,
+      );
     }
     return link;
   }
@@ -352,25 +411,30 @@ class LinkPool {
   async getUserLink(
     key: Readonly<UserKey>,
     index: Readonly<AdjustedLineIndex>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
-    const userLine = this.getUserLine(key, ocm);
+    const userLine = this.getUserLine(key, activeUser, ocm);
     return userLine.get(index, ocm);
   }
 
   async getSingleLink(
     parentHash: Readonly<MHash>,
     childHash: Readonly<MHash>,
-    token: Readonly<Token> | undefined,
+    activeUser: ActiveUser,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
-    const key: LinkCacheKey = [parentHash, childHash];
+    const key: LinkCacheKey = [getUserId(activeUser), parentHash, childHash];
     const res = this.linkCache.get(key);
     if (res !== undefined) {
       return res;
     }
     reportCacheMiss(ocm);
-    const linkRes = await this.api.singleLink(parentHash, childHash, token);
+    const linkRes = await this.api.singleLink(
+      parentHash,
+      childHash,
+      getToken(activeUser),
+    );
     const link = toLink(linkRes);
     this.linkCache.set(key, link);
     return link;
@@ -444,6 +508,7 @@ export default class CommentGraph {
 
   private async getUserMessage(
     key: Readonly<FullUserlikeKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<ContentValueExt> {
     if (key.fullKeyType === FullKeyType.user) {
@@ -453,6 +518,7 @@ export default class CommentGraph {
     const res = await this.linkPool.getUserLink(
       { keyType: KeyType.user, userId: parentUser },
       index,
+      activeUser,
       ocm,
     );
     return this.getMessageFromLink(res, IsGet.child, ocm);
@@ -460,14 +526,16 @@ export default class CommentGraph {
 
   private async getFullLinkMessage(
     fullLinkKey: Readonly<FullLinkKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<ContentValueExt> {
-    const link = await this.linkPool.getLink(fullLinkKey, ocm);
+    const link = await this.linkPool.getLink(fullLinkKey, activeUser, ocm);
     return this.getMessageFromLink(link, fullLinkKey.isGet, ocm);
   }
 
   async getMessage(
     fullKey: Readonly<FullKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<ContentValueExt> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
@@ -477,7 +545,7 @@ export default class CommentGraph {
       fullKey.fullKeyType === FullKeyType.user ||
       fullKey.fullKeyType === FullKeyType.userchild
     ) {
-      return this.getUserMessage(fullKey, ocm);
+      return this.getUserMessage(fullKey, activeUser, ocm);
     }
     if (fullKey.fullKeyType === FullKeyType.direct) {
       return this.getMessageByHash(fullKey, ocm);
@@ -485,11 +553,12 @@ export default class CommentGraph {
     if (fullKey.fullKeyType === FullKeyType.topic) {
       return this.getTopicMessage(fullKey, ocm);
     }
-    return this.getFullLinkMessage(fullKey, ocm);
+    return this.getFullLinkMessage(fullKey, activeUser, ocm);
   }
 
   async getHash(
     fullKey: Readonly<FullKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<MHash> | undefined> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
@@ -502,6 +571,7 @@ export default class CommentGraph {
       const link = await this.linkPool.getUserLink(
         { keyType: KeyType.user, userId: fullKey.parentUser },
         fullKey.index,
+        activeUser,
         ocm,
       );
       if (link.invalid) {
@@ -516,7 +586,7 @@ export default class CommentGraph {
       const [topic, _] = await this.msgPool.getTopic(fullKey.index, ocm);
       return topic;
     }
-    const link = await this.linkPool.getLink(fullKey, ocm);
+    const link = await this.linkPool.getLink(fullKey, activeUser, ocm);
     if (link.invalid) {
       return undefined;
     } else {
@@ -527,25 +597,26 @@ export default class CommentGraph {
   async getSingleLink(
     parent: Readonly<FullKey>,
     child: Readonly<FullKey>,
-    token: Readonly<Token> | undefined,
+    activeUser: ActiveUser,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
-    const parentHash = await this.getHash(parent, ocm);
+    const parentHash = await this.getHash(parent, activeUser, ocm);
     if (parentHash === undefined) {
       return INVALID_LINK;
     }
     const phash = parentHash;
-    const childHash = await this.getHash(child, ocm);
+    const childHash = await this.getHash(child, activeUser, ocm);
     if (childHash === undefined) {
       return INVALID_LINK;
     }
-    return this.linkPool.getSingleLink(phash, childHash, token, ocm);
+    return this.linkPool.getSingleLink(phash, childHash, activeUser, ocm);
   }
 
   private async getTopicNextLink(
     fullTopicKey: Readonly<FullTopicKey>,
     nextIndex: Readonly<AdjustedLineIndex>,
     isTop: boolean,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     const { index } = fullTopicKey;
@@ -560,6 +631,7 @@ export default class CommentGraph {
         isGet: isTop ? IsGet.parent : IsGet.child,
         index: nextIndex,
       },
+      activeUser,
       ocm,
     );
   }
@@ -569,6 +641,7 @@ export default class CommentGraph {
     isGet: Readonly<IsGet>,
     isTop: boolean,
     nextIndex: Readonly<AdjustedLineIndex>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     if (link.invalid) {
@@ -580,23 +653,32 @@ export default class CommentGraph {
       isGet: isTop ? IsGet.parent : IsGet.child,
       index: nextIndex,
     };
-    return this.linkPool.getLink(topKey, ocm);
+    return this.linkPool.getLink(topKey, activeUser, ocm);
   }
 
   private async getFullNextLink(
     fullLinkKey: Readonly<FullLinkKey>,
     nextIndex: Readonly<AdjustedLineIndex>,
     isTop: boolean,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     const isGet = fullLinkKey.isGet;
-    const link = await this.linkPool.getLink(fullLinkKey, ocm);
-    return this.getNextLinkFromLink(link, isGet, isTop, nextIndex, ocm);
+    const link = await this.linkPool.getLink(fullLinkKey, activeUser, ocm);
+    return this.getNextLinkFromLink(
+      link,
+      isGet,
+      isTop,
+      nextIndex,
+      activeUser,
+      ocm,
+    );
   }
 
   private async getUserBottomLink(
     fullKey: Readonly<FullUserlikeKey>,
     childIndex: Readonly<AdjustedLineIndex>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     if (fullKey.fullKeyType === FullKeyType.user) {
@@ -604,20 +686,30 @@ export default class CommentGraph {
       return this.linkPool.getUserLink(
         { keyType: KeyType.user, userId },
         childIndex,
+        activeUser,
         ocm,
       );
     }
     const res = await this.linkPool.getUserLink(
       { keyType: KeyType.user, userId: fullKey.parentUser },
       fullKey.index,
+      activeUser,
       ocm,
     );
-    return this.getNextLinkFromLink(res, IsGet.child, false, childIndex, ocm);
+    return this.getNextLinkFromLink(
+      res,
+      IsGet.child,
+      false,
+      childIndex,
+      activeUser,
+      ocm,
+    );
   }
 
   async getTopLink(
     fullKey: Readonly<FullIndirectKey>,
     parentIndex: Readonly<AdjustedLineIndex>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
@@ -634,18 +726,26 @@ export default class CommentGraph {
       return this.getUserBottomLink(
         { fullKeyType: FullKeyType.user, userId: parentUser },
         index,
+        activeUser,
         ocm,
       );
     }
     if (fullKey.fullKeyType === FullKeyType.topic) {
-      return this.getTopicNextLink(fullKey, parentIndex, true, ocm);
+      return this.getTopicNextLink(
+        fullKey,
+        parentIndex,
+        true,
+        activeUser,
+        ocm,
+      );
     }
-    return this.getFullNextLink(fullKey, parentIndex, true, ocm);
+    return this.getFullNextLink(fullKey, parentIndex, true, activeUser, ocm);
   }
 
   async getBottomLink(
     fullKey: Readonly<FullIndirectKey>,
     childIndex: Readonly<AdjustedLineIndex>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<Link>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
@@ -655,12 +755,18 @@ export default class CommentGraph {
       fullKey.fullKeyType === FullKeyType.user ||
       fullKey.fullKeyType === FullKeyType.userchild
     ) {
-      return this.getUserBottomLink(fullKey, childIndex, ocm);
+      return this.getUserBottomLink(fullKey, childIndex, activeUser, ocm);
     }
     if (fullKey.fullKeyType === FullKeyType.topic) {
-      return this.getTopicNextLink(fullKey, childIndex, false, ocm);
+      return this.getTopicNextLink(
+        fullKey,
+        childIndex,
+        false,
+        activeUser,
+        ocm,
+      );
     }
-    return this.getFullNextLink(fullKey, childIndex, false, ocm);
+    return this.getFullNextLink(fullKey, childIndex, false, activeUser, ocm);
   }
 
   private async getTopicNext(
@@ -679,9 +785,10 @@ export default class CommentGraph {
   private async getFullNext(
     fullLinkKey: Readonly<FullLinkKey>,
     isGet: Readonly<IsGet>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<LineKey>> {
-    const link = await this.linkPool.getLink(fullLinkKey, ocm);
+    const link = await this.linkPool.getLink(fullLinkKey, activeUser, ocm);
     if (link.invalid) {
       return INVALID_KEY;
     }
@@ -694,6 +801,7 @@ export default class CommentGraph {
 
   private async getUserNext(
     fullKey: Readonly<FullUserlikeKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<LineKey>> {
     if (fullKey.fullKeyType === FullKeyType.user) {
@@ -702,6 +810,7 @@ export default class CommentGraph {
     const link = await this.linkPool.getUserLink(
       { keyType: KeyType.user, userId: fullKey.parentUser },
       fullKey.index,
+      activeUser,
       ocm,
     );
     if (link.invalid) {
@@ -712,6 +821,7 @@ export default class CommentGraph {
 
   async getParent(
     fullKey: Readonly<FullKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<LineKey>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
@@ -730,11 +840,12 @@ export default class CommentGraph {
     if (fullKey.fullKeyType === FullKeyType.topic) {
       return this.getTopicNext(fullKey, IsGet.parent, ocm);
     }
-    return this.getFullNext(fullKey, IsGet.parent, ocm);
+    return this.getFullNext(fullKey, IsGet.parent, activeUser, ocm);
   }
 
   async getChild(
     fullKey: Readonly<FullKey>,
+    activeUser: Readonly<ActiveUser>,
     ocm: OnCacheMiss,
   ): Promise<Readonly<LineKey>> {
     if (fullKey.fullKeyType === FullKeyType.invalid) {
@@ -751,9 +862,9 @@ export default class CommentGraph {
       fullKey.fullKeyType === FullKeyType.user ||
       fullKey.fullKeyType === FullKeyType.userchild
     ) {
-      return await this.getUserNext(fullKey, ocm);
+      return await this.getUserNext(fullKey, activeUser, ocm);
     } else {
-      return await this.getFullNext(fullKey, IsGet.child, ocm);
+      return await this.getFullNext(fullKey, IsGet.child, activeUser, ocm);
     }
   }
 

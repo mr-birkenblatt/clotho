@@ -3,6 +3,7 @@ import { json, toJson } from '../misc/util';
 import {
   ApiLinkResponse,
   ApiLoginResponse,
+  ApiLogout,
   MHash,
   Token,
   Username,
@@ -11,6 +12,7 @@ import {
 
 export type PrivilegeApiProvider = {
   login: (user: Readonly<Username>) => Promise<ApiLoginResponse>;
+  logout: (token: Readonly<Token>) => Promise<ApiLogout>;
   userInfo: (token: Readonly<Token>) => Promise<ApiLoginResponse>;
   vote: (
     token: Readonly<Token>,
@@ -29,6 +31,15 @@ export const DEFAULT_PRIVILEGE_API: PrivilegeApiProvider = {
         'Content-Type': 'application/json',
       },
       body: toJson({ user }),
+    }).then(json);
+  },
+  logout: async (token) => {
+    return fetch(`${URL_PREFIX}/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: toJson({ token }),
     }).then(json);
   },
   userInfo: async (token) => {

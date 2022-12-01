@@ -17,11 +17,13 @@ export type GraphApiProvider = {
     linkKey: Readonly<LinkKey>,
     offset: number,
     limit: number,
+    token: Readonly<Token> | undefined,
   ) => Promise<ApiLinkList>;
   userLink: (
     userKey: Readonly<UserKey>,
     offset: number,
     limit: number,
+    token: Readonly<Token> | undefined,
   ) => Promise<ApiLinkList>;
   singleLink: (
     parent: Readonly<MHash>,
@@ -48,7 +50,7 @@ export const DEFAULT_GRAPH_API: GraphApiProvider = {
       body: toJson({ hashes }),
     }).then(json);
   },
-  link: async (linkKey, offset, limit) => {
+  link: async (linkKey, offset, limit, token) => {
     const { mhash, isGet } = linkKey;
     const query =
       isGet === IsGet.parent ? { child: mhash } : { parent: mhash };
@@ -65,10 +67,11 @@ export const DEFAULT_GRAPH_API: GraphApiProvider = {
         offset,
         limit,
         scorer: 'best',
+        token,
       }),
     }).then(json);
   },
-  userLink: async (userChildKey, offset, limit) => {
+  userLink: async (userChildKey, offset, limit, token) => {
     const { userId } = userChildKey;
     const url = `${URL_PREFIX}/userlinks`;
     return fetch(url, {
@@ -81,6 +84,7 @@ export const DEFAULT_GRAPH_API: GraphApiProvider = {
         offset,
         limit,
         scorer: 'best',
+        token,
       }),
     }).then(json);
   },

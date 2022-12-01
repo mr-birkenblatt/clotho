@@ -11,6 +11,7 @@ from quick_server import ReqArgs, WorkerArgs
 from app.response_types import (
     LinkListResponse,
     LoginResponse,
+    LogoutResponse,
     MessageResponse,
     TopicListResponse,
     TopicResponse,
@@ -104,6 +105,17 @@ def setup(
             "user": user.get_name(),
             "userid": user.get_id(),
             "permissions": user.get_permissions(),
+        }
+
+    @server.json_post(f"{prefix}/logout")
+    def _post_logout(_req: QSRH, rargs: ReqArgs) -> LogoutResponse:
+        args = rargs["post"]
+        token = args.get("token")
+        if token is not None:
+            with server.get_token_obj(token, 0) as _:
+                pass
+        return {
+            "success": True,
         }
 
     @server.json_post(f"{prefix}/signup")

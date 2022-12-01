@@ -22,6 +22,11 @@ export default class UserActions {
     return toUser(res);
   }
 
+  async logout(token: Readonly<Token>): Promise<boolean> {
+    const res = await this.api.logout(token);
+    return !!res.success;
+  }
+
   async activeUser(
     token: Readonly<Token> | undefined,
   ): Promise<User | undefined> {

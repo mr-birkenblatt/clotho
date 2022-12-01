@@ -150,7 +150,7 @@ const createGetTopLink = (
   parentIndex: Readonly<AdjustedLineIndex>,
 ) => Promise<Readonly<Link>>) => {
   return (ocm, fullKey, parentIndex) =>
-    pool.getTopLink(fullKey, parentIndex, ocm);
+    pool.getTopLink(fullKey, parentIndex, undefined, ocm);
 };
 
 const createGetBottomLink = (
@@ -161,7 +161,7 @@ const createGetBottomLink = (
   childIndex: Readonly<AdjustedLineIndex>,
 ) => Promise<Readonly<Link>>) => {
   return (ocm, fullKey, childIndex) =>
-    pool.getBottomLink(fullKey, childIndex, ocm);
+    pool.getBottomLink(fullKey, childIndex, undefined, ocm);
 };
 
 const createGetMessage = (
@@ -170,7 +170,7 @@ const createGetMessage = (
   ocm: OnCacheMiss,
   fullKey: Readonly<FullKey>,
 ) => Promise<Readonly<ContentValueExt>>) => {
-  return (ocm, fullKey) => pool.getMessage(fullKey, ocm);
+  return (ocm, fullKey) => pool.getMessage(fullKey, undefined, ocm);
 };
 
 const createGetHash = (
@@ -179,7 +179,7 @@ const createGetHash = (
   ocm: OnCacheMiss,
   fullKey: Readonly<FullKey>,
 ) => Promise<Readonly<MHash> | undefined>) => {
-  return (ocm, fullKey) => pool.getHash(fullKey, ocm);
+  return (ocm, fullKey) => pool.getHash(fullKey, undefined, ocm);
 };
 
 const createGetParent = (
@@ -188,7 +188,7 @@ const createGetParent = (
   ocm: OnCacheMiss,
   fullKey: Readonly<FullKey>,
 ) => Promise<Readonly<LineKey>>) => {
-  return (ocm, fullKey) => pool.getParent(fullKey, ocm);
+  return (ocm, fullKey) => pool.getParent(fullKey, undefined, ocm);
 };
 
 const createGetChild = (
@@ -197,7 +197,7 @@ const createGetChild = (
   ocm: OnCacheMiss,
   fullKey: Readonly<FullKey>,
 ) => Promise<Readonly<LineKey>>) => {
-  return (ocm, fullKey) => pool.getChild(fullKey, ocm);
+  return (ocm, fullKey) => pool.getChild(fullKey, undefined, ocm);
 };
 
 const createCommentGraph = (isSimple: boolean): CommentGraph => {

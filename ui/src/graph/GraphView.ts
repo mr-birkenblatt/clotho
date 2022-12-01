@@ -1,5 +1,5 @@
-import { Link, MHash, Token, UserId } from '../api/types';
-import CommentGraph from './CommentGraph';
+import { Link, MHash, UserId } from '../api/types';
+import CommentGraph, { ActiveUser } from './CommentGraph';
 import {
   adj,
   AdjustedLineIndex,
@@ -159,9 +159,14 @@ export function replaceLink(
 async function getCellContent(
   graph: CommentGraph,
   cell: Readonly<Cell>,
+  activeUser: Readonly<ActiveUser>,
   ocm: OnCacheMiss,
 ): Promise<Readonly<Cell>> {
-  const [mhash, content] = await graph.getMessage(cell.fullKey, ocm);
+  const [mhash, content] = await graph.getMessage(
+    cell.fullKey,
+    activeUser,
+    ocm,
+  );
   const res = mhash !== undefined ? { mhash } : { invalid: true };
   return {
     ...cell,
@@ -174,10 +179,15 @@ async function getTopLink(
   graph: CommentGraph,
   cell: Readonly<Cell>,
   parent: Readonly<FullKey>,
-  token: Readonly<Token> | undefined,
+  activeUser: Readonly<ActiveUser>,
   ocm: OnCacheMiss,
 ): Promise<Readonly<Cell>> {
-  const link = await graph.getSingleLink(parent, cell.fullKey, token, ocm);
+  const link = await graph.getSingleLink(
+    parent,
+    cell.fullKey,
+    activeUser,
+    ocm,
+  );
   return {
     ...cell,
     topLink: link,
@@ -191,6 +201,7 @@ async function getNextCell(
   skip: Readonly<MHash> | undefined,
   isGet: IsGet,
   isIncrease: boolean,
+  activeUser: Readonly<ActiveUser>,
   ocm: OnCacheMiss,
   logger: LoggerCB,
 ): Promise<Readonly<Cell>> {
@@ -199,11 +210,11 @@ async function getNextCell(
   const change = isIncrease ? 1 : -1;
   if (fullKeyType === FullKeyType.invalid) {
     log('invalid');
-    return getCellContent(graph, invalidCell(), ocm);
+    return getCellContent(graph, invalidCell(), activeUser, ocm);
   }
   if (fullKeyType === FullKeyType.user) {
     log('user');
-    return getCellContent(graph, invalidCell(), ocm);
+    return getCellContent(graph, invalidCell(), activeUser, ocm);
   }
 
   const getIndexedContent = async (
@@ -214,13 +225,13 @@ async function getNextCell(
     const index = adj(num(oldIndex) + change);
     if (num(index) === -1 && skip !== undefined) {
       log('direct -1');
-      return getCellContent(graph, directCell(skip), ocm);
+      return getCellContent(graph, directCell(skip), activeUser, ocm);
     }
     if (num(index) < 0) {
       log('invalid negative');
-      return getCellContent(graph, invalidCell(), ocm);
+      return getCellContent(graph, invalidCell(), activeUser, ocm);
     }
-    const res = await getCellContent(graph, initCell(index), ocm);
+    const res = await getCellContent(graph, initCell(index), activeUser, ocm);
     if (skip === undefined || res.mhash !== skip) {
       log(`no skip:${skip}`);
       return res;
@@ -251,7 +262,7 @@ async function getNextCell(
   if (fullKeyType === FullKeyType.direct) {
     log('direct');
     if (!isIncrease) {
-      return getCellContent(graph, invalidCell(), ocm);
+      return getCellContent(graph, invalidCell(), activeUser, ocm);
     }
     return getIndexedContent(adj(-1), skip, (index) =>
       cell(otherLevel, isGet, index),
@@ -264,7 +275,7 @@ async function getNextCell(
 export async function progressView(
   graph: CommentGraph,
   view: Readonly<GraphView>,
-  token: Readonly<Token> | undefined,
+  activeUser: Readonly<ActiveUser>,
   ocm?: OnCacheMiss,
   logger?: LoggerCB,
 ): Promise<Readonly<{ view: Readonly<GraphView>; change: boolean }>> {
@@ -281,7 +292,12 @@ export async function progressView(
     return {
       view: {
         ...view,
-        centerTop: await getCellContent(graph, view.centerTop, ocm),
+        centerTop: await getCellContent(
+          graph,
+          view.centerTop,
+          activeUser,
+          ocm,
+        ),
       },
       change: true,
     };
@@ -300,6 +316,7 @@ export async function progressView(
           view.centerBottom !== undefined
             ? view.centerBottom
             : cell(view.centerTop.mhash, IsGet.child, adj(0)),
+          activeUser,
           ocm,
         ),
       },
@@ -315,7 +332,7 @@ export async function progressView(
           graph,
           view.centerBottom,
           view.centerTop.fullKey,
-          token,
+          activeUser,
           ocm,
         ),
       },
@@ -334,6 +351,7 @@ export async function progressView(
           view.topSkip,
           IsGet.parent,
           true,
+          activeUser,
           ocm,
           log,
         ),
@@ -353,6 +371,7 @@ export async function progressView(
           view.bottomSkip,
           IsGet.child,
           true,
+          activeUser,
           ocm,
           log,
         ),
@@ -372,6 +391,7 @@ export async function progressView(
           view.topSkip,
           IsGet.parent,
           false,
+          activeUser,
           ocm,
           log,
         ),
@@ -391,6 +411,7 @@ export async function progressView(
           view.bottomSkip,
           IsGet.child,
           false,
+          activeUser,
           ocm,
           log,
         ),
@@ -406,6 +427,7 @@ export async function progressView(
         top: await getCellContent(
           graph,
           cell(view.centerTop.mhash, IsGet.parent, adj(0)),
+          activeUser,
           ocm,
         ),
       },
@@ -420,6 +442,7 @@ export async function progressView(
         bottom: await getCellContent(
           graph,
           cell(view.centerBottom.mhash, IsGet.child, adj(0)),
+          activeUser,
           ocm,
         ),
       },
@@ -435,7 +458,7 @@ export async function progressView(
           graph,
           view.centerTop,
           view.top.fullKey,
-          token,
+          activeUser,
           ocm,
         ),
       },
@@ -451,7 +474,7 @@ export async function progressView(
           graph,
           view.bottom,
           view.centerBottom.fullKey,
-          token,
+          activeUser,
           ocm,
         ),
       },
@@ -467,7 +490,7 @@ export async function progressView(
           graph,
           view.bottomRight,
           view.centerTop.fullKey,
-          token,
+          activeUser,
           ocm,
         ),
       },
@@ -483,7 +506,7 @@ export async function progressView(
           graph,
           view.bottomLeft,
           view.centerTop.fullKey,
-          token,
+          activeUser,
           ocm,
         ),
       },
