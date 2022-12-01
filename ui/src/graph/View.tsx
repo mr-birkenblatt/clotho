@@ -51,9 +51,9 @@ const NavButton = styled.button`
   border: 0;
   opacity: 0.8;
   color: #5b5f67;
-  border-radius: calc(var(--main-size) * 0.1);
-  width: calc(var(--main-size) * 0.15);
-  height: calc(var(--main-size) * 0.15);
+  border-radius: var(--button-radius);
+  width: var(--button-size);
+  height: var(--button-size);
   background-color: #393d45;
 
   &:hover {
@@ -71,7 +71,7 @@ const VNavButton = styled(NavButton)<OverlayProps>`
 `;
 
 const HOverlay = styled.div<OverlayProps>`
-  height: calc(var(--main-size) * 0.15);
+  height: var(--button-size);
   position: absolute;
   left: 0;
   ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
@@ -155,11 +155,11 @@ const ItemContent = styled.div`
   align-items: center;
   justify-content: center;
   text-align: center;
-  width: calc(var(--main-size) * 0.9);
-  height: calc(var(--main-size) * 0.9);
+  width: var(--item-size);
+  height: var(--item-size);
   margin: 0;
-  border-radius: calc(var(--main-size) * 0.1);
-  padding: calc(var(--main-size) * 0.05);
+  border-radius: var(--item-radius);
+  padding: var(--item-padding);
   white-space: normal;
   overflow: hidden;
 
@@ -171,7 +171,7 @@ const ItemMid = styled.div`
   width: 100%;
   height: 0;
   position: relative;
-  top: calc(var(--main-size) * 0.06);
+  top: var(--mid-top);
   left: 0;
   align-items: center;
   justify-content: center;
@@ -208,9 +208,9 @@ const ItemMidName = styled(ButtonDiv)`
   font-size: 0.6em;
   align-items: center;
   justify-content: center;
-  border-radius: calc(var(--main-size) * 0.025);
-  margin-top: calc(var(--main-size) * -0.0125);
-  padding: calc(var(--main-size) * 0.0125);
+  border-radius: var(--mid-user-radius);
+  margin-top: var(--mid-user-top);
+  padding: var(--mid-user-padding);
 `;
 
 const ItemMidContent = styled(ButtonDiv)`
@@ -218,9 +218,9 @@ const ItemMidContent = styled(ButtonDiv)`
   align-items: center;
   justify-content: center;
   flex-direction: row;
-  height: calc(var(--main-size) * 0.05);
-  border-radius: calc(var(--main-size) * 0.025);
-  padding: calc(var(--main-size) * 0.0125);
+  height: var(--vote-size);
+  border-radius: var(--vote-radius);
+  padding: var(--vote-padding);
 `;
 
 const Link = styled.a`

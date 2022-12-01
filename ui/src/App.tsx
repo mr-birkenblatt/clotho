@@ -4,6 +4,7 @@ import View from './graph/View';
 import CommentGraph from './graph/CommentGraph';
 import { advancedGraph } from './graph/TestGraph';
 import UserActions from './users/UserActions';
+import UserMenu from './users/UserMenu';
 
 const DEBUG = false;
 
@@ -17,17 +18,6 @@ const Main = styled.div`
   background-color: #282c34;
   color: white;
 `;
-
-// const MainHeader = styled.header`
-//   background-color: #282c34;
-//   min-height: 100vh;
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-//   justify-content: center;
-//   font-size: calc(10px + 2vmin);
-//   color: white;
-// `;
 
 const MainColumn = styled.div`
   margin: 0 auto;
@@ -59,15 +49,13 @@ export default class App extends PureComponent<AppProps, AppState> {
   render() {
     return (
       <Main>
-        {/* <MainHeader>
-          <RequireLogin />
-        </MainHeader> */}
         <MainColumn>
           <View
             graph={this.graph}
             userActions={this.userActions}
           />
         </MainColumn>
+        <UserMenu userActions={this.userActions} />
       </Main>
     );
   }

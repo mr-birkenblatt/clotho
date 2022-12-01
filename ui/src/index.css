@@ -1,5 +1,22 @@
 :root {
   --main-size: min(100vw, 50vh);
+
+  --button-size: calc(var(--main-size) * 0.15);
+  --button-radius: calc(var(--main-size) * 0.1);
+
+  --item-size: calc(var(--main-size) * 0.9);
+  --item-radius: calc(var(--main-size) * 0.1);
+  --item-padding: calc(var(--main-size) * 0.05);
+
+  --mid-top: calc(var(--main-size) * 0.06);
+
+  --mid-user-padding: calc(var(--main-size) * 0.0125);
+  --mid-user-radius: calc(var(--main-size) * 0.025);
+  --mid-user-top: calc(var(--main-size) * -0.0125);
+
+  --vote-size: calc(var(--main-size) * 0.05);
+  --vote-radius: calc(var(--main-size) * 0.025);
+  --vote-padding: calc(var(--main-size) * 0.0125);
 }
 
 body {
