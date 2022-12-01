@@ -386,7 +386,7 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { resetView, redraw, pending } = this.state;
     const token = user !== undefined ? user.token : undefined;
     if (user !== prevProps.user) {
-      // graph.clearCache();
+      graph.clearCache();
       dispatch(
         setView({ view: removeAllLinks(view), changes, progress: false }),
       );
