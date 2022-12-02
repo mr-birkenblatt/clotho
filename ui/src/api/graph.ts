@@ -80,7 +80,7 @@ export const DEFAULT_GRAPH_API: GraphApiProvider = {
         'Content-Type': 'application/json',
       },
       body: toJson({
-        user: userId,
+        userid: userId,
         offset,
         limit,
         scorer: 'best',

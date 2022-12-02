@@ -313,8 +313,7 @@ def setup(
     def _post_userlinks(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
         muser = get_maybe_user(args)
-        user = user_store.get_user_by_id(
-            user_store.get_id_from_name(args["user"]))
+        user = user_store.get_user_by_id(args["userid"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_user_links(user, **link_query))
         return {
