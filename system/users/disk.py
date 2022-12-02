@@ -38,7 +38,6 @@ class DiskUserStore(UserStore):
 
     def _compute_path(self, user_id: str) -> str:
         # FIXME: create generic class with dedup and subtree creation
-        # FIXME: use disk for links as well
 
         def split_hash(hash_str: str) -> Iterable[str]:
             yield hash_str[:2]
