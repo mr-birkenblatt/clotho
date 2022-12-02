@@ -23,7 +23,9 @@
   --item-radius-sm: calc(var(--main-size) * 0.025);
   --item-padding: calc(var(--main-size) * 0.05);
   --item-background: #393d45;
+  --item-background-dim: #334;
   --item-shadow: #6c7078;
+  --item-lock: rgb(20, 145, 154);
 
   --mid-top: calc(var(--main-size) * 0.06);
 

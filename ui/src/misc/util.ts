@@ -106,8 +106,8 @@ export function toJson(obj: any): string {
 }
 
 const UNITS: readonly [Readonly<string>, number, number][] = [
-  ['k', 1000, 750],
-  ['M', 1000, 750],
+  ['k', 1000, 1000],
+  ['M', 1000, 1000],
 ];
 
 export function toReadableNumber(num: number): string {

@@ -30,6 +30,7 @@ import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 import UserActions from '../users/UserActions';
 import { RichVote, VoteType, VOTE_TYPES } from '../api/types';
+import { FullKeyType } from './keys';
 
 const Outer = styled.div`
   position: relative;
@@ -149,7 +150,7 @@ const Item = styled.div`
   scroll-snap-align: center;
 `;
 
-const ItemContent = styled.div`
+const ItemContent = styled.div<ItemContentProps>`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -163,6 +164,10 @@ const ItemContent = styled.div`
   white-space: normal;
   overflow: hidden;
   background-color: var(--item-background);
+  box-shadow: ${(props) =>
+    props.isLocked
+      ? 'inset 0 0 32px 0 var(--item-lock)'
+      : 'inset 0 0 32px 0 var(--item-background-dim)'};
 `;
 
 const ItemMid = styled.div`
@@ -263,6 +268,10 @@ type NoScrollProps = {
 
 type ButtonDivProps = {
   isChecked: boolean;
+};
+
+type ItemContentProps = {
+  isLocked: boolean;
 };
 
 enum ResetView {
@@ -712,54 +721,77 @@ class View extends PureComponent<ViewProps, ViewState> {
       );
     };
 
+    const isLocked =
+      view.centerTop.fullKey.fullKeyType === FullKeyType.topic ||
+      view.centerTop.fullKey.fullKeyType === FullKeyType.user;
     return (
       <Outer ref={this.rootRef}>
         <Temp noScroll={noScroll}>
           <Item>
             {getTopLink(tempContent[0], undefined)}
-            <ItemContent>{getContent(tempContent[0])}</ItemContent>
+            <ItemContent isLocked={isLocked}>
+              {getContent(tempContent[0])}
+            </ItemContent>
           </Item>
           <Item>
             {getTopLink(tempContent[1], undefined)}
-            <ItemContent>{getContent(tempContent[1])}</ItemContent>
+            <ItemContent isLocked={isLocked}>
+              {getContent(tempContent[1])}
+            </ItemContent>
           </Item>
         </Temp>
         <VBand noScroll={noScroll}>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.top}>
-              <ItemContent>{getContent(view.top)}</ItemContent>
+              <ItemContent isLocked={false}>
+                {getContent(view.top)}
+              </ItemContent>
             </Item>
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.topLeft}>
-              <ItemContent>{getContent(view.topLeft)}</ItemContent>
+              <ItemContent isLocked={isLocked}>
+                {getContent(view.topLeft)}
+              </ItemContent>
             </Item>
             <Item ref={this.curRefs.centerTop}>
               {getTopLink(view.centerTop, 'centerTop')}
-              <ItemContent>{getContent(view.centerTop)}</ItemContent>
+              <ItemContent isLocked={isLocked}>
+                {getContent(view.centerTop)}
+              </ItemContent>
             </Item>
             <Item ref={this.curRefs.topRight}>
-              <ItemContent>{getContent(view.topRight)}</ItemContent>
+              <ItemContent isLocked={isLocked}>
+                {getContent(view.topRight)}
+              </ItemContent>
             </Item>
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.bottomLeft}>
               {getTopLink(view.bottomLeft, 'bottomLeft')}
-              <ItemContent>{getContent(view.bottomLeft)}</ItemContent>
+              <ItemContent isLocked={isLocked}>
+                {getContent(view.bottomLeft)}
+              </ItemContent>
             </Item>
             <Item ref={this.curRefs.centerBottom}>
               {getTopLink(view.centerBottom, 'centerBottom')}
-              <ItemContent>{getContent(view.centerBottom)}</ItemContent>
+              <ItemContent isLocked={isLocked}>
+                {getContent(view.centerBottom)}
+              </ItemContent>
             </Item>
             <Item ref={this.curRefs.bottomRight}>
               {getTopLink(view.bottomRight, 'bottomRight')}
-              <ItemContent>{getContent(view.bottomRight)}</ItemContent>
+              <ItemContent isLocked={isLocked}>
+                {getContent(view.bottomRight)}
+              </ItemContent>
             </Item>
           </HBand>
           <HBand noScroll={noScroll}>
             <Item ref={this.curRefs.bottom}>
               {getTopLink(view.bottom, 'bottom')}
-              <ItemContent>{getContent(view.bottom)}</ItemContent>
+              <ItemContent isLocked={false}>
+                {getContent(view.bottom)}
+              </ItemContent>
             </Item>
           </HBand>
         </VBand>
