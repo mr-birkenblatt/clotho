@@ -1,18 +1,8 @@
-import { INVALID_LINK, Link, MHash, UserId } from '../api/types';
+import { MHash, UserId } from '../api/types';
 import { assertFail, debugJSON, LoggerCB, maybeLog, str } from '../misc/util';
 
 export function fromMHash(mhash: Readonly<MHash>): Readonly<string> {
   return str(mhash);
-}
-
-export function userMHash(
-  key:
-    | Readonly<FullUserKey>
-    | Readonly<UserKey>
-    | Readonly<{ userId: Readonly<UserId> }>,
-): MHash {
-  // FIXME: don't use MHash for users
-  return `[user: ${key.userId}]` as MHash;
 }
 
 export type AdjustedLineIndex = number & { _adjustedLineIndex: void };
@@ -68,7 +58,6 @@ export enum FullKeyType {
 export interface FullDirectKey {
   fullKeyType: FullKeyType.direct;
   mhash: Readonly<MHash>;
-  topLink?: Readonly<Link>;
 }
 export interface FullLinkKey {
   fullKeyType: FullKeyType.link;
@@ -83,6 +72,7 @@ export interface FullTopicKey {
 interface FullUserKey {
   fullKeyType: FullKeyType.user;
   userId: Readonly<UserId>;
+  index: Readonly<AdjustedLineIndex>;
 }
 interface FullUserChildKey {
   fullKeyType: FullKeyType.userchild;
@@ -142,7 +132,7 @@ export function toFullKey(
     return { fullKeyType: FullKeyType.topic, index };
   }
   if (lineKey.keyType === KeyType.user) {
-    return { fullKeyType: FullKeyType.user, userId: lineKey.userId };
+    return { fullKeyType: FullKeyType.user, userId: lineKey.userId, index };
   }
   if (lineKey.keyType === KeyType.userchild) {
     return {
@@ -171,11 +161,32 @@ export function asTopicKey(index: number): Readonly<FullIndirectKey> {
   };
 }
 
+export function asUserKey(
+  userId: string,
+  index: number,
+): Readonly<FullIndirectKey> {
+  return {
+    fullKeyType: FullKeyType.user,
+    userId: userId as UserId,
+    index: adj(index),
+  };
+}
+
+export function asUserChildKey(
+  parentUser: string,
+  index: number,
+): Readonly<FullIndirectKey> {
+  return {
+    fullKeyType: FullKeyType.userchild,
+    parentUser: parentUser as UserId,
+    index: adj(index),
+  };
+}
+
 export function asDirectKey(hash: Readonly<string>): Readonly<FullKey> {
   return {
     fullKeyType: FullKeyType.direct,
     mhash: hash as MHash,
-    topLink: INVALID_LINK,
   };
 }
 
@@ -254,12 +265,11 @@ export function equalFullKey(
     keyA.fullKeyType === FullKeyType.direct &&
     keyB.fullKeyType === FullKeyType.direct
   ) {
-    // NOTE: topLink is a cache
-    if (keyA.mhash === keyB.mhash) {
-      return true;
+    if (keyA.mhash !== keyB.mhash) {
+      log(`direct: keyA.mhash:${keyA.mhash} !== keyB.mhash:${keyB.mhash}`);
+      return false;
     }
-    log(`direct: keyA.mhash:${keyA.mhash} !== keyB.mhash:${keyB.mhash}`);
-    return false;
+    return true;
   }
   if (
     keyA.fullKeyType === FullKeyType.user &&
@@ -269,7 +279,11 @@ export function equalFullKey(
       log(`user: keyA.userId:${keyA.userId} !== keyB.userId:${keyB.userId}`);
       return false;
     }
-    return false;
+    if (keyA.index !== keyB.index) {
+      log(`user: keyA:${debugJSON(keyA)}`, '!==', `keyB:${debugJSON(keyB)}`);
+      return false;
+    }
+    return true;
   }
   if (
     keyA.fullKeyType === FullKeyType.userchild &&
@@ -284,7 +298,11 @@ export function equalFullKey(
       return false;
     }
     if (keyA.index !== keyB.index) {
-      log(`user: keyA:${debugJSON(keyA)}`, '!==', `keyB:${debugJSON(keyB)}`);
+      log(
+        `userchild: keyA:${debugJSON(keyA)}`,
+        '!==',
+        `keyB:${debugJSON(keyB)}`,
+      );
       return false;
     }
     return true;

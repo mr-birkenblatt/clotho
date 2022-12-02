@@ -1,6 +1,6 @@
 import { GraphApiProvider } from '../api/graph';
 import { ApiVotes, MHash, UserId, Username } from '../api/types';
-import { IsGet, userMHash } from './keys';
+import { IsGet } from './keys';
 import { assertTrue, range, str } from '../misc/util';
 
 export const simpleGraph = (): TestGraph => {
@@ -45,7 +45,7 @@ class TestGraph {
   private readonly messages: { [key: string]: string };
   private readonly children: { [key: string]: string[] };
   private readonly parents: { [key: string]: string[] };
-  private readonly allHash: string[];
+  private readonly allLinks: [string, string][];
 
   constructor(apiLimit: number) {
     this.apiLimit = apiLimit;
@@ -53,7 +53,7 @@ class TestGraph {
     this.messages = {};
     this.children = {};
     this.parents = {};
-    this.allHash = [];
+    this.allLinks = [];
   }
 
   private addTopic(hash: string): void {
@@ -64,7 +64,6 @@ class TestGraph {
   private addMessage(hash: string): void {
     assertTrue(!hash.startsWith('msg:'), `invalid hash: ${hash}`);
     this.messages[hash] = `msg: ${hash}`;
-    this.allHash.push(hash);
   }
 
   private addLink(from: string, to: string): void {
@@ -78,6 +77,7 @@ class TestGraph {
       this.parents[to] = [];
     }
     this.parents[to].push(from);
+    this.allLinks.push([from, to]);
   }
 
   addTopics(hashs: string[]): void {
@@ -135,13 +135,13 @@ class TestGraph {
         if (str(userId) !== 'abc') {
           return { links: [], next: 0 };
         }
-        const arr = this.allHash;
+        const arr = this.allLinks;
         const ret = arr.slice(offset, offset + Math.min(limit, this.apiLimit));
         const endIx = offset + ret.length;
         const next = endIx === arr.length ? 0 : endIx;
-        const links = ret.map((mhash) => ({
-          parent: userMHash({ userId }),
-          child: mhash as MHash,
+        const links = ret.map(([parent, child]) => ({
+          parent: parent as MHash,
+          child: child as MHash,
           user: `u/${userId}` as Username,
           userid: userId,
           first: 123,
@@ -219,16 +219,16 @@ export class InfGraph {
         if (str(userId) !== 'abc') {
           return { links: [], next: 0 };
         }
-        const arr: string[] = range(
+        const arr: [string, string][] = range(
           offset,
           offset + Math.min(limit, this.apiLimit),
-        ).map((el) => `b${el}`);
+        ).map((el) => [`a${el}`, `b${el}`]);
         const ret = arr.slice(offset, offset + Math.min(limit, this.apiLimit));
         const endIx = offset + ret.length;
         const next = endIx === arr.length ? 0 : endIx;
-        const links = ret.map((mhash) => ({
-          parent: userMHash({ userId }),
-          child: mhash as MHash,
+        const links = ret.map(([parent, child]) => ({
+          parent: parent as MHash,
+          child: child as MHash,
           user: `u/${userId}` as Username,
           userid: userId,
           first: 123,

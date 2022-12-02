@@ -5,6 +5,7 @@ import {
   equalView,
   GraphView,
   HDirection,
+  initUserView,
   initView,
   progressView,
   scrollBottomHorizontal,
@@ -16,6 +17,8 @@ import {
   adj,
   asDirectKey,
   asTopicKey,
+  asUserChildKey,
+  asUserKey,
   FullIndirectKey,
   FullKey,
   FullKeyType,
@@ -29,7 +32,7 @@ import {
   detectSlowCallback,
   LoggerCB,
 } from '../misc/util';
-import { INVALID_LINK, MHash } from '../api/types';
+import { INVALID_LINK, MHash, UserId } from '../api/types';
 
 function asFullKey(
   hash: Readonly<string>,
@@ -142,7 +145,7 @@ function invalidCell(): Cell {
 }
 
 function buildFullView(
-  top: [string, FullKey],
+  top: [string, FullKey] | undefined,
   middleTop: [
     [string, FullKey] | undefined,
     [string, FullKey],
@@ -158,7 +161,7 @@ function buildFullView(
   bottomSkip: string | undefined,
 ): Readonly<GraphView> {
   return {
-    top: cellFromString(...top),
+    top: top !== undefined ? cellFromString(...top) : invalidCell(),
     topLeft:
       middleTop[0] !== undefined
         ? cellFromString(...middleTop[0])
@@ -240,16 +243,12 @@ test('test graph view init', async () => {
     buildFullView(
       ['a1', asFullKey('b2', true, 0)],
       [['a2', asTopicKey(0)], ['b2', asTopicKey(1)], undefined],
-      [
-        undefined,
-        ['a3', asDirectKey('a3')],
-        ['b4', asFullKey('b2', false, 0)],
-      ],
-      ['a4', asFullKey('a3', false, 0)],
+      [undefined, ['b4', asFullKey('b2', false, 0)], undefined],
+      ['b2', asFullKey('b4', false, 0)],
       undefined,
-      'a3',
+      undefined,
     ),
-    8,
+    11,
   );
   const a1Graph = await execute(
     graph,
@@ -753,4 +752,207 @@ test('test graph infinite', async () => {
     scrollBottomHorizontal(v14, HDirection.Left) === undefined,
     `${debugJSON(scrollBottomHorizontal(v14, HDirection.Left))}`,
   );
+});
+
+test('test user graph', async () => {
+  const graph = new CommentGraph(advancedGraph().getApiProvider(), {
+    maxCommentPoolSize: 100,
+    maxTopicSize: 100,
+    maxLinkPoolSize: 100,
+    maxLinkCache: 100,
+    maxLineSize: 100,
+    maxUserCache: 100,
+    maxUserLineSize: 100,
+    blockSize: 10,
+  });
+  const v0 = await execute(
+    graph,
+    initUserView('abc' as UserId),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asUserKey('abc', 0)], ['a1', asUserKey('abc', 1)]],
+      [
+        undefined,
+        ['a2', asUserChildKey('abc', 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+      undefined,
+      'a2',
+    ),
+    13,
+  );
+  const v1 = await execute(
+    graph,
+    scrollTopHorizontal(v0, HDirection.Right),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [
+        ['a1', asUserKey('abc', 0)],
+        ['a1', asUserKey('abc', 1)],
+        ['a1', asUserKey('abc', 2)],
+      ],
+      [
+        undefined,
+        ['b2', asUserChildKey('abc', 1)],
+        ['a2', asFullKey('a1', false, 0)],
+      ],
+      ['b4', asFullKey('b2', false, 0)],
+      undefined,
+      'b2',
+    ),
+    11,
+  );
+  const v2 = await execute(
+    graph,
+    scrollTopHorizontal(v1, HDirection.Right),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [
+        ['a1', asUserKey('abc', 1)],
+        ['a1', asUserKey('abc', 2)],
+        ['a1', asUserKey('abc', 3)],
+      ],
+      [
+        undefined,
+        ['c2', asUserChildKey('abc', 2)],
+        ['a2', asFullKey('a1', false, 0)],
+      ],
+      undefined,
+      undefined,
+      'c2',
+    ),
+    11,
+  );
+  const v3 = await execute(
+    graph,
+    scrollTopHorizontal(v2, HDirection.Right),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [
+        ['a1', asUserKey('abc', 2)],
+        ['a1', asUserKey('abc', 3)],
+        ['a2', asUserKey('abc', 4)],
+      ],
+      [
+        undefined,
+        ['d2', asUserChildKey('abc', 3)],
+        ['a2', asFullKey('a1', false, 0)],
+      ],
+      undefined,
+      undefined,
+      'd2',
+    ),
+    11,
+  );
+  const v4 = await execute(
+    graph,
+    scrollTopHorizontal(v3, HDirection.Right),
+    buildFullView(
+      ['a1', asFullKey('a2', true, 0)],
+      [
+        ['a1', asUserKey('abc', 3)],
+        ['a2', asUserKey('abc', 4)],
+        ['a3', asUserKey('abc', 5)],
+      ],
+      [undefined, ['a3', asUserChildKey('abc', 4)], undefined],
+      ['a4', asFullKey('a3', false, 0)],
+      undefined,
+      'a3',
+    ),
+    11,
+  );
+
+  await execute(graph, scrollTopHorizontal(v4, HDirection.Left), v3, 11);
+  await execute(graph, scrollTopHorizontal(v3, HDirection.Left), v2, 11);
+
+  const v5 = await execute(
+    graph,
+    scrollBottomHorizontal(v2, HDirection.Right),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
+      [
+        ['c2', asUserChildKey('abc', 2)],
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+      'a1',
+      'c2',
+    ),
+    6,
+  );
+  await execute(
+    graph,
+    scrollBottomHorizontal(v5, HDirection.Left),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
+      [
+        undefined,
+        ['c2', asUserChildKey('abc', 2)],
+        ['a2', asFullKey('a1', false, 0)],
+      ],
+      undefined,
+      'a1',
+      'c2',
+    ),
+    6,
+  );
+  const v6 = await execute(
+    graph,
+    scrollBottomHorizontal(v5, HDirection.Right),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], ['b4', asFullKey('b2', true, 1)]],
+      [
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+        ['d2', asFullKey('a1', false, 3)],
+      ],
+      ['b4', asFullKey('b2', false, 0)],
+      'a1',
+      'c2',
+    ),
+    6,
+  );
+  await execute(
+    graph,
+    scrollBottomHorizontal(v6, HDirection.Left),
+    buildFullView(
+      ['a5', asFullKey('a1', true, 0)],
+      [undefined, ['a1', asDirectKey('a1')], undefined],
+      [
+        ['c2', asDirectKey('c2')],
+        ['a2', asFullKey('a1', false, 0)],
+        ['b2', asFullKey('a1', false, 1)],
+      ],
+      ['a3', asFullKey('a2', false, 0)],
+      'a1',
+      'c2',
+    ),
+    6,
+  );
+
+  const { view: invalidView, change: invalidChange } = await progressView(
+    graph,
+    initUserView('foo' as UserId),
+    undefined,
+  );
+  assertTrue(invalidChange, 'one change');
+  assertTrue(
+    equalView(invalidView, {
+      centerTop: {
+        content: '[deleted]',
+        fullKey: asUserKey('foo', 0),
+        invalid: true,
+      },
+    }),
+    'should be invalid',
+  );
+  const { view: nextInvalidView, change: nextInvalidChange } =
+    await progressView(graph, invalidView, undefined);
+  assertTrue(!nextInvalidChange, 'no more changes');
+  assertTrue(equalView(invalidView, nextInvalidView), 'should be no change');
 });

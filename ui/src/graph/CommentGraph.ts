@@ -35,7 +35,6 @@ import {
   LineKey,
   LinkKey,
   UserKey,
-  userMHash,
 } from './keys';
 import LRU from '../misc/LRU';
 import {
@@ -512,7 +511,14 @@ export default class CommentGraph {
     ocm: OnCacheMiss,
   ): Promise<ContentValueExt> {
     if (key.fullKeyType === FullKeyType.user) {
-      return [userMHash(key), `u/${key.userId}`]; // FIXME: use real name
+      const { userId, index } = key;
+      const res = await this.linkPool.getUserLink(
+        { keyType: KeyType.user, userId },
+        index,
+        activeUser,
+        ocm,
+      );
+      return this.getMessageFromLink(res, IsGet.parent, ocm);
     }
     const { parentUser, index } = key;
     const res = await this.linkPool.getUserLink(
@@ -565,7 +571,16 @@ export default class CommentGraph {
       return undefined;
     }
     if (fullKey.fullKeyType === FullKeyType.user) {
-      return userMHash(fullKey);
+      const link = await this.linkPool.getUserLink(
+        { keyType: KeyType.user, userId: fullKey.userId },
+        fullKey.index,
+        activeUser,
+        ocm,
+      );
+      if (link.invalid) {
+        return undefined;
+      }
+      return link.parent;
     }
     if (fullKey.fullKeyType === FullKeyType.userchild) {
       const link = await this.linkPool.getUserLink(
@@ -719,12 +734,13 @@ export default class CommentGraph {
       return INVALID_LINK;
     }
     if (fullKey.fullKeyType === FullKeyType.userchild) {
-      if (num(parentIndex) !== 0) {
-        return INVALID_LINK;
-      }
       const { parentUser, index } = fullKey;
       return this.getUserBottomLink(
-        { fullKeyType: FullKeyType.user, userId: parentUser },
+        {
+          fullKeyType: FullKeyType.user,
+          userId: parentUser,
+          index: parentIndex,
+        },
         index,
         activeUser,
         ocm,

@@ -14,6 +14,7 @@ import {
 import {
   amend,
   assertFail,
+  assertTrue,
   debugJSON,
   LoggerCB,
   maybeLog,
@@ -71,8 +72,11 @@ function topicCell(index: Readonly<AdjustedLineIndex>): Readonly<Cell> {
   return { fullKey: toFullKey(TOPIC_KEY, index) };
 }
 
-function userCell(userId: Readonly<UserId>): Readonly<Cell> {
-  return { fullKey: { fullKeyType: FullKeyType.user, userId } };
+function userCell(
+  userId: Readonly<UserId>,
+  index: Readonly<AdjustedLineIndex>,
+): Readonly<Cell> {
+  return { fullKey: { fullKeyType: FullKeyType.user, userId, index } };
 }
 
 function userChildCell(
@@ -102,7 +106,7 @@ export function initView(
 
 export function initUserView(userId: Readonly<UserId>): Readonly<GraphView> {
   return {
-    centerTop: userCell(userId),
+    centerTop: userCell(userId, adj(0)),
   };
 }
 
@@ -153,6 +157,7 @@ export function replaceLink(
   if (consistentLinks(newView, undefined)) {
     return newView;
   }
+  console.warn('replaced link would cause inconsistent state. reverting...');
   return view;
 }
 
@@ -212,10 +217,6 @@ async function getNextCell(
     log('invalid');
     return getCellContent(graph, invalidCell(), activeUser, ocm);
   }
-  if (fullKeyType === FullKeyType.user) {
-    log('user');
-    return getCellContent(graph, invalidCell(), activeUser, ocm);
-  }
 
   const getIndexedContent = async (
     oldIndex: Readonly<AdjustedLineIndex>,
@@ -223,10 +224,19 @@ async function getNextCell(
     initCell: (index: Readonly<AdjustedLineIndex>) => Readonly<Cell>,
   ): Promise<Readonly<Cell>> => {
     const index = adj(num(oldIndex) + change);
-    if (num(index) === -1 && skip !== undefined) {
+    if (
+      num(index) === -1 &&
+      skip !== undefined &&
+      sameLevel.fullKeyType !== FullKeyType.userchild
+    ) {
       log('direct -1');
       return getCellContent(graph, directCell(skip), activeUser, ocm);
     }
+    log(
+      `reject direct index:${num(index)}`,
+      `skip:${skip}`,
+      `fullKeyType:${sameLevel.fullKeyType}`,
+    );
     if (num(index) < 0) {
       log('invalid negative');
       return getCellContent(graph, invalidCell(), activeUser, ocm);
@@ -240,10 +250,16 @@ async function getNextCell(
     return getIndexedContent(index, undefined, initCell);
   };
 
+  if (fullKeyType === FullKeyType.user) {
+    log('user');
+    return getIndexedContent(sameLevel.index, skip, (index) =>
+      userCell(sameLevel.userId, index),
+    );
+  }
   if (fullKeyType === FullKeyType.userchild) {
     log('userchild');
-    return getIndexedContent(sameLevel.index, skip, (index) =>
-      userChildCell(sameLevel.parentUser, index),
+    return getIndexedContent(adj(isIncrease ? -1 : 0), skip, (index) =>
+      cell(otherLevel, isGet, index),
     );
   }
   if (fullKeyType === FullKeyType.topic) {
@@ -270,6 +286,48 @@ async function getNextCell(
   }
   /* istanbul ignore next */
   assertFail(`unkown FullKeyType: ${fullKeyType}`);
+}
+
+type BottomCell = {
+  centerBottom: Readonly<Cell>;
+  bottomSkip: Readonly<MHash> | undefined;
+};
+
+async function initCenterBottom(
+  graph: CommentGraph,
+  centerTop: Readonly<Cell>,
+  centerBottom: Readonly<Cell> | undefined,
+  bottomSkip: Readonly<MHash> | undefined,
+  activeUser: Readonly<ActiveUser>,
+  ocm: OnCacheMiss,
+  logger: LoggerCB,
+): Promise<BottomCell> {
+  const log = maybeLog(logger, 'centerBottom');
+
+  const getBottom = (cell: Readonly<Cell>): Promise<Readonly<Cell>> => {
+    return getCellContent(graph, cell, activeUser, ocm);
+  };
+
+  if (centerBottom !== undefined) {
+    log('already set');
+    return {
+      centerBottom: await getBottom(centerBottom),
+      bottomSkip,
+    };
+  }
+  if (centerTop.fullKey.fullKeyType === FullKeyType.user) {
+    const { userId, index } = centerTop.fullKey;
+    log(`for user ${userId} at ${index}`);
+    const res = await getBottom(userChildCell(userId, index));
+    return { centerBottom: res, bottomSkip: res.mhash };
+  }
+  const { mhash } = centerTop;
+  assertTrue(mhash !== undefined, 'guarantee centerTop mhash before calling');
+  log('from parent');
+  return {
+    centerBottom: await getBottom(cell(mhash, IsGet.child, adj(0))),
+    bottomSkip: undefined,
+  };
 }
 
 export async function progressView(
@@ -308,17 +366,20 @@ export async function progressView(
     view.centerBottom.content === undefined
   ) {
     log('centerBottom content');
+    const { centerBottom, bottomSkip } = await initCenterBottom(
+      graph,
+      view.centerTop,
+      view.centerBottom,
+      view.bottomSkip,
+      activeUser,
+      ocm,
+      log,
+    );
     return {
       view: {
         ...view,
-        centerBottom: await getCellContent(
-          graph,
-          view.centerBottom !== undefined
-            ? view.centerBottom
-            : cell(view.centerTop.mhash, IsGet.child, adj(0)),
-          activeUser,
-          ocm,
-        ),
+        centerBottom,
+        bottomSkip,
       },
       change: true,
     };
@@ -523,7 +584,10 @@ function removeLink<T extends Readonly<Cell> | undefined>(
   if (cell === undefined) {
     return undefined as undefined extends T ? undefined : never;
   }
-  const { topLink: _, ...rest }: Readonly<Cell> = cell;
+  const { topLink, ...rest }: Readonly<Cell> = cell;
+  if (topLink === undefined) {
+    return cell;
+  }
   return { ...rest };
 }
 
@@ -638,6 +702,9 @@ export function scrollTopHorizontal(
   view: Readonly<GraphView>,
   direction: HDirection,
 ): Readonly<GraphView> | undefined {
+  const lockBottom =
+    view.centerTop.fullKey.fullKeyType === FullKeyType.topic ||
+    view.centerTop.fullKey.fullKeyType === FullKeyType.user;
   const centerBottom = removeLink(convertToDirect(view.centerBottom));
   if (direction == HDirection.Right) {
     if (view.topRight === undefined || view.topRight.invalid) {
@@ -646,14 +713,18 @@ export function scrollTopHorizontal(
     return {
       top: undefined,
       centerTop: removeLink(view.topRight),
-      centerBottom: centerBottom,
-      bottom: centerBottom !== undefined ? view.bottom : undefined,
+      centerBottom: !lockBottom ? centerBottom : undefined,
+      bottom:
+        centerBottom !== undefined && !lockBottom ? view.bottom : undefined,
       topLeft: removeLink(view.centerTop),
       topRight: undefined,
       bottomLeft: undefined,
       bottomRight: undefined,
       topSkip: view.topSkip,
-      bottomSkip: centerBottom !== undefined ? centerBottom.mhash : undefined,
+      bottomSkip:
+        centerBottom !== undefined && !lockBottom
+          ? centerBottom.mhash
+          : undefined,
     };
   } else {
     if (view.topLeft === undefined || view.topLeft.invalid) {
@@ -662,14 +733,18 @@ export function scrollTopHorizontal(
     return {
       top: undefined,
       centerTop: removeLink(view.topLeft),
-      centerBottom: centerBottom,
-      bottom: centerBottom !== undefined ? view.bottom : undefined,
+      centerBottom: !lockBottom ? centerBottom : undefined,
+      bottom:
+        centerBottom !== undefined && !lockBottom ? view.bottom : undefined,
       topLeft: undefined,
       topRight: removeLink(view.centerTop),
       bottomLeft: undefined,
       bottomRight: undefined,
       topSkip: view.topSkip,
-      bottomSkip: centerBottom !== undefined ? centerBottom.mhash : undefined,
+      bottomSkip:
+        centerBottom !== undefined && !lockBottom
+          ? centerBottom.mhash
+          : undefined,
     };
   }
 }
@@ -745,12 +820,14 @@ function equalCell(
     log(`cell.mhash:${cell.mhash} !== expected.mhash:${expected.mhash}`);
     return false;
   }
-  // NOTE: topLink is a cache
-  if (cell.content === expected.content) {
-    return true;
+  if (cell.content !== expected.content) {
+    log(
+      `cell.content:${cell.content} !== expected.content:${expected.content}`,
+    );
+    return false;
   }
-  log(`cell.content:${cell.content} !== expected.content:${expected.content}`);
-  return false;
+  // NOTE: topLink is a cache
+  return true;
 }
 
 export function equalView(
