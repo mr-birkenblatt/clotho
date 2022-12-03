@@ -14,24 +14,19 @@ import {
   scrollVertical,
   TopLinkKey,
   vertical,
-} from './GraphView';
-import CommentGraph, { toActiveUser } from './CommentGraph';
-import {
-  errHnd,
-  SafeMap,
-  safeStringify,
-  toReadableNumber,
-} from '../misc/util';
-import {
-  initMessageWriting,
-  initUser,
-  refreshLinks,
-  setView,
-} from './ViewStateSlice';
+} from '../graph/GraphView';
+import CommentGraph, { toActiveUser } from '../graph/CommentGraph';
+import { errHnd, SafeMap } from '../misc/util';
+import { initUser, refreshLinks, setView } from './ViewStateSlice';
 import UserActions from '../users/UserActions';
-import { RichVote, VoteType, VOTE_TYPES } from '../api/types';
-import { FullKeyType } from './keys';
-import Content from './Content';
+import { FullKeyType } from '../graph/keys';
+import { VoteType } from '../api/types';
+import TopLink, {
+  UserCallback,
+  VoteCallback,
+  VoteCallbackKey,
+} from './TopLink';
+import Item from './Item';
 
 const Outer = styled.div`
   position: relative;
@@ -157,117 +152,12 @@ const HBand = styled.div<NoScrollProps>`
   scroll-snap-align: start;
 `;
 
-const Item = styled.div`
-  display: inline-block;
-  white-space: nowrap;
-  vertical-align: top;
-  margin: 0;
-  padding: 0;
-  width: var(--main-size);
-  height: var(--main-size);
-  scroll-snap-align: center;
-`;
-
-const ItemContent = styled.div<ItemContentProps>`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  width: var(--item-size);
-  height: var(--item-size);
-  margin: 0;
-  border-radius: var(--item-radius);
-  padding: var(--item-padding);
-  white-space: normal;
-  overflow: hidden;
-  background-color: var(--item-background);
-  box-shadow: ${(props) =>
-    props.isLocked
-      ? 'inset 0 0 32px 0 var(--item-lock)'
-      : 'inset 0 0 32px 0 var(--item-background-dim)'};
-`;
-
-const ItemMid = styled.div`
-  display: flex;
-  width: 100%;
-  height: 0;
-  position: relative;
-  top: var(--mid-top);
-  left: 0;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  opacity: 0.8;
-  flex-direction: column;
-`;
-
-const ItemMidVotes = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ButtonDiv = styled.div<ButtonDivProps>`
-  display: inline-block;
-  text-align: center;
-  vertical-align: middle;
-  pointer-events: auto;
-  cursor: pointer;
-  border: 0;
-  ${(props) =>
-    props.isChecked ? 'background-color: var(--button-background-lit);' : ''}
-
-  &:hover {
-    background-color: ${(props) =>
-      props.isChecked ? 'var(--button-active)' : 'var(--button-hover)'};
-  }
-  &:active {
-    background-color: ${(props) =>
-      props.isChecked ? 'var(--button-hover)' : 'var(--button-active)'};
-  }
-`;
-
-const ItemMidName = styled(ButtonDiv)`
-  font-size: 0.6em;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--mid-user-radius);
-  margin-top: var(--mid-user-top);
-  padding: var(--mid-user-padding);
-`;
-
-const ItemMidContent = styled(ButtonDiv)`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: row;
-  height: var(--vote-size);
-  border-radius: var(--vote-radius);
-  padding: var(--vote-padding);
-`;
-
-const VOTE_SYMBOL = {
-  up: '👍',
-  down: '👎',
-  honor: '⭐',
-};
-
 type OverlayProps = {
   isTop: boolean;
 };
 
 type NoScrollProps = {
   noScroll: boolean;
-};
-
-type ButtonDivProps = {
-  isChecked: boolean;
-};
-
-type ItemContentProps = {
-  isLocked: boolean;
 };
 
 enum ResetView {
@@ -333,15 +223,6 @@ type ViewState = {
   tempContent: [Readonly<Cell> | undefined, Readonly<Cell> | undefined];
   pending: [NavigationCB, Direction] | undefined;
 };
-
-type VoteCallbackKey = {
-  position: TopLinkKey;
-  voteType: VoteType;
-  isAdd: boolean;
-};
-
-type VoteCallback = (event: React.MouseEvent<HTMLElement>) => void;
-type UserCallback = (event: React.MouseEvent<HTMLElement>) => void;
 
 class View extends PureComponent<ViewProps, ViewState> {
   private readonly rootRef: React.RefObject<HTMLDivElement>;
@@ -574,6 +455,21 @@ class View extends PureComponent<ViewProps, ViewState> {
     return res;
   }
 
+  maybeVoteHandle = (
+    position: TopLinkKey | undefined,
+    voteType: VoteType,
+    isAdd: boolean,
+    noScroll: boolean,
+  ): VoteCallback | undefined => {
+    return !noScroll && position !== undefined
+      ? this.getVoteHandle({
+          position,
+          voteType,
+          isAdd,
+        })
+      : undefined;
+  };
+
   private getUserHandle(key: Readonly<TopLinkKey>): UserCallback {
     let res = this.userCallbacks.get(key);
     if (res === undefined) {
@@ -592,18 +488,27 @@ class View extends PureComponent<ViewProps, ViewState> {
     return res;
   }
 
+  maybeUserHandle = (
+    key: Readonly<TopLinkKey> | undefined,
+    noScroll: boolean,
+  ): UserCallback | undefined => {
+    return !noScroll && key !== undefined
+      ? this.getUserHandle(key)
+      : undefined;
+  };
+
   handleWriteMessage = (event: React.MouseEvent<HTMLElement>): void => {
-    const { view, user, dispatch } = this.props;
-    if (user === undefined) {
-      return;
-    }
-    dispatch(
-      initMessageWriting({
-        userId: user.userId,
-        parentCell: view.centerTop,
-        childCell: view.centerBottom,
-      }),
-    );
+    // const { view, user } = this.props;
+    // if (user === undefined) {
+    //   return;
+    // }
+    // dispatch(
+    //   initMessageWriting({
+    //     userId: user.userId,
+    //     parentCell: view.centerTop,
+    //     childCell: view.centerBottom,
+    //   }),
+    // );
     event.preventDefault();
   };
 
@@ -651,143 +556,115 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { tempContent } = this.state;
     const noScroll = this.isNoScroll();
 
-    const getTopLink = (
-      cell: Cell | undefined,
-      position: TopLinkKey | undefined,
-    ): JSX.Element | null => {
-      if (cell === undefined) {
-        return null;
-      }
-      if (cell.topLink === undefined) {
-        return null;
-      }
-      const link = cell.topLink;
-      if (link.invalid) {
-        return null;
-      }
-      const userCB =
-        !noScroll && position !== undefined
-          ? this.getUserHandle(position)
-          : undefined;
-      return (
-        <ItemMid>
-          <ItemMidVotes>
-            {VOTE_TYPES.map((voteType: VoteType): RichVote => {
-              const res = link.votes[voteType];
-              if (res === undefined) {
-                return { voteType, count: 0, userVoted: false };
-              }
-              const { count, userVoted } = res;
-              return { voteType, count, userVoted };
-            }).map(({ voteType, count, userVoted }) => {
-              const voteCB =
-                !noScroll && position !== undefined
-                  ? this.getVoteHandle({
-                      position,
-                      voteType,
-                      isAdd: !userVoted,
-                    })
-                  : undefined;
-              return (
-                <ItemMidContent
-                  key={voteType}
-                  onClick={voteCB}
-                  isChecked={userVoted}>
-                  {toReadableNumber(count)} {VOTE_SYMBOL[voteType]}
-                </ItemMidContent>
-              );
-            })}
-          </ItemMidVotes>
-          <ItemMidName
-            onClick={userCB}
-            isChecked={false}>
-            {link.username}
-          </ItemMidName>
-        </ItemMid>
-      );
-    };
-
-    const getContent = (cell: Cell | undefined): JSX.Element | string => {
-      if (cell === undefined) {
-        return '[loading]';
-      }
-      if (cell.content === undefined) {
-        return `[loading...${safeStringify(cell.fullKey)}]`;
-      }
-      return <Content>{cell.content}</Content>;
-    };
-
     const isLocked =
       view.centerTop.fullKey.fullKeyType === FullKeyType.topic ||
       view.centerTop.fullKey.fullKeyType === FullKeyType.user;
+    const getUserCB = this.maybeUserHandle;
+    const getVoteCB = this.maybeVoteHandle;
     return (
       <Outer ref={this.rootRef}>
         <Temp noScroll={noScroll}>
-          <Item>
-            {getTopLink(tempContent[0], undefined)}
-            <ItemContent isLocked={isLocked}>
-              {getContent(tempContent[0])}
-            </ItemContent>
+          <Item
+            cell={tempContent[0]}
+            isLocked={isLocked}>
+            <TopLink
+              cell={tempContent[0]}
+              position={undefined}
+              noScroll={noScroll}
+              getUserCB={getUserCB}
+              getVoteCB={getVoteCB}
+            />
           </Item>
-          <Item>
-            {getTopLink(tempContent[1], undefined)}
-            <ItemContent isLocked={isLocked}>
-              {getContent(tempContent[1])}
-            </ItemContent>
+          <Item
+            cell={tempContent[1]}
+            isLocked={isLocked}>
+            <TopLink
+              cell={tempContent[1]}
+              position={undefined}
+              noScroll={noScroll}
+              getUserCB={getUserCB}
+              getVoteCB={getVoteCB}
+            />
           </Item>
         </Temp>
         <VBand noScroll={noScroll}>
           <HBand noScroll={noScroll}>
-            <Item ref={this.curRefs.top}>
-              <ItemContent isLocked={false}>
-                {getContent(view.top)}
-              </ItemContent>
+            <Item
+              refObj={this.curRefs.top}
+              cell={view.top}
+              isLocked={false}
+            />
+          </HBand>
+          <HBand noScroll={noScroll}>
+            <Item
+              refObj={this.curRefs.topLeft}
+              cell={view.topLeft}
+              isLocked={isLocked}
+            />
+            <Item
+              refObj={this.curRefs.centerTop}
+              cell={view.centerTop}
+              isLocked={isLocked}>
+              <TopLink
+                cell={view.centerTop}
+                position="centerTop"
+                noScroll={noScroll}
+                getUserCB={getUserCB}
+                getVoteCB={getVoteCB}
+              />
+            </Item>
+            <Item
+              refObj={this.curRefs.topRight}
+              cell={view.topRight}
+              isLocked={isLocked}
+            />
+          </HBand>
+          <HBand noScroll={noScroll}>
+            <Item
+              refObj={this.curRefs.bottomLeft}
+              cell={view.bottomLeft}
+              isLocked={isLocked}>
+              <TopLink
+                cell={view.bottomLeft}
+                position="bottomLeft"
+                noScroll={noScroll}
+                getUserCB={getUserCB}
+                getVoteCB={getVoteCB}></TopLink>
+            </Item>
+            <Item
+              refObj={this.curRefs.centerBottom}
+              cell={view.centerBottom}
+              isLocked={isLocked}>
+              <TopLink
+                cell={view.centerBottom}
+                position="centerBottom"
+                noScroll={noScroll}
+                getUserCB={getUserCB}
+                getVoteCB={getVoteCB}></TopLink>
+            </Item>
+            <Item
+              refObj={this.curRefs.bottomRight}
+              cell={view.bottomRight}
+              isLocked={isLocked}>
+              <TopLink
+                cell={view.bottomRight}
+                position="bottomRight"
+                noScroll={noScroll}
+                getUserCB={getUserCB}
+                getVoteCB={getVoteCB}></TopLink>
             </Item>
           </HBand>
           <HBand noScroll={noScroll}>
-            <Item ref={this.curRefs.topLeft}>
-              <ItemContent isLocked={isLocked}>
-                {getContent(view.topLeft)}
-              </ItemContent>
-            </Item>
-            <Item ref={this.curRefs.centerTop}>
-              {getTopLink(view.centerTop, 'centerTop')}
-              <ItemContent isLocked={isLocked}>
-                {getContent(view.centerTop)}
-              </ItemContent>
-            </Item>
-            <Item ref={this.curRefs.topRight}>
-              <ItemContent isLocked={isLocked}>
-                {getContent(view.topRight)}
-              </ItemContent>
-            </Item>
-          </HBand>
-          <HBand noScroll={noScroll}>
-            <Item ref={this.curRefs.bottomLeft}>
-              {getTopLink(view.bottomLeft, 'bottomLeft')}
-              <ItemContent isLocked={isLocked}>
-                {getContent(view.bottomLeft)}
-              </ItemContent>
-            </Item>
-            <Item ref={this.curRefs.centerBottom}>
-              {getTopLink(view.centerBottom, 'centerBottom')}
-              <ItemContent isLocked={isLocked}>
-                {getContent(view.centerBottom)}
-              </ItemContent>
-            </Item>
-            <Item ref={this.curRefs.bottomRight}>
-              {getTopLink(view.bottomRight, 'bottomRight')}
-              <ItemContent isLocked={isLocked}>
-                {getContent(view.bottomRight)}
-              </ItemContent>
-            </Item>
-          </HBand>
-          <HBand noScroll={noScroll}>
-            <Item ref={this.curRefs.bottom}>
-              {getTopLink(view.bottom, 'bottom')}
-              <ItemContent isLocked={false}>
-                {getContent(view.bottom)}
-              </ItemContent>
+            <Item
+              refObj={this.curRefs.bottom}
+              cell={view.bottom}
+              isLocked={false}>
+              <TopLink
+                cell={view.bottom}
+                position="bottom"
+                noScroll={noScroll}
+                getUserCB={getUserCB}
+                getVoteCB={getVoteCB}></TopLink>
             </Item>
           </HBand>
         </VBand>

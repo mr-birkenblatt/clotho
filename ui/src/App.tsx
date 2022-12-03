@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import styled from 'styled-components';
-import View from './graph/View';
+import View from './view/View';
 import CommentGraph from './graph/CommentGraph';
 import { advancedGraph } from './graph/TestGraph';
 import UserActions from './users/UserActions';

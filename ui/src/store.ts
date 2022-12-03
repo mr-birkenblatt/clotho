@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import viewStateSliceReducer from './graph/ViewStateSlice';
+import viewStateSliceReducer from './view/ViewStateSlice';
 import modalStateSliceReducer from './modal/ModalStateSlice';
 import userStateSliceReducer from './users/UserStateSlice';
 

@@ -8,7 +8,7 @@ import { errHnd } from '../misc/util';
 import { Username } from '../api/types';
 import Modal from '../modal/Modal';
 import { ActiveModal, setModal } from '../modal/ModalStateSlice';
-import { initTopic, initUser } from '../graph/ViewStateSlice';
+import { initTopic, initUser } from '../view/ViewStateSlice';
 
 const Menu = styled.div`
   position: fixed;
@@ -80,7 +80,7 @@ const MenuItemButton = styled.button`
   color: var(--button-text);
   border-radius: var(--button-radius);
   height: var(--button-size);
-  background-color: var(--button-background-lit);
+  background-color: unset;
 
   &:hover {
     color: var(--button-text-hover-lit);
@@ -276,7 +276,7 @@ class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
           </React.Fragment>
         ) : null}
         <Modal
-          name={ActiveModal.Login}
+          modalTrigger={ActiveModal.Login}
           header="Welcome back!"
           footer="Sign in to be able to vote and write messages."
           onOpen={this.onLoginOpen}>

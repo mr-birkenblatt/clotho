@@ -84,7 +84,7 @@ const Footer = styled.span`
 `;
 
 interface ModalProps extends ConnectUser {
-  name: Readonly<ActiveModal>;
+  modalTrigger: Readonly<ActiveModal>;
   header?: string;
   footer?: string;
   children: ReactNode;
@@ -107,9 +107,9 @@ class Modal extends PureComponent<ModalProps, ModalState> {
   }
 
   componentDidUpdate(): void {
-    const { name, curModal, onOpen, onClose } = this.props;
+    const { modalTrigger, curModal, onOpen, onClose } = this.props;
     const { isShowing } = this.state;
-    const nextIsShowing = name === curModal;
+    const nextIsShowing = modalTrigger === curModal;
     if (nextIsShowing !== isShowing) {
       if (nextIsShowing) {
         onOpen !== undefined && onOpen();
