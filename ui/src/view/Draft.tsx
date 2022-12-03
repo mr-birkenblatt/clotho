@@ -47,11 +47,11 @@ const DraftSubmit = styled.input`
   }
 `;
 
-export const CloseButton = styled(NavButton)`
+const CloseButton = styled(NavButton)`
   font-size: 1.5em;
 `;
 
-export const PreviewButton = styled(NavButton)``;
+const PreviewButton = styled(NavButton)``;
 
 export type DraftMode = {
   parent: Readonly<Cell>;
