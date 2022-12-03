@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-export const NavButton = styled.button`
+export const NavButton = styled.button<NavButtonProps>`
   appearance: none;
   display: inline-block;
   text-align: center;
@@ -13,12 +13,18 @@ export const NavButton = styled.button`
   border-radius: var(--button-radius);
   width: var(--button-size);
   height: var(--button-size);
-  background-color: var(--button-background);
+  background-color: ${(props) =>
+    props.isChecked
+      ? 'var(--button-background-lit)'
+      : 'var(--button-background)'};
 
   &:hover {
-    background-color: var(--button-hover);
+    background-color: ${(props) =>
+      props.isChecked ? 'var(--button-hover-lit)' : 'var(--button-hover)'};
   }
   &:active {
+    background-color: ${(props) =>
+      props.isChecked ? 'var(--button-active-lit)' : 'var(--button-active)'};
     background-color: var(--button-active);
   }
 `;
@@ -61,6 +67,10 @@ export const WMOverlay = styled.div<WMProps>`
 export const WriteMessageButton = styled(NavButton)`
   font-size: 1.5em;
 `;
+
+type NavButtonProps = {
+  isChecked?: boolean;
+};
 
 type VOverlayProps = {
   isTop: boolean;

@@ -176,7 +176,11 @@ class Draft extends PureComponent<DraftProps, DraftState> {
         <WMOverlay
           isLeft={true}
           isVisible={true}>
-          <PreviewButton onClick={this.handlePreview}>🔍</PreviewButton>
+          <PreviewButton
+            isChecked={isPreview}
+            onClick={this.handlePreview}>
+            🔍
+          </PreviewButton>
         </WMOverlay>
         <WMOverlay
           isLeft={false}

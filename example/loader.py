@@ -284,5 +284,6 @@ def process_action_file(
     # FIXME: analyze mhash storage (how many hashes per file / how deep?)
     # FIXME: batch votes (100 at a time)
     # FIXME: lazy caching -- invalidation / recomputation markers by time
-    # FIXME: add inbox
+    # FIXME: add user inbox
     # FIXME: add sort select
+    # FIXME: total karma to user display
