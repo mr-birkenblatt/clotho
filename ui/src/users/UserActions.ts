@@ -7,6 +7,7 @@ import {
   toUser,
   User,
   Username,
+  ValidLink,
   VoteTypeExt,
 } from '../api/types';
 
@@ -45,6 +46,15 @@ export default class UserActions {
     isAdd: boolean,
   ): Promise<Link> {
     const res = await this.api.vote(token, parent, child, votes, isAdd);
+    return toLink(res);
+  }
+
+  async writeMessage(
+    token: Readonly<Token>,
+    parent: Readonly<MHash>,
+    text: string,
+  ): Promise<ValidLink> {
+    const res = await this.api.writeMessage(token, parent, text);
     return toLink(res);
   }
 } // UserActions

@@ -4,23 +4,39 @@ import styled from 'styled-components';
 import { RootState } from '../store';
 import { Cell } from '../graph/GraphView';
 import Item, { ItemContent, ItemDiv } from './Item';
-import { HNavButton, HOverlay, WMOverlay } from './buttons';
+import { HOverlay, NavButton, WMOverlay } from './buttons';
+import { MHash, ValidLink } from '../api/types';
+import UserActions from '../users/UserActions';
+import { errHnd } from '../misc/util';
+import { INVALID_FULL_KEY } from '../graph/keys';
 
 const DraftInput = styled.textarea`
   appearance: none;
   margin: auto 0;
   width: var(--md-size-w);
   height: var(--md-size-h);
-  overflow: hidden;
   resize: none;
 `;
 
 const DraftSubmit = styled.input`
   appearance: none;
-  border-radius: var(--item-radius);
-  padding: var(--item-padding);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  vertical-align: middle;
+  border-radius: var(--button-radius);
+  width: var(--button-size);
+  height: var(--button-size);
   cursor: pointer;
-  color: var(--main-text);
+  padding: 0;
+  font-size: 2em;
+  border: 0;
+  opacity: 0.8;
+  color: var(--button-text-dim);
+  pointer-events: auto;
+  border-style: none;
   background-color: var(--button-background);
 
   &:hover {
@@ -31,19 +47,29 @@ const DraftSubmit = styled.input`
   }
 `;
 
+export const CloseButton = styled(NavButton)`
+  font-size: 1.5em;
+`;
+
+export const PreviewButton = styled(NavButton)``;
+
 export type DraftMode = {
   parent: Readonly<Cell>;
-  child: Readonly<Cell> | undefined;
 };
 
 interface DraftProps extends ConnectDraft {
+  userActions: UserActions;
   draft: Readonly<DraftMode> | undefined;
-  onClose: () => void;
+  onClose: (link: Readonly<ValidLink> | undefined) => void;
 }
 
 type DraftState = {
   draftValue: string;
   awaitFocus: boolean;
+  lastParent: Readonly<MHash> | undefined;
+  isOpen: boolean;
+  isPreview: boolean;
+  preview: Readonly<Cell> | undefined;
 };
 
 class Draft extends PureComponent<DraftProps, DraftState> {
@@ -54,6 +80,10 @@ class Draft extends PureComponent<DraftProps, DraftState> {
     this.state = {
       draftValue: '',
       awaitFocus: false,
+      lastParent: undefined,
+      isOpen: false,
+      isPreview: false,
+      preview: undefined,
     };
     this.inputRef = React.createRef();
   }
@@ -63,49 +93,101 @@ class Draft extends PureComponent<DraftProps, DraftState> {
   }
 
   componentDidUpdate(): void {
-    const { awaitFocus } = this.state;
-    if (awaitFocus && this.inputRef.current) {
+    const { draft } = this.props;
+    const { awaitFocus, lastParent, isOpen } = this.state;
+    const newIsOpen = draft !== undefined;
+    if (newIsOpen !== isOpen) {
+      this.setState({ isOpen: newIsOpen, isPreview: false });
+    }
+    if (newIsOpen) {
+      const { parent } = draft;
+      if (parent.mhash !== lastParent) {
+        this.setState({
+          lastParent: parent.mhash,
+          draftValue: '',
+          preview: { fullKey: INVALID_FULL_KEY, content: '' },
+          awaitFocus: true,
+        });
+      }
+    }
+    if ((newIsOpen || awaitFocus) && this.inputRef.current) {
       this.inputRef.current.focus();
       this.setState({ awaitFocus: false });
     }
   }
 
   handleChange = (event: React.FormEvent<HTMLTextAreaElement>): void => {
-    this.setState({ draftValue: event.currentTarget.value });
+    const draftValue = event.currentTarget.value;
+    this.setState({
+      draftValue,
+      preview: { fullKey: INVALID_FULL_KEY, content: draftValue.trim() },
+    });
   };
 
+  private closeDraft(link: Readonly<ValidLink> | undefined) {
+    const { onClose } = this.props;
+    onClose(link);
+  }
+
   handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
-    const { draft } = this.props;
+    const { userActions, user, draft } = this.props;
     const { draftValue } = this.state;
-    if (draft !== undefined) {
-      console.log(draft.parent.mhash, draftValue);
+    if (
+      draft !== undefined &&
+      draft.parent.mhash !== undefined &&
+      draftValue &&
+      user !== undefined
+    ) {
+      userActions
+        .writeMessage(user.token, draft.parent.mhash, draftValue)
+        .then(
+          (link) => {
+            this.closeDraft(link);
+          },
+          (e) => {
+            errHnd(e);
+          },
+        );
     }
     event.preventDefault();
   };
 
+  handlePreview = (event: React.FormEvent<HTMLElement>): void => {
+    const { isPreview } = this.state;
+    this.setState({ isPreview: !isPreview });
+    event.preventDefault();
+  };
+
   handleClose = (event: React.FormEvent<HTMLElement>): void => {
-    const { onClose } = this.props;
-    onClose();
+    this.closeDraft(undefined);
     event.preventDefault();
   };
 
   render(): ReactNode {
     const { draft } = this.props;
-    if (draft === undefined) {
+    const { isOpen, isPreview, preview } = this.state;
+    if (!isOpen || draft === undefined) {
       return null;
     }
     const { draftValue } = this.state;
     const parent = draft.parent;
     return (
       <form onSubmit={this.handleSubmit}>
-        <WMOverlay isVisible={true}>
+        <WMOverlay
+          isLeft={true}
+          isVisible={true}>
+          <PreviewButton onClick={this.handlePreview}>🔍</PreviewButton>
+        </WMOverlay>
+        <WMOverlay
+          isLeft={false}
+          isVisible={true}>
           <DraftSubmit
             type="submit"
             value="✉"
           />
         </WMOverlay>
         <Item
-          cell={parent}
+          cell={isPreview && preview !== undefined ? preview : parent}
           isLocked={false}
         />
         <ItemDiv>
@@ -119,15 +201,18 @@ class Draft extends PureComponent<DraftProps, DraftState> {
         </ItemDiv>
         <HOverlay
           isTop={true}
-          isVisible={true}>
-          <HNavButton onClick={this.handleClose}>✖</HNavButton>
+          isVisible={true}
+          forceRight={true}>
+          <CloseButton onClick={this.handleClose}>✖</CloseButton>
         </HOverlay>
       </form>
     );
   }
 } // Draft
 
-const connector = connect((_state: RootState) => ({}));
+const connector = connect((state: RootState) => ({
+  user: state.userState.currentUser,
+}));
 
 export default connector(Draft);
 

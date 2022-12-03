@@ -21,6 +21,11 @@ export type PrivilegeApiProvider = {
     votes: Readonly<VoteTypeExt[]>,
     isadd: Readonly<boolean>,
   ) => Promise<ApiLinkResponse>;
+  writeMessage: (
+    token: Readonly<Token>,
+    parent: Readonly<MHash>,
+    msg: string,
+  ) => Promise<ApiLinkResponse>;
 };
 
 export const DEFAULT_PRIVILEGE_API: PrivilegeApiProvider = {
@@ -58,6 +63,15 @@ export const DEFAULT_PRIVILEGE_API: PrivilegeApiProvider = {
         'Content-Type': 'application/json',
       },
       body: toJson({ token, parent, child, votes, isadd }),
+    }).then(json);
+  },
+  writeMessage: async (token, parent, msg) => {
+    return fetch(`${URL_PREFIX}/message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: toJson({ token, parent, msg }),
     }).then(json);
   },
 };

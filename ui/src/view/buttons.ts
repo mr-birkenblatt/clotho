@@ -1,6 +1,6 @@
 import styled from 'styled-components';
 
-const NavButton = styled.button`
+export const NavButton = styled.button`
   appearance: none;
   display: inline-block;
   text-align: center;
@@ -23,21 +23,21 @@ const NavButton = styled.button`
   }
 `;
 
-export const VNavButton = styled(NavButton)<OverlayProps>`
+export const VNavButton = styled(NavButton)<VOverlayProps>`
   display: ${(props) => (props.isVisible ? 'inline-block' : 'none')};
   position: fixed;
   ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
   right: 0;
 `;
 
-export const HOverlay = styled.div<OverlayProps>`
+export const HOverlay = styled.div<HOverlayProps>`
   height: var(--button-size);
   position: absolute;
   left: 0;
   ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
   display: ${(props) => (props.isVisible ? 'flex' : 'none')};
   justify-content: space-between;
-  flex-direction: row;
+  flex-direction: ${(props) => (props.forceRight ? 'row-reverse' : 'row')};
   flex-wrap: nowrap;
   width: var(--main-size);
   pointer-events: none;
@@ -49,7 +49,7 @@ export const WMOverlay = styled.div<WMProps>`
   width: var(--button-size);
   height: var(--main-size);
   position: absolute;
-  right: 0;
+  ${(props) => (props.isLeft ? 'left' : 'right')}: 0;
   top: 0;
   display: ${(props) => (props.isVisible ? 'flex' : 'none')};
   justify-content: end;
@@ -62,11 +62,18 @@ export const WriteMessageButton = styled(NavButton)`
   font-size: 1.5em;
 `;
 
-type OverlayProps = {
+type VOverlayProps = {
   isTop: boolean;
   isVisible: boolean;
 };
 
+type HOverlayProps = {
+  isTop: boolean;
+  isVisible: boolean;
+  forceRight?: boolean;
+};
+
 type WMProps = {
+  isLeft: boolean;
   isVisible: boolean;
 };

@@ -17,10 +17,10 @@ import {
 } from '../graph/GraphView';
 import CommentGraph, { toActiveUser } from '../graph/CommentGraph';
 import { errHnd, SafeMap } from '../misc/util';
-import { initUser, refreshLinks, setView } from './ViewStateSlice';
+import { initLink, initUser, refreshLinks, setView } from './ViewStateSlice';
 import UserActions from '../users/UserActions';
 import { FullKeyType } from '../graph/keys';
-import { VoteType } from '../api/types';
+import { ValidLink, VoteType } from '../api/types';
 import TopLink, {
   UserCallback,
   VoteCallback,
@@ -452,14 +452,17 @@ class View extends PureComponent<ViewProps, ViewState> {
       this.setState({
         draft: {
           parent: view.centerTop,
-          child: view.centerBottom,
         },
       });
     }
     event.preventDefault();
   };
 
-  onCloseDraft = (): void => {
+  onCloseDraft = (link: Readonly<ValidLink> | undefined): void => {
+    if (link !== undefined) {
+      const { changes, dispatch } = this.props;
+      dispatch(initLink({ link, changes }));
+    }
     this.setState({ draft: undefined });
   };
 
@@ -503,7 +506,7 @@ class View extends PureComponent<ViewProps, ViewState> {
   };
 
   render(): ReactNode {
-    const { user, view } = this.props;
+    const { userActions, user, view } = this.props;
     const { tempContent, draft } = this.state;
     const noScroll = this.isNoScroll();
     const isDraftMode = draft !== undefined;
@@ -517,6 +520,7 @@ class View extends PureComponent<ViewProps, ViewState> {
       <Outer ref={this.rootRef}>
         <Temp isVisible={isDraftMode}>
           <Draft
+            userActions={userActions}
             draft={draft}
             onClose={this.onCloseDraft}
           />
@@ -650,7 +654,9 @@ class View extends PureComponent<ViewProps, ViewState> {
           onClick={this.handleDown}>
           ▼
         </VNavButton>
-        <WMOverlay isVisible={user !== undefined && !isDraftMode}>
+        <WMOverlay
+          isLeft={false}
+          isVisible={user !== undefined && !isDraftMode}>
           <WriteMessageButton onClick={this.handleWriteMessage}>
             ✎
           </WriteMessageButton>

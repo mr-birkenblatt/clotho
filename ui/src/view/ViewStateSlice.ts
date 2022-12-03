@@ -1,10 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { UserId } from '../api/types';
+import { UserId, ValidLink } from '../api/types';
 import {
   GraphView,
   initUserView,
   initView,
   removeAllLinks,
+  replaceLink,
 } from '../graph/GraphView';
 
 type ViewState = {
@@ -31,6 +32,10 @@ type InitUserAction = {
   };
 };
 
+type InitLinkAction = {
+  payload: { link: Readonly<ValidLink>; changes?: number };
+};
+
 type RefreshLinksAction = {
   payload: { changes?: number };
 };
@@ -39,6 +44,7 @@ type ViewReducers = {
   setView: (state: ViewState, action: SetAction) => void;
   initTopic: (state: ViewState, action: InitTopicAction) => void;
   initUser: (state: ViewState, action: InitUserAction) => void;
+  initLink: (state: ViewState, action: InitLinkAction) => void;
   refreshLinks: (state: ViewState, action: RefreshLinksAction) => void;
 };
 
@@ -78,6 +84,12 @@ const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
       state.currentChanges = incChanges(state, changes);
       state.currentView = initUserView(userId);
     },
+    initLink: (state, action) => {
+      const { link, changes } = action.payload;
+      state.currentChanges = incChanges(state, changes);
+      const view = initView(link.parent, link.child);
+      state.currentView = replaceLink(view, 'centerBottom', link);
+    },
     refreshLinks: (state, action) => {
       const { changes } = action.payload;
       state.currentChanges = incChanges(state, changes);
@@ -86,7 +98,7 @@ const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
   },
 });
 
-export const { setView, initTopic, initUser, refreshLinks } =
+export const { setView, initTopic, initUser, initLink, refreshLinks } =
   viewStateSlice.actions;
 
 export default viewStateSlice.reducer;
