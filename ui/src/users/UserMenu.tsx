@@ -6,9 +6,11 @@ import { RootState } from '../store';
 import { setUser } from './UserStateSlice';
 import { errHnd } from '../misc/util';
 import { Username } from '../api/types';
+import Modal from '../modal/Modal';
+import { ActiveModal, setModal } from '../modal/ModalStateSlice';
+import { initTopic, initUser } from '../graph/ViewStateSlice';
 
 const Menu = styled.div`
-  display: inline-block;
   position: fixed;
   top: 0;
   left: 0;
@@ -17,11 +19,22 @@ const Menu = styled.div`
   border: 0;
   color: var(--button-text);
   border-radius: var(--button-radius);
-  height: var(--button-size);
   background-color: var(--button-background-lit);
+  width: max-content;
 `;
 
-const MenuButton = styled.button<LoggedInProps>`
+const MenuItem = styled.div`
+  display: flex;
+  flex-direction: row;
+  justify-content: end;
+  text-align: right;
+  vertical-align: middle;
+  height: var(--button-size);
+`;
+
+const MenuButton = styled.button`
+  flex-shrink: 0;
+  flex-grow: 0;
   appearance: none;
   text-align: center;
   vertical-align: middle;
@@ -31,7 +44,7 @@ const MenuButton = styled.button<LoggedInProps>`
   opacity: 0.8;
   color: var(--button-text);
   border-radius: var(--button-radius);
-  ${(props) => (props.isLoggedIn ? '' : 'width: var(--button-size);')}
+  width: var(--button-size);
   height: var(--button-size);
   background-color: var(--button-background);
   border-style: groove;
@@ -45,10 +58,19 @@ const MenuButton = styled.button<LoggedInProps>`
   }
 `;
 
-const LogoutButton = styled.button`
+const Pad = styled.div`
+  flex-shrink: 0;
+  flex-grow: 0;
+  width: var(--button-size);
+  background-color: unset;
+`;
+
+const MenuItemButton = styled.button`
+  flex-shrink: 0;
+  flex-grow: 0;
   appearance: none;
   padding: 0 1em;
-  text-align: center;
+  text-align: end;
   vertical-align: middle;
   pointer-events: auto;
   cursor: pointer;
@@ -67,41 +89,7 @@ const LogoutButton = styled.button`
   }
 `;
 
-const Modal = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-`;
-
-const ModalOutside = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  opacity: 0.8;
-  background-color: var(--main-background);
-  pointer-events: auto;
-`;
-
-const ModalMain = styled.div`
-  position: relative;
-  color: var(--main-text);
-  background-color: var(--item-background);
-  border-radius: var(--item-radius-sm);
-  padding: 0 var(--item-padding);
-  pointer-events: auto;
-  box-shadow: 0 0 16px var(--item-radius-sm) var(--item-shadow);
-`;
-
-const ModalInputText = styled.input`
+const LoginInputText = styled.input`
   appearance: none;
   border-radius: var(--item-radius);
   padding: var(--item-padding);
@@ -110,7 +98,7 @@ const ModalInputText = styled.input`
   border-bottom-right-radius: 0;
 `;
 
-const ModalSubmit = styled.input`
+const LoginSubmit = styled.input`
   appearance: none;
   border-radius: var(--item-radius);
   border-left-style: none;
@@ -129,68 +117,14 @@ const ModalSubmit = styled.input`
   }
 `;
 
-const ModalPad = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: 100%;
-  height: var(--item-radius);
-  text-align: center;
-  vertical-align: middle;
-  padding: var(--item-padding) 0;
-`;
-
-const ModalExit = styled.button`
-  position: absolute;
-  top: 0;
-  right: 0;
-  user-select: none;
-  appearance: none;
-  text-align: center;
-  vertical-align: middle;
-  pointer-events: auto;
-  cursor: pointer;
-  border: 0;
-  border-radius: var(--item-radius);
-  padding: 0;
-  margin: var(--item-padding);
-  cursor: pointer;
-  background-color: unset;
-  color: var(--button-text);
-
-  &:hover {
-    color: var(--button-text-hover);
-  }
-  &:active {
-    color: var(--button-text-active);
-  }
-`;
-
-const Header = styled.span`
-  font-size: 1.5em;
-`;
-
-const Footer = styled.span`
-  font-size: 0.75em;
-`;
-
-type LoggedInProps = {
-  isLoggedIn: boolean;
-};
-
-enum ModalState {
-  None = 'None',
-  ShowLogin = 'ShowLogin',
-  ShowLogout = 'ShowLogout',
-}
-
 interface UserMenuProps extends ConnectUser {
   userActions: UserActions;
 }
 
 type UserMenuState = {
   loginValue: string;
-  modal: ModalState;
+  isMenuOpen: boolean;
+  awaitFocus: boolean;
 };
 
 class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
@@ -200,46 +134,57 @@ class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
     super(props);
     this.state = {
       loginValue: '',
-      modal: ModalState.None,
+      isMenuOpen: false,
+      awaitFocus: false,
     };
     this.inputTextRef = React.createRef();
   }
 
-  private isLoggedIn(): boolean {
-    const { user } = this.props;
-    return user !== undefined;
+  componentDidMount(): void {
+    this.componentDidUpdate();
   }
 
-  private closeModal(): void {
+  componentDidUpdate(): void {
+    const { awaitFocus } = this.state;
+    if (awaitFocus && this.inputTextRef.current) {
+      this.inputTextRef.current.focus();
+      this.setState({ awaitFocus: false });
+    }
+  }
+
+  private closeMenu(): void {
     this.setState({
       loginValue: '',
-      modal: ModalState.None,
+      isMenuOpen: false,
     });
   }
 
   handleMenuClick = (event: React.MouseEvent<HTMLElement>): void => {
-    const isLoggedIn = this.isLoggedIn();
-    const { modal } = this.state;
-    if (modal === ModalState.None) {
-      this.setState(
-        {
-          loginValue: '',
-          modal: isLoggedIn ? ModalState.ShowLogout : ModalState.ShowLogin,
-        },
-        () => {
-          if (!isLoggedIn && this.inputTextRef.current) {
-            this.inputTextRef.current.focus();
-          }
-        },
-      );
-    } else {
-      this.closeModal();
+    const { isMenuOpen } = this.state;
+    this.setState({ isMenuOpen: !isMenuOpen });
+    event.preventDefault();
+  };
+
+  handleUserClick = (event: React.MouseEvent<HTMLElement>): void => {
+    const { user, dispatch } = this.props;
+    if (user !== undefined) {
+      const { userId } = user;
+      dispatch(initUser({ userId }));
+      this.closeMenu();
     }
     event.preventDefault();
   };
 
-  handleModalOutside = (event: React.MouseEvent<HTMLElement>): void => {
-    this.closeModal();
+  handleTopicClick = (event: React.MouseEvent<HTMLElement>): void => {
+    const { dispatch } = this.props;
+    dispatch(initTopic({}));
+    this.closeMenu();
+    event.preventDefault();
+  };
+
+  handleLoginClick = (event: React.MouseEvent<HTMLElement>): void => {
+    const { dispatch } = this.props;
+    dispatch(setModal({ activeModal: ActiveModal.Login }));
     event.preventDefault();
   };
 
@@ -253,7 +198,8 @@ class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
           }
           const { dispatch } = this.props;
           dispatch(setUser({ user: undefined }));
-          this.closeModal();
+          dispatch(setModal({ activeModal: ActiveModal.None }));
+          this.closeMenu();
         },
         (e) => {
           errHnd(e);
@@ -274,7 +220,7 @@ class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
       (user) => {
         const { dispatch } = this.props;
         dispatch(setUser({ user }));
-        this.closeModal();
+        dispatch(setModal({ activeModal: ActiveModal.None }));
       },
       (e) => {
         errHnd(e);
@@ -283,55 +229,72 @@ class UserMenu extends PureComponent<UserMenuProps, UserMenuState> {
     event.preventDefault();
   };
 
+  onLoginOpen = (): void => {
+    this.closeMenu();
+    this.setState({ awaitFocus: true });
+  };
+
   render(): ReactNode {
     const { user } = this.props;
     const isLoggedIn = user !== undefined;
-    const { modal, loginValue } = this.state;
+    const { isMenuOpen, loginValue } = this.state;
     const username = isLoggedIn ? user.name : undefined;
-    const menuText = isLoggedIn ? username : 'Sign In';
     return (
       <Menu>
-        <MenuButton
-          isLoggedIn={isLoggedIn}
-          onClick={this.handleMenuClick}>
-          {menuText}
-        </MenuButton>
-        {modal === ModalState.ShowLogout ? (
-          <LogoutButton onClick={this.handleLogoutClick}>
-            ⇥ Logout
-          </LogoutButton>
+        <MenuItem>
+          <MenuButton onClick={this.handleMenuClick}>≡</MenuButton>
+          {!isMenuOpen || isLoggedIn ? (
+            <MenuItemButton
+              onClick={
+                isLoggedIn ? this.handleUserClick : this.handleLoginClick
+              }>
+              {isLoggedIn ? username : 'Sign In'}
+            </MenuItemButton>
+          ) : (
+            <Pad />
+          )}
+        </MenuItem>
+        {isMenuOpen ? (
+          <React.Fragment>
+            <MenuItem>
+              <MenuItemButton onClick={this.handleTopicClick}>
+                Topics
+              </MenuItemButton>
+            </MenuItem>
+            <MenuItem>
+              {isLoggedIn ? (
+                <MenuItemButton onClick={this.handleLogoutClick}>
+                  ⇥ Logout
+                </MenuItemButton>
+              ) : (
+                <MenuItemButton onClick={this.handleLoginClick}>
+                  Sign In
+                </MenuItemButton>
+              )}
+            </MenuItem>
+          </React.Fragment>
         ) : null}
-        {modal === ModalState.ShowLogin ? (
-          <ModalOutside onClick={this.handleModalOutside} />
-        ) : null}
-        {modal === ModalState.ShowLogin ? (
-          <Modal>
-            <ModalMain>
-              <ModalPad>
-                <Header>Welcome back!</Header>
-                <ModalExit onClick={this.handleModalOutside}>✖</ModalExit>
-              </ModalPad>
-              <form onSubmit={this.handleSubmit}>
-                <label>
-                  Name:&nbsp;
-                  <ModalInputText
-                    type="text"
-                    value={loginValue}
-                    ref={this.inputTextRef}
-                    onChange={this.handleChange}
-                  />
-                </label>
-                <ModalSubmit
-                  type="submit"
-                  value="Login"
-                />
-              </form>
-              <ModalPad>
-                <Footer>Sign in to be able to vote and write messages.</Footer>
-              </ModalPad>
-            </ModalMain>
-          </Modal>
-        ) : null}
+        <Modal
+          name={ActiveModal.Login}
+          header="Welcome back!"
+          footer="Sign in to be able to vote and write messages."
+          onOpen={this.onLoginOpen}>
+          <form onSubmit={this.handleSubmit}>
+            <label>
+              Name:&nbsp;
+              <LoginInputText
+                type="text"
+                value={loginValue}
+                ref={this.inputTextRef}
+                onChange={this.handleChange}
+              />
+            </label>
+            <LoginSubmit
+              type="submit"
+              value="Login"
+            />
+          </form>
+        </Modal>
       </Menu>
     );
   }

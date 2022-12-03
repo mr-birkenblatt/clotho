@@ -7,10 +7,8 @@ import {
   Cell,
   Direction,
   horizontal,
-  initUserView,
   NavigationCB,
   progressView,
-  removeAllLinks,
   replaceLink,
   scrollBottomHorizontal,
   scrollTopHorizontal,
@@ -25,7 +23,7 @@ import {
   safeStringify,
   toReadableNumber,
 } from '../misc/util';
-import { setView } from './ViewStateSlice';
+import { initUser, refreshLinks, setView } from './ViewStateSlice';
 import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 import UserActions from '../users/UserActions';
@@ -397,9 +395,7 @@ class View extends PureComponent<ViewProps, ViewState> {
     const { resetView, redraw, pending } = this.state;
     const activeUser = toActiveUser(user);
     if (user !== prevProps.user) {
-      dispatch(
-        setView({ view: removeAllLinks(view), changes, progress: false }),
-      );
+      dispatch(refreshLinks({ changes }));
     }
     if (view !== prevProps.view || pending !== undefined) {
       progressView(graph, view, activeUser).then(
@@ -589,13 +585,7 @@ class View extends PureComponent<ViewProps, ViewState> {
         const link =
           cell !== undefined && !cell.invalid ? cell.topLink : undefined;
         if (link !== undefined && !link.invalid && link.userId !== undefined) {
-          dispatch(
-            setView({
-              view: initUserView(link.userId),
-              changes,
-              progress: false,
-            }),
-          );
+          dispatch(initUser({ userId: link.userId, changes }));
         }
         event.preventDefault();
       };

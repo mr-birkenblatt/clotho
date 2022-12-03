@@ -1,11 +1,13 @@
 import { configureStore } from '@reduxjs/toolkit';
 import viewStateSliceReducer from './graph/ViewStateSlice';
+import modalStateSliceReducer from './modal/ModalStateSlice';
 import userStateSliceReducer from './users/UserStateSlice';
 
 const store = configureStore({
   reducer: {
     viewState: viewStateSliceReducer,
     userState: userStateSliceReducer,
+    modalState: modalStateSliceReducer,
   },
 });
 
