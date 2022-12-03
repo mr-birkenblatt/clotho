@@ -22,7 +22,12 @@ import {
   safeStringify,
   toReadableNumber,
 } from '../misc/util';
-import { initUser, refreshLinks, setView } from './ViewStateSlice';
+import {
+  initMessageWriting,
+  initUser,
+  refreshLinks,
+  setView,
+} from './ViewStateSlice';
 import UserActions from '../users/UserActions';
 import { RichVote, VoteType, VOTE_TYPES } from '../api/types';
 import { FullKeyType } from './keys';
@@ -81,6 +86,23 @@ const HOverlay = styled.div<OverlayProps>`
 `;
 
 const HNavButton = styled(NavButton)``;
+
+const WMOverlay = styled.div`
+  width: var(--button-size);
+  height: var(--main-size);
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: flex;
+  justify-content: end;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  pointer-events: none;
+`;
+
+const WriteMessageButton = styled(NavButton)`
+  font-size: 1.5em;
+`;
 
 const Temp = styled.div<NoScrollProps>`
   display: ${(props) => (props.noScroll ? 'block' : 'none')};
@@ -226,13 +248,11 @@ const ItemMidContent = styled(ButtonDiv)`
   padding: var(--vote-padding);
 `;
 
-const VOTE_SYMBOL: Readonly<Map<Readonly<string>, Readonly<string>>> = new Map(
-  [
-    ['up', '👍'],
-    ['down', '👎'],
-    ['honor', '⭐'],
-  ],
-);
+const VOTE_SYMBOL = {
+  up: '👍',
+  down: '👎',
+  honor: '⭐',
+};
 
 type OverlayProps = {
   isTop: boolean;
@@ -572,6 +592,21 @@ class View extends PureComponent<ViewProps, ViewState> {
     return res;
   }
 
+  handleWriteMessage = (event: React.MouseEvent<HTMLElement>): void => {
+    const { view, user, dispatch } = this.props;
+    if (user === undefined) {
+      return;
+    }
+    dispatch(
+      initMessageWriting({
+        userId: user.userId,
+        parentCell: view.centerTop,
+        childCell: view.centerBottom,
+      }),
+    );
+    event.preventDefault();
+  };
+
   private handleButtons(
     event: React.MouseEvent<HTMLElement>,
     key: ObsKey,
@@ -612,7 +647,7 @@ class View extends PureComponent<ViewProps, ViewState> {
   };
 
   render(): ReactNode {
-    const { view } = this.props;
+    const { user, view } = this.props;
     const { tempContent } = this.state;
     const noScroll = this.isNoScroll();
 
@@ -658,8 +693,7 @@ class View extends PureComponent<ViewProps, ViewState> {
                   key={voteType}
                   onClick={voteCB}
                   isChecked={userVoted}>
-                  {toReadableNumber(count)}{' '}
-                  {VOTE_SYMBOL.get(voteType) ?? `[${voteType}]`}
+                  {toReadableNumber(count)} {VOTE_SYMBOL[voteType]}
                 </ItemMidContent>
               );
             })}
@@ -775,6 +809,13 @@ class View extends PureComponent<ViewProps, ViewState> {
           onClick={this.handleDown}>
           ▼
         </VNavButton>
+        {user !== undefined ? (
+          <WMOverlay>
+            <WriteMessageButton onClick={this.handleWriteMessage}>
+              ✎
+            </WriteMessageButton>
+          </WMOverlay>
+        ) : null}
       </Outer>
     );
   }

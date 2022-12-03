@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 import { UserId } from '../api/types';
 import {
+  Cell,
   GraphView,
   initUserView,
   initView,
@@ -31,6 +32,15 @@ type InitUserAction = {
   };
 };
 
+type InitMessageWriting = {
+  payload: {
+    userId: Readonly<UserId>;
+    parentCell: Readonly<Cell>;
+    childCell: Readonly<Cell> | undefined;
+    changes?: number;
+  };
+};
+
 type RefreshLinksAction = {
   payload: { changes?: number };
 };
@@ -39,6 +49,7 @@ type ViewReducers = {
   setView: (state: ViewState, action: SetAction) => void;
   initTopic: (state: ViewState, action: InitTopicAction) => void;
   initUser: (state: ViewState, action: InitUserAction) => void;
+  initMessageWriting: (state: ViewState, action: InitMessageWriting) => void;
   refreshLinks: (state: ViewState, action: RefreshLinksAction) => void;
 };
 
@@ -78,6 +89,11 @@ const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
       state.currentChanges = incChanges(state, changes);
       state.currentView = initUserView(userId);
     },
+    initMessageWriting: (state, action) => {
+      const { userId, parentCell, childCell, changes } = action.payload;
+      // FIXME TODO!!!
+      state.currentChanges = incChanges(state, changes);
+    },
     refreshLinks: (state, action) => {
       const { changes } = action.payload;
       state.currentChanges = incChanges(state, changes);
@@ -86,7 +102,12 @@ const viewStateSlice = createSlice<ViewState, ViewReducers, string>({
   },
 });
 
-export const { setView, initTopic, initUser, refreshLinks } =
-  viewStateSlice.actions;
+export const {
+  setView,
+  initTopic,
+  initUser,
+  refreshLinks,
+  initMessageWriting,
+} = viewStateSlice.actions;
 
 export default viewStateSlice.reducer;

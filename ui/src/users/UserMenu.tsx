@@ -33,6 +33,7 @@ const MenuItem = styled.div`
 `;
 
 const MenuButton = styled.button`
+  font-size: 1.5em;
   flex-shrink: 0;
   flex-grow: 0;
   appearance: none;
