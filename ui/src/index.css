@@ -39,6 +39,7 @@
 
   --md-anchor: silver;
   --md-anchor-hover: #ddd;
+  --md-size: calc(var(--main-size) * 0.85);
 }
 
 body {

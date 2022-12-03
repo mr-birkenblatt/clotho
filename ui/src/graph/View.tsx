@@ -1,6 +1,5 @@
 import { connect, ConnectedProps } from 'react-redux';
 import React, { PureComponent, ReactNode } from 'react';
-import ReactMarkdown from 'react-markdown';
 import styled from 'styled-components';
 import { RootState } from '../store';
 import {
@@ -24,11 +23,10 @@ import {
   toReadableNumber,
 } from '../misc/util';
 import { initUser, refreshLinks, setView } from './ViewStateSlice';
-import { NormalComponents } from 'react-markdown/lib/complex-types';
-import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 import UserActions from '../users/UserActions';
 import { RichVote, VoteType, VOTE_TYPES } from '../api/types';
 import { FullKeyType } from './keys';
+import Content from './Content';
 
 const Outer = styled.div`
   position: relative;
@@ -228,20 +226,6 @@ const ItemMidContent = styled(ButtonDiv)`
   padding: var(--vote-padding);
 `;
 
-const Link = styled.a`
-  color: var(--md-anchor);
-
-  &:visited {
-    color: var(--md-anchor);
-  }
-  &:active {
-    color: var(--md-anchor);
-  }
-  &:hover {
-    color: var(--md-anchor-hover);
-  }
-`;
-
 const VOTE_SYMBOL: Readonly<Map<Readonly<string>, Readonly<string>>> = new Map(
   [
     ['up', '👍'],
@@ -249,12 +233,6 @@ const VOTE_SYMBOL: Readonly<Map<Readonly<string>, Readonly<string>>> = new Map(
     ['honor', '⭐'],
   ],
 );
-
-const MD_COMPONENTS: Partial<
-  Omit<NormalComponents, keyof SpecialComponents> & SpecialComponents
-> = {
-  a: ({ node: _, ...props }) => <Link {...props} />,
-};
 
 type OverlayProps = {
   isTop: boolean;
@@ -702,13 +680,7 @@ class View extends PureComponent<ViewProps, ViewState> {
       if (cell.content === undefined) {
         return `[loading...${safeStringify(cell.fullKey)}]`;
       }
-      return (
-        <ReactMarkdown
-          skipHtml={true}
-          components={MD_COMPONENTS}>
-          {cell.content}
-        </ReactMarkdown>
-      );
+      return <Content>{cell.content}</Content>;
     };
 
     const isLocked =
