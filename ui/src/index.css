@@ -4,7 +4,7 @@
   --main-background: #282c34;
 
   --button-size: calc(var(--main-size) * 0.15);
-  --button-radius: calc(var(--main-size) * 0.1);
+  --button-radius: calc(var(--main-size) * 0.075);
   --button-text: white;
   --button-text-hover: #8e929a;
   --button-text-active: #7d8189;
@@ -19,7 +19,7 @@
   --button-active-lit: #4a4e56;
 
   --item-size: calc(var(--main-size) * 0.9);
-  --item-radius: calc(var(--main-size) * 0.1);
+  --item-radius: calc(var(--main-size) * 0.075);
   --item-radius-sm: calc(var(--main-size) * 0.025);
   --item-padding: calc(var(--main-size) * 0.05);
   --item-background: #393d45;

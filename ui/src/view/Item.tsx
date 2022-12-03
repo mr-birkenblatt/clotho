@@ -4,7 +4,7 @@ import { Cell } from '../graph/GraphView';
 import { safeStringify } from '../misc/util';
 import Content from './Content';
 
-const ItemDiv = styled.div`
+export const ItemDiv = styled.div`
   display: inline-block;
   white-space: nowrap;
   vertical-align: top;
@@ -15,7 +15,7 @@ const ItemDiv = styled.div`
   scroll-snap-align: center;
 `;
 
-const ItemContent = styled.div<ItemContentProps>`
+export const ItemContent = styled.div<ItemContentProps>`
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -27,6 +27,14 @@ import TopLink, {
   VoteCallbackKey,
 } from './TopLink';
 import Item from './Item';
+import Draft, { DraftMode } from './Draft';
+import {
+  HNavButton,
+  HOverlay,
+  VNavButton,
+  WMOverlay,
+  WriteMessageButton,
+} from './buttons';
 
 const Outer = styled.div`
   position: relative;
@@ -38,69 +46,8 @@ const Outer = styled.div`
   padding: 0;
 `;
 
-const NavButton = styled.button`
-  appearance: none;
-  display: inline-block;
-  text-align: center;
-  vertical-align: middle;
-  pointer-events: auto;
-  cursor: pointer;
-  border: 0;
-  opacity: 0.8;
-  color: var(--button-text-dim);
-  border-radius: var(--button-radius);
-  width: var(--button-size);
-  height: var(--button-size);
-  background-color: var(--button-background);
-
-  &:hover {
-    background-color: var(--button-hover);
-  }
-  &:active {
-    background-color: var(--button-active);
-  }
-`;
-
-const VNavButton = styled(NavButton)<OverlayProps>`
-  position: fixed;
-  ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
-  right: 0;
-`;
-
-const HOverlay = styled.div<OverlayProps>`
-  height: var(--button-size);
-  position: absolute;
-  left: 0;
-  ${(props) => (props.isTop ? 'top' : 'bottom')}: 0;
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  width: var(--main-size);
-  pointer-events: none;
-`;
-
-const HNavButton = styled(NavButton)``;
-
-const WMOverlay = styled.div`
-  width: var(--button-size);
-  height: var(--main-size);
-  position: absolute;
-  right: 0;
-  top: 0;
-  display: flex;
-  justify-content: end;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  pointer-events: none;
-`;
-
-const WriteMessageButton = styled(NavButton)`
-  font-size: 1.5em;
-`;
-
-const Temp = styled.div<NoScrollProps>`
-  display: ${(props) => (props.noScroll ? 'block' : 'none')};
+const Temp = styled.div<TempProps>`
+  display: ${(props) => (props.isVisible ? 'block' : 'none')};
   position: relative;
   top: 0;
   left: 0;
@@ -152,12 +99,12 @@ const HBand = styled.div<NoScrollProps>`
   scroll-snap-align: start;
 `;
 
-type OverlayProps = {
-  isTop: boolean;
-};
-
 type NoScrollProps = {
   noScroll: boolean;
+};
+
+type TempProps = {
+  isVisible: boolean;
 };
 
 enum ResetView {
@@ -222,6 +169,7 @@ type ViewState = {
   redraw: boolean;
   tempContent: [Readonly<Cell> | undefined, Readonly<Cell> | undefined];
   pending: [NavigationCB, Direction] | undefined;
+  draft: Readonly<DraftMode> | undefined;
 };
 
 class View extends PureComponent<ViewProps, ViewState> {
@@ -238,6 +186,7 @@ class View extends PureComponent<ViewProps, ViewState> {
       redraw: false,
       tempContent: [undefined, undefined],
       pending: undefined,
+      draft: undefined,
     };
     this.rootRef = React.createRef();
     this.curRefs = {
@@ -498,18 +447,20 @@ class View extends PureComponent<ViewProps, ViewState> {
   };
 
   handleWriteMessage = (event: React.MouseEvent<HTMLElement>): void => {
-    // const { view, user } = this.props;
-    // if (user === undefined) {
-    //   return;
-    // }
-    // dispatch(
-    //   initMessageWriting({
-    //     userId: user.userId,
-    //     parentCell: view.centerTop,
-    //     childCell: view.centerBottom,
-    //   }),
-    // );
+    const { view, user } = this.props;
+    if (user !== undefined) {
+      this.setState({
+        draft: {
+          parent: view.centerTop,
+          child: view.centerBottom,
+        },
+      });
+    }
     event.preventDefault();
+  };
+
+  onCloseDraft = (): void => {
+    this.setState({ draft: undefined });
   };
 
   private handleButtons(
@@ -553,8 +504,9 @@ class View extends PureComponent<ViewProps, ViewState> {
 
   render(): ReactNode {
     const { user, view } = this.props;
-    const { tempContent } = this.state;
+    const { tempContent, draft } = this.state;
     const noScroll = this.isNoScroll();
+    const isDraftMode = draft !== undefined;
 
     const isLocked =
       view.centerTop.fullKey.fullKeyType === FullKeyType.topic ||
@@ -563,7 +515,13 @@ class View extends PureComponent<ViewProps, ViewState> {
     const getVoteCB = this.maybeVoteHandle;
     return (
       <Outer ref={this.rootRef}>
-        <Temp noScroll={noScroll}>
+        <Temp isVisible={isDraftMode}>
+          <Draft
+            draft={draft}
+            onClose={this.onCloseDraft}
+          />
+        </Temp>
+        <Temp isVisible={noScroll && !isDraftMode}>
           <Item
             cell={tempContent[0]}
             isLocked={isLocked}>
@@ -668,31 +626,35 @@ class View extends PureComponent<ViewProps, ViewState> {
             </Item>
           </HBand>
         </VBand>
-        <HOverlay isTop={true}>
+        <HOverlay
+          isTop={true}
+          isVisible={!isDraftMode}>
           <HNavButton onClick={this.handleTopLeft}>◀</HNavButton>
           <HNavButton onClick={this.handleTopRight}>▶</HNavButton>
         </HOverlay>
-        <HOverlay isTop={false}>
+        <HOverlay
+          isTop={false}
+          isVisible={!isDraftMode}>
           <HNavButton onClick={this.handleBottomLeft}>◀</HNavButton>
           <HNavButton onClick={this.handleBottomRight}>▶</HNavButton>
         </HOverlay>
         <VNavButton
           isTop={true}
+          isVisible={!isDraftMode}
           onClick={this.handleUp}>
           ▲
         </VNavButton>
         <VNavButton
           isTop={false}
+          isVisible={!isDraftMode}
           onClick={this.handleDown}>
           ▼
         </VNavButton>
-        {user !== undefined ? (
-          <WMOverlay>
-            <WriteMessageButton onClick={this.handleWriteMessage}>
-              ✎
-            </WriteMessageButton>
-          </WMOverlay>
-        ) : null}
+        <WMOverlay isVisible={user !== undefined && !isDraftMode}>
+          <WriteMessageButton onClick={this.handleWriteMessage}>
+            ✎
+          </WriteMessageButton>
+        </WMOverlay>
       </Outer>
     );
   }
