@@ -5,16 +5,12 @@ import { NormalComponents } from 'react-markdown/lib/complex-types';
 import { SpecialComponents } from 'react-markdown/lib/ast-to-react';
 
 const ContentBox = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
-  height: var(--md-size);
-  width: var(--md-size);
+  margin: auto 0;
+  width: var(--md-size-w);
+  height: var(--md-size-h);
   overflow-y: auto;
   overflow-x: hidden;
-  word-break: break-all;
+  word-break: break-word;
 `;
 
 const Link = styled.a`

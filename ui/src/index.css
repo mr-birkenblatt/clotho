@@ -39,7 +39,8 @@
 
   --md-anchor: silver;
   --md-anchor-hover: #ddd;
-  --md-size: calc(var(--main-size) * 0.85);
+  --md-size-w: calc(var(--main-size) * 0.85);
+  --md-size-h: calc(var(--main-size) * 0.8);
 }
 
 body {
