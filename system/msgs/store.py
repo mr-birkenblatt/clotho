@@ -32,12 +32,15 @@ class MessageStore:
 
     def get_random_messages(
             self,
-            ref: MHash | None,
+            ref: MHash,
+            is_parent: bool,
             offset: int,
             limit: int) -> Iterable[MHash]:
         start = offset - (offset % RNG_ALIGN)
         end = offset + limit
-        base_seed = 1 if ref is None else hash(ref)
+        base_seed = hash(ref)
+        if is_parent:
+            base_seed = base_seed * 5 + 1
         res: list[MHash] = []
         cur_ix = start
         while cur_ix < end:

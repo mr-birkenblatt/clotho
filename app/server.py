@@ -24,6 +24,7 @@ from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
 from system.msgs.message import Message, MHash
 from system.msgs.store import get_default_message_store
+from system.suggest.suggest import get_default_link_suggester
 from system.users.store import get_default_user_store
 from system.users.user import User
 
@@ -78,6 +79,7 @@ def setup(
     message_store = get_default_message_store()
     link_store = get_default_link_store()
     user_store = get_default_user_store()
+    link_suggester = get_default_link_suggester()
 
     def get_user(args: WorkerArgs) -> User:
         with server.get_token_obj(args["token"]) as obj:
@@ -260,22 +262,8 @@ def setup(
         offset = link_query["offset"]
         cur_offset = offset + len(links)
         cur_limit = limit - len(links)
-        ref_query = link_query.copy()
-        ref_query["offset"] = 0
-        ref_query["limit"] = 1
-        if is_parent:
-            refs = list(link_store.get_children(other, **ref_query))
-            ref = refs[0].get_child() if refs else None
-        else:
-            refs = list(link_store.get_parents(other, **ref_query))
-            ref = refs[0].get_parent() if refs else None
-        return links + [
-            link_store.get_link(
-                other if is_parent else cur,
-                cur if is_parent else other)
-            for cur in message_store.get_random_messages(
-                ref, cur_offset, cur_limit)
-        ]
+        return links + list(link_suggester.suggest_links(
+            other, is_parent=is_parent, offset=cur_offset, limit=cur_limit))
 
     @server.json_post(f"{prefix}/children")
     def _post_children(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:

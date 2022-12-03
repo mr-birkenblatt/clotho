@@ -10,6 +10,7 @@ EnvPath = Literal[
 EnvStr = Literal[
     "HOST",
     "LINK_STORE",
+    "LINK_SUGGESTER",
     "MSG_STORE",
     "REDIS_HOST",
     "REDIS_PASS",
