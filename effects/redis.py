@@ -135,7 +135,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
             *,
             parents: tuple[EffectBase[PT], ...],
             convert: Callable[[PT], KT],
-            effect: Callable[[KT], None]) -> None:
+            effect: Callable[[KT, pd.Timestamp | None], None]) -> None:
         super().__init__(parents=parents, effect=effect, convert=convert)
         assert marker_prefix
         assert marker_prefix != value_prefix
@@ -184,20 +184,20 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         with self._redis.get_connection(depth=1) as conn:
             conn.rpush(key_queue, self._key_json(key))
 
-    def set_outdated(self, key: KT, now: pd.Timestamp) -> None:
+    def on_set_outdated(self, key: KT, now: pd.Timestamp) -> None:
         # FIXME optimize
         mkey = self.get_marker_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(mkey, to_timestamp(now))
 
-    def clear_outdated(self, key: KT, now: pd.Timestamp) -> None:
+    def clear_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
         # FIXME optimize
         mkey = self.get_marker_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             when = conn.get(mkey)
             if when is None:
                 return
-            if now > from_timestamp(float(when)):
+            if now is None or now >= from_timestamp(float(when)):
                 conn.delete(mkey)
 
     def retrieve_value(self, key: KT) -> tuple[VT | None, pd.Timestamp | None]:
@@ -249,7 +249,7 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
             *,
             parents: tuple[EffectBase[PT], ...],
             convert: Callable[[PT], KT],
-            effect: Callable[[KT], None]) -> None:
+            effect: Callable[[KT, pd.Timestamp | None], None]) -> None:
         super().__init__(parents=parents, effect=effect, convert=convert)
         self._redis = RedisConnection(module)
         self._key_fn = key_fn
@@ -297,20 +297,20 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
         with self._redis.get_connection(depth=1) as conn:
             conn.rpush(key_queue, self._key_json(key))
 
-    def set_outdated(self, key: KT, now: pd.Timestamp) -> None:
+    def on_set_outdated(self, key: KT, now: pd.Timestamp) -> None:
         # FIXME optimize
         mkey = self.get_marker_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(mkey, to_timestamp(now))
 
-    def clear_outdated(self, key: KT, now: pd.Timestamp) -> None:
+    def clear_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
         # FIXME optimize
         mkey = self.get_marker_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             when = conn.get(mkey)
             if when is None:
                 return
-            if now > from_timestamp(float(when)):
+            if now is None or now >= from_timestamp(float(when)):
                 conn.delete(mkey)
 
     def retrieve_value(

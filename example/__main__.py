@@ -15,7 +15,8 @@ from system.users.store import get_default_user_store
 
 
 REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
-ROOTS = ["politics", "news", "worldnews", "conservative"]
+# ROOTS = ["politics", "news", "worldnews", "conservative"]
+ROOTS = ["askscience", "askreddit", "explainlikeimfive", "todayilearned"]
 
 
 def process_reddit(reddit: RedditAccess, fname: str, subs: list[str]) -> None:

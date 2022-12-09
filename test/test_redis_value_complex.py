@@ -2,11 +2,15 @@
 import time
 from typing import NamedTuple
 
+import pandas as pd
+
+from effects.effects import set_old_threshold
 from effects.redis import (
     ListDependentRedisType,
     ValueDependentRedisType,
     ValueRootRedisType,
 )
+from misc.util import json_compact, json_read
 
 
 Link = NamedTuple('Link', [
@@ -22,31 +26,43 @@ TLink = NamedTuple('TLink', [
 
 
 def test_complex() -> None:
+    now = 1670580000.0
+    set_old_threshold(0.1)
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
         "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
-    def compute_destinations(key: FLink) -> None:
-        dests.set_value(key, sorted(links.get_range(f"link:{key.l_from}:")))
+    def compute_destinations(key: FLink, now: pd.Timestamp | None) -> None:
+        dests.set_value(
+            key, sorted(links.get_range(f"link:{key.l_from}:")), now)
 
-    def compute_sources(key: TLink) -> None:
-        srcs.set_value(key, sorted(links.get_range("link:", f":{key.l_to}")))
+    def compute_sources(key: TLink, now: pd.Timestamp | None) -> None:
+        srcs.set_value(
+            key, sorted(links.get_range("link:", f":{key.l_to}")), now)
 
     dests: ValueDependentRedisType[FLink, list[int]] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
+            json_compact,
+            json_read,
+            "",
+            "obs",
+            "pen",
             parents=(links,),
             convert=lambda pkey: FLink(l_from=pkey.l_from),
-            effect=compute_destinations,
-            delay=0.1)
+            effect=compute_destinations)
     srcs: ValueDependentRedisType[TLink, list[int]] = \
         ValueDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
+            json_compact,
+            json_read,
+            "",
+            "obs",
+            "pen",
             parents=(links,),
             convert=lambda pkey: TLink(l_to=pkey.l_to),
-            effect=compute_sources,
-            delay=0.1)
+            effect=compute_sources)
 
     assert dests.get_value(FLink(l_from="a"), []) == []
 
@@ -75,33 +91,47 @@ def test_complex() -> None:
 
 
 def test_complex_list() -> None:
+    now = 1670580000.0
+    set_old_threshold(0.1)
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
         "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
-    def compute_destinations(key: FLink) -> None:
+    def compute_destinations(key: FLink, now: pd.Timestamp | None) -> None:
         dests.set_value(key, sorted((
-            f"{val}" for val in links.get_range(f"link:{key.l_from}:"))))
+            f"{val}" for val in links.get_range(f"link:{key.l_from}:"))), now)
 
-    def compute_sources(key: TLink) -> None:
-        srcs.set_value(key, sorted((
-            f"{val}" for val in links.get_range("link:", f":{key.l_to}"))))
+    def compute_sources(key: TLink, now: pd.Timestamp | None) -> None:
+        srcs.set_value(
+            key,
+            sorted(
+                (f"{val}" for val in links.get_range("link:", f":{key.l_to}"))
+            ),
+            now)
 
     dests: ListDependentRedisType[FLink] = \
         ListDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
+            json_compact,
+            json_read,
+            "",
+            "obs",
+            "pen",
             parents=(links,),
             convert=lambda pkey: FLink(l_from=pkey.l_from),
-            effect=compute_destinations,
-            delay=0.1)
+            effect=compute_destinations)
     srcs: ListDependentRedisType[TLink] = \
         ListDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
+            json_compact,
+            json_read,
+            "",
+            "obs",
+            "pen",
             parents=(links,),
             convert=lambda pkey: TLink(l_to=pkey.l_to),
-            effect=compute_sources,
-            delay=0.1)
+            effect=compute_sources)
 
     assert dests.get_value(FLink(l_from="a"), []) == []
 
