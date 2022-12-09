@@ -10,7 +10,7 @@ from effects.redis import (
     ValueDependentRedisType,
     ValueRootRedisType,
 )
-from misc.util import json_compact, json_read
+from misc.util import from_timestamp, json_compact, json_read
 
 
 Link = NamedTuple('Link', [
@@ -64,30 +64,34 @@ def test_complex() -> None:
             convert=lambda pkey: TLink(l_to=pkey.l_to),
             effect=compute_sources)
 
-    assert dests.get_value(FLink(l_from="a"), []) == []
+    now_ts = from_timestamp(now)
+    assert dests.get_value(FLink(l_from="a"), [], now_ts) == []
 
-    links.set_value(Link(l_from="a", l_to="b"), 1)
+    links.set_value(Link(l_from="a", l_to="b"), 1, now_ts)
 
-    assert srcs.get_value(TLink(l_to="b"), []) == []  # time sensitive
+    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == []  # time sensitive
 
-    links.set_value(Link(l_from="a", l_to="c"), 2)
-    links.set_value(Link(l_from="a", l_to="d"), 3)
-    links.set_value(Link(l_from="b", l_to="b"), 0)
-    links.set_value(Link(l_from="c", l_to="b"), 1)
-    links.set_value(Link(l_from="d", l_to="b"), 2)
-    links.set_value(Link(l_from="b", l_to="a"), 5)
-    links.set_value(Link(l_from="b", l_to="d"), 4)
-    links.set_value(Link(l_from="a", l_to="b"), 6)
+    links.set_value(Link(l_from="a", l_to="c"), 2, now_ts)
+    links.set_value(Link(l_from="a", l_to="d"), 3, now_ts)
+    links.set_value(Link(l_from="b", l_to="b"), 0, now_ts)
+    links.set_value(Link(l_from="c", l_to="b"), 1, now_ts)
+    links.set_value(Link(l_from="d", l_to="b"), 2, now_ts)
+    links.set_value(Link(l_from="b", l_to="a"), 5, now_ts)
+    links.set_value(Link(l_from="b", l_to="d"), 4, now_ts)
+    links.set_value(Link(l_from="a", l_to="b"), 6, now_ts)
+
     time.sleep(0.2)
+    now += 0.2
+    now_ts = from_timestamp(now)
 
-    assert dests.get_value(FLink(l_from="a"), []) == [2, 3, 6]
-    assert dests.get_value(FLink(l_from="b"), []) == [0, 4, 5]
-    assert dests.get_value(FLink(l_from="c"), []) == [1]
-    assert dests.get_value(FLink(l_from="d"), []) == [2]
-    assert srcs.get_value(TLink(l_to="a"), []) == [5]
-    assert srcs.get_value(TLink(l_to="b"), []) == [0, 1, 2, 6]
-    assert srcs.get_value(TLink(l_to="c"), []) == [2]
-    assert srcs.get_value(TLink(l_to="d"), []) == [3, 4]
+    assert dests.get_value(FLink(l_from="a"), [], now_ts) == [2, 3, 6]
+    assert dests.get_value(FLink(l_from="b"), [], now_ts) == [0, 4, 5]
+    assert dests.get_value(FLink(l_from="c"), [], now_ts) == [1]
+    assert dests.get_value(FLink(l_from="d"), [], now_ts) == [2]
+    assert srcs.get_value(TLink(l_to="a"), [], now_ts) == [5]
+    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == [0, 1, 2, 6]
+    assert srcs.get_value(TLink(l_to="c"), [], now_ts) == [2]
+    assert srcs.get_value(TLink(l_to="d"), [], now_ts) == [3, 4]
 
 
 def test_complex_list() -> None:
@@ -133,30 +137,35 @@ def test_complex_list() -> None:
             convert=lambda pkey: TLink(l_to=pkey.l_to),
             effect=compute_sources)
 
-    assert dests.get_value(FLink(l_from="a"), []) == []
+    now_ts = from_timestamp(now)
 
-    links.set_value(Link(l_from="a", l_to="b"), 1)
+    assert dests.get_value(FLink(l_from="a"), [], now_ts) == []
 
-    assert srcs.get_value(TLink(l_to="b"), []) == []  # time sensitive
+    links.set_value(Link(l_from="a", l_to="b"), 1, now_ts)
 
-    links.set_value(Link(l_from="a", l_to="c"), 2)
-    links.set_value(Link(l_from="a", l_to="d"), 3)
-    links.set_value(Link(l_from="b", l_to="b"), 0)
-    links.set_value(Link(l_from="c", l_to="b"), 1)
-    links.set_value(Link(l_from="d", l_to="b"), 2)
-    links.set_value(Link(l_from="b", l_to="a"), 5)
-    links.set_value(Link(l_from="b", l_to="d"), 4)
-    links.set_value(Link(l_from="a", l_to="b"), 6)
+    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == []  # time sensitive
+
+    links.set_value(Link(l_from="a", l_to="c"), 2, now_ts)
+    links.set_value(Link(l_from="a", l_to="d"), 3, now_ts)
+    links.set_value(Link(l_from="b", l_to="b"), 0, now_ts)
+    links.set_value(Link(l_from="c", l_to="b"), 1, now_ts)
+    links.set_value(Link(l_from="d", l_to="b"), 2, now_ts)
+    links.set_value(Link(l_from="b", l_to="a"), 5, now_ts)
+    links.set_value(Link(l_from="b", l_to="d"), 4, now_ts)
+    links.set_value(Link(l_from="a", l_to="b"), 6, now_ts)
+
     time.sleep(0.2)
+    now += 0.2
+    now_ts = from_timestamp(now)
 
-    assert dests.get_value(FLink(l_from="a"), []) == ["2", "3", "6"]
-    assert dests.get_value(FLink(l_from="b"), []) == ["0", "4", "5"]
-    assert dests.get_value(FLink(l_from="c"), []) == ["1"]
-    assert dests.get_value(FLink(l_from="d"), []) == ["2"]
-    assert srcs.get_value(TLink(l_to="a"), []) == ["5"]
-    assert srcs.get_value(TLink(l_to="b"), []) == ["0", "1", "2", "6"]
-    assert srcs.get_value(TLink(l_to="c"), []) == ["2"]
-    assert srcs.get_value(TLink(l_to="d"), []) == ["3", "4"]
+    assert dests.get_value(FLink(l_from="a"), [], now_ts) == ["2", "3", "6"]
+    assert dests.get_value(FLink(l_from="b"), [], now_ts) == ["0", "4", "5"]
+    assert dests.get_value(FLink(l_from="c"), [], now_ts) == ["1"]
+    assert dests.get_value(FLink(l_from="d"), [], now_ts) == ["2"]
+    assert srcs.get_value(TLink(l_to="a"), [], now_ts) == ["5"]
+    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == ["0", "1", "2", "6"]
+    assert srcs.get_value(TLink(l_to="c"), [], now_ts) == ["2"]
+    assert srcs.get_value(TLink(l_to="d"), [], now_ts) == ["3", "4"]
 
     arr = ["0", "1", "2", "6"]
     assert srcs.get_value_range(TLink(l_to="b"), 0, 4) == arr
