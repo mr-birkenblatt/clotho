@@ -3,9 +3,10 @@ from typing import Iterable
 import pandas as pd
 
 from misc.env import envload_str
-from system.links.link import Link
+from system.links.link import Link, RLink, VoteType
 from system.links.scorer import Scorer
 from system.msgs.message import MHash
+from system.users.store import UserStore
 from system.users.user import User
 
 
@@ -14,7 +15,42 @@ class LinkStore:
     def valid_scorers() -> list[Scorer]:
         raise NotImplementedError()
 
-    def get_link(self, parent: MHash, child: MHash) -> Link:
+    def get_user_id(self, link: RLink) -> str | None:
+        raise NotImplementedError()
+
+    def get_vote_total(self, link: RLink) -> float:
+        raise NotImplementedError()
+
+    def get_vote_daily(self, link: RLink) -> float:
+        raise NotImplementedError()
+
+    def get_vote_first(self, link: RLink) -> float | None:
+        raise NotImplementedError()
+
+    def get_vote_last(self, link: RLink) -> float | None:
+        raise NotImplementedError()
+
+    def has_voted(self, link: RLink, user: User) -> bool:
+        raise NotImplementedError()
+
+    def get_voters(self, link: RLink, user_store: UserStore) -> Iterable[User]:
+        raise NotImplementedError()
+
+    def add_vote(
+            self,
+            link: RLink,
+            user: User,
+            vote_type: VoteType,
+            weighted_value: float,
+            now: pd.Timestamp) -> None:
+        raise NotImplementedError()
+
+    def remove_vote(
+            self,
+            link: RLink,
+            user: User,
+            weighted_value: float,
+            now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
     def get_all_children(
@@ -71,6 +107,9 @@ class LinkStore:
             limit: int) -> Iterable[Link]:
         return self.limit_results(
             self.get_all_user_links(user), scorer, now, offset, limit)
+
+    def get_link(self, parent: MHash, child: MHash) -> Link:
+        return Link(self, parent, child)
 
 
 DEFAULT_LINK_STORE: LinkStore | None = None
