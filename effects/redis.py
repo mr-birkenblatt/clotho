@@ -7,6 +7,7 @@ from effects.effects import (
     EffectBase,
     EffectDependent,
     KeyType,
+    ListEffectDependent,
     SetRootType,
     ValueRootType,
 )
@@ -47,7 +48,7 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             with conn.pipeline() as pipe:
                 pipe.get(rkey)
                 pipe.set(rkey, json_compact(value))
-                res = pipe.execute()[0]
+                res, _ = pipe.execute()
                 return json_read(res) if res is not None else None
 
     def do_set_new_value(self, key: KT, value: VT) -> bool:
@@ -215,7 +216,6 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
                 pipe.get(vkey)
                 pipe.get(mkey)
                 value, marker = pipe.execute()
-        self.maybe_compute(key, marker)
         return (
             json_read(value) if value is not None else None,
             from_timestamp(float(marker)) if marker is not None else None,
@@ -245,7 +245,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
             return bool(res)
 
 
-class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
+class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
     def __init__(
             self,
             module: RedisModule,
@@ -333,7 +333,6 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
                 pipe.lrange(vkey, 0, -1)
                 pipe.get(mkey)
                 has, value, marker = pipe.execute()
-        self.maybe_compute(key, marker)
         return (
             [val.decode("utf-8") for val in value] if int(has) else None,
             from_timestamp(float(marker)) if marker is not None else None,
@@ -362,10 +361,12 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
                 pipe.delete(rkey)
                 if value:
                     pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
-                has, res, _, _ = pipe.execute()
-                if not int(has):
-                    return None
-                return [val.decode("utf-8") for val in res]
+                exec_res = pipe.execute()
+        has = exec_res[0]
+        res = exec_res[1]
+        if not int(has):
+            return None
+        return [val.decode("utf-8") for val in res]
 
     def do_set_new_value(
             self, key: KT, value: list[str], now: pd.Timestamp | None) -> bool:
@@ -393,50 +394,33 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
             depth=1)
         return int(res) != 0
 
-    def get_value_range(
+    def do_get_value_range(
             self,
             key: KT,
             from_ix: int | None,
-            to_ix: int | None) -> list[str]:
+            to_ix: int | None) -> tuple[list[str] | None, pd.Timestamp | None]:
+        rkey = self.get_value_redis_key(key)
         mkey = self.get_marker_redis_key(key)
-        if to_ix == 0:
-            res = []
-            with self._redis.get_connection(depth=1) as conn:
-                marker = conn.get(mkey)
-        else:
-            if from_ix is None:
-                from_ix = 0
-            if to_ix is None:
-                to_ix = -1
-            else:
-                to_ix -= 1
-            rkey = self.get_value_redis_key(key)
-            with self._redis.get_connection(depth=1) as conn:
+        with self._redis.get_connection(depth=1) as conn:
+            if to_ix == 0:
+                res = []
                 with conn.pipeline() as pipe:
+                    pipe.exists(rkey)
+                    pipe.get(mkey)
+                    has, marker = pipe.execute()
+            else:
+                if from_ix is None:
+                    from_ix = 0
+                if to_ix is None:
+                    to_ix = -1
+                else:
+                    to_ix -= 1
+                with conn.pipeline() as pipe:
+                    pipe.exists(rkey)
                     pipe.lrange(rkey, from_ix, to_ix)
                     pipe.get(mkey)
-                    res, marker = pipe.execute()
-        self.maybe_compute(key, marker)
-        return [val.decode("utf-8") for val in res]
-
-    def __getitem__(self, arg: tuple[KT, slice]) -> list[str]:
-        key, slicer = arg
-        if slicer.step is None or slicer.step > 0:
-            res = self.get_value_range(key, slicer.start, slicer.stop)
-        else:
-            flip_start = slicer.stop
-            if flip_start is not None:
-                if flip_start != -1:
-                    flip_start += 1
-                else:
-                    return []
-            flip_stop = slicer.start
-            if flip_stop is not None:
-                if flip_stop != -1:
-                    flip_stop += 1
-                else:
-                    flip_stop = None
-            res = self.get_value_range(key, flip_start, flip_stop)
-        if slicer.step is not None and slicer.step != 1:
-            return res[::slicer.step]
-        return res
+                    has, res, marker = pipe.execute()
+        return (
+            [val.decode("utf-8") for val in res] if int(has) else None,
+            from_timestamp(float(marker)) if marker is not None else None,
+        )

@@ -1,5 +1,6 @@
+import contextlib
 import threading
-from typing import Callable, Generic, Literal, TYPE_CHECKING, TypeVar
+from typing import Callable, Generic, Iterator, Literal, TYPE_CHECKING, TypeVar
 
 import pandas as pd
 
@@ -145,6 +146,8 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
         self._parents = parents
         self._effect = effect
         self._thread: threading.Thread | None = None
+        self._update_lock = threading.RLock()
+        self._is_updating = False
         for parent in self._parents:
             parent.add_dependent(Dependent(self, convert))  # type: ignore
 
@@ -155,10 +158,7 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             th.start()
 
     def set_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
-        if now is None:
-            self.execute_update(key, now)
-        else:
-            self.on_set_outdated(key, now)
+        self.on_set_outdated(key, now_ts() if now is None else now)
         self.on_update(key, now)
 
     def updater(self) -> None:
@@ -175,9 +175,22 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
         finally:
             self._thread = None
 
+    @contextlib.contextmanager
+    def no_deferred_updates(self) -> Iterator[None]:
+        with self._update_lock:
+            yield
+
     def execute_update(self, key: KT, now: pd.Timestamp | None) -> None:
-        self._effect(key, now)
-        self.clear_outdated(key, now)
+        with self._update_lock:
+            if self._is_updating:
+                raise RuntimeError(
+                    f"attempt to update while updating {self} {key} {now}")
+            self._is_updating = True
+            try:
+                self._effect(key, now)
+                self.clear_outdated(key, now)
+            finally:
+                self._is_updating = False
 
     def get_value(self, key: KT, default: VT, when: pd.Timestamp | None) -> VT:
         res = self.maybe_get_value(key, when)
@@ -189,19 +202,16 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             self,
             key: KT,
             when: pd.Timestamp | None) -> VT | None:
-        value, is_outdated = self.poll_value(key, when)
+        value, outdated_ts = self.retrieve_value(key)
+        if self._is_updating:
+            return value
+        is_outdated = self._is_outdated(outdated_ts, when)
         if is_outdated != "old" and value is not None:
+            self.maybe_compute(key, outdated_ts)
             return value
         self.execute_update(key, when)
-        value, _ = self.poll_value(key, when)
+        value, _ = self.retrieve_value(key)
         return value
-
-    def poll_value(
-            self,
-            key: KT,
-            when: pd.Timestamp | None) -> tuple[VT | None, Freshness]:
-        value, outdated_ts = self.retrieve_value(key)
-        return value, self._is_outdated(outdated_ts, when)
 
     def _is_outdated(
             self,
@@ -268,3 +278,52 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def do_set_new_value(
             self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         raise NotImplementedError()
+
+
+class ListEffectDependent(Generic[KT, VT], EffectDependent[KT, list[VT]]):
+    def do_get_value_range(
+            self,
+            key: KT,
+            from_ix: int | None,
+            to_ix: int | None) -> tuple[list[VT] | None, pd.Timestamp | None]:
+        raise NotImplementedError()
+
+    def get_value_range(
+            self,
+            key: KT,
+            from_ix: int | None,
+            to_ix: int | None,
+            when: pd.Timestamp | None) -> list[VT]:
+        value, outdated_ts = self.do_get_value_range(key, from_ix, to_ix)
+        if self._is_updating:
+            return [] if value is None else value
+        is_outdated = self._is_outdated(outdated_ts, when)
+        if is_outdated != "old" and value is not None:
+            self.maybe_compute(key, outdated_ts)
+            return value
+        self.execute_update(key, when)
+        value, _ = self.do_get_value_range(key, from_ix, to_ix)
+        return [] if value is None else value
+
+    def __getitem__(
+            self, arg: tuple[KT, slice, pd.Timestamp | None]) -> list[VT]:
+        key, slicer, now = arg
+        if slicer.step is None or slicer.step > 0:
+            res = self.get_value_range(key, slicer.start, slicer.stop, now)
+        else:
+            flip_start = slicer.stop
+            if flip_start is not None:
+                if flip_start != -1:
+                    flip_start += 1
+                else:
+                    return []
+            flip_stop = slicer.start
+            if flip_stop is not None:
+                if flip_stop != -1:
+                    flip_stop += 1
+                else:
+                    flip_stop = None
+            res = self.get_value_range(key, flip_start, flip_stop, now)
+        if slicer.step is not None and slicer.step != 1:
+            return res[::slicer.step]
+        return res

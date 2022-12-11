@@ -90,31 +90,31 @@ def test_scenario() -> None:
     def get_parents(links: Iterable[Link]) -> list[MHash]:
         return [link.get_parent() for link in links]
 
-    assert set(get_children(store.get_all_children(msgs[0]))) == {
+    assert set(get_children(store.get_all_children(msgs[0], now))) == {
         msgs[1], msgs[2], msgs[3]}
-    assert set(get_parents(store.get_all_children(msgs[0]))) == {msgs[0]}
+    assert set(get_parents(store.get_all_children(msgs[0], now))) == {msgs[0]}
 
-    assert set(get_children(store.get_all_children(msgs[4]))) == {
+    assert set(get_children(store.get_all_children(msgs[4], now))) == {
         msgs[5], msgs[6], msgs[7]}
 
-    assert set(get_children(store.get_all_children(msgs[3]))) == {
+    assert set(get_children(store.get_all_children(msgs[3], now))) == {
         msgs[1], msgs[5], msgs[7]}
 
-    assert len(get_children(store.get_all_children(msgs[2]))) == 0
+    assert len(get_children(store.get_all_children(msgs[2], now))) == 0
 
-    assert set(get_parents(store.get_all_parents(msgs[7]))) == {
+    assert set(get_parents(store.get_all_parents(msgs[7], now))) == {
         msgs[3], msgs[4]}
-    assert set(get_children(store.get_all_parents(msgs[7]))) == {msgs[7]}
+    assert set(get_children(store.get_all_parents(msgs[7], now))) == {msgs[7]}
 
-    assert set(get_parents(store.get_all_parents(msgs[1]))) == {
+    assert set(get_parents(store.get_all_parents(msgs[1], now))) == {
         msgs[0], msgs[3]}
 
-    assert set(get_parents(store.get_all_parents(msgs[5]))) == {
+    assert set(get_parents(store.get_all_parents(msgs[5], now))) == {
         msgs[3], msgs[4]}
 
-    assert set(get_parents(store.get_all_parents(msgs[2]))) == {msgs[0]}
-    assert set(get_parents(store.get_all_parents(msgs[9]))) == {msgs[7]}
-    assert len(get_parents(store.get_all_parents(msgs[4]))) == 0
+    assert set(get_parents(store.get_all_parents(msgs[2], now))) == {msgs[0]}
+    assert set(get_parents(store.get_all_parents(msgs[9], now))) == {msgs[7]}
+    assert len(get_parents(store.get_all_parents(msgs[4], now))) == 0
 
     time.sleep(2.0 * old_th)  # update tier 2
     # (sorted parents, sorted children, first user, user list)
@@ -201,9 +201,9 @@ def test_scenario() -> None:
         users[0], users[1], users[2], users[4]}
 
     assert set(store.get_all_user_links(users[0])) == \
-        set(store.get_all_children(msgs[0]))
+        set(store.get_all_children(msgs[0], now))
     assert set(store.get_all_user_links(users[2])) == \
-        set(store.get_all_children(msgs[3]))
+        set(store.get_all_children(msgs[3], now))
 
     time.sleep(2.0 * old_th)  # update tier 3
     # (sorted user list)

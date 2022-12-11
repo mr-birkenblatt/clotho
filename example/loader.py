@@ -191,9 +191,6 @@ def process_actions(
                 if not key.startswith("new_"):
                     continue
                 totals.pop(key, None)
-        settled, settle_timing = link_store.settle_all()
-        if settled:
-            print(f"settled {settled} variables in {settle_timing:.2f}s")
 
     try:
         for action in actions:

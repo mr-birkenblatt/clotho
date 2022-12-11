@@ -63,8 +63,9 @@ def test_dependent() -> None:
     value_a.set_value("a", 2, from_timestamp(now))
     assert value_a.maybe_get_value("a") == 2
     value_b.on_update("a", from_timestamp(now))
-    assert dep_a.maybe_get_value("a", from_timestamp(now)) is None
-    assert dep_b.maybe_get_value("a", from_timestamp(now)) is None
+    assert dep_a.maybe_get_value("a", from_timestamp(now)) \
+        == ["MISSING", "MISSING"]
+    assert dep_b.maybe_get_value("a", from_timestamp(now)) == 7
     time.sleep(0.2)
     now += 0.2
     assert dep_a.maybe_get_value("a", from_timestamp(now)) \
@@ -75,8 +76,8 @@ def test_dependent() -> None:
     value_b.set_value("a", "abc", from_timestamp(now))
     value_a.set_value("b", 2, from_timestamp(now))
     value_b.set_value("b", "defg", from_timestamp(now))
-    assert dep_a.maybe_get_value("b", from_timestamp(now)) is None
-    assert dep_b.maybe_get_value("b", from_timestamp(now)) is None
+    assert dep_a.maybe_get_value("b", from_timestamp(now)) == ["defg", "defg"]
+    assert dep_b.maybe_get_value("b", from_timestamp(now)) == 4
     time.sleep(0.2)
     now += 0.2
     assert dep_a.maybe_get_value("a", from_timestamp(now)) \
@@ -238,22 +239,24 @@ def test_dependent_list() -> None:
         convert=key_id,
         effect=update_a_a)
 
-    value_a.set_value("a", 5, from_timestamp(now))
-    value_b.set_value("a", ".", from_timestamp(now))
-    value_a.set_value("b", 3, from_timestamp(now))
-    value_b.set_value("b", ":", from_timestamp(now))
+    with (
+            dep_a_a.no_deferred_updates(),
+            dep_a.no_deferred_updates(),
+            dep_b.no_deferred_updates()):
+        value_a.set_value("a", 5, from_timestamp(now))
+        value_b.set_value("a", ".", from_timestamp(now))
+        value_a.set_value("b", 3, from_timestamp(now))
+        value_b.set_value("b", ":", from_timestamp(now))
 
-    assert dep_a_a.maybe_get_value(
-        "b", from_timestamp(now)) is None  # time sensitive
-    assert dep_a.maybe_get_value(
-        "b", from_timestamp(now)) is None  # time sensitive
-    assert dep_b.maybe_get_value(
-        "b", from_timestamp(now)) is None  # time sensitive
-    now += 0.1
-    assert dep_a_a.maybe_get_value(
-        "a", from_timestamp(now)) is None  # time sensitive
-    assert dep_b.maybe_get_value("a", None) \
-        == [".", ".", ".", ".", "."]
+        assert dep_a_a.maybe_get_value("b", from_timestamp(now)) == 3
+        assert dep_a.maybe_get_value("b", from_timestamp(now)) \
+            == [":", ":", ":"]
+        assert dep_b.maybe_get_value("b", from_timestamp(now)) \
+            == [":", ":", ":"]
+        now += 0.1
+        assert dep_a_a.maybe_get_value("a", from_timestamp(now)) == 5
+        assert dep_b.maybe_get_value("a", None) \
+            == [".", ".", ".", ".", "."]
 
     value_a.set_value("a", 3, from_timestamp(now))
 

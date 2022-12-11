@@ -39,16 +39,19 @@ CLink = NamedTuple('CLink', [
 ])
 
 
-def serialize_link(link: RLink | PLink | CLink) -> bytes:
-    return json_compact(link._asdict())
-
-
 def to_plink(link: RLink) -> PLink:
     return PLink(link.vote_type, link.parent)
 
 
 def to_clink(link: RLink) -> CLink:
     return CLink(link.vote_type, link.child)
+
+
+def serialize_link(link: RLink | PLink | CLink) -> bytes:
+    return json_compact({
+        key: value.to_parseable() if isinstance(value, MHash) else value
+        for key, value in link._asdict().items()
+    })
 
 
 def deserialize_rlink(obj: bytes) -> RLink:
@@ -545,7 +548,8 @@ class RedisLinkStore(LinkStore):
         for child in self.r_call_sorted[scorer.name()].get_value_range(
                 PLink(vote_type=VT_UP, parent=parent),
                 offset,
-                offset + limit):
+                offset + limit,
+                now):
             yield self.get_link(parent, MHash.parse(child))
 
     def get_parents(
@@ -559,7 +563,8 @@ class RedisLinkStore(LinkStore):
         for parent in self.r_pall_sorted[scorer.name()].get_value_range(
                 CLink(vote_type=VT_UP, child=child),
                 offset,
-                offset + limit):
+                offset + limit,
+                now):
             yield self.get_link(MHash.parse(parent), child)
 
     def get_user_links(
@@ -572,6 +577,6 @@ class RedisLinkStore(LinkStore):
             limit: int) -> Iterable[Link]:
         user_id = user.get_id()
         for link in self.r_user_sorted[scorer.name()].get_value_range(
-                user_id, offset, offset + limit):
+                user_id, offset, offset + limit, now):
             rlink = parse_link(VT_UP, link)
             yield self.get_link(rlink.parent, rlink.child)

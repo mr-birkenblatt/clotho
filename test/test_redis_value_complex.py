@@ -69,7 +69,7 @@ def test_complex() -> None:
 
     links.set_value(Link(l_from="a", l_to="b"), 1, now_ts)
 
-    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == []  # time sensitive
+    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == [1]
 
     links.set_value(Link(l_from="a", l_to="c"), 2, now_ts)
     links.set_value(Link(l_from="a", l_to="d"), 3, now_ts)
@@ -143,7 +143,7 @@ def test_complex_list() -> None:
 
     links.set_value(Link(l_from="a", l_to="b"), 1, now_ts)
 
-    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == []  # time sensitive
+    assert srcs.get_value(TLink(l_to="b"), [], now_ts) == ["1"]
 
     links.set_value(Link(l_from="a", l_to="c"), 2, now_ts)
     links.set_value(Link(l_from="a", l_to="d"), 3, now_ts)
@@ -168,56 +168,57 @@ def test_complex_list() -> None:
     assert srcs.get_value(TLink(l_to="d"), [], now_ts) == ["3", "4"]
 
     arr = ["0", "1", "2", "6"]
-    assert srcs.get_value_range(TLink(l_to="b"), 0, 4) == arr
-    assert srcs.get_value_range(TLink(l_to="b"), None, 0) == []
-    assert srcs.get_value_range(TLink(l_to="b"), None, 1) == ["0"]
-    assert srcs.get_value_range(TLink(l_to="b"), None, None) == arr
-    assert srcs.get_value_range(TLink(l_to="b"), 0, None) == arr
-    assert srcs.get_value_range(TLink(l_to="b"), 0, -1) == ["0", "1", "2"]
-    assert srcs.get_value_range(TLink(l_to="b"), 0, 0) == []
-    assert srcs.get_value_range(TLink(l_to="b"), 0, 1) == ["0"]
-    assert srcs.get_value_range(TLink(l_to="b"), 0, 2) == ["0", "1"]
-    assert srcs.get_value_range(TLink(l_to="b"), 1, 1) == []
-    assert srcs.get_value_range(TLink(l_to="b"), 1, 2) == ["1"]
-    assert srcs.get_value_range(TLink(l_to="b"), 1, 3) == ["1", "2"]
-    assert srcs.get_value_range(TLink(l_to="b"), 2, 4) == ["2", "6"]
-    assert srcs.get_value_range(TLink(l_to="b"), 2, None) == ["2", "6"]
-    assert srcs.get_value_range(TLink(l_to="b"), -3, None) == arr[-3:]
-    assert srcs.get_value_range(TLink(l_to="b"), 1, -1) == arr[1:-1]
-    assert srcs.get_value_range(TLink(l_to="b"), -3, -1) == arr[-3:-1]
-    assert srcs.get_value_range(TLink(l_to="b"), -3, 3) == arr[-3:3]
-    assert srcs.get_value_range(TLink(l_to="b"), 3, 5) == ["6"]
-    assert srcs.get_value_range(TLink(l_to="b"), 4, 5) == []
+    assert srcs.get_value_range(TLink(l_to="b"), 0, 4, now_ts) == arr
+    assert srcs.get_value_range(TLink(l_to="b"), None, 0, now_ts) == []
+    assert srcs.get_value_range(TLink(l_to="b"), None, 1, now_ts) == ["0"]
+    assert srcs.get_value_range(TLink(l_to="b"), None, None, now_ts) == arr
+    assert srcs.get_value_range(TLink(l_to="b"), 0, None, now_ts) == arr
+    assert srcs.get_value_range(
+        TLink(l_to="b"), 0, -1, now_ts) == ["0", "1", "2"]
+    assert srcs.get_value_range(TLink(l_to="b"), 0, 0, now_ts) == []
+    assert srcs.get_value_range(TLink(l_to="b"), 0, 1, now_ts) == ["0"]
+    assert srcs.get_value_range(TLink(l_to="b"), 0, 2, now_ts) == ["0", "1"]
+    assert srcs.get_value_range(TLink(l_to="b"), 1, 1, now_ts) == []
+    assert srcs.get_value_range(TLink(l_to="b"), 1, 2, now_ts) == ["1"]
+    assert srcs.get_value_range(TLink(l_to="b"), 1, 3, now_ts) == ["1", "2"]
+    assert srcs.get_value_range(TLink(l_to="b"), 2, 4, now_ts) == ["2", "6"]
+    assert srcs.get_value_range(TLink(l_to="b"), 2, None, now_ts) == ["2", "6"]
+    assert srcs.get_value_range(TLink(l_to="b"), -3, None, now_ts) == arr[-3:]
+    assert srcs.get_value_range(TLink(l_to="b"), 1, -1, now_ts) == arr[1:-1]
+    assert srcs.get_value_range(TLink(l_to="b"), -3, -1, now_ts) == arr[-3:-1]
+    assert srcs.get_value_range(TLink(l_to="b"), -3, 3, now_ts) == arr[-3:3]
+    assert srcs.get_value_range(TLink(l_to="b"), 3, 5, now_ts) == ["6"]
+    assert srcs.get_value_range(TLink(l_to="b"), 4, 5, now_ts) == []
 
-    assert srcs[TLink(l_to="b"), 0:2] == ["0", "1"]
-    assert len(srcs[TLink(l_to="b"), 2:0]) == 0
-    assert srcs[TLink(l_to="b"), None:2] == ["0", "1"]
-    assert srcs[TLink(l_to="b"), 1:3] == ["1", "2"]
-    assert srcs[TLink(l_to="b"), 1:] == ["1", "2", "6"]
-    assert srcs[TLink(l_to="b"), 3:] == ["6"]
-    assert len(srcs[TLink(l_to="b"), 4:]) == 0
-    assert srcs[TLink(l_to="b"), ::-1] == arr[::-1]
-    assert srcs[TLink(l_to="b"), 5:0:-1] == arr[5:0:-1]
-    assert srcs[TLink(l_to="b"), 4:0:-1] == arr[4:0:-1]
-    assert srcs[TLink(l_to="b"), 3:0:-1] == arr[3:0:-1]
-    assert srcs[TLink(l_to="b"), 2:0:-1] == arr[2:0:-1]
-    assert srcs[TLink(l_to="b"), 1:0:-1] == arr[1:0:-1]
-    assert srcs[TLink(l_to="b"), 3:1:-1] == arr[3:1:-1]
-    assert srcs[TLink(l_to="b"), 4:2:-1] == arr[4:2:-1]
-    assert srcs[TLink(l_to="b"), 0:5:-1] == arr[0:5:-1]
-    assert srcs[TLink(l_to="b"), 0:4:-1] == arr[0:4:-1]
-    assert srcs[TLink(l_to="b"), 0:3:-1] == arr[0:3:-1]
-    assert srcs[TLink(l_to="b"), 0:2:-1] == arr[0:2:-1]
-    assert srcs[TLink(l_to="b"), 0:1:-1] == arr[0:1:-1]
-    assert srcs[TLink(l_to="b"), 0:0:-1] == arr[0:0:-1]
-    assert srcs[TLink(l_to="b"), 3:-1:-1] == arr[3:-1:-1]
-    assert srcs[TLink(l_to="b"), 3:-2:-1] == arr[3:-2:-1]
-    assert srcs[TLink(l_to="b"), 3:-3:-1] == arr[3:-3:-1]
-    assert srcs[TLink(l_to="b"), 3:-4:-1] == arr[3:-4:-1]
-    assert srcs[TLink(l_to="b"), :2:-1] == arr[:2:-1]
-    assert srcs[TLink(l_to="b"), 2::-1] == arr[2::-1]
-    assert srcs[TLink(l_to="b"), -1:2:-1] == arr[-1:2:-1]
-    assert srcs[TLink(l_to="b"), -2:1:-1] == arr[-2:1:-1]
-    assert srcs[TLink(l_to="b"), 1:4:2] == ["1", "6"]
+    assert srcs[TLink(l_to="b"), 0:2, now_ts] == ["0", "1"]
+    assert len(srcs[TLink(l_to="b"), 2:0, now_ts]) == 0
+    assert srcs[TLink(l_to="b"), None:2, now_ts] == ["0", "1"]
+    assert srcs[TLink(l_to="b"), 1:3, now_ts] == ["1", "2"]
+    assert srcs[TLink(l_to="b"), 1:, now_ts] == ["1", "2", "6"]
+    assert srcs[TLink(l_to="b"), 3:, now_ts] == ["6"]
+    assert len(srcs[TLink(l_to="b"), 4:, now_ts]) == 0
+    assert srcs[TLink(l_to="b"), ::-1, now_ts] == arr[::-1]
+    assert srcs[TLink(l_to="b"), 5:0:-1, now_ts] == arr[5:0:-1]
+    assert srcs[TLink(l_to="b"), 4:0:-1, now_ts] == arr[4:0:-1]
+    assert srcs[TLink(l_to="b"), 3:0:-1, now_ts] == arr[3:0:-1]
+    assert srcs[TLink(l_to="b"), 2:0:-1, now_ts] == arr[2:0:-1]
+    assert srcs[TLink(l_to="b"), 1:0:-1, now_ts] == arr[1:0:-1]
+    assert srcs[TLink(l_to="b"), 3:1:-1, now_ts] == arr[3:1:-1]
+    assert srcs[TLink(l_to="b"), 4:2:-1, now_ts] == arr[4:2:-1]
+    assert srcs[TLink(l_to="b"), 0:5:-1, now_ts] == arr[0:5:-1]
+    assert srcs[TLink(l_to="b"), 0:4:-1, now_ts] == arr[0:4:-1]
+    assert srcs[TLink(l_to="b"), 0:3:-1, now_ts] == arr[0:3:-1]
+    assert srcs[TLink(l_to="b"), 0:2:-1, now_ts] == arr[0:2:-1]
+    assert srcs[TLink(l_to="b"), 0:1:-1, now_ts] == arr[0:1:-1]
+    assert srcs[TLink(l_to="b"), 0:0:-1, now_ts] == arr[0:0:-1]
+    assert srcs[TLink(l_to="b"), 3:-1:-1, now_ts] == arr[3:-1:-1]
+    assert srcs[TLink(l_to="b"), 3:-2:-1, now_ts] == arr[3:-2:-1]
+    assert srcs[TLink(l_to="b"), 3:-3:-1, now_ts] == arr[3:-3:-1]
+    assert srcs[TLink(l_to="b"), 3:-4:-1, now_ts] == arr[3:-4:-1]
+    assert srcs[TLink(l_to="b"), :2:-1, now_ts] == arr[:2:-1]
+    assert srcs[TLink(l_to="b"), 2::-1, now_ts] == arr[2::-1]
+    assert srcs[TLink(l_to="b"), -1:2:-1, now_ts] == arr[-1:2:-1]
+    assert srcs[TLink(l_to="b"), -2:1:-1, now_ts] == arr[-2:1:-1]
+    assert srcs[TLink(l_to="b"), 1:4:2, now_ts] == ["1", "6"]
 
-    assert len(srcs[TLink(l_to="d"), 2:0]) == 0
+    assert len(srcs[TLink(l_to="d"), 2:0, now_ts]) == 0
