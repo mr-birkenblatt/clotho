@@ -107,9 +107,8 @@ def test_complex_list() -> None:
     def compute_sources(key: TLink, now: pd.Timestamp | None) -> None:
         srcs.set_value(
             key,
-            sorted(
-                (f"{val}" for val in links.get_range("link:", f":{key.l_to}"))
-            ),
+            sorted((
+                f"{val}" for val in links.get_range("link:", f":{key.l_to}"))),
             now)
 
     dests: ListDependentRedisType[FLink] = \
