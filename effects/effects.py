@@ -190,7 +190,7 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             key: KT,
             when: pd.Timestamp | None) -> VT | None:
         value, is_outdated = self.poll_value(key, when)
-        if is_outdated != "old":
+        if is_outdated != "old" and value is not None:
             return value
         self.execute_update(key, when)
         value, _ = self.poll_value(key, when)
@@ -226,18 +226,18 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
         self.init_thread()
 
     def set_value(self, key: KT, value: VT, now: pd.Timestamp | None) -> None:
-        self.do_set_value(key, value)
+        self.do_set_value(key, value, now)
         self.on_update(key, now)
 
     def update_value(
             self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
-        res = self.do_update_value(key, value)
+        res = self.do_update_value(key, value, now)
         self.on_update(key, now)
         return res
 
     def set_new_value(
             self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
-        was_set = self.do_set_new_value(key, value)
+        was_set = self.do_set_new_value(key, value, now)
         if was_set:
             self.on_update(key, now)
         return was_set
@@ -257,11 +257,14 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def retrieve_value(self, key: KT) -> tuple[VT | None, pd.Timestamp | None]:
         raise NotImplementedError()
 
-    def do_set_value(self, key: KT, value: VT) -> None:
+    def do_set_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> None:
         raise NotImplementedError()
 
-    def do_update_value(self, key: KT, value: VT) -> VT | None:
+    def do_update_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
         raise NotImplementedError()
 
-    def do_set_new_value(self, key: KT, value: VT) -> bool:
+    def do_set_new_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         raise NotImplementedError()

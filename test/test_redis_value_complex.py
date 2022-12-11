@@ -43,8 +43,8 @@ def test_complex() -> None:
         ValueDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
-            json_compact,
-            json_read,
+            lambda key: json_compact(key.l_from),
+            lambda obj: FLink(json_read(obj)),
             "",
             "obs",
             "pen",
@@ -55,8 +55,8 @@ def test_complex() -> None:
         ValueDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
-            json_compact,
-            json_read,
+            lambda key: json_compact(key.l_to),
+            lambda obj: TLink(json_read(obj)),
             "",
             "obs",
             "pen",
@@ -116,8 +116,8 @@ def test_complex_list() -> None:
         ListDependentRedisType(
             "test",
             lambda key: f"dests:{key.l_from}",
-            json_compact,
-            json_read,
+            lambda key: json_compact(key.l_from),
+            lambda obj: FLink(json_read(obj)),
             "",
             "obs",
             "pen",
@@ -128,8 +128,8 @@ def test_complex_list() -> None:
         ListDependentRedisType(
             "test",
             lambda key: f"srcs:{key.l_to}",
-            json_compact,
-            json_read,
+            lambda key: json_compact(key.l_to),
+            lambda obj: TLink(json_read(obj)),
             "",
             "obs",
             "pen",

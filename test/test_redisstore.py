@@ -3,9 +3,9 @@ import time
 import uuid
 from typing import Iterable
 
+from effects.effects import set_old_threshold
 from misc.util import from_timestamp, now_ts, to_timestamp
 from system.links.link import Link, VoteType, VT_DOWN, VT_UP
-from system.links.redisstore import set_delay_multiplier
 from system.links.scorer import get_scorer, ScorerName
 from system.links.store import get_link_store
 from system.msgs.message import MHash, set_mhash_print_hook
@@ -42,7 +42,7 @@ PLAN: list[tuple[int, int, int, VoteType]] = [
 ]
 
 
-DMUL = 0.05
+OLD_TH = 0.05
 
 
 def test_scenario() -> None:
@@ -61,8 +61,8 @@ def test_scenario() -> None:
     for user in users:
         user_store.store_user(user)
 
-    dmul = DMUL
-    set_delay_multiplier(dmul)
+    old_th = OLD_TH
+    set_old_threshold(old_th)
     store = get_link_store("redis")
 
     def get_link(parent: int, child: int) -> Link:
@@ -81,7 +81,7 @@ def test_scenario() -> None:
     assert int(get_link(0, 1).get_votes(VT_UP).get_total_votes()) == 3
     assert int(get_link(0, 1).get_votes(VT_DOWN).get_total_votes()) == 1
 
-    time.sleep(4.0 * dmul)  # update tier 1
+    time.sleep(2.0 * old_th)  # update tier 1
     # (all parents, all children)
 
     def get_children(links: Iterable[Link]) -> list[MHash]:
@@ -116,7 +116,7 @@ def test_scenario() -> None:
     assert set(get_parents(store.get_all_parents(msgs[9]))) == {msgs[7]}
     assert len(get_parents(store.get_all_parents(msgs[4]))) == 0
 
-    time.sleep(5.0 * dmul)  # update tier 2
+    time.sleep(2.0 * old_th)  # update tier 2
     # (sorted parents, sorted children, first user, user list)
 
     def get_sorted(
@@ -205,7 +205,7 @@ def test_scenario() -> None:
     assert set(store.get_all_user_links(users[2])) == \
         set(store.get_all_children(msgs[3]))
 
-    time.sleep(4.0 * dmul)  # update tier 3
+    time.sleep(2.0 * old_th)  # update tier 3
     # (sorted user list)
 
     def get_sorted_user(

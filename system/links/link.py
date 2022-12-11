@@ -127,7 +127,8 @@ class Link:
             self,
             user_store: UserStore,
             vote_type: VoteType,
-            who: User) -> None:
+            who: User,
+            now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
     def get_response(

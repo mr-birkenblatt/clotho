@@ -11,7 +11,13 @@ from effects.effects import (
     ValueRootType,
 )
 from misc.redis import RedisConnection, RedisModule
-from misc.util import from_timestamp, json_compact, json_read, to_timestamp
+from misc.util import (
+    from_timestamp,
+    json_compact,
+    json_read,
+    now_ts,
+    to_timestamp,
+)
 
 
 KT = TypeVar('KT', bound=KeyType)
@@ -215,12 +221,14 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
             from_timestamp(float(marker)) if marker is not None else None,
         )
 
-    def do_set_value(self, key: KT, value: VT) -> None:
+    def do_set_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> None:
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(rkey, json_compact(value))
 
-    def do_update_value(self, key: KT, value: VT) -> VT | None:
+    def do_update_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
@@ -229,7 +237,8 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
                 res = pipe.execute()[0]
                 return json_read(res) if res is not None else None
 
-    def do_set_new_value(self, key: KT, value: VT) -> bool:
+    def do_set_new_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             res = conn.setnx(rkey, json_compact(value))
@@ -330,7 +339,8 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
             from_timestamp(float(marker)) if marker is not None else None,
         )
 
-    def do_set_value(self, key: KT, value: list[str]) -> None:
+    def do_set_value(
+            self, key: KT, value: list[str], now: pd.Timestamp | None) -> None:
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
@@ -339,7 +349,11 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
                     pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
                 pipe.execute()
 
-    def do_update_value(self, key: KT, value: list[str]) -> list[str] | None:
+    def do_update_value(
+            self,
+            key: KT,
+            value: list[str],
+            now: pd.Timestamp | None) -> list[str] | None:
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
@@ -353,7 +367,8 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
                     return None
                 return [val.decode("utf-8") for val in res]
 
-    def do_set_new_value(self, key: KT, value: list[str]) -> bool:
+    def do_set_new_value(
+            self, key: KT, value: list[str], now: pd.Timestamp | None) -> bool:
         if not value:
             return False
         if self._update_new_val is None:
@@ -373,6 +388,7 @@ class ListDependentRedisType(Generic[KT], EffectDependent[KT, list[str]]):
         res = self._update_new_val.execute(
             args={"value": value},
             keys={"rkey": rkey},
+            now=now_ts() if now is None else now,
             conn=self._redis,
             depth=1)
         return int(res) != 0

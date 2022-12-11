@@ -200,7 +200,7 @@ def setup(
             if is_add:
                 link.add_vote(user_store, vote_type, user, now)
             else:
-                link.remove_vote(user_store, vote_type, user)
+                link.remove_vote(user_store, vote_type, user, now)
         return link.get_response(user_store, who=user, now=now)
 
     # *** read only ***

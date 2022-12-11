@@ -17,16 +17,15 @@ class LinkStore:
     def get_link(self, parent: MHash, child: MHash) -> Link:
         raise NotImplementedError()
 
-    def get_all_children(self, parent: MHash) -> Iterable[Link]:
+    def get_all_children(
+            self, parent: MHash, now: pd.Timestamp) -> Iterable[Link]:
         raise NotImplementedError()
 
-    def get_all_parents(self, child: MHash) -> Iterable[Link]:
+    def get_all_parents(
+            self, child: MHash, now: pd.Timestamp) -> Iterable[Link]:
         raise NotImplementedError()
 
     def get_all_user_links(self, user: User) -> Iterable[Link]:
-        raise NotImplementedError()
-
-    def settle_all(self) -> tuple[int, float]:
         raise NotImplementedError()
 
     def limit_results(
@@ -49,7 +48,7 @@ class LinkStore:
             offset: int,
             limit: int) -> Iterable[Link]:
         return self.limit_results(
-            self.get_all_children(parent), scorer, now, offset, limit)
+            self.get_all_children(parent, now), scorer, now, offset, limit)
 
     def get_parents(
             self,
@@ -60,7 +59,7 @@ class LinkStore:
             offset: int,
             limit: int) -> Iterable[Link]:
         return self.limit_results(
-            self.get_all_parents(child), scorer, now, offset, limit)
+            self.get_all_parents(child, now), scorer, now, offset, limit)
 
     def get_user_links(
             self,

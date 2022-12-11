@@ -1,4 +1,3 @@
-import time
 from typing import Callable, Iterable, NamedTuple
 
 import pandas as pd
@@ -10,26 +9,19 @@ from effects.redis import (
     ValueRootRedisType,
 )
 from misc.redis import RedisConnection
-from misc.util import from_timestamp, now_ts, to_timestamp
-from system.links.link import Link, Votes, VoteType, VT_UP
+from misc.util import (
+    from_timestamp,
+    json_compact,
+    json_read,
+    now_ts,
+    to_timestamp,
+)
+from system.links.link import Link, parse_vote_type, Votes, VoteType, VT_UP
 from system.links.scorer import get_scorer, Scorer, ScorerName
 from system.links.store import LinkStore
 from system.msgs.message import MHash
 from system.users.store import UserStore
 from system.users.user import User
-
-
-DELAY_MULTIPLIER = 1.0
-
-
-def set_delay_multiplier(mul: float) -> None:
-    global DELAY_MULTIPLIER
-
-    DELAY_MULTIPLIER = mul
-
-
-def get_delay_multiplier() -> float:
-    return DELAY_MULTIPLIER
 
 
 RLink = NamedTuple('RLink', [
@@ -45,6 +37,38 @@ CLink = NamedTuple('CLink', [
     ("vote_type", VoteType),
     ("child", MHash),
 ])
+
+
+def serialize_link(link: RLink | PLink | CLink) -> bytes:
+    return json_compact(link._asdict())
+
+
+def to_plink(link: RLink) -> PLink:
+    return PLink(link.vote_type, link.parent)
+
+
+def to_clink(link: RLink) -> CLink:
+    return CLink(link.vote_type, link.child)
+
+
+def deserialize_rlink(obj: bytes) -> RLink:
+    link = json_read(obj)
+    return RLink(
+        parse_vote_type(link["vote_type"]),
+        MHash.parse(link["parent"]),
+        MHash.parse(link["child"]))
+
+
+def deserialize_plink(obj: bytes) -> PLink:
+    link = json_read(obj)
+    return PLink(
+        parse_vote_type(link["vote_type"]), MHash.parse(link["parent"]))
+
+
+def deserialize_clink(obj: bytes) -> CLink:
+    link = json_read(obj)
+    return CLink(
+        parse_vote_type(link["vote_type"]), MHash.parse(link["child"]))
 
 
 def parseable_link(parent: MHash, child: MHash) -> str:
@@ -170,24 +194,23 @@ class RedisLink(Link):
         key = RLink(
             vote_type=vote_type, parent=self._parent, child=self._child)
         weighted_value = who.get_weighted_vote(self.get_user(user_store))
-        nows = to_timestamp(now)
-        store.add_vote(key, who, vote_type, weighted_value, nows)
+        store.add_vote(key, who, vote_type, weighted_value, now)
 
     def remove_vote(
             self,
             user_store: UserStore,
             vote_type: VoteType,
-            who: User) -> None:
+            who: User,
+            now: pd.Timestamp) -> None:
         store = self._s
         key = RLink(
             vote_type=vote_type, parent=self._parent, child=self._child)
         weighted_value = who.get_weighted_vote(self.get_user(user_store))
-        store.remove_vote(key, who, weighted_value)
+        store.remove_vote(key, who, weighted_value, now)
 
 
 class RedisLinkStore(LinkStore):
     def __init__(self) -> None:
-        dmul = get_delay_multiplier()
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
             "link", key_constructor("user"))
         self.r_user_links = SetRootRedisType[str](
@@ -205,37 +228,45 @@ class RedisLinkStore(LinkStore):
 
         # all children for a given parent
 
-        def compute_call(key: PLink) -> None:
+        def compute_call(key: PLink, now: pd.Timestamp | None) -> None:
             self.r_call.set_value(
                 key,
-                list(self.r_last.get_range_keys(key_children("vlast", key))))
+                list(self.r_last.get_range_keys(key_children("vlast", key))),
+                now)
 
         self.r_call: ListDependentRedisType[PLink] = \
             ListDependentRedisType(
                 "link",
                 key_parent_constructor("vcall"),
+                serialize_link,
+                deserialize_plink,
+                "",
+                "obs",
+                "pen",
                 parents=(self.r_last,),
-                convert=lambda pkey: PLink(
-                    vote_type=pkey.vote_type, parent=pkey.parent),
-                effect=compute_call,
-                delay=2.0 * dmul)
+                convert=to_plink,
+                effect=compute_call)
 
         # all parents for a given child
 
-        def compute_pall(key: CLink) -> None:
+        def compute_pall(key: CLink, now: pd.Timestamp | None) -> None:
             self.r_pall.set_value(
                 key,
-                list(self.r_last.get_range_keys(*key_parents("vlast", key))))
+                list(self.r_last.get_range_keys(*key_parents("vlast", key))),
+                now)
 
         self.r_pall: ListDependentRedisType[CLink] = \
             ListDependentRedisType(
                 "link",
                 key_child_constructor("vpall"),
+                serialize_link,
+                deserialize_clink,
+                "",
+                "obs",
+                "pen",
                 parents=(self.r_last,),
-                convert=lambda pkey: CLink(
-                    vote_type=pkey.vote_type, child=pkey.child),
-                effect=compute_pall,
-                delay=2.0 * dmul)
+                convert=to_clink,
+                effect=compute_pall)
 
         # sorted lists by score
 
@@ -251,48 +282,62 @@ class RedisLinkStore(LinkStore):
 
             # all children for a given parent sorted with score
 
-            def compute_call_sorted(key: PLink) -> None:
-                now = now_ts()
+            def compute_call_sorted(
+                    key: PLink, now: pd.Timestamp | None) -> None:
                 links = sorted(
                     (
                         self.get_link(key.parent, MHash.parse(child))
-                        for child in self.r_call.get_value(key, [])
+                        for child in self.r_call.get_value(key, [], now)
                     ),
-                    key=lambda link: scorer.get_score(link, now),
+                    key=lambda link: scorer.get_score(
+                        link, now_ts() if now is None else now),
                     reverse=True)
                 cur_r_call_sorted.set_value(
-                    key, [link.get_child().to_parseable() for link in links])
+                    key,
+                    [link.get_child().to_parseable() for link in links],
+                    now)
 
             cur_r_call_sorted = ListDependentRedisType(
                 "link",
                 key_parent_constructor(f"scall:{sname}"),
+                serialize_link,
+                deserialize_plink,
+                "",
+                "obs",
+                "pen",
                 parents=(self.r_call,),
                 convert=lambda pkey: pkey,
-                effect=compute_call_sorted,
-                delay=2.0 * dmul)
+                effect=compute_call_sorted)
             self.r_call_sorted[sname] = cur_r_call_sorted
 
             # all parents for a given child sorted with score
 
-            def compute_pall_sorted(key: CLink) -> None:
-                now = now_ts()
+            def compute_pall_sorted(
+                    key: CLink, now: pd.Timestamp | None) -> None:
                 links = sorted(
                     (
                         self.get_link(MHash.parse(parent), key.child)
-                        for parent in self.r_pall.get_value(key, [])
+                        for parent in self.r_pall.get_value(key, [], now)
                     ),
-                    key=lambda link: scorer.get_score(link, now),
+                    key=lambda link: scorer.get_score(
+                        link, now_ts() if now is None else now),
                     reverse=True)
                 cur_r_pall_sorted.set_value(
-                    key, [link.get_parent().to_parseable() for link in links])
+                    key,
+                    [link.get_parent().to_parseable() for link in links],
+                    now)
 
             cur_r_pall_sorted = ListDependentRedisType(
                 "link",
                 key_child_constructor(f"spall:{sname}"),
+                serialize_link,
+                deserialize_clink,
+                "",
+                "obs",
+                "pen",
                 parents=(self.r_pall,),
                 convert=lambda pkey: pkey,
-                effect=compute_pall_sorted,
-                delay=2.0 * dmul)
+                effect=compute_pall_sorted)
             self.r_pall_sorted[sname] = cur_r_pall_sorted
 
             # all links created by a user sorted with score
@@ -301,29 +346,35 @@ class RedisLinkStore(LinkStore):
                 rlink = parse_link(VT_UP, ulink)
                 return self.get_link(rlink.parent, rlink.child)
 
-            def compute_user_sorted(key: str) -> None:
-                now = now_ts()
+            def compute_user_sorted(
+                    key: str, now: pd.Timestamp | None) -> None:
                 links = sorted(
                     (
                         to_link(ulink)
                         for ulink in self.r_user_links.get_value(key, set())
                     ),
-                    key=lambda link: scorer.get_score(link, now),
+                    key=lambda link: scorer.get_score(
+                        link, now_ts() if now is None else now),
                     reverse=True)
                 cur_r_user_sorted.set_value(
                     key,
                     [
                         parseable_link(link.get_parent(), link.get_child())
                         for link in links
-                    ])
+                    ],
+                    now)
 
             cur_r_user_sorted = ListDependentRedisType(
                 "link",
                 lambda user: f"suserlinks:{sname}:{user}",
+                json_compact,
+                json_read,
+                "",
+                "obs",
+                "pen",
                 parents=(self.r_user_links,),
                 convert=lambda pkey: pkey,
-                effect=compute_user_sorted,
-                delay=4.0 * dmul)
+                effect=compute_user_sorted)
             self.r_user_sorted[sname] = cur_r_user_sorted
 
         for scorer in self.valid_scorers():
@@ -340,14 +391,14 @@ class RedisLinkStore(LinkStore):
             user: User,
             vote_type: VoteType,
             weighted_value: float,
-            now: float) -> None:
+            now: pd.Timestamp) -> None:
         user_id = user.get_id()
         self._add_vote.execute(
             args={
                 "user_id": user_id,
                 "weighted_value": weighted_value,
                 "vote_type": vote_type,
-                "now": now,
+                "now": to_timestamp(now),
                 "plink": parseable_link(link.parent, link.child),
             },
             keys={
@@ -359,6 +410,7 @@ class RedisLinkStore(LinkStore):
                 "r_last": link,
                 "r_user_links": user_id,
             },
+            now=now,
             conn=self._conn,
             depth=1)
 
@@ -414,7 +466,8 @@ class RedisLinkStore(LinkStore):
             self,
             link: RLink,
             user: User,
-            weighted_value: float) -> None:
+            weighted_value: float,
+            now: pd.Timestamp) -> None:
         user_id = user.get_id()
         self._remove_vote.execute(
             args={
@@ -426,6 +479,7 @@ class RedisLinkStore(LinkStore):
                 "r_total": link,
                 "r_daily": link,
             },
+            now=now,
             conn=self._conn,
             depth=1)
 
@@ -451,19 +505,6 @@ class RedisLinkStore(LinkStore):
 
         return script
 
-    def settle_all(self) -> tuple[int, float]:
-        start_time = time.monotonic()
-        count = 0
-        count += self.r_call.settle_all()
-        count += self.r_pall.settle_all()
-        for scall in self.r_call_sorted.values():
-            count += scall.settle_all()
-        for spall in self.r_pall_sorted.values():
-            count += spall.settle_all()
-        for suser in self.r_user_sorted.values():
-            count += suser.settle_all()
-        return count, time.monotonic() - start_time
-
     @staticmethod
     def valid_scorers() -> list[Scorer]:
         return [
@@ -475,14 +516,16 @@ class RedisLinkStore(LinkStore):
     def get_link(self, parent: MHash, child: MHash) -> Link:
         return RedisLink(self, parent, child)
 
-    def get_all_children(self, parent: MHash) -> Iterable[Link]:
+    def get_all_children(
+            self, parent: MHash, now: pd.Timestamp) -> Iterable[Link]:
         for child in self.r_call.get_value(
-                PLink(vote_type=VT_UP, parent=parent), default=[]):
+                PLink(vote_type=VT_UP, parent=parent), default=[], when=now):
             yield self.get_link(parent, MHash.parse(child))
 
-    def get_all_parents(self, child: MHash) -> Iterable[Link]:
+    def get_all_parents(
+            self, child: MHash, now: pd.Timestamp) -> Iterable[Link]:
         for parent in self.r_pall.get_value(
-                CLink(vote_type=VT_UP, child=child), default=[]):
+                CLink(vote_type=VT_UP, child=child), default=[], when=now):
             yield self.get_link(MHash.parse(parent), child)
 
     def get_all_user_links(self, user: User) -> Iterable[Link]:
