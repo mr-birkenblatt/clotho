@@ -279,19 +279,21 @@ def test_dependent_list() -> None:
     assert dep_a.maybe_get_value("b", from_timestamp(now)) == [":", ":", ":"]
     assert dep_b.maybe_get_value("b", from_timestamp(now)) == [":", ":", ":"]
 
-    assert dep_a_a.maybe_get_value("a", from_timestamp(now)) \
-        == 3  # time sensitive
-    assert dep_a.maybe_get_value("a", from_timestamp(now)) \
-        == [".", ".", "."]  # time sensitive
+    with (dep_a_a.no_deferred_updates(), dep_a.no_deferred_updates()):
+        assert dep_a_a.maybe_get_value("a", from_timestamp(now)) \
+            == 3  # time sensitive
+        assert dep_a.maybe_get_value("a", from_timestamp(now)) \
+            == [".", ".", "."]  # time sensitive
+
+        now += 0.1
+
+        assert dep_a_a.maybe_get_value("a", from_timestamp(now)) \
+            == 3  # time sensitive
+        assert dep_a.maybe_get_value("a", None) == [".", ".", ".", "."]
+        assert dep_b.maybe_get_value("a", None) == [".", ".", ".", ".", "."]
 
     now += 0.1
-
-    assert dep_a_a.maybe_get_value("a", from_timestamp(now)) \
-        == 3  # time sensitive
-    assert dep_a.maybe_get_value("a", None) == [".", ".", ".", "."]
-    assert dep_b.maybe_get_value("a", None) == [".", ".", ".", ".", "."]
-
-    now += 0.1
+    time.sleep(0.1)
 
     assert dep_a_a.maybe_get_value("a", None) == 4
 

@@ -9,7 +9,7 @@ from effects.redis import (
     ValueRootRedisType,
 )
 from misc.redis import RedisConnection
-from misc.util import json_compact, json_read, now_ts, to_timestamp
+from misc.util import identity, json_compact, json_read, now_ts, to_timestamp
 from system.links.link import (
     CLink,
     deserialize_clink,
@@ -181,7 +181,7 @@ class RedisLinkStore(LinkStore):
                 "obs",
                 "pen",
                 parents=(self.r_call,),
-                convert=lambda pkey: pkey,
+                convert=lambda pkey: pkey,  # FIXME: use identity
                 effect=compute_call_sorted)
             self.r_call_sorted[sname] = cur_r_call_sorted
 
@@ -211,7 +211,7 @@ class RedisLinkStore(LinkStore):
                 "obs",
                 "pen",
                 parents=(self.r_pall,),
-                convert=lambda pkey: pkey,
+                convert=lambda pkey: pkey,  # FIXME: use identity
                 effect=compute_pall_sorted)
             self.r_pall_sorted[sname] = cur_r_pall_sorted
 
@@ -248,7 +248,7 @@ class RedisLinkStore(LinkStore):
                 "obs",
                 "pen",
                 parents=(self.r_user_links,),
-                convert=lambda pkey: pkey,
+                convert=identity,
                 effect=compute_user_sorted)
             self.r_user_sorted[sname] = cur_r_user_sorted
 
