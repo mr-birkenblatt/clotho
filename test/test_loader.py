@@ -2,6 +2,7 @@ import time
 
 import pandas as pd
 
+from effects.effects import set_old_threshold
 from example.loader import process_action_file
 from system.links.link import Link, VoteType, VT_DOWN, VT_UP
 from system.links.scorer import get_scorer, Scorer
@@ -62,6 +63,7 @@ def test_loader() -> None:
     link_store = get_link_store("redis")
     user_store = get_user_store("ram")
     now = pd.Timestamp("2022-08-22", tz="UTC")
+    set_old_threshold(0.1)
 
     msgs_raw = [
         "t/news",
