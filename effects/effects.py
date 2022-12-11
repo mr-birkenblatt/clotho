@@ -45,6 +45,10 @@ def set_old_threshold(old_threshold: float) -> None:
     OLD_THRESHOLD = pd.Timedelta(seconds=old_threshold)
 
 
+def get_old_threshold() -> float:
+    return OLD_THRESHOLD / pd.Timedelta("1s")
+
+
 class Dependent(Generic[KT, CT]):
     def __init__(
             self,
