@@ -195,7 +195,6 @@ def test_dependent_list() -> None:
     def update_b(key: str, now_ts: pd.Timestamp | None) -> None:
         arr = [value_b.get_value(key, "MISSING")] * value_a.get_value(key, 0)
         old = dep_b.maybe_get_value(key, now_ts)
-        print(f"x {key} {old} {arr}")
         if dep_b.set_new_value(key, arr, now_ts):
             assert dep_b.maybe_get_value(key, now_ts) == arr
         else:
