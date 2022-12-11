@@ -175,7 +175,7 @@ def test_dependent() -> None:
 
 def test_dependent_list() -> None:
     now = 1670580000.0
-    set_old_threshold(0.1)
+    set_old_threshold(10.0)
     value_a: ValueRootRedisType[str, int] = ValueRootRedisType(
         "test", lambda key: f"count:{key}")
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
