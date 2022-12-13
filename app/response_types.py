@@ -7,7 +7,11 @@ from system.users.user import Permissions
 LoginResponse = TypedDict('LoginResponse', {
     "token": str,
     "user": str,
+    "userid": str,
     "permissions": Permissions,
+})
+LogoutResponse = TypedDict('LogoutResponse', {
+    "success": bool,
 })
 TopicResponse = TypedDict('TopicResponse', {
     "topic": str,

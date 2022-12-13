@@ -20,7 +20,10 @@ class MessageStore:
     def add_topic(self, topic: Message) -> MHash:
         raise NotImplementedError()
 
-    def get_topics(self) -> Iterable[Message]:
+    def get_topics(
+            self,
+            offset: int,
+            limit: int | None) -> Iterable[Message]:
         raise NotImplementedError()
 
     def do_get_random_messages(
@@ -29,12 +32,15 @@ class MessageStore:
 
     def get_random_messages(
             self,
-            ref: MHash | None,
+            ref: MHash,
+            is_parent: bool,
             offset: int,
             limit: int) -> Iterable[MHash]:
         start = offset - (offset % RNG_ALIGN)
         end = offset + limit
-        base_seed = 1 if ref is None else hash(ref)
+        base_seed = hash(ref)
+        if is_parent:
+            base_seed = base_seed * 5 + 1
         res: list[MHash] = []
         cur_ix = start
         while cur_ix < end:

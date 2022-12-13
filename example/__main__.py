@@ -4,18 +4,19 @@ import time
 
 import pandas as pd
 
+from effects.effects import get_old_threshold, set_old_threshold
 from example.loader import process_action_file
 from example.reddit import RedditAccess
 from misc.io import open_append
 from misc.util import json_compact
-from system.links.redisstore import get_delay_multiplier, set_delay_multiplier
 from system.links.store import get_default_link_store
 from system.msgs.store import get_default_message_store
 from system.users.store import get_default_user_store
 
 
 REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
-ROOTS = ["politics", "news", "worldnews", "conservative"]
+# ROOTS = ["politics", "news", "worldnews", "conservative"]
+ROOTS = ["askscience", "askreddit", "explainlikeimfive", "todayilearned"]
 
 
 def process_reddit(reddit: RedditAccess, fname: str, subs: list[str]) -> None:
@@ -48,8 +49,8 @@ def process_load() -> None:
     user_store = get_default_user_store()
     now = pd.Timestamp("2022-08-22", tz="UTC")
     reference_time = time.monotonic()
-    old_dm = get_delay_multiplier()
-    set_delay_multiplier(3600)
+    old_th = get_old_threshold()
+    set_old_threshold(24 * 60 * 60)
     process_action_file(
         REDDIT_ACTION_FILE,
         message_store=message_store,
@@ -58,7 +59,7 @@ def process_load() -> None:
         now=now,
         reference_time=reference_time,
         roots=set(ROOTS))
-    set_delay_multiplier(old_dm)
+    set_old_threshold(old_th)
 
 
 def run() -> None:

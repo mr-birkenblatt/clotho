@@ -174,15 +174,15 @@ test('union tests', () => {
 
 test('assert tests', () => {
   const at = () => {
-    assertTrue(false);
+    assertTrue(false, 'expected throw');
   };
   expect(at).toThrow(Error);
   const ae = () => {
-    assertEqual(3, 5);
+    assertEqual(3, 5, 'expected throw');
   };
   expect(ae).toThrow(Error);
   const an = () => {
-    assertNotEqual(2, 2);
+    assertNotEqual(2, 2, 'expected throw');
   };
   expect(an).toThrow(Error);
   const err = () => {

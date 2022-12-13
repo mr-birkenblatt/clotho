@@ -146,7 +146,7 @@ def interpret_action(
                 is_topic = True
         msg = Message(msg=text)
         if is_topic:
-            topics = list(message_store.get_topics())
+            topics = list(message_store.get_topics(0, None))
             if msg not in topics:
                 message_store.add_topic(msg)
                 print(f"adding topic: {msg.get_text()}")
@@ -191,9 +191,6 @@ def process_actions(
                 if not key.startswith("new_"):
                     continue
                 totals.pop(key, None)
-        settled, settle_timing = link_store.settle_all()
-        if settled:
-            print(f"settled {settled} variables in {settle_timing:.2f}s")
 
     try:
         for action in actions:
@@ -279,10 +276,10 @@ def process_action_file(
         user_pool=user_pool,
         synth_pool=synth_pool,
         counter=counter)
-    # FIXME: process by children count first (least first)
-    # FIXME: use temporary files to filter each pass
+    # FIXME: process by children count first (least first) (maybe)
+    # FIXME: use temporary files to filter each pass (maybe)
     # FIXME: analyze mhash storage (how many hashes per file / how deep?)
-    # FIXME: batch votes (100 at a time)
-    # FIXME: lazy caching -- invalidation / recomputation markers by time
-    # FIXME: jumpy loads in UI
-    # FIXME: python tests breaking
+    # FIXME: batch votes (100 at a time; maybe)
+    # FIXME: add user inbox
+    # FIXME: add sort select
+    # FIXME: total karma to user display

@@ -23,8 +23,13 @@ class RamMessageStore(MessageStore):
         self._topics.append(topic)
         return topic.get_hash()
 
-    def get_topics(self) -> Iterable[Message]:
-        yield from self._topics
+    def get_topics(
+            self,
+            offset: int,
+            limit: int | None) -> Iterable[Message]:
+        if limit is None:
+            return self._topics[offset:]
+        return self._topics[offset:offset + limit]
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:

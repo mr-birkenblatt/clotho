@@ -1,8 +1,10 @@
 import React, { PureComponent } from 'react';
 import styled from 'styled-components';
-import View from './main/View';
-import CommentGraph from './misc/CommentGraph';
-import { advancedGraph } from './misc/TestGraph';
+import View from './view/View';
+import CommentGraph from './graph/CommentGraph';
+import { advancedGraph } from './graph/TestGraph';
+import UserActions from './users/UserActions';
+import UserMenu from './users/UserMenu';
 
 const DEBUG = false;
 
@@ -13,20 +15,9 @@ const Main = styled.div`
   width: 100vw;
   display: flex;
   flex-direction: column;
-  background-color: #282c34;
-  color: white;
+  background-color: var(--main-background);
+  color: var(--main-text);
 `;
-
-// const MainHeader = styled.header`
-//   background-color: #282c34;
-//   min-height: 100vh;
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-//   justify-content: center;
-//   font-size: calc(10px + 2vmin);
-//   color: white;
-// `;
 
 const MainColumn = styled.div`
   margin: 0 auto;
@@ -43,11 +34,13 @@ type AppProps = Record<string, never>;
 type AppState = Record<string, never>;
 
 export default class App extends PureComponent<AppProps, AppState> {
-  graph: CommentGraph;
+  private readonly graph: CommentGraph;
+  private readonly userActions: UserActions;
 
   constructor(props: AppProps) {
     super(props);
     this.state = {};
+    this.userActions = new UserActions(undefined);
     this.graph = new CommentGraph(
       DEBUG ? advancedGraph().getApiProvider() : undefined,
     );
@@ -56,12 +49,13 @@ export default class App extends PureComponent<AppProps, AppState> {
   render() {
     return (
       <Main>
-        {/* <MainHeader>
-          <RequireLogin />
-        </MainHeader> */}
         <MainColumn>
-          <View graph={this.graph} />
+          <View
+            graph={this.graph}
+            userActions={this.userActions}
+          />
         </MainColumn>
+        <UserMenu userActions={this.userActions} />
       </Main>
     );
   }
