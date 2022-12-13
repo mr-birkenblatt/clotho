@@ -69,7 +69,7 @@ def run() -> None:
     if args.cmd == "reddit":
         process_reddit(RedditAccess(do_log=False), REDDIT_ACTION_FILE, ROOTS)
     elif args.cmd == "load":
-        process_load(args.ns)
+        process_load(args.namespace)
     else:
         raise RuntimeError(f"invalid cmd: {args.cmd}")
 

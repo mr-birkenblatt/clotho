@@ -17,6 +17,9 @@ VT = TypeVar('VT')
 DT = TypeVar('DT', bound=pd.DataFrame | pd.Series)
 
 
+NL = "\n"
+
+
 TEST_SALT_LOCK = threading.RLock()
 TEST_SALT: dict[str, str] = {}
 

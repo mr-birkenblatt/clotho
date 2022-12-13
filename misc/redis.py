@@ -28,6 +28,7 @@ from misc.util import (
     is_test,
     json_compact,
     json_read,
+    NL,
 )
 
 
@@ -70,7 +71,6 @@ def get_api_config() -> RedisConfig:
 REDIS_SLOW = 1.0
 REDIS_SLOW_CONTEXT = 3
 REDIS_UNIQUE: set[tuple[str, int, str]] = set()
-NL = "\n"
 
 
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods
