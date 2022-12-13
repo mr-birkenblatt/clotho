@@ -61,7 +61,7 @@ lint-indent:
 	| xargs grep --color=always -nE "^(\s{4})*\s{1,3}\S.*$$"
 
 lint-forgottenformat:
-	PYTHON=$(PYTHON) && ! ./forgottenformat.sh
+	! PYTHON=$(PYTHON) ./forgottenformat.sh
 
 lint-requirements:
 	locale
@@ -110,16 +110,16 @@ lint-all: \
 	lint-ts
 
 install:
-	PYTHON=$(PYTHON) && ./install.sh
+	PYTHON=$(PYTHON) ./install.sh
 
 install-ts:
 	cd ui && yarn install
 
 requirements-check:
-	PYTHON=$(PYTHON) && ./requirements_check.sh $(FILE)
+	PYTHON=$(PYTHON) ./requirements_check.sh $(FILE)
 
 requirements-complete:
-	PYTHON=$(PYTHON) && ./requirements_complete.sh $(FILE)
+	PYTHON=$(PYTHON) ./requirements_complete.sh $(FILE)
 
 name:
 	git describe --abbrev=10 --tags HEAD
@@ -135,7 +135,7 @@ clean:
 	./clean.sh
 
 pytest:
-	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
+	MAKE=$(MAKE) PYTHON=$(PYTHON) RESULT_FNAME=$(RESULT_FNAME) ./run_pytest.sh $(FILE)
 
 test-ts:
 	cd ui && yarn testall
@@ -147,16 +147,16 @@ ts-build:
 	cd ui && yarn build
 
 run-redis-test:
-	PYTHON=$(PYTHON) && NS=_test && ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_test ./run_redis.sh
 
 run-redis-api:
-	PYTHON=$(PYTHON) && USER_PATH=$(USER_PATH) && NS=_api && ./run_redis.sh
+	PYTHON=$(PYTHON) USER_PATH=$(USER_PATH) NS=_api ./run_redis.sh
 
 run-redis:
-	PYTHON=$(PYTHON) && USER_PATH=$(USER_PATH) && NS=$(NS) && ./run_redis.sh
+	PYTHON=$(PYTHON) USER_PATH=$(USER_PATH) NS=$(NS) ./run_redis.sh
 
 run-api:
-	API_SERVER_NAMESPACE=$(NS) && $(PYTHON) -m app
+	API_SERVER_NAMESPACE=$(NS) $(PYTHON) -m app
 
 run-web:
 	cd ui && yarn start

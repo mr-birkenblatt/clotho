@@ -14,10 +14,4 @@ else
     CFG="../redis.main.conf"
 fi
 
-echo ${NS}
-echo ${PYTHON}
-echo ${USER_PATH}
-echo ${PORT}
-echo ${CFG}
-
-# cd "${USER_PATH}" && redis-server "${CFG}" --port "${PORT}"
+cd "${USER_PATH}" && redis-server "${CFG}" --port "${PORT}"
