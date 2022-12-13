@@ -12,6 +12,7 @@ from typing import (
     Literal,
     overload,
     Protocol,
+    TypedDict,
 )
 
 from redis import StrictRedis
@@ -19,37 +20,47 @@ from redis.client import Script
 from redis.exceptions import ResponseError
 from redis_lock import Lock
 
-from misc.env import envload_int, envload_str
 from misc.io import open_read
-from misc.util import get_relative_function_info, json_compact, json_read
+from misc.util import (
+    get_relative_function_info,
+    get_test_salt,
+    is_test,
+    json_compact,
+    json_read,
+)
 
 
-REDIS_SALT_LOCK = threading.RLock()
-REDIS_SALT: dict[str, str] = {}
+RedisConfig = TypedDict('RedisConfig', {
+    "host": str,
+    "port": int,
+    "passwd": str,
+    "prefix": str,
+})
+
+
+def get_redis_config(
+        host: str, port: int, passwd: str, prefix: str) -> RedisConfig:
+    return {
+        "host": host,
+        "port": port,
+        "passwd": passwd,
+        "prefix": prefix,
+    }
+
+
+def get_test_config() -> RedisConfig:
+    return {
+        "host": "localhost",
+        "port": 6380,
+        "passwd": "",
+        "prefix": "",
+    }
+
 
 REDIS_SLOW = 1.0
 REDIS_SLOW_CONTEXT = 3
 REDIS_UNIQUE: set[tuple[str, int, str]] = set()
 NL = "\n"
-
-
-def is_test() -> bool:
-    test_id = os.getenv("PYTEST_CURRENT_TEST")
-    return test_id is not None
-
-
-def get_salt() -> str | None:
-    test_id = os.getenv("PYTEST_CURRENT_TEST")
-    if test_id is None:
-        return None
-    res = REDIS_SALT.get(test_id)
-    if res is None:
-        with REDIS_SALT_LOCK:
-            res = REDIS_SALT.get(test_id)
-            if res is None:
-                res = f"salt:{uuid.uuid4().hex}"
-                REDIS_SALT[test_id] = res
-    return res
 
 
 class RedisFunctionBytes(Protocol):  # pylint: disable=too-few-public-methods
@@ -83,53 +94,98 @@ RedisModule = Literal[
 LOCK_MODULE: RedisModule = "locks"
 
 
+ConfigKey = tuple[str, str]
+ConnectionKey = tuple[ConfigKey, str, str]
+
+
 SCRIPT_CACHE: dict[str, str] = {}
 SCRIPT_UTILS_CACHE: str = ""
 SCRIPT_UTILS_LINES: int = 0
 CONCURRENT_MODULE_CONN: int = 17
-REDIS_SERVICE_CONN: dict[str, StrictRedis | None] = {}
+REDIS_CONFIG_CACHE: dict[ConfigKey, RedisConfig] = {}
+REDIS_SERVICE_CONN: dict[ConnectionKey, StrictRedis | None] = {}
 DO_CACHE = True
 LOCK = threading.RLock()
 LOCKS: dict[str, tuple[threading.RLock, Lock] | None] = {}
 LOCK_ID: str = uuid.uuid4().hex
 
 
+def get_redis_ns_key(ns_name: str, ns_module: str) -> ConfigKey:
+    return f"{ns_name}", f"{ns_module}"
+
+
+def get_connection_key(
+        ns_name: str,
+        ns_module: str,
+        redis_module: RedisModule) -> ConnectionKey:
+    return (
+        get_redis_ns_key(ns_name, ns_module),
+        f"{redis_module}",
+        f"{threading.get_ident() % CONCURRENT_MODULE_CONN}",
+    )
+
+
+def register_redis_ns(ns_name: str, ns_module: str, cfg: RedisConfig) -> None:
+    key = get_redis_ns_key(ns_name, ns_module)
+    if key in REDIS_CONFIG_CACHE:
+        raise ValueError(f"redis ns already registered: {ns_name} {ns_module}")
+    REDIS_CONFIG_CACHE[key] = cfg
+
+
 class RedisWrapper:
-    def __init__(self, module: RedisModule) -> None:
-        self._module = module
+    def __init__(
+            self,
+            ns_name: str,
+            ns_module: str,
+            redis_module: RedisModule) -> None:
+        self._ns_name = ns_name
+        self._ns_module = ns_module
+        self._redis_module = redis_module
         self._conn = None
 
+    def get_ns_info(self) -> tuple[str, str]:
+        return self._ns_name, self._ns_module
+
     @staticmethod
-    def _create_connection() -> StrictRedis:
+    def _create_connection(cfg: RedisConfig) -> StrictRedis:
         config = {
             "retry_on_timeout": True,
             "health_check_interval": 45,
             "client_name": f"api-{uuid.uuid4().hex}",
         }
-        default_port = 6380 if is_test() else 6379
         return StrictRedis(  # pylint: disable=unexpected-keyword-arg
-            host=envload_str("REDIS_HOST", default="localhost"),
-            port=envload_int("REDIS_PORT", default=default_port),
+            host=cfg["host"],
+            port=cfg["port"],
             db=0,
-            password=envload_str("REDIS_PASS", default=""),
+            password=cfg["passwd"],
             **config)
 
     @classmethod
-    def _get_redis_cached_conn(cls, module: RedisModule) -> StrictRedis:
+    def _get_redis_cached_conn(
+            cls,
+            ns_name: str,
+            ns_module: str,
+            redis_module: RedisModule) -> StrictRedis:
         if not DO_CACHE:
-            return cls._create_connection()
+            cfg = REDIS_CONFIG_CACHE[get_redis_ns_key(ns_name, ns_module)]
+            return cls._create_connection(cfg)
 
-        key = f"{module}-{threading.get_ident() % CONCURRENT_MODULE_CONN}"
+        key = get_connection_key(ns_name, ns_module, redis_module)
         res = REDIS_SERVICE_CONN.get(key)
         if res is None:
             with LOCK:
                 if res is None:
-                    res = cls._create_connection()
+                    cfg = REDIS_CONFIG_CACHE[key[0]]
+                    res = cls._create_connection(cfg)
                     REDIS_SERVICE_CONN[key] = res
         return res
 
     @classmethod
-    def _get_lock_pair(cls, name: str) -> tuple[threading.RLock, Lock]:
+    def _get_lock_pair(
+            cls,
+            ns_name: str,
+            ns_module: str,
+            name: str) -> tuple[threading.RLock, Lock]:
         res = LOCKS.get(name)
         if res is None:
             with LOCK:
@@ -138,7 +194,8 @@ class RedisWrapper:
                     res = (
                         threading.RLock(),
                         Lock(
-                            cls._get_redis_cached_conn(LOCK_MODULE),
+                            cls._get_redis_cached_conn(
+                                ns_name, ns_module, LOCK_MODULE),
                             name,
                             id=LOCK_ID,
                             expire=1,
@@ -153,7 +210,8 @@ class RedisWrapper:
         conn_start = time.monotonic()
         try:
             if self._conn is None:
-                self._conn = self._get_redis_cached_conn(self._module)
+                self._conn = self._get_redis_cached_conn(
+                    self._ns_name, self._ns_module, self._redis_module)
             yield self._conn
         except Exception:
             self.reset()
@@ -189,30 +247,34 @@ class RedisWrapper:
     def reset(self) -> None:
         conn = self._conn
         if conn is not None:
-            self._invalidate_connection(self._module)
+            self._invalidate_connection(
+                self._ns_name, self._ns_module, self._redis_module)
             self._conn = None
 
     @classmethod
-    def reset_lock(cls) -> None:
+    def reset_lock(cls, ns_name: str, ns_module: str) -> None:
         with LOCK:
             LOCKS.clear()
-            cls._invalidate_connection(LOCK_MODULE)
+            cls._invalidate_connection(ns_name, ns_module, LOCK_MODULE)
 
     @staticmethod
-    def _invalidate_connection(module: RedisModule) -> None:
+    def _invalidate_connection(
+            ns_name: str, ns_module: str, redis_module: RedisModule) -> None:
         with LOCK:
-            key = f"{module}-{threading.get_ident() % CONCURRENT_MODULE_CONN}"
+            key = get_connection_key(ns_name, ns_module, redis_module)
             REDIS_SERVICE_CONN[key] = None
 
     @classmethod
     @contextlib.contextmanager
-    def create_lock(cls, name: str) -> Iterator[Lock]:
+    def create_lock(
+            cls, ns_name: str, ns_module: str, name: str) -> Iterator[Lock]:
         try:
-            local_lock, redis_lock = cls._get_lock_pair(name)
+            local_lock, redis_lock = cls._get_lock_pair(
+                ns_name, ns_module, name)
             with local_lock:
                 yield redis_lock
         except Exception:
-            cls.reset_lock()
+            cls.reset_lock(ns_name, ns_module)
             raise
 
     @staticmethod
@@ -222,11 +284,17 @@ class RedisWrapper:
 
 
 class RedisConnection:
-    def __init__(self, module: RedisModule) -> None:
-        self._conn = RedisWrapper(module)
-        salt = get_salt()
+    def __init__(
+            self,
+            ns_name: str,
+            ns_module: str,
+            redis_module: RedisModule) -> None:
+        self._conn = RedisWrapper(ns_name, ns_module, redis_module)
+        cfg = REDIS_CONFIG_CACHE[get_redis_ns_key(ns_name, ns_module)]
+        salt = get_test_salt()
         salt_str = "" if salt is None else f"{salt}:"
-        self._module = f"{salt_str}{module}"
+        prefix_str = f"{cfg['prefix']}:" if cfg["prefix"] else ""
+        self._module = f"{salt_str}{prefix_str}{redis_module}"
 
     def get_connection(self, *, depth: int) -> ContextManager[StrictRedis]:
         return self._conn.get_connection(depth=depth + 1)
@@ -492,13 +560,18 @@ class RedisConnection:
 
     @contextlib.contextmanager
     def get_lock(self, name: str) -> Iterator[None]:
-        with self._conn.create_lock(f"{self.get_prefix()}:{name}"):
+        with self._conn.create_lock(
+                *self._conn.get_ns_info(), f"{self.get_prefix()}:{name}"):
             yield
 
 
 class ObjectRedis(RedisConnection):
-    def __init__(self, module: RedisModule) -> None:
-        super().__init__(module)
+    def __init__(
+            self,
+            ns_name: str,
+            ns_module: str,
+            redis_module: RedisModule) -> None:
+        super().__init__(ns_name, ns_module, redis_module)
         self._objs = f"{self.get_prefix()}:objects"
 
         # LUA scripts

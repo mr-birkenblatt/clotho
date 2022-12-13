@@ -85,7 +85,7 @@ def key_constructor(prefix: str) -> Callable[[RLink], str]:
 
 
 class RedisLinkStore(LinkStore):
-    def __init__(self, host: str, port: int, passwd: str) -> None:
+    def __init__(self, host: str, port: int, passwd: str, prefix: str) -> None:
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
             "link", key_constructor("user"))
         self.r_user_links = SetRootRedisType[str](

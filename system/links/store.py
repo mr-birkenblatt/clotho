@@ -128,6 +128,7 @@ RedisLinkModule = TypedDict('RedisLinkModule', {
     "port": int,
     "host": str,
     "passwd": str,
+    "prefix": str,
 })
 LinkModule = RedisLinkModule
 
@@ -135,5 +136,6 @@ LinkModule = RedisLinkModule
 def create_link_store(lobj: LinkModule) -> LinkStore:
     if lobj["name"] == "redis":
         from system.links.redisstore import RedisLinkStore
-        return RedisLinkStore(lobj["host"], lobj["port"], lobj["passwd"])
+        return RedisLinkStore(
+            lobj["host"], lobj["port"], lobj["passwd"], lobj["prefix"])
     raise ValueError(f"unknown link store: {lobj}")

@@ -1,5 +1,7 @@
 
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
+
+from system.namespace.load import NamespaceObj
 
 
 if TYPE_CHECKING:
@@ -7,14 +9,6 @@ if TYPE_CHECKING:
     from system.msgs.store import MsgsModule
     from system.suggest.suggest import SuggestModule
     from system.users.store import UsersModule
-
-
-NamespaceObj = TypedDict('NamespaceObj', {
-    "msgs": 'MsgsModule',
-    "links": 'LinkModule',
-    "suggest": 'SuggestModule',
-    "users": 'UsersModule',
-})
 
 
 class Namespace:

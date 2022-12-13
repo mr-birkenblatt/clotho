@@ -28,7 +28,7 @@ def ensure_user_dict(obj: Any) -> UserDict:
 class DiskUserStore(UserStore):
     def __init__(self, user_root: str) -> None:
         base_path = envload_path("USER_PATH", default="userdata")
-        self._path = os.path.join(base_path, user_root)
+        self._path = os.path.join(base_path, user_root, "user")
         self._cache: LRU[str, User] = LRU(10000)
 
     def _get_user_dict(self, user: User) -> UserDict:
