@@ -37,6 +37,9 @@ help:
 export LC_ALL=C
 export LANG=C
 
+PYTHON=python
+NS=default
+
 lint-comment:
 	! ./findpy.sh \
 	| xargs grep --color=always -nE \
@@ -146,10 +149,10 @@ run-test-redis:
 	cd test && redis-server --port 6380
 
 run-redis:
-	cd userdata && redis-server ../redis.main.conf
+	./run_redis.sh $(NS)
 
 run-api:
-	python3 -m app
+	python3 -m app --namespace $(NS)
 
 run-web:
 	cd ui && yarn start
