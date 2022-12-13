@@ -140,7 +140,8 @@ def create_link_store(namespace: Namespace) -> LinkStore:
         from system.links.redisstore import RedisLinkStore
 
         ns_key = get_redis_ns_key(namespace.get_name(), "linkstore")
-        register_redis_ns(ns_key, create_redis_config(
-            lobj["host"], lobj["port"], lobj["passwd"], lobj["prefix"]))
+        if not ns_key[0].startswith("_"):
+            register_redis_ns(ns_key, create_redis_config(
+                lobj["host"], lobj["port"], lobj["passwd"], lobj["prefix"]))
         return RedisLinkStore(ns_key)
     raise ValueError(f"unknown link store: {lobj}")
