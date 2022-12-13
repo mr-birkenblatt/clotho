@@ -27,6 +27,7 @@ def get_test_namespace() -> Namespace:
                 "port": cfg["port"],
                 "passwd": cfg["passwd"],
                 "prefix": cfg["prefix"],
+                "path": cfg["path"],
             },
             "suggest": {
                 "name": "random",

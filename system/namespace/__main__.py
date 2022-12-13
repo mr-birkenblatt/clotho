@@ -3,6 +3,8 @@ import argparse
 import os
 import sys
 
+from misc.env import envload_path
+from misc.io import ensure_folder
 from misc.redis import get_redis_config
 from system.namespace.store import get_namespace
 
@@ -19,11 +21,27 @@ def get_port(ns_name: str) -> int:
     return link_module["port"]
 
 
+def get_path(ns_name: str) -> str:
+    if ns_name.startswith("_"):
+        cfg = get_redis_config((ns_name, ""))
+        return ensure_folder(cfg["path"])
+    namespace = get_namespace(ns_name)
+    link_module = namespace.get_link_module()
+    if link_module["name"] != "redis":
+        raise ValueError(f"no redis needed for link module: {link_module}")
+    base_path = envload_path("USER_PATH", default="userdata")
+    res = os.path.join(base_path, link_module["path"])
+    return ensure_folder(res)
+
+
 def run() -> None:
     stdout = sys.stdout
     args = parse_args()
     if args.info == "port":
         stdout.write(f"{get_port(args.namespace)}")
+        stdout.flush()
+    elif args.info == "path":
+        stdout.write(f"{get_path(args.namespace)}")
         stdout.flush()
     else:
         raise RuntimeError(f"invalid info: {args.info}")
@@ -35,7 +53,7 @@ def parse_args() -> argparse.Namespace:
         description="Extract namespace information")
     parser.add_argument(
         "info",
-        choices=["port"],
+        choices=["port", "path"],
         help="what information to extract")
     parser.add_argument("--namespace", default="default", help="the namespace")
     return parser.parse_args()

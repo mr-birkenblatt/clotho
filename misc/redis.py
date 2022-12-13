@@ -20,7 +20,7 @@ from redis.client import Script
 from redis.exceptions import ResponseError
 from redis_lock import Lock
 
-from misc.env import envload_int, envload_str
+from misc.env import envload_int, envload_path, envload_str
 from misc.io import open_read
 from misc.util import (
     get_relative_function_info,
@@ -37,16 +37,22 @@ RedisConfig = TypedDict('RedisConfig', {
     "port": int,
     "passwd": str,
     "prefix": str,
+    "path": str,
 })
 
 
 def create_redis_config(
-        host: str, port: int, passwd: str, prefix: str) -> RedisConfig:
+        host: str,
+        port: int,
+        passwd: str,
+        prefix: str,
+        path: str) -> RedisConfig:
     return {
         "host": host,
         "port": port,
         "passwd": passwd,
         "prefix": prefix,
+        "path": path,
     }
 
 
@@ -56,15 +62,18 @@ def get_test_config() -> RedisConfig:
         "port": 6380,
         "passwd": "",
         "prefix": "",
+        "path": "test",
     }
 
 
 def get_api_config() -> RedisConfig:
+    base_path = envload_path("USER_PATH", default="userdata")
     return {
         "host": envload_str("API_REDIS_HOST", default="localhost"),
         "port": envload_int("API_REDIS_PORT", default=6379),
         "passwd": envload_str("API_REDIS_PASSWD", default=""),
         "prefix": envload_str("API_REDIS_PREFIX", default=""),
+        "path": os.path.join(base_path, "_api"),
     }
 
 

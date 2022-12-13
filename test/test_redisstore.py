@@ -9,6 +9,7 @@ from system.links.link import Link, VoteType, VT_DOWN, VT_UP
 from system.links.scorer import get_scorer, ScorerName
 from system.links.store import get_link_store
 from system.msgs.message import MHash, set_mhash_print_hook
+from system.namespace.store import get_test_namespace
 from system.users.store import get_user_store
 from system.users.user import User
 
@@ -46,6 +47,7 @@ OLD_TH = 0.05
 
 
 def test_scenario() -> None:
+    namespace = get_test_namespace()
     msgs = [get_random_mhash() for _ in range(10)]
     mlookup = {mhash: f"msgs[{ix}]" for (ix, mhash) in enumerate(msgs)}
     set_mhash_print_hook(
@@ -57,13 +59,13 @@ def test_scenario() -> None:
         })
         for uid in range(5)
     ]
-    user_store = get_user_store("ram")
+    user_store = get_user_store(namespace)
     for user in users:
         user_store.store_user(user)
 
     old_th = OLD_TH
     set_old_threshold(old_th)
-    store = get_link_store("redis")
+    store = get_link_store(namespace)
 
     def get_link(parent: int, child: int) -> Link:
         return store.get_link(msgs[parent], msgs[child])

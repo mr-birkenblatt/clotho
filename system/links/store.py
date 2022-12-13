@@ -130,6 +130,7 @@ RedisLinkModule = TypedDict('RedisLinkModule', {
     "port": int,
     "passwd": str,
     "prefix": str,
+    "path": str,
 })
 LinkModule = RedisLinkModule
 
@@ -142,6 +143,10 @@ def create_link_store(namespace: Namespace) -> LinkStore:
         ns_key = get_redis_ns_key(namespace.get_name(), "linkstore")
         if not ns_key[0].startswith("_"):
             register_redis_ns(ns_key, create_redis_config(
-                lobj["host"], lobj["port"], lobj["passwd"], lobj["prefix"]))
+                lobj["host"],
+                lobj["port"],
+                lobj["passwd"],
+                lobj["prefix"],
+                lobj["path"]))
         return RedisLinkStore(ns_key)
     raise ValueError(f"unknown link store: {lobj}")

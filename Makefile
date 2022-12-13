@@ -150,10 +150,10 @@ run-redis-test:
 	PYTHON=$(PYTHON) NS=_test ./run_redis.sh
 
 run-redis-api:
-	PYTHON=$(PYTHON) USER_PATH=$(USER_PATH) NS=_api ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_api ./run_redis.sh
 
 run-redis:
-	PYTHON=$(PYTHON) USER_PATH=$(USER_PATH) NS=$(NS) ./run_redis.sh
+	PYTHON=$(PYTHON) NS=$(NS) ./run_redis.sh
 
 run-api:
 	API_SERVER_NAMESPACE=$(NS) $(PYTHON) -m app

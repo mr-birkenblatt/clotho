@@ -42,6 +42,7 @@ def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
             "port": int(obj.get("port", 6379)),
             "passwd": obj.get("passwd", ""),
             "prefix": obj.get("prefix", f"{ns_name}"),
+            "path": obj.get("path", f"{ns_name}"),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
