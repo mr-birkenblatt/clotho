@@ -53,18 +53,15 @@ def get_link_suggester(namespace: Namespace) -> LinkSuggester:
     return res
 
 
-SuggestName = Literal["random"]
-
-
-SuggestModule = TypedDict('SuggestModule', {
-    "name": SuggestName,
+RandomSuggestModule = TypedDict('RandomSuggestModule', {
+    "name": Literal["random"],
 })
+SuggestModule = RandomSuggestModule
 
 
 def create_link_suggester(namespace: Namespace) -> LinkSuggester:
     sobj = namespace.get_suggest_module()
-    name = sobj["name"]
-    if name == "random":
+    if sobj["name"] == "random":
         from system.suggest.random import RandomLinkSuggester
         return RandomLinkSuggester(namespace)
-    raise ValueError(f"unknown link suggester: {name}")
+    raise ValueError(f"unknown link suggester: {sobj}")

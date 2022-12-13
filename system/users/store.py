@@ -31,21 +31,21 @@ def get_user_store(namespace: Namespace) -> UserStore:
     return res
 
 
-UsersStoreName = Literal["disk", "ram"]
-
-
-UsersModule = TypedDict('UsersModule', {
-    "name": UsersStoreName,
-    "folder": str,
+DiskUsersModule = TypedDict('DiskUsersModule', {
+    "name": Literal["disk"],
+    "root": str,
 })
+RamUsersModule = TypedDict('RamUsersModule', {
+    "name": Literal["ram"],
+})
+UsersModule = DiskUsersModule | RamUsersModule
 
 
 def create_user_store(uobj: UsersModule) -> UserStore:
-    name = uobj["name"]
-    if name == "disk":
+    if uobj["name"] == "disk":
         from system.users.disk import DiskUserStore
-        return DiskUserStore()
-    if name == "ram":
+        return DiskUserStore(uobj["root"])
+    if uobj["name"] == "ram":
         from system.users.ram import RamUserStore
         return RamUserStore()
-    raise ValueError(f"unknown user store: {name}")
+    raise ValueError(f"unknown user store: {uobj}")

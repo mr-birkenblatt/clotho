@@ -123,20 +123,17 @@ def get_link_store(namespace: Namespace) -> LinkStore:
     return res
 
 
-LinkStoreName = Literal["redis"]
-
-
-LinkModule = TypedDict('LinkModule', {
-    "name": LinkStoreName,
+RedisLinkModule = TypedDict('RedisLinkModule', {
+    "name": Literal["redis"],
     "port": int,
     "host": str,
     "passwd": str,
 })
+LinkModule = RedisLinkModule
 
 
 def create_link_store(lobj: LinkModule) -> LinkStore:
-    name = lobj["name"]
-    if name == "redis":
+    if lobj["name"] == "redis":
         from system.links.redisstore import RedisLinkStore
         return RedisLinkStore(lobj["host"], lobj["port"], lobj["passwd"])
-    raise ValueError(f"unknown link store: {name}")
+    raise ValueError(f"unknown link store: {lobj}")

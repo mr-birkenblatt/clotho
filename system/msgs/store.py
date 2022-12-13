@@ -62,21 +62,21 @@ def get_message_store(namespace: Namespace) -> MessageStore:
     return res
 
 
-MessageStoreName = Literal["disk", "ram"]
-
-
-MsgsModule = TypedDict('MsgsModule', {
-    "name": MessageStoreName,
+DiskMessageModule = TypedDict('DiskMessageModule', {
+    "name": Literal["disk"],
     "root": str,
 })
+RamMessageModule = TypedDict('RamMessageModule', {
+    "name": Literal["ram"],
+})
+MsgsModule = DiskMessageModule | RamMessageModule
 
 
 def create_message_store(mobj: MsgsModule) -> MessageStore:
-    name = mobj["name"]
-    if name == "disk":
+    if mobj["name"] == "disk":
         from system.msgs.disk import DiskStore
         return DiskStore(mobj["root"])
-    if name == "ram":
+    if mobj["name"] == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()
-    raise ValueError(f"unknown message store: {name}")
+    raise ValueError(f"unknown message store: {mobj}")
