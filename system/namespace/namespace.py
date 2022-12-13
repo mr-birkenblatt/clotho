@@ -1,18 +1,16 @@
-
 from typing import TYPE_CHECKING
-
-from system.namespace.load import NamespaceObj
 
 
 if TYPE_CHECKING:
     from system.links.store import LinkModule
     from system.msgs.store import MsgsModule
+    from system.namespace.load import NamespaceObj
     from system.suggest.suggest import SuggestModule
     from system.users.store import UsersModule
 
 
 class Namespace:
-    def __init__(self, name: str, obj: NamespaceObj) -> None:
+    def __init__(self, name: str, obj: 'NamespaceObj') -> None:
         self._name = name
         self._obj = obj
 

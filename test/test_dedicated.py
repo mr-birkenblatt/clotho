@@ -1,7 +1,7 @@
 from effects.dedicated import CallFn, RedisFn, RootValue, Script
 from effects.effects import set_old_threshold
 from effects.redis import ValueRootRedisType
-from misc.redis import RedisConnection
+from misc.redis import REDIS_TEST_CONFIG, RedisConnection
 from misc.util import from_timestamp
 
 
@@ -34,7 +34,7 @@ def test_dedicated() -> None:
     input_b = script.add_arg("input_b")
 
     value_a: ValueRootRedisType[str, float] = ValueRootRedisType(
-        "test", lambda key: key)
+        REDIS_TEST_CONFIG, "test", lambda key: key)
     output_a: RootValue[str, float] = script.add_key(
         "value_a", RootValue(value_a))
     var_a = script.add_local(0.0)
@@ -54,7 +54,7 @@ def test_dedicated() -> None:
 
     assert script.compile(0) == SCRIPT_REF
 
-    conn = RedisConnection("test")
+    conn = RedisConnection(REDIS_TEST_CONFIG, "test")
     assert value_a.maybe_get_value("abc") is None
     assert value_a.maybe_get_value("def") is None
     script.execute(

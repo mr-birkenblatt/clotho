@@ -8,7 +8,7 @@ from effects.redis import (
     SetRootRedisType,
     ValueRootRedisType,
 )
-from misc.redis import RedisConnection
+from misc.redis import ConfigKey, get_redis_config, RedisConnection
 from misc.util import identity, json_compact, json_read, now_ts, to_timestamp
 from system.links.link import (
     CLink,
@@ -85,21 +85,26 @@ def key_constructor(prefix: str) -> Callable[[RLink], str]:
 
 
 class RedisLinkStore(LinkStore):
-    def __init__(self, host: str, port: int, passwd: str, prefix: str) -> None:
+    def __init__(self, ns_key: ConfigKey) -> None:
+        cfg = get_redis_config(ns_key)
+        val = "val" if cfg["prefix"] else ""
+        obs = "obs"
+        pen = "pen"
+
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
-            "link", key_constructor("user"))
+            ns_key, "link", key_constructor("user"))
         self.r_user_links = SetRootRedisType[str](
-            "link", lambda user: f"vuserlinks:{user}")
+            ns_key, "link", lambda user: f"vuserlinks:{user}")
         self.r_voted: SetRootRedisType[RLink] = SetRootRedisType(
-            "link", key_constructor("voted"))
+            ns_key, "link", key_constructor("voted"))
         self.r_total: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            "link", key_constructor("vtotal"))
+            ns_key, "link", key_constructor("vtotal"))
         self.r_daily: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            "link", key_constructor("vdaily"))
+            ns_key, "link", key_constructor("vdaily"))
         self.r_first: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            "link", key_constructor("vfirst"))
+            ns_key, "link", key_constructor("vfirst"))
         self.r_last: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            "link", key_constructor("vlast"))
+            ns_key, "link", key_constructor("vlast"))
 
         # all children for a given parent
 
@@ -111,13 +116,14 @@ class RedisLinkStore(LinkStore):
 
         self.r_call: ListDependentRedisType[PLink] = \
             ListDependentRedisType(
+                ns_key,
                 "link",
                 key_parent_constructor("vcall"),
                 serialize_link,
                 deserialize_plink,
-                "",
-                "obs",
-                "pen",
+                val,
+                obs,
+                pen,
                 parents=(self.r_last,),
                 convert=to_plink,
                 effect=compute_call)
@@ -132,13 +138,14 @@ class RedisLinkStore(LinkStore):
 
         self.r_pall: ListDependentRedisType[CLink] = \
             ListDependentRedisType(
+                ns_key,
                 "link",
                 key_child_constructor("vpall"),
                 serialize_link,
                 deserialize_clink,
-                "",
-                "obs",
-                "pen",
+                val,
+                obs,
+                pen,
                 parents=(self.r_last,),
                 convert=to_clink,
                 effect=compute_pall)
@@ -173,13 +180,14 @@ class RedisLinkStore(LinkStore):
                     now)
 
             cur_r_call_sorted = ListDependentRedisType(
+                ns_key,
                 "link",
                 key_parent_constructor(f"scall:{sname}"),
                 serialize_link,
                 deserialize_plink,
-                "",
-                "obs",
-                "pen",
+                val,
+                obs,
+                pen,
                 parents=(self.r_call,),
                 convert=lambda pkey: pkey,  # FIXME: use identity
                 effect=compute_call_sorted)
@@ -203,13 +211,14 @@ class RedisLinkStore(LinkStore):
                     now)
 
             cur_r_pall_sorted = ListDependentRedisType(
+                ns_key,
                 "link",
                 key_child_constructor(f"spall:{sname}"),
                 serialize_link,
                 deserialize_clink,
-                "",
-                "obs",
-                "pen",
+                val,
+                obs,
+                pen,
                 parents=(self.r_pall,),
                 convert=lambda pkey: pkey,  # FIXME: use identity
                 effect=compute_pall_sorted)
@@ -240,13 +249,14 @@ class RedisLinkStore(LinkStore):
                     now)
 
             cur_r_user_sorted = ListDependentRedisType(
+                ns_key,
                 "link",
                 lambda user: f"suserlinks:{sname}:{user}",
                 json_compact,
                 json_read,
-                "",
-                "obs",
-                "pen",
+                val,
+                obs,
+                pen,
                 parents=(self.r_user_links,),
                 convert=identity,
                 effect=compute_user_sorted)
@@ -256,7 +266,7 @@ class RedisLinkStore(LinkStore):
             add_scorer_dependent_types(scorer)
 
         # add_vote lua script
-        self._conn = RedisConnection("link")
+        self._conn = RedisConnection(ns_key, "link")
         self._add_vote = self.create_add_vote_script()
         self._remove_vote = self.create_remove_vote_script()
 

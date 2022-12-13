@@ -7,9 +7,14 @@ EnvPath = Literal[
 ]
 EnvStr = Literal[
     "HOST",
+    "NAMESPACE",
+    "REDIS_API_HOST",
+    "REDIS_API_PASSWD",
+    "REDIS_API_PREFIX",
 ]
 EnvInt = Literal[
     "PORT",
+    "REDIS_API_PORT",
 ]
 
 

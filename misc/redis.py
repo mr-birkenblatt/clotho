@@ -20,6 +20,7 @@ from redis.client import Script
 from redis.exceptions import ResponseError
 from redis_lock import Lock
 
+from misc.env import envload_int, envload_str
 from misc.io import open_read
 from misc.util import (
     get_relative_function_info,
@@ -38,7 +39,7 @@ RedisConfig = TypedDict('RedisConfig', {
 })
 
 
-def get_redis_config(
+def create_redis_config(
         host: str, port: int, passwd: str, prefix: str) -> RedisConfig:
     return {
         "host": host,
@@ -54,6 +55,15 @@ def get_test_config() -> RedisConfig:
         "port": 6380,
         "passwd": "",
         "prefix": "",
+    }
+
+
+def get_api_config() -> RedisConfig:
+    return {
+        "host": envload_str("REDIS_API_HOST", default="localhost"),
+        "port": envload_int("REDIS_API_PORT", default=6380),
+        "passwd": envload_str("REDIS_API_PASSWD", default=""),
+        "prefix": envload_str("REDIS_API_PREFIX", default=""),
     }
 
 
@@ -115,36 +125,45 @@ def get_redis_ns_key(ns_name: str, ns_module: str) -> ConfigKey:
 
 
 def get_connection_key(
-        ns_name: str,
-        ns_module: str,
-        redis_module: RedisModule) -> ConnectionKey:
+        ns_key: ConfigKey, redis_module: RedisModule) -> ConnectionKey:
     return (
-        get_redis_ns_key(ns_name, ns_module),
+        ns_key,
         f"{redis_module}",
         f"{threading.get_ident() % CONCURRENT_MODULE_CONN}",
     )
 
 
-def register_redis_ns(ns_name: str, ns_module: str, cfg: RedisConfig) -> None:
-    key = get_redis_ns_key(ns_name, ns_module)
-    if key in REDIS_CONFIG_CACHE:
-        raise ValueError(f"redis ns already registered: {ns_name} {ns_module}")
-    REDIS_CONFIG_CACHE[key] = cfg
+def register_redis_ns(ns_key: ConfigKey, cfg: RedisConfig) -> None:
+    if ns_key[0].startswith("_"):
+        raise ValueError(f"invalid ns_key: {ns_key}")
+    if ns_key in REDIS_CONFIG_CACHE:
+        raise ValueError(f"redis ns already registered: {ns_key}")
+    REDIS_CONFIG_CACHE[ns_key] = cfg
+
+
+REDIS_TEST_CONFIG: ConfigKey = ("_test", "")
+REDIS_API_CONFIG: ConfigKey = ("_api", "")
+
+
+def get_redis_config(ns_key: ConfigKey) -> RedisConfig:
+    if ns_key[0] == REDIS_API_CONFIG[0]:
+        return get_api_config()
+    if ns_key[0] == REDIS_TEST_CONFIG[0]:
+        return get_test_config()
+    return REDIS_CONFIG_CACHE[ns_key]
 
 
 class RedisWrapper:
     def __init__(
             self,
-            ns_name: str,
-            ns_module: str,
+            ns_key: ConfigKey,
             redis_module: RedisModule) -> None:
-        self._ns_name = ns_name
-        self._ns_module = ns_module
+        self._ns_key = ns_key
         self._redis_module = redis_module
         self._conn = None
 
-    def get_ns_info(self) -> tuple[str, str]:
-        return self._ns_name, self._ns_module
+    def get_ns_key(self) -> ConfigKey:
+        return self._ns_key
 
     @staticmethod
     def _create_connection(cfg: RedisConfig) -> StrictRedis:
@@ -163,29 +182,24 @@ class RedisWrapper:
     @classmethod
     def _get_redis_cached_conn(
             cls,
-            ns_name: str,
-            ns_module: str,
+            ns_key: ConfigKey,
             redis_module: RedisModule) -> StrictRedis:
+        cfg = get_redis_config(ns_key)
         if not DO_CACHE:
-            cfg = REDIS_CONFIG_CACHE[get_redis_ns_key(ns_name, ns_module)]
             return cls._create_connection(cfg)
 
-        key = get_connection_key(ns_name, ns_module, redis_module)
+        key = get_connection_key(ns_key, redis_module)
         res = REDIS_SERVICE_CONN.get(key)
         if res is None:
             with LOCK:
                 if res is None:
-                    cfg = REDIS_CONFIG_CACHE[key[0]]
                     res = cls._create_connection(cfg)
                     REDIS_SERVICE_CONN[key] = res
         return res
 
     @classmethod
     def _get_lock_pair(
-            cls,
-            ns_name: str,
-            ns_module: str,
-            name: str) -> tuple[threading.RLock, Lock]:
+            cls, ns_key: ConfigKey, name: str) -> tuple[threading.RLock, Lock]:
         res = LOCKS.get(name)
         if res is None:
             with LOCK:
@@ -194,8 +208,7 @@ class RedisWrapper:
                     res = (
                         threading.RLock(),
                         Lock(
-                            cls._get_redis_cached_conn(
-                                ns_name, ns_module, LOCK_MODULE),
+                            cls._get_redis_cached_conn(ns_key, LOCK_MODULE),
                             name,
                             id=LOCK_ID,
                             expire=1,
@@ -211,7 +224,7 @@ class RedisWrapper:
         try:
             if self._conn is None:
                 self._conn = self._get_redis_cached_conn(
-                    self._ns_name, self._ns_module, self._redis_module)
+                    self._ns_key, self._redis_module)
             yield self._conn
         except Exception:
             self.reset()
@@ -247,34 +260,31 @@ class RedisWrapper:
     def reset(self) -> None:
         conn = self._conn
         if conn is not None:
-            self._invalidate_connection(
-                self._ns_name, self._ns_module, self._redis_module)
+            self._invalidate_connection(self._ns_key, self._redis_module)
             self._conn = None
 
     @classmethod
-    def reset_lock(cls, ns_name: str, ns_module: str) -> None:
+    def reset_lock(cls, ns_key: ConfigKey) -> None:
         with LOCK:
             LOCKS.clear()
-            cls._invalidate_connection(ns_name, ns_module, LOCK_MODULE)
+            cls._invalidate_connection(ns_key, LOCK_MODULE)
 
     @staticmethod
     def _invalidate_connection(
-            ns_name: str, ns_module: str, redis_module: RedisModule) -> None:
+            ns_key: ConfigKey, redis_module: RedisModule) -> None:
         with LOCK:
-            key = get_connection_key(ns_name, ns_module, redis_module)
+            key = get_connection_key(ns_key, redis_module)
             REDIS_SERVICE_CONN[key] = None
 
     @classmethod
     @contextlib.contextmanager
-    def create_lock(
-            cls, ns_name: str, ns_module: str, name: str) -> Iterator[Lock]:
+    def create_lock(cls, ns_key: ConfigKey, name: str) -> Iterator[Lock]:
         try:
-            local_lock, redis_lock = cls._get_lock_pair(
-                ns_name, ns_module, name)
+            local_lock, redis_lock = cls._get_lock_pair(ns_key, name)
             with local_lock:
                 yield redis_lock
         except Exception:
-            cls.reset_lock(ns_name, ns_module)
+            cls.reset_lock(ns_key)
             raise
 
     @staticmethod
@@ -284,13 +294,9 @@ class RedisWrapper:
 
 
 class RedisConnection:
-    def __init__(
-            self,
-            ns_name: str,
-            ns_module: str,
-            redis_module: RedisModule) -> None:
-        self._conn = RedisWrapper(ns_name, ns_module, redis_module)
-        cfg = REDIS_CONFIG_CACHE[get_redis_ns_key(ns_name, ns_module)]
+    def __init__(self, ns_key: ConfigKey, redis_module: RedisModule) -> None:
+        self._conn = RedisWrapper(ns_key, redis_module)
+        cfg = get_redis_config(ns_key)
         salt = get_test_salt()
         salt_str = "" if salt is None else f"{salt}:"
         prefix_str = f"{cfg['prefix']}:" if cfg["prefix"] else ""
@@ -561,17 +567,13 @@ class RedisConnection:
     @contextlib.contextmanager
     def get_lock(self, name: str) -> Iterator[None]:
         with self._conn.create_lock(
-                *self._conn.get_ns_info(), f"{self.get_prefix()}:{name}"):
+                self._conn.get_ns_key(), f"{self.get_prefix()}:{name}"):
             yield
 
 
 class ObjectRedis(RedisConnection):
-    def __init__(
-            self,
-            ns_name: str,
-            ns_module: str,
-            redis_module: RedisModule) -> None:
-        super().__init__(ns_name, ns_module, redis_module)
+    def __init__(self, ns_key: ConfigKey, redis_module: RedisModule) -> None:
+        super().__init__(ns_key, redis_module)
         self._objs = f"{self.get_prefix()}:objects"
 
         # LUA scripts

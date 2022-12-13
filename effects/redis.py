@@ -11,7 +11,7 @@ from effects.effects import (
     SetRootType,
     ValueRootType,
 )
-from misc.redis import RedisConnection, RedisModule
+from misc.redis import ConfigKey, RedisConnection, RedisModule
 from misc.util import (
     from_timestamp,
     json_compact,
@@ -29,9 +29,12 @@ LT = TypeVar('LT', bound=tuple[EffectBase, ...])
 
 class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def __init__(
-            self, module: RedisModule, key_fn: Callable[[KT], str]) -> None:
+            self,
+            ns_key: ConfigKey,
+            module: RedisModule,
+            key_fn: Callable[[KT], str]) -> None:
         super().__init__()
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
 
     def get_redis_key(self, key: KT) -> str:
@@ -91,9 +94,12 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def __init__(
-            self, module: RedisModule, key_fn: Callable[[KT], str]) -> None:
+            self,
+            ns_key: ConfigKey,
+            module: RedisModule,
+            key_fn: Callable[[KT], str]) -> None:
         super().__init__()
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
 
     def get_redis_key(self, key: KT) -> str:
@@ -132,6 +138,7 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
 class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
     def __init__(
             self,
+            ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str],
             key_json: Callable[[KT], bytes],
@@ -146,7 +153,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         super().__init__(parents=parents, effect=effect, convert=convert)
         assert marker_prefix
         assert marker_prefix != value_prefix
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
         self._key_json = key_json
         self._json_key = json_key
@@ -248,6 +255,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
 class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
     def __init__(
             self,
+            ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str],
             key_json: Callable[[KT], bytes],
@@ -260,7 +268,7 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             convert: Callable[[PT], KT],
             effect: Callable[[KT, pd.Timestamp | None], None]) -> None:
         super().__init__(parents=parents, effect=effect, convert=convert)
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
         self._key_json = key_json
         self._json_key = json_key

@@ -10,6 +10,7 @@ from effects.redis import (
     ValueDependentRedisType,
     ValueRootRedisType,
 )
+from misc.redis import REDIS_TEST_CONFIG
 from misc.util import from_timestamp, json_compact, json_read
 
 
@@ -29,7 +30,9 @@ def test_complex() -> None:
     now = 1670580000.0
     set_old_threshold(0.1)
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
-        "test", lambda key: f"link:{key.l_from}:{key.l_to}")
+        REDIS_TEST_CONFIG,
+        "test",
+        lambda key: f"link:{key.l_from}:{key.l_to}")
 
     def compute_destinations(key: FLink, now: pd.Timestamp | None) -> None:
         dests.set_value(
@@ -41,6 +44,7 @@ def test_complex() -> None:
 
     dests: ValueDependentRedisType[FLink, list[int]] = \
         ValueDependentRedisType(
+            REDIS_TEST_CONFIG,
             "test",
             lambda key: f"dests:{key.l_from}",
             lambda key: json_compact(key.l_from),
@@ -53,6 +57,7 @@ def test_complex() -> None:
             effect=compute_destinations)
     srcs: ValueDependentRedisType[TLink, list[int]] = \
         ValueDependentRedisType(
+            REDIS_TEST_CONFIG,
             "test",
             lambda key: f"srcs:{key.l_to}",
             lambda key: json_compact(key.l_to),
@@ -98,7 +103,7 @@ def test_complex_list() -> None:
     now = 1670580000.0
     set_old_threshold(0.1)
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
-        "test", lambda key: f"link:{key.l_from}:{key.l_to}")
+        REDIS_TEST_CONFIG, "test", lambda key: f"link:{key.l_from}:{key.l_to}")
 
     def compute_destinations(key: FLink, now: pd.Timestamp | None) -> None:
         dests.set_value(key, sorted((
@@ -113,6 +118,7 @@ def test_complex_list() -> None:
 
     dests: ListDependentRedisType[FLink] = \
         ListDependentRedisType(
+            REDIS_TEST_CONFIG,
             "test",
             lambda key: f"dests:{key.l_from}",
             lambda key: json_compact(key.l_from),
@@ -125,6 +131,7 @@ def test_complex_list() -> None:
             effect=compute_destinations)
     srcs: ListDependentRedisType[TLink] = \
         ListDependentRedisType(
+            REDIS_TEST_CONFIG,
             "test",
             lambda key: f"srcs:{key.l_to}",
             lambda key: json_compact(key.l_to),

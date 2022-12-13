@@ -9,6 +9,7 @@ from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_link_store, LinkStore
 from system.msgs.message import MHash, set_mhash_print_hook
 from system.msgs.store import get_message_store
+from system.namespace.store import get_test_namespace
 from system.users.store import get_user_store, UserStore
 
 
@@ -59,9 +60,10 @@ def print_links(
 
 
 def test_loader() -> None:
-    message_store = get_message_store("ram")
-    link_store = get_link_store("redis")
-    user_store = get_user_store("ram")
+    namespace = get_test_namespace()
+    message_store = get_message_store(namespace)
+    link_store = get_link_store(namespace)
+    user_store = get_user_store(namespace)
     now = pd.Timestamp("2022-08-22", tz="UTC")
     set_old_threshold(0.1)
 

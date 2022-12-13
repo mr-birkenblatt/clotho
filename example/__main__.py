@@ -9,9 +9,10 @@ from example.loader import process_action_file
 from example.reddit import RedditAccess
 from misc.io import open_append
 from misc.util import json_compact
-from system.links.store import get_default_link_store
-from system.msgs.store import get_default_message_store
-from system.users.store import get_default_user_store
+from system.links.store import get_link_store
+from system.msgs.store import get_message_store
+from system.namespace.store import get_namespace
+from system.users.store import get_user_store
 
 
 REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
@@ -43,10 +44,11 @@ def process_reddit(reddit: RedditAccess, fname: str, subs: list[str]) -> None:
                     # dups.add(a_str)  # NOTE: not worth it!
 
 
-def process_load() -> None:
-    message_store = get_default_message_store()
-    link_store = get_default_link_store()
-    user_store = get_default_user_store()
+def process_load(ns_name: str) -> None:
+    namespace = get_namespace(ns_name)
+    message_store = get_message_store(namespace)
+    link_store = get_link_store(namespace)
+    user_store = get_user_store(namespace)
     now = pd.Timestamp("2022-08-22", tz="UTC")
     reference_time = time.monotonic()
     old_th = get_old_threshold()
@@ -67,7 +69,7 @@ def run() -> None:
     if args.cmd == "reddit":
         process_reddit(RedditAccess(do_log=False), REDDIT_ACTION_FILE, ROOTS)
     elif args.cmd == "load":
-        process_load()
+        process_load(args.ns)
     else:
         raise RuntimeError(f"invalid cmd: {args.cmd}")
 
@@ -80,6 +82,7 @@ def parse_args() -> argparse.Namespace:
         "cmd",
         choices=["reddit", "load"],
         help="the command to execute")
+    parser.add_argument("--namespace", default="default", help="the namespace")
     return parser.parse_args()
 
 

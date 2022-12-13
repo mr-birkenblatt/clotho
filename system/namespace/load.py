@@ -7,9 +7,6 @@ from system.suggest.suggest import SuggestModule
 from system.users.store import UsersModule
 
 
-VALID_NS_NAME = re.compile(r"^[a-z][a-z0-9_-]+$")
-
-
 NamespaceObj = TypedDict('NamespaceObj', {
     "msgs": MsgsModule,
     "links": LinkModule,
@@ -78,6 +75,9 @@ def users_from_obj(ns_name: str, obj: dict[str, Any]) -> UsersModule:
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res
+
+
+VALID_NS_NAME = re.compile(r"^[a-z][a-z0-9_-]+$")
 
 
 def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
