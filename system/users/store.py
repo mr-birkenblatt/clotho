@@ -1,7 +1,7 @@
-from typing import Iterable
+from typing import Iterable, Literal, TypedDict
 
-from misc.env import envload_str
 from misc.util import get_short_hash
+from system.namespace.namespace import Namespace
 from system.users.user import User
 
 
@@ -20,19 +20,28 @@ class UserStore:
         return get_short_hash(user_name)
 
 
-DEFAULT_USER_STORE: UserStore | None = None
+USER_STORE: dict[Namespace, UserStore] = {}
 
 
-def get_default_user_store() -> UserStore:
-    global DEFAULT_USER_STORE
+def get_user_store(namespace: Namespace) -> UserStore:
+    res = USER_STORE.get(namespace)
+    if res is None:
+        res = create_user_store(namespace.get_users_module())
+        USER_STORE[namespace] = res
+    return res
 
-    if DEFAULT_USER_STORE is None:
-        DEFAULT_USER_STORE = get_user_store(
-            envload_str("USER_STORE", default="disk"))
-    return DEFAULT_USER_STORE
+
+UsersStoreName = Literal["disk", "ram"]
 
 
-def get_user_store(name: str) -> UserStore:
+UsersModule = TypedDict('UsersModule', {
+    "name": UsersStoreName,
+    "folder": str,
+})
+
+
+def create_user_store(uobj: UsersModule) -> UserStore:
+    name = uobj["name"]
     if name == "disk":
         from system.users.disk import DiskUserStore
         return DiskUserStore()

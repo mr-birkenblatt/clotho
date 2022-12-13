@@ -16,10 +16,11 @@ RELOAD_TOPICS_FREQ = 60 * 60  # 1h
 
 
 class DiskStore(MessageStore):
-    def __init__(self) -> None:
-        self._path = envload_path("MSG_PATH", default="userdata/msg")
-        self._topics = envload_path(
-            "MSG_TOPICS", default="userdata/topics.list")
+    def __init__(self, msgs_root: str) -> None:
+        base_path = envload_path("USER_PATH", default="userdata")
+        path = os.path.join(base_path, msgs_root)
+        self._path = os.path.join(path, "msg")
+        self._topics = os.path.join(path, "topics.list")
         self._cache: LRU[MHash, Message] = LRU(10000)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0

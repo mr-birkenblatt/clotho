@@ -1,15 +1,15 @@
 
-from typing import Iterable
+from typing import Iterable, Literal, TypedDict
 
-from misc.env import envload_str
 from system.links.link import Link
-from system.links.store import get_default_link_store, LinkStore
+from system.links.store import get_link_store, LinkStore
 from system.msgs.message import MHash
+from system.namespace.namespace import Namespace
 
 
 class LinkSuggester:
-    def __init__(self) -> None:
-        self._link_store = get_default_link_store()
+    def __init__(self, namespace: Namespace) -> None:
+        self._link_store = get_link_store(namespace)
 
     def get_link_store(self) -> LinkStore:
         return self._link_store
@@ -42,20 +42,29 @@ class LinkSuggester:
         ]
 
 
-DEFAULT_LINK_SUGGESTER: LinkSuggester | None = None
+SUGGESTER_STORE: dict[Namespace, LinkSuggester] = {}
 
 
-def get_default_link_suggester() -> LinkSuggester:
-    global DEFAULT_LINK_SUGGESTER
+def get_link_suggester(namespace: Namespace) -> LinkSuggester:
+    res = SUGGESTER_STORE.get(namespace)
+    if res is None:
+        res = create_link_suggester(namespace)
+        SUGGESTER_STORE[namespace] = res
+    return res
 
-    if DEFAULT_LINK_SUGGESTER is None:
-        DEFAULT_LINK_SUGGESTER = get_link_suggester(
-            envload_str("LINK_SUGGESTER", default="random"))
-    return DEFAULT_LINK_SUGGESTER
+
+SuggestName = Literal["random"]
 
 
-def get_link_suggester(name: str) -> LinkSuggester:
+SuggestModule = TypedDict('SuggestModule', {
+    "name": SuggestName,
+})
+
+
+def create_link_suggester(namespace: Namespace) -> LinkSuggester:
+    sobj = namespace.get_suggest_module()
+    name = sobj["name"]
     if name == "random":
         from system.suggest.random import RandomLinkSuggester
-        return RandomLinkSuggester()
+        return RandomLinkSuggester(namespace)
     raise ValueError(f"unknown link suggester: {name}")

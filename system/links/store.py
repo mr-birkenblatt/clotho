@@ -1,11 +1,11 @@
-from typing import Iterable
+from typing import Iterable, Literal, TypedDict
 
 import pandas as pd
 
-from misc.env import envload_str
 from system.links.link import Link, RLink, VoteType
 from system.links.scorer import Scorer
 from system.msgs.message import MHash
+from system.namespace.namespace import Namespace
 from system.users.store import UserStore
 from system.users.user import User
 
@@ -112,20 +112,31 @@ class LinkStore:
         return Link(self, parent, child)
 
 
-DEFAULT_LINK_STORE: LinkStore | None = None
+LINK_STORE: dict[Namespace, LinkStore] = {}
 
 
-def get_default_link_store() -> LinkStore:
-    global DEFAULT_LINK_STORE
+def get_link_store(namespace: Namespace) -> LinkStore:
+    res = LINK_STORE.get(namespace)
+    if res is None:
+        res = create_link_store(namespace.get_link_module())
+        LINK_STORE[namespace] = res
+    return res
 
-    if DEFAULT_LINK_STORE is None:
-        DEFAULT_LINK_STORE = get_link_store(
-            envload_str("LINK_STORE", default="redis"))
-    return DEFAULT_LINK_STORE
+
+LinkStoreName = Literal["redis"]
 
 
-def get_link_store(name: str) -> LinkStore:
+LinkModule = TypedDict('LinkModule', {
+    "name": LinkStoreName,
+    "port": int,
+    "host": str,
+    "passwd": str,
+})
+
+
+def create_link_store(lobj: LinkModule) -> LinkStore:
+    name = lobj["name"]
     if name == "redis":
         from system.links.redisstore import RedisLinkStore
-        return RedisLinkStore()
+        return RedisLinkStore(lobj["host"], lobj["port"], lobj["passwd"])
     raise ValueError(f"unknown link store: {name}")

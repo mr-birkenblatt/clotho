@@ -1,9 +1,9 @@
-from typing import Iterable
+from typing import Iterable, Literal, TypedDict
 
 import numpy as np
 
-from misc.env import envload_str
 from system.msgs.message import Message, MHash
+from system.namespace.namespace import Namespace
 
 
 RNG_ALIGN = 10
@@ -51,22 +51,31 @@ class MessageStore:
         return res[rel_start:rel_start + limit]
 
 
-DEFAULT_MSG_STORE: MessageStore | None = None
+MSG_STORE: dict[Namespace, MessageStore] = {}
 
 
-def get_default_message_store() -> MessageStore:
-    global DEFAULT_MSG_STORE
+def get_message_store(namespace: Namespace) -> MessageStore:
+    res = MSG_STORE.get(namespace)
+    if res is None:
+        res = create_message_store(namespace.get_message_module())
+        MSG_STORE[namespace] = res
+    return res
 
-    if DEFAULT_MSG_STORE is None:
-        DEFAULT_MSG_STORE = get_message_store(
-            envload_str("MSG_STORE", default="disk"))
-    return DEFAULT_MSG_STORE
+
+MessageStoreName = Literal["disk", "ram"]
 
 
-def get_message_store(name: str) -> MessageStore:
+MsgsModule = TypedDict('MsgsModule', {
+    "name": MessageStoreName,
+    "root": str,
+})
+
+
+def create_message_store(mobj: MsgsModule) -> MessageStore:
+    name = mobj["name"]
     if name == "disk":
         from system.msgs.disk import DiskStore
-        return DiskStore()
+        return DiskStore(mobj["root"])
     if name == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()
