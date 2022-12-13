@@ -210,3 +210,7 @@ def get_relative_function_info(
         return "unknown", -1, "unknown", {}
     frame = stack[depth]
     return frame.filename, frame.lineno, frame.function, frame.frame.f_locals
+
+
+def identity(obj: RT) -> RT:
+    return obj

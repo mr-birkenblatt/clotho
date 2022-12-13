@@ -11,6 +11,7 @@ from quick_server import ReqArgs, WorkerArgs
 from app.response_types import (
     LinkListResponse,
     LoginResponse,
+    LogoutResponse,
     MessageResponse,
     TopicListResponse,
     TopicResponse,
@@ -23,6 +24,7 @@ from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_default_link_store
 from system.msgs.message import Message, MHash
 from system.msgs.store import get_default_message_store
+from system.suggest.suggest import get_default_link_suggester
 from system.users.store import get_default_user_store
 from system.users.user import User
 
@@ -77,11 +79,17 @@ def setup(
     message_store = get_default_message_store()
     link_store = get_default_link_store()
     user_store = get_default_user_store()
+    link_suggester = get_default_link_suggester()
 
     def get_user(args: WorkerArgs) -> User:
         with server.get_token_obj(args["token"]) as obj:
             return user_store.get_user_by_id(
                 user_store.get_id_from_name(obj["user"]))
+
+    def get_maybe_user(args: WorkerArgs) -> User | None:
+        if args.get("token") is None:
+            return None
+        return get_user(args)
 
     # *** user management ***
 
@@ -97,7 +105,19 @@ def setup(
         return {
             "token": token,
             "user": user.get_name(),
+            "userid": user.get_id(),
             "permissions": user.get_permissions(),
+        }
+
+    @server.json_post(f"{prefix}/logout")
+    def _post_logout(_req: QSRH, rargs: ReqArgs) -> LogoutResponse:
+        args = rargs["post"]
+        token = args.get("token")
+        if token is not None:
+            with server.get_token_obj(token, 0) as _:
+                pass
+        return {
+            "success": True,
         }
 
     @server.json_post(f"{prefix}/signup")
@@ -120,6 +140,7 @@ def setup(
         return {
             "token": token,
             "user": user.get_name(),
+            "userid": user.get_id(),
             "permissions": user.get_permissions(),
         }
 
@@ -130,6 +151,7 @@ def setup(
         return {
             "token": args["token"],
             "user": user.get_name(),
+            "userid": user.get_id(),
             "permissions": user.get_permissions(),
         }
 
@@ -161,11 +183,12 @@ def setup(
         link = link_store.get_link(parent, child)
         now = now_ts()
         link.add_vote(user_store, VT_UP, user, now)
-        return link.get_response(user_store, now)
+        return link.get_response(user_store, who=user, now=now)
 
     @server.json_post(f"{prefix}/vote")
     def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
         args = rargs["post"]
+        is_add = bool(args["isadd"])
         votes = to_list(args["votes"])
         user = get_user(args)
         parent = MHash.parse(f"{args['parent']}")
@@ -173,17 +196,24 @@ def setup(
         link = link_store.get_link(parent, child)
         now = now_ts()
         for vtype in votes:
-            link.add_vote(user_store, parse_vote_type(f"{vtype}"), user, now)
-        return link.get_response(user_store, now)
+            vote_type = parse_vote_type(f"{vtype}")
+            if is_add:
+                link.add_vote(user_store, vote_type, user, now)
+            else:
+                link.remove_vote(user_store, vote_type, user, now)
+        return link.get_response(user_store, who=user, now=now)
 
     # *** read only ***
 
     @server.json_get(f"{prefix}/topic")
     def _get_topic(_req: QSRH, rargs: ReqArgs) -> TopicListResponse:
+        args = rargs["query"]
+        offset = int(args["offset"])
+        limit = min(int(args["limit"]), MAX_LINKS)
         return {
             "topics": {
                 msg.get_hash().to_parseable(): msg.get_text()
-                for msg in message_store.get_topics()
+                for msg in message_store.get_topics(offset, limit)
             },
         }
 
@@ -232,33 +262,20 @@ def setup(
         offset = link_query["offset"]
         cur_offset = offset + len(links)
         cur_limit = limit - len(links)
-        ref_query = link_query.copy()
-        ref_query["offset"] = 0
-        ref_query["limit"] = 1
-        if is_parent:
-            refs = list(link_store.get_children(other, **ref_query))
-            ref = refs[0].get_child() if refs else None
-        else:
-            refs = list(link_store.get_parents(other, **ref_query))
-            ref = refs[0].get_parent() if refs else None
-        return links + [
-            link_store.get_link(
-                other if is_parent else cur,
-                cur if is_parent else other)
-            for cur in message_store.get_random_messages(
-                ref, cur_offset, cur_limit)
-        ]
+        return links + list(link_suggester.suggest_links(
+            other, is_parent=is_parent, offset=cur_offset, limit=cur_limit))
 
     @server.json_post(f"{prefix}/children")
     def _post_children(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         parent = MHash.parse(args["parent"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_children(parent, **link_query))
         links = enrich_links(parent, link_query, is_parent=True, links=links)
         return {
             "links": [
-                link.get_response(user_store, link_query["now"])
+                link.get_response(user_store, who=muser, now=link_query["now"])
                 for link in links
             ],
             "next": link_query["offset"] + len(links),
@@ -267,13 +284,14 @@ def setup(
     @server.json_post(f"{prefix}/parents")
     def _post_parents(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         child = MHash.parse(args["child"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_parents(child, **link_query))
         links = enrich_links(child, link_query, is_parent=False, links=links)
         return {
             "links": [
-                link.get_response(user_store, link_query["now"])
+                link.get_response(user_store, who=muser, now=link_query["now"])
                 for link in links
             ],
             "next": link_query["offset"] + len(links),
@@ -282,13 +300,13 @@ def setup(
     @server.json_post(f"{prefix}/userlinks")
     def _post_userlinks(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
         args = rargs["post"]
-        user = user_store.get_user_by_id(
-            user_store.get_id_from_name(args["user"]))
+        muser = get_maybe_user(args)
+        user = user_store.get_user_by_id(args["userid"])
         link_query = get_link_query_params(args)
         links = list(link_store.get_user_links(user, **link_query))
         return {
             "links": [
-                link.get_response(user_store, link_query["now"])
+                link.get_response(user_store, who=muser, now=link_query["now"])
                 for link in links
             ],
             "next": link_query["offset"] + len(links),
@@ -297,11 +315,12 @@ def setup(
     @server.json_post(f"{prefix}/link")
     def _post_link(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
         args = rargs["post"]
+        muser = get_maybe_user(args)
         parent = MHash.parse(args["parent"])
         child = MHash.parse(args["child"])
         now = now_ts()
         link = link_store.get_link(parent, child)
-        return link.get_response(user_store, now)
+        return link.get_response(user_store, who=muser, now=now)
 
     return server, prefix
 

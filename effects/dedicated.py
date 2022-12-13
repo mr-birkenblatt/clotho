@@ -8,6 +8,8 @@ from typing import (
     Union,
 )
 
+import pandas as pd
+
 from effects.effects import KeyType
 from misc.redis import RedisConnection, RedisFunctionBytes
 from misc.util import json_compact
@@ -53,8 +55,14 @@ class Expr:
     def __add__(self, other: MixedType) -> 'Expr':
         return AddOp(self, other)
 
+    def __sub__(self, other: MixedType) -> 'Expr':
+        return SubOp(self, other)
+
     def eq(self, other: MixedType) -> 'Expr':  # pylint: disable=invalid-name
         return EqOp(self, other)
+
+    def neq(self, other: MixedType) -> 'Expr':
+        return NeqOp(self, other)
 
     def lt(self, other: MixedType) -> 'Expr':  # pylint: disable=invalid-name
         return LtOp(self, other)
@@ -171,6 +179,7 @@ class Script(Sequence):
             *,
             args: dict[str, JSONType],
             keys: dict[str, Any],
+            now: pd.Timestamp,
             conn: RedisConnection,
             depth: int) -> bytes:
         assert len(keys) == len(self._keys)
@@ -190,7 +199,7 @@ class Script(Sequence):
             res = self._compute(
                 keys=keyv, args=argv, client=client, depth=depth + 1)
         for kname, key_var in self._keys:
-            key_var.post_completion(keys[kname])
+            key_var.post_completion(keys[kname], now)
         return res
 
 
@@ -246,7 +255,7 @@ class KeyVariable(Generic[KT], Variable):
     def get_value(self, key: KT) -> str:
         raise NotImplementedError()
 
-    def post_completion(self, key: KT) -> None:
+    def post_completion(self, key: KT, now: pd.Timestamp) -> None:
         raise NotImplementedError()
 
 
@@ -254,7 +263,7 @@ class LiteralKey(KeyVariable[str]):
     def get_value(self, key: str) -> str:
         return key
 
-    def post_completion(self, key: str) -> None:
+    def post_completion(self, key: str, now: pd.Timestamp) -> None:
         pass
 
 
@@ -322,6 +331,11 @@ class AddOp(Op):  # pylint: disable=too-few-public-methods
         return f"({self.get_left()} + {self.get_right()})"
 
 
+class SubOp(Op):  # pylint: disable=too-few-public-methods
+    def compile(self) -> str:
+        return f"({self.get_left()} - {self.get_right()})"
+
+
 class LtOp(Op):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         return f"({self.get_left()} < {self.get_right()})"
@@ -330,6 +344,11 @@ class LtOp(Op):  # pylint: disable=too-few-public-methods
 class EqOp(Op):  # pylint: disable=too-few-public-methods
     def compile(self) -> str:
         return f"({self.get_left()} == {self.get_right()})"
+
+
+class NeqOp(Op):  # pylint: disable=too-few-public-methods
+    def compile(self) -> str:
+        return f"({self.get_left()} ~= {self.get_right()})"
 
 
 class CallFn(Expr):  # pylint: disable=too-few-public-methods
@@ -430,8 +449,8 @@ class RootValue(Generic[KT, VT], KeyVariable[KT]):
     def get_value(self, key: KT) -> str:
         return self._ref.get_redis_key(key)
 
-    def post_completion(self, key: KT) -> None:
-        self._ref.on_update(key)
+    def post_completion(self, key: KT, now: pd.Timestamp) -> None:
+        self._ref.on_update(key, now)
 
 
 class RootSet(Generic[KT], KeyVariable[KT]):
@@ -441,5 +460,5 @@ class RootSet(Generic[KT], KeyVariable[KT]):
     def get_value(self, key: KT) -> str:
         return self._ref.get_redis_key(key)
 
-    def post_completion(self, key: KT) -> None:
-        self._ref.on_update(key)
+    def post_completion(self, key: KT, now: pd.Timestamp) -> None:
+        self._ref.on_update(key, now)

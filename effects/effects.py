@@ -1,10 +1,17 @@
+import contextlib
 import threading
-import time
-from typing import Callable, Generic, TYPE_CHECKING, TypeVar
+from typing import Callable, Generic, Iterator, Literal, TYPE_CHECKING, TypeVar
+
+import pandas as pd
+
+from misc.util import now_ts
 
 
 if TYPE_CHECKING:
     from typing import Any
+
+
+Freshness = Literal["old", "needs_update", "current"]
 
 
 class EqType:
@@ -29,6 +36,19 @@ CT = TypeVar('CT', bound=KeyType)
 AT = TypeVar('AT')
 
 
+OLD_THRESHOLD = pd.Timedelta(seconds=60.0 * 60.0)
+
+
+def set_old_threshold(old_threshold: float) -> None:
+    global OLD_THRESHOLD
+
+    OLD_THRESHOLD = pd.Timedelta(seconds=old_threshold)
+
+
+def get_old_threshold() -> float:
+    return OLD_THRESHOLD / pd.Timedelta("1s")
+
+
 class Dependent(Generic[KT, CT]):
     def __init__(
             self,
@@ -37,8 +57,8 @@ class Dependent(Generic[KT, CT]):
         self._dependent = dependent
         self._convert = convert
 
-    def trigger_update(self, key: KT, cur_time: float) -> None:
-        self._dependent.trigger_update(self._convert(key), cur_time)
+    def set_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
+        self._dependent.set_outdated(self.convert(key), now)
 
     def convert(self, key: KT) -> CT:
         return self._convert(key)
@@ -51,19 +71,12 @@ class EffectBase(Generic[KT]):
     def add_dependent(self, dependent: Dependent[KT, KeyType]) -> None:
         self._dependents.append(dependent)
 
-    def on_update(self, key: KT) -> None:
-        cur_time = time.monotonic()
+    def on_update(self, key: KT, now: pd.Timestamp | None) -> None:
         for dependent in self._dependents:
-            dependent.trigger_update(key, cur_time)
-
-    def settle_all(self) -> int:
-        raise NotImplementedError()
+            dependent.set_outdated(key, now)
 
 
 class EffectRoot(Generic[KT, VT], EffectBase[KT]):
-    def settle_all(self) -> int:
-        return 0
-
     def get_value(self, key: KT, default: VT) -> VT:
         res = self.maybe_get_value(key)
         if res is None:
@@ -78,25 +91,28 @@ class ValueRootType(Generic[KT, VT], EffectRoot[KT, VT]):
     def do_update_value(self, key: KT, value: VT) -> VT | None:
         raise NotImplementedError()
 
-    def update_value(self, key: KT, value: VT) -> VT | None:
+    def update_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
         res = self.do_update_value(key, value)
-        self.on_update(key)
+        self.on_update(key, now)
         return res
 
     def do_set_value(self, key: KT, value: VT) -> None:
         raise NotImplementedError()
 
-    def set_value(self, key: KT, value: VT) -> None:
+    def set_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> None:
         self.do_set_value(key, value)
-        self.on_update(key)
+        self.on_update(key, now)
 
     def do_set_new_value(self, key: KT, value: VT) -> bool:
         raise NotImplementedError()
 
-    def set_new_value(self, key: KT, value: VT) -> bool:
+    def set_new_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         was_set = self.do_set_new_value(key, value)
         if was_set:
-            self.on_update(key)
+            self.on_update(key, now)
         return was_set
 
 
@@ -104,18 +120,22 @@ class SetRootType(Generic[KT, VT], EffectRoot[KT, set[VT]]):
     def do_add_value(self, key: KT, value: VT) -> bool:
         raise NotImplementedError()
 
-    def add_value(self, key: KT, value: VT) -> bool:
+    def add_value(self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         res = self.do_add_value(key, value)
-        self.on_update(key)
+        self.on_update(key, now)
         return res
 
     def do_remove_value(self, key: KT, value: VT) -> bool:
         raise NotImplementedError()
 
-    def remove_value(self, key: KT, value: VT) -> bool:
+    def remove_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         res = self.do_remove_value(key, value)
-        self.on_update(key)
+        self.on_update(key, now)
         return res
+
+    def has_value(self, key: KT, value: VT) -> bool:
+        raise NotImplementedError()
 
 
 class EffectDependent(Generic[KT, VT], EffectBase[KT]):
@@ -124,14 +144,14 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             *,
             parents: tuple[EffectBase[PT], ...],
             convert: Callable[[PT], KT],
-            effect: Callable[[KT], None],
-            delay: float) -> None:
+            effect: Callable[[KT, pd.Timestamp | None], None]) -> None:
         super().__init__()
         self._pending: dict[KT, float] = {}
         self._parents = parents
         self._effect = effect
-        self._delay = delay
         self._thread: threading.Thread | None = None
+        self._update_lock = threading.RLock()
+        self._is_updating = False
         for parent in self._parents:
             parent.add_dependent(Dependent(self, convert))  # type: ignore
 
@@ -141,98 +161,173 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             self._thread = th
             th.start()
 
+    def set_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
+        self.on_set_outdated(key, now_ts() if now is None else now)
+        self.on_update(key, now)
+
     def updater(self) -> None:
         try:
             while True:
                 if self._thread is not threading.current_thread():
                     break
-                cur_time = time.monotonic()
-                next_time = self.poll_update(cur_time)
-                if next_time is None:
+                next_task = self.pending_outdated()
+                if next_task is None:
                     break
-                pause = next_time - time.monotonic()
-                if pause > 0:
-                    time.sleep(pause)
+                key, when = next_task
+                now = now_ts()
+                self.execute_update(key, max(now, when))
         finally:
             self._thread = None
 
-    def trigger_update(self, key: KT, cur_time: float) -> None:
-        prev_time = self._pending.get(key)
-        end_time = self._delay + cur_time
-        if prev_time is None or prev_time > end_time:
-            self._pending[key] = end_time
-        self.init_thread()
+    @contextlib.contextmanager
+    def no_deferred_updates(self) -> Iterator[None]:
+        with self._update_lock:
+            yield
 
-    def poll_update(self, cur_time: float) -> float | None:
-        next_time: float | None = None
-        for (pkey, update_time) in list(self._pending.items()):
-            if update_time > cur_time:
-                if next_time is None or update_time < next_time:
-                    next_time = update_time
-                continue
-            pkval = self._pending.pop(pkey, None)
-            if pkval is not None:
-                success = False
-                try:
-                    self.execute_update(pkey)
-                    success = True
-                finally:
-                    if not success:
-                        self._pending[pkey] = pkval
-        return next_time
+    def execute_update(self, key: KT, now: pd.Timestamp | None) -> None:
+        with self._update_lock:
+            if self._is_updating:
+                raise RuntimeError(
+                    f"attempt to update while updating {self} {key} {now}")
+            self._is_updating = True
+            try:
+                self._effect(key, now)
+                self.clear_outdated(key, now)
+            finally:
+                self._is_updating = False
 
-    def settle_all(self) -> int:
-        count = 0
-        for parent in self._parents:
-            count += parent.settle_all()
-        for pkey in list(self._pending.keys()):
-            pkval = self._pending.pop(pkey, None)
-            if pkval is not None:
-                success = False
-                try:
-                    self.execute_update(pkey)
-                    count += 1
-                    success = True
-                finally:
-                    if not success:
-                        self._pending[pkey] = pkval
-        return count
-
-    def execute_update(self, key: KT) -> None:
-        self._effect(key)
-
-    def retrieve_value(self, key: KT) -> VT | None:
-        raise NotImplementedError()
-
-    def get_value(self, key: KT, default: VT) -> VT:
-        res = self.maybe_get_value(key)
+    def get_value(self, key: KT, default: VT, when: pd.Timestamp | None) -> VT:
+        res = self.maybe_get_value(key, when)
         if res is None:
             return default
         return res
 
-    def maybe_get_value(self, key: KT) -> VT | None:
-        return self.retrieve_value(key)
+    def maybe_get_value(
+            self,
+            key: KT,
+            when: pd.Timestamp | None) -> VT | None:
+        value, outdated_ts = self.retrieve_value(key)
+        if self._is_updating:
+            return value
+        is_outdated = self._is_outdated(outdated_ts, when)
+        if is_outdated != "old" and value is not None:
+            self.maybe_compute(key, outdated_ts)
+            return value
+        self.execute_update(key, when)
+        value, _ = self.retrieve_value(key)
+        return value
 
-    def do_set_value(self, key: KT, value: VT) -> None:
-        raise NotImplementedError()
+    def _is_outdated(
+            self,
+            outdated_ts: pd.Timestamp | None,
+            when: pd.Timestamp | None) -> Freshness:
+        if outdated_ts is None:
+            return "current"
+        if when is None:
+            return "old"
+        if when < outdated_ts:
+            return "current"
+        if when > outdated_ts + OLD_THRESHOLD:
+            return "old"
+        return "needs_update"
 
-    def set_value(self, key: KT, value: VT) -> None:
-        self.do_set_value(key, value)
-        self.on_update(key)
+    def maybe_compute(self, key: KT, marker: pd.Timestamp | None) -> None:
+        if marker is not None:
+            self.request_compute(key)
 
-    def do_update_value(self, key: KT, value: VT) -> VT | None:
-        raise NotImplementedError()
+    def request_compute(self, key: KT) -> None:
+        self.on_request_compute(key)
+        self.init_thread()
 
-    def update_value(self, key: KT, value: VT) -> VT | None:
-        res = self.do_update_value(key, value)
-        self.on_update(key)
+    def set_value(self, key: KT, value: VT, now: pd.Timestamp | None) -> None:
+        self.do_set_value(key, value, now)
+        self.on_update(key, now)
+
+    def update_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
+        res = self.do_update_value(key, value, now)
+        self.on_update(key, now)
         return res
 
-    def do_set_new_value(self, key: KT, value: VT) -> bool:
+    def set_new_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
+        was_set = self.do_set_new_value(key, value, now)
+        if was_set:
+            self.on_update(key, now)
+        return was_set
+
+    def pending_outdated(self) -> tuple[KT, pd.Timestamp] | None:
         raise NotImplementedError()
 
-    def set_new_value(self, key: KT, value: VT) -> bool:
-        was_set = self.do_set_new_value(key, value)
-        if was_set:
-            self.on_update(key)
-        return was_set
+    def on_request_compute(self, key: KT) -> None:
+        raise NotImplementedError()
+
+    def on_set_outdated(self, key: KT, now: pd.Timestamp) -> None:
+        raise NotImplementedError()
+
+    def clear_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
+        raise NotImplementedError()
+
+    def retrieve_value(self, key: KT) -> tuple[VT | None, pd.Timestamp | None]:
+        raise NotImplementedError()
+
+    def do_set_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> None:
+        raise NotImplementedError()
+
+    def do_update_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
+        raise NotImplementedError()
+
+    def do_set_new_value(
+            self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
+        raise NotImplementedError()
+
+
+class ListEffectDependent(Generic[KT, VT], EffectDependent[KT, list[VT]]):
+    def do_get_value_range(
+            self,
+            key: KT,
+            from_ix: int | None,
+            to_ix: int | None) -> tuple[list[VT] | None, pd.Timestamp | None]:
+        raise NotImplementedError()
+
+    def get_value_range(
+            self,
+            key: KT,
+            from_ix: int | None,
+            to_ix: int | None,
+            when: pd.Timestamp | None) -> list[VT]:
+        value, outdated_ts = self.do_get_value_range(key, from_ix, to_ix)
+        if self._is_updating:
+            return [] if value is None else value
+        is_outdated = self._is_outdated(outdated_ts, when)
+        if is_outdated != "old" and value is not None:
+            self.maybe_compute(key, outdated_ts)
+            return value
+        self.execute_update(key, when)
+        value, _ = self.do_get_value_range(key, from_ix, to_ix)
+        return [] if value is None else value
+
+    def __getitem__(
+            self, arg: tuple[KT, slice, pd.Timestamp | None]) -> list[VT]:
+        key, slicer, now = arg
+        if slicer.step is None or slicer.step > 0:
+            res = self.get_value_range(key, slicer.start, slicer.stop, now)
+        else:
+            flip_start = slicer.stop
+            if flip_start is not None:
+                if flip_start != -1:
+                    flip_start += 1
+                else:
+                    return []
+            flip_stop = slicer.start
+            if flip_stop is not None:
+                if flip_stop != -1:
+                    flip_stop += 1
+                else:
+                    flip_stop = None
+            res = self.get_value_range(key, flip_start, flip_stop, now)
+        if slicer.step is not None and slicer.step != 1:
+            return res[::slicer.step]
+        return res

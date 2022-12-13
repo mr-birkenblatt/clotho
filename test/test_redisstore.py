@@ -3,9 +3,9 @@ import time
 import uuid
 from typing import Iterable
 
+from effects.effects import set_old_threshold
 from misc.util import from_timestamp, now_ts, to_timestamp
 from system.links.link import Link, VoteType, VT_DOWN, VT_UP
-from system.links.redisstore import set_delay_multiplier
 from system.links.scorer import get_scorer, ScorerName
 from system.links.store import get_link_store
 from system.msgs.message import MHash, set_mhash_print_hook
@@ -42,7 +42,7 @@ PLAN: list[tuple[int, int, int, VoteType]] = [
 ]
 
 
-DMUL = 0.05
+OLD_TH = 0.05
 
 
 def test_scenario() -> None:
@@ -61,8 +61,8 @@ def test_scenario() -> None:
     for user in users:
         user_store.store_user(user)
 
-    dmul = DMUL
-    set_delay_multiplier(dmul)
+    old_th = OLD_TH
+    set_old_threshold(old_th)
     store = get_link_store("redis")
 
     def get_link(parent: int, child: int) -> Link:
@@ -81,7 +81,7 @@ def test_scenario() -> None:
     assert int(get_link(0, 1).get_votes(VT_UP).get_total_votes()) == 3
     assert int(get_link(0, 1).get_votes(VT_DOWN).get_total_votes()) == 1
 
-    time.sleep(4.0 * dmul)  # update tier 1
+    time.sleep(2.0 * old_th)  # update tier 1
     # (all parents, all children)
 
     def get_children(links: Iterable[Link]) -> list[MHash]:
@@ -90,33 +90,33 @@ def test_scenario() -> None:
     def get_parents(links: Iterable[Link]) -> list[MHash]:
         return [link.get_parent() for link in links]
 
-    assert set(get_children(store.get_all_children(msgs[0]))) == {
+    assert set(get_children(store.get_all_children(msgs[0], now))) == {
         msgs[1], msgs[2], msgs[3]}
-    assert set(get_parents(store.get_all_children(msgs[0]))) == {msgs[0]}
+    assert set(get_parents(store.get_all_children(msgs[0], now))) == {msgs[0]}
 
-    assert set(get_children(store.get_all_children(msgs[4]))) == {
+    assert set(get_children(store.get_all_children(msgs[4], now))) == {
         msgs[5], msgs[6], msgs[7]}
 
-    assert set(get_children(store.get_all_children(msgs[3]))) == {
+    assert set(get_children(store.get_all_children(msgs[3], now))) == {
         msgs[1], msgs[5], msgs[7]}
 
-    assert len(get_children(store.get_all_children(msgs[2]))) == 0
+    assert len(get_children(store.get_all_children(msgs[2], now))) == 0
 
-    assert set(get_parents(store.get_all_parents(msgs[7]))) == {
+    assert set(get_parents(store.get_all_parents(msgs[7], now))) == {
         msgs[3], msgs[4]}
-    assert set(get_children(store.get_all_parents(msgs[7]))) == {msgs[7]}
+    assert set(get_children(store.get_all_parents(msgs[7], now))) == {msgs[7]}
 
-    assert set(get_parents(store.get_all_parents(msgs[1]))) == {
+    assert set(get_parents(store.get_all_parents(msgs[1], now))) == {
         msgs[0], msgs[3]}
 
-    assert set(get_parents(store.get_all_parents(msgs[5]))) == {
+    assert set(get_parents(store.get_all_parents(msgs[5], now))) == {
         msgs[3], msgs[4]}
 
-    assert set(get_parents(store.get_all_parents(msgs[2]))) == {msgs[0]}
-    assert set(get_parents(store.get_all_parents(msgs[9]))) == {msgs[7]}
-    assert len(get_parents(store.get_all_parents(msgs[4]))) == 0
+    assert set(get_parents(store.get_all_parents(msgs[2], now))) == {msgs[0]}
+    assert set(get_parents(store.get_all_parents(msgs[9], now))) == {msgs[7]}
+    assert len(get_parents(store.get_all_parents(msgs[4], now))) == 0
 
-    time.sleep(5.0 * dmul)  # update tier 2
+    time.sleep(2.0 * old_th)  # update tier 2
     # (sorted parents, sorted children, first user, user list)
 
     def get_sorted(
@@ -171,35 +171,41 @@ def test_scenario() -> None:
 
     assert len(get_sorted(0, "top", is_children=False, full=False)) == 0
 
-    resp = get_link(0, 1).get_response(user_store, now)
+    resp = get_link(0, 1).get_response(user_store, who=users[0], now=now)
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[1].to_parseable()
-    assert resp["user"] == users[0].get_id()
+    assert resp["user"] == users[0].get_name()
+    assert resp["userid"] == users[0].get_id()
     assert int(resp["first"]) == int(first_s)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
-    assert int(rvotes[VT_UP]) == 3
-    assert int(rvotes[VT_DOWN]) == 1
+    assert int(rvotes[VT_UP]["count"]) == 3
+    assert int(rvotes[VT_DOWN]["count"]) == 1
+    assert rvotes[VT_UP]["uservoted"]
+    assert not rvotes[VT_DOWN]["uservoted"]
 
-    resp = get_link(0, 3).get_response(user_store, now)
+    resp = get_link(0, 3).get_response(user_store, who=None, now=now)
     assert resp["parent"] == msgs[0].to_parseable()
     assert resp["child"] == msgs[3].to_parseable()
-    assert resp["user"] == users[0].get_id()
+    assert resp["user"] == users[0].get_name()
+    assert resp["userid"] == users[0].get_id()
     assert int(resp["first"]) == int(first_s + 10.0)
     rvotes = resp["votes"]
     assert rvotes.keys() == {VT_UP, VT_DOWN}
-    assert int(rvotes[VT_UP]) == 1
-    assert int(rvotes[VT_DOWN]) == 4
+    assert int(rvotes[VT_UP]["count"]) == 1
+    assert int(rvotes[VT_DOWN]["count"]) == 4
+    assert not rvotes[VT_UP]["uservoted"]
+    assert not rvotes[VT_DOWN]["uservoted"]
 
     assert get_link(0, 3).get_votes(VT_DOWN).get_voters(user_store) == {
         users[0], users[1], users[2], users[4]}
 
     assert set(store.get_all_user_links(users[0])) == \
-        set(store.get_all_children(msgs[0]))
+        set(store.get_all_children(msgs[0], now))
     assert set(store.get_all_user_links(users[2])) == \
-        set(store.get_all_children(msgs[3]))
+        set(store.get_all_children(msgs[3], now))
 
-    time.sleep(4.0 * dmul)  # update tier 3
+    time.sleep(2.0 * old_th)  # update tier 3
     # (sorted user list)
 
     def get_sorted_user(

@@ -1,6 +1,8 @@
 from effects.dedicated import CallFn, RedisFn, RootValue, Script
+from effects.effects import set_old_threshold
 from effects.redis import ValueRootRedisType
 from misc.redis import RedisConnection
+from misc.util import from_timestamp
 
 
 SCRIPT_REF = """
@@ -24,6 +26,9 @@ return 1
 
 
 def test_dedicated() -> None:
+    now = 1670580000.0
+    set_old_threshold(0.1)
+
     script = Script()
     input_a = script.add_arg("input_a")
     input_b = script.add_arg("input_b")
@@ -55,12 +60,14 @@ def test_dedicated() -> None:
     script.execute(
         args={"input_a": -1.0, "input_b": 3.0},
         keys={"value_a": "def"},
+        now=from_timestamp(now),
         conn=conn,
         depth=0)
     assert value_a.maybe_get_value("def") == 2.0
     script.execute(
         args={"input_a": 3.0, "input_b": -1.0},
         keys={"value_a": "def"},
+        now=from_timestamp(now),
         conn=conn,
         depth=0)
     assert value_a.maybe_get_value("def") == 1.0
@@ -69,6 +76,7 @@ def test_dedicated() -> None:
     assert int(script.execute(
         args={"input_a": 3.0, "input_b": -1.0},
         keys={"value_a": "abc"},
+        now=from_timestamp(now),
         conn=conn,
         depth=0)) != 0
     assert value_a.maybe_get_value("abc") == -1.0
