@@ -20,7 +20,7 @@ def msgs_from_obj(ns_name: str, obj: dict[str, Any]) -> MsgsModule:
     name = obj.get("name", "disk")
     if name == "ram":
         res = {
-            "name": "ram"
+            "name": "ram",
         }
     elif name == "disk":
         res = {
@@ -41,7 +41,7 @@ def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
             "host": obj.get("host", "localhost"),
             "port": int(obj.get("port", 6379)),
             "passwd": obj.get("passwd", ""),
-            "prefix": obj.get("prefix", f"{ns_name}")
+            "prefix": obj.get("prefix", f"{ns_name}"),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
