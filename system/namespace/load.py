@@ -34,7 +34,7 @@ def msgs_from_obj(ns_name: str, obj: dict[str, Any]) -> MsgsModule:
 
 def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
     res: LinkModule
-    name = obj.get("name", "disk")
+    name = obj.get("name", "redis")
     if name == "redis":
         res = {
             "name": "redis",

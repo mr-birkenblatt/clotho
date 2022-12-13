@@ -27,7 +27,8 @@ help:
 	@echo "ts-build	build the ui code"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
-	@echo "run-test-redis	start redis server for pytest"
+	@echo "run-redis-test	start redis server for pytest"
+	@echo "run-redis-api	start redis server for api (note, this is separate from redis required by modules)"
 	@echo "run-redis	start redis server"
 	@echo "run-api	start api server"
 	@echo "run-web	start web server"
@@ -37,7 +38,7 @@ help:
 export LC_ALL=C
 export LANG=C
 
-PYTHON=python
+PYTHON=python3
 NS=default
 
 lint-comment:
@@ -145,14 +146,17 @@ ts-unused:
 ts-build:
 	cd ui && yarn build
 
-run-test-redis:
-	cd test && redis-server --port 6380
+run-redis-test:
+	PYTHON=$(PYTHON) && NS=_test && ./run_redis.sh
+
+run-redis-api:
+	PYTHON=$(PYTHON) && USER_PATH=$(USER_PATH) && NS=_api && ./run_redis.sh
 
 run-redis:
-	./run_redis.sh $(NS)
+	PYTHON=$(PYTHON) && USER_PATH=$(USER_PATH) && NS=$(NS) && ./run_redis.sh
 
 run-api:
-	python3 -m app --namespace $(NS)
+	API_SERVER_NAMESPACE=$(NS) && $(PYTHON) -m app
 
 run-web:
 	cd ui && yarn start

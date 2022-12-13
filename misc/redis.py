@@ -61,10 +61,10 @@ def get_test_config() -> RedisConfig:
 
 def get_api_config() -> RedisConfig:
     return {
-        "host": envload_str("REDIS_API_HOST", default="localhost"),
-        "port": envload_int("REDIS_API_PORT", default=6380),
-        "passwd": envload_str("REDIS_API_PASSWD", default=""),
-        "prefix": envload_str("REDIS_API_PREFIX", default=""),
+        "host": envload_str("API_REDIS_HOST", default="localhost"),
+        "port": envload_int("API_REDIS_PORT", default=6379),
+        "passwd": envload_str("API_REDIS_PASSWD", default=""),
+        "prefix": envload_str("API_REDIS_PREFIX", default=""),
     }
 
 

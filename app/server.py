@@ -47,7 +47,7 @@ def setup(
         addr: str,
         port: int,
         parallel: bool,
-        deploy: bool) -> tuple[QuickServer, str]:
+        deploy: bool) -> tuple[QuickServer, str, str]:
     server: QuickServer = create_server(
         (addr, port),
         parallel,
@@ -325,26 +325,28 @@ def setup(
         link = link_store.get_link(parent, child)
         return link.get_response(user_store, who=muser, now=now)
 
-    return server, prefix
+    return server, prefix, ns_name
 
 
 def setup_server(
         deploy: bool,
         ns_name: str | None,
         addr: str | None,
-        port: int | None) -> tuple[QuickServer, str]:
+        port: int | None) -> tuple[QuickServer, str, str]:
     if ns_name is None:
-        ns_name = envload_str("NAMESPACE", default="default")
+        ns_name = envload_str("API_SERVER_NAMESPACE", default="default")
     if addr is None:
-        addr = envload_str("HOST", default="127.0.0.1")
+        addr = envload_str("API_SERVER_HOST", default="127.0.0.1")
     if port is None:
-        port = envload_int("PORT", default=8080)
+        port = envload_int("API_SERVER_PORT", default=8080)
     return setup(ns_name, addr, port, parallel=True, deploy=deploy)
 
 
-def start(server: QuickServer, prefix: str) -> None:
+def start(server: QuickServer, prefix: str, ns_name: str) -> None:
     addr, port = server.server_address
-    print(f"starting API at http://{addr}:{port}{prefix}/")
+    print(
+        f"starting API at http://{addr}:{port}{prefix}/ "
+        f"for namespace {ns_name}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

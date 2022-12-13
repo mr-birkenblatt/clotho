@@ -31,12 +31,12 @@ def parse_args() -> argparse.Namespace:
 
 def run() -> None:
     args = parse_args()
-    server, prefix = setup_server(
+    server, prefix, ns_name = setup_server(
         deploy=args.dedicated,
         ns_name=args.namespace,
         addr=args.address,
         port=args.port)
-    start(server, prefix)
+    start(server, prefix, ns_name)
 
 
 if __name__ == "__main__":
