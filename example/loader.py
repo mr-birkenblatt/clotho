@@ -279,7 +279,7 @@ def process_action_file(
     # FIXME: process by children count first (least first) (maybe)
     # FIXME: use temporary files to filter each pass (maybe)
     # FIXME: analyze mhash storage (how many hashes per file / how deep?)
-    # FIXME: batch votes (100 at a time)
+    # FIXME: batch votes (100 at a time; maybe)
     # FIXME: add user inbox
     # FIXME: add sort select
     # FIXME: total karma to user display
