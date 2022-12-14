@@ -91,7 +91,7 @@ def parse_args() -> argparse.Namespace:
         "cmd",
         choices=["reddit", "load"],
         help="the command to execute")
-    parser.add_argument("--namespace", default="default", help="the namespace")
+    parser.add_argument("namespace", help="the namespace (test, train, etc.)")
     return parser.parse_args()
 
 
