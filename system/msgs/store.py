@@ -1,4 +1,4 @@
-from typing import Iterable, Literal, TypedDict
+from typing import Callable, Iterable, Literal, TypedDict
 
 import numpy as np
 
@@ -36,15 +36,26 @@ class MessageStore:
             is_parent: bool,
             offset: int,
             limit: int) -> Iterable[MHash]:
-        start = offset - (offset % RNG_ALIGN)
-        end = offset + limit
         base_seed = hash(ref)
         if is_parent:
             base_seed = base_seed * 5 + 1
+        yield from self.generate_random_messages(
+            lambda cur_ix: np.random.default_rng(
+                abs(base_seed + SEED_MUL * cur_ix)),
+            offset,
+            limit)
+
+    def generate_random_messages(
+            self,
+            rng_fn: Callable[[int], np.random.Generator],
+            offset: int,
+            limit: int) -> list[MHash]:
+        start = offset - (offset % RNG_ALIGN)
+        end = offset + limit
         res: list[MHash] = []
         cur_ix = start
         while cur_ix < end:
-            rng = np.random.default_rng(abs(base_seed + SEED_MUL * cur_ix))
+            rng = rng_fn(cur_ix)
             res.extend(self.do_get_random_messages(rng, RNG_ALIGN))
             cur_ix += RNG_ALIGN
         rel_start = offset - start

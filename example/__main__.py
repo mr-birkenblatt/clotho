@@ -15,9 +15,14 @@ from system.namespace.store import get_namespace
 from system.users.store import get_user_store
 
 
-REDDIT_ACTION_FILE = os.path.join(os.path.dirname(__file__), "reddit.jsonl")
-# ROOTS = ["politics", "news", "worldnews", "conservative"]
-ROOTS = ["askscience", "askreddit", "explainlikeimfive", "todayilearned"]
+def get_roots(is_train: bool) -> list[str]:
+    if is_train:
+        return ["politics", "news", "worldnews", "conservative"]
+    return ["askscience", "askreddit", "explainlikeimfive", "todayilearned"]
+
+
+def reddit_action_file(ns_name: str) -> str:
+    return os.path.join(os.path.dirname(__file__), f"reddit.{ns_name}.jsonl")
 
 
 def process_reddit(reddit: RedditAccess, fname: str, subs: list[str]) -> None:
@@ -54,22 +59,26 @@ def process_load(ns_name: str) -> None:
     old_th = get_old_threshold()
     set_old_threshold(24 * 60 * 60)
     process_action_file(
-        REDDIT_ACTION_FILE,
+        reddit_action_file(ns_name),
         message_store=message_store,
         link_store=link_store,
         user_store=user_store,
         now=now,
         reference_time=reference_time,
-        roots=set(ROOTS))
+        roots=set(get_roots(ns_name == "train")))
     set_old_threshold(old_th)
 
 
 def run() -> None:
     args = parse_args()
+    ns_name = args.namespace
     if args.cmd == "reddit":
-        process_reddit(RedditAccess(do_log=False), REDDIT_ACTION_FILE, ROOTS)
+        process_reddit(
+            RedditAccess(do_log=False),
+            reddit_action_file(ns_name),
+            get_roots(ns_name == "train"))
     elif args.cmd == "load":
-        process_load(args.namespace)
+        process_load(ns_name)
     else:
         raise RuntimeError(f"invalid cmd: {args.cmd}")
 
