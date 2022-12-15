@@ -9,6 +9,14 @@ if __name__ == "__main__":
     data_gen = DataGenerator(ns, 42)
     for link in data_gen.get_random_links(100):
         print(
-            f"{data_gen.long_info(link.get_parent())} -- "
-            f"{data_gen.long_info(link.get_child())} -- "
+            f"{data_gen.short_info(link.get_parent())} -- "
+            f"{data_gen.short_info(link.get_child())} -- "
             f"{data_gen.vote_score(link)}")
+    print("====================")
+    for link in data_gen.get_random_links(5):
+        print(f"{data_gen.long_info(link.get_parent())}")
+        print("--------------------")
+        print(f"{data_gen.long_info(link.get_child())}")
+        print("--------------------")
+        print(f"{data_gen.vote_score(link)}")
+        print("====================")
