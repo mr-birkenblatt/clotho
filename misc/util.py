@@ -242,3 +242,7 @@ def get_relative_function_info(
 
 def identity(obj: RT) -> RT:
     return obj
+
+
+def sigmoid(x: Any) -> Any:
+    return np.exp(-np.logaddexp(0, -x))
