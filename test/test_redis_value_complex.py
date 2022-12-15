@@ -128,7 +128,8 @@ def test_complex_list() -> None:
             "pen",
             parents=(links,),
             convert=lambda pkey: FLink(l_from=pkey.l_from),
-            effect=compute_destinations)
+            effect=compute_destinations,
+            empty=b"")
     srcs: ListDependentRedisType[TLink] = \
         ListDependentRedisType(
             REDIS_TEST_CONFIG,
@@ -141,7 +142,8 @@ def test_complex_list() -> None:
             "pen",
             parents=(links,),
             convert=lambda pkey: TLink(l_to=pkey.l_to),
-            effect=compute_sources)
+            effect=compute_sources,
+            empty=b"")
 
     now_ts = from_timestamp(now)
 

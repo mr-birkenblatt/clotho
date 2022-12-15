@@ -217,7 +217,8 @@ def test_dependent_list() -> None:
         "pen",
         parents=(value_a, value_b),
         convert=key_id,
-        effect=update_a)
+        effect=update_a,
+        empty=b"")
     dep_b = ListDependentRedisType(
         REDIS_TEST_CONFIG,
         "test",
@@ -229,7 +230,8 @@ def test_dependent_list() -> None:
         "pen",
         parents=(value_a, value_b),
         convert=key_id,
-        effect=update_b)
+        effect=update_b,
+        empty=b"")
 
     def update_a_a(key: str, now_ts: pd.Timestamp | None) -> None:
         dep_a_a.set_value(key, len(dep_a.get_value(key, [], now_ts)), now_ts)
