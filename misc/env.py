@@ -3,22 +3,18 @@ from typing import Literal
 
 
 EnvPath = Literal[
-    "MSG_PATH",
-    "MSG_TOPICS",
     "USER_PATH",
 ]
 EnvStr = Literal[
-    "HOST",
-    "LINK_STORE",
-    "LINK_SUGGESTER",
-    "MSG_STORE",
-    "REDIS_HOST",
-    "REDIS_PASS",
-    "USER_STORE",
+    "API_REDIS_HOST",
+    "API_REDIS_PASSWD",
+    "API_REDIS_PREFIX",
+    "API_SERVER_HOST",
+    "API_SERVER_NAMESPACE",
 ]
 EnvInt = Literal[
-    "PORT",
-    "REDIS_PORT",
+    "API_REDIS_PORT",
+    "API_SERVER_PORT",
 ]
 
 

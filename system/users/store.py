@@ -1,7 +1,7 @@
-from typing import Iterable
+from typing import Iterable, Literal, TypedDict
 
-from misc.env import envload_str
 from misc.util import get_short_hash
+from system.namespace.namespace import Namespace
 from system.users.user import User
 
 
@@ -20,23 +20,32 @@ class UserStore:
         return get_short_hash(user_name)
 
 
-DEFAULT_USER_STORE: UserStore | None = None
+USER_STORE: dict[Namespace, UserStore] = {}
 
 
-def get_default_user_store() -> UserStore:
-    global DEFAULT_USER_STORE
+def get_user_store(namespace: Namespace) -> UserStore:
+    res = USER_STORE.get(namespace)
+    if res is None:
+        res = create_user_store(namespace.get_users_module())
+        USER_STORE[namespace] = res
+    return res
 
-    if DEFAULT_USER_STORE is None:
-        DEFAULT_USER_STORE = get_user_store(
-            envload_str("USER_STORE", default="disk"))
-    return DEFAULT_USER_STORE
+
+DiskUsersModule = TypedDict('DiskUsersModule', {
+    "name": Literal["disk"],
+    "root": str,
+})
+RamUsersModule = TypedDict('RamUsersModule', {
+    "name": Literal["ram"],
+})
+UsersModule = DiskUsersModule | RamUsersModule
 
 
-def get_user_store(name: str) -> UserStore:
-    if name == "disk":
+def create_user_store(uobj: UsersModule) -> UserStore:
+    if uobj["name"] == "disk":
         from system.users.disk import DiskUserStore
-        return DiskUserStore()
-    if name == "ram":
+        return DiskUserStore(uobj["root"])
+    if uobj["name"] == "ram":
         from system.users.ram import RamUserStore
         return RamUserStore()
-    raise ValueError(f"unknown user store: {name}")
+    raise ValueError(f"unknown user store: {uobj}")

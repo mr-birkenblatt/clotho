@@ -3,6 +3,8 @@ import inspect
 import json
 import os
 import string
+import threading
+import uuid
 from typing import Any, IO, Iterable, Type, TypeVar
 
 import numpy as np
@@ -13,6 +15,32 @@ CT = TypeVar('CT')
 RT = TypeVar('RT')
 VT = TypeVar('VT')
 DT = TypeVar('DT', bound=pd.DataFrame | pd.Series)
+
+
+NL = "\n"
+
+
+TEST_SALT_LOCK = threading.RLock()
+TEST_SALT: dict[str, str] = {}
+
+
+def is_test() -> bool:
+    test_id = os.getenv("PYTEST_CURRENT_TEST")
+    return test_id is not None
+
+
+def get_test_salt() -> str | None:
+    test_id = os.getenv("PYTEST_CURRENT_TEST")
+    if test_id is None:
+        return None
+    res = TEST_SALT.get(test_id)
+    if res is None:
+        with TEST_SALT_LOCK:
+            res = TEST_SALT.get(test_id)
+            if res is None:
+                res = f"salt:{uuid.uuid4().hex}"
+                TEST_SALT[test_id] = res
+    return res
 
 
 def get_text_hash(text: str) -> str:
@@ -214,3 +242,7 @@ def get_relative_function_info(
 
 def identity(obj: RT) -> RT:
     return obj
+
+
+def sigmoid(x: Any) -> Any:
+    return np.exp(-np.logaddexp(0, -x))

@@ -1,14 +1,15 @@
 from typing import Iterable
 
 from system.msgs.message import MHash
-from system.msgs.store import get_default_message_store
+from system.msgs.store import get_message_store
+from system.namespace.namespace import Namespace
 from system.suggest.suggest import LinkSuggester
 
 
 class RandomLinkSuggester(LinkSuggester):
-    def __init__(self) -> None:
-        super().__init__()
-        self._message_store = get_default_message_store()
+    def __init__(self, namespace: Namespace) -> None:
+        super().__init__(namespace)
+        self._message_store = get_message_store(namespace)
 
     def suggest_messages(
             self,

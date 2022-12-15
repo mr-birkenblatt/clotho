@@ -2,17 +2,17 @@ from typing import Any, ContextManager
 
 from quick_server import TokenHandler
 
-from misc.redis import ObjectRedis, RedisWrapper
+from misc.redis import ObjectRedis, REDIS_API_CONFIG, RedisWrapper
 
 
 class RedisTokenHandler(TokenHandler):
     def __init__(self) -> None:
-        self._r = ObjectRedis("token")
+        self._r = ObjectRedis(REDIS_API_CONFIG, "token")
 
     def lock(self, key: str | None) -> ContextManager[None]:
         if key is None:
             return RedisWrapper.no_lock()
-        return RedisWrapper.create_lock(f"token.{key}")
+        return RedisWrapper.create_lock(REDIS_API_CONFIG, f"token.{key}")
 
     def ttl(self, key: str) -> float | None:
         return self._r.obj_ttl("token", key)

@@ -1,9 +1,9 @@
-from typing import Iterable
+from typing import Callable, Iterable, Literal, TypedDict
 
 import numpy as np
 
-from misc.env import envload_str
 from system.msgs.message import Message, MHash
+from system.namespace.namespace import Namespace
 
 
 RNG_ALIGN = 10
@@ -23,8 +23,11 @@ class MessageStore:
     def get_topics(
             self,
             offset: int,
-            limit: int | None) -> Iterable[Message]:
+            limit: int | None) -> list[Message]:
         raise NotImplementedError()
+
+    def get_topics_count(self) -> int:
+        return len(self.get_topics(0, None))
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
@@ -36,38 +39,58 @@ class MessageStore:
             is_parent: bool,
             offset: int,
             limit: int) -> Iterable[MHash]:
-        start = offset - (offset % RNG_ALIGN)
-        end = offset + limit
         base_seed = hash(ref)
         if is_parent:
             base_seed = base_seed * 5 + 1
+        yield from self.generate_random_messages(
+            lambda cur_ix: np.random.default_rng(
+                abs(base_seed + SEED_MUL * cur_ix)),
+            offset,
+            limit)
+
+    def generate_random_messages(
+            self,
+            rng_fn: Callable[[int], np.random.Generator],
+            offset: int,
+            limit: int) -> list[MHash]:
+        start = offset - (offset % RNG_ALIGN)
+        end = offset + limit
         res: list[MHash] = []
         cur_ix = start
         while cur_ix < end:
-            rng = np.random.default_rng(abs(base_seed + SEED_MUL * cur_ix))
+            rng = rng_fn(cur_ix)
             res.extend(self.do_get_random_messages(rng, RNG_ALIGN))
             cur_ix += RNG_ALIGN
         rel_start = offset - start
         return res[rel_start:rel_start + limit]
 
 
-DEFAULT_MSG_STORE: MessageStore | None = None
+MSG_STORE: dict[Namespace, MessageStore] = {}
 
 
-def get_default_message_store() -> MessageStore:
-    global DEFAULT_MSG_STORE
+def get_message_store(namespace: Namespace) -> MessageStore:
+    res = MSG_STORE.get(namespace)
+    if res is None:
+        res = create_message_store(namespace.get_message_module())
+        MSG_STORE[namespace] = res
+    return res
 
-    if DEFAULT_MSG_STORE is None:
-        DEFAULT_MSG_STORE = get_message_store(
-            envload_str("MSG_STORE", default="disk"))
-    return DEFAULT_MSG_STORE
+
+DiskMessageModule = TypedDict('DiskMessageModule', {
+    "name": Literal["disk"],
+    "root": str,
+})
+RamMessageModule = TypedDict('RamMessageModule', {
+    "name": Literal["ram"],
+})
+MsgsModule = DiskMessageModule | RamMessageModule
 
 
-def get_message_store(name: str) -> MessageStore:
-    if name == "disk":
+def create_message_store(mobj: MsgsModule) -> MessageStore:
+    if mobj["name"] == "disk":
         from system.msgs.disk import DiskStore
-        return DiskStore()
-    if name == "ram":
+        return DiskStore(mobj["root"])
+    if mobj["name"] == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()
-    raise ValueError(f"unknown message store: {name}")
+    raise ValueError(f"unknown message store: {mobj}")

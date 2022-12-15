@@ -21,11 +21,12 @@ from misc.env import envload_int, envload_str
 from misc.util import now_ts, to_list
 from system.links.link import Link, LinkResponse, parse_vote_type, VT_UP
 from system.links.scorer import get_scorer, Scorer
-from system.links.store import get_default_link_store
+from system.links.store import get_link_store
 from system.msgs.message import Message, MHash
-from system.msgs.store import get_default_message_store
-from system.suggest.suggest import get_default_link_suggester
-from system.users.store import get_default_user_store
+from system.msgs.store import get_message_store
+from system.namespace.store import get_namespace
+from system.suggest.suggest import get_link_suggester
+from system.users.store import get_user_store
 from system.users.user import User
 
 
@@ -42,10 +43,11 @@ MAX_LINKS = 20
 
 
 def setup(
+        ns_name: str,
         addr: str,
         port: int,
         parallel: bool,
-        deploy: bool) -> tuple[QuickServer, str]:
+        deploy: bool) -> tuple[QuickServer, str, str]:
     server: QuickServer = create_server(
         (addr, port),
         parallel,
@@ -76,10 +78,11 @@ def setup(
 
     server.set_default_token_expiration(48 * 60 * 60)  # 2 days
 
-    message_store = get_default_message_store()
-    link_store = get_default_link_store()
-    user_store = get_default_user_store()
-    link_suggester = get_default_link_suggester()
+    namespace = get_namespace(ns_name)
+    message_store = get_message_store(namespace)
+    link_store = get_link_store(namespace)
+    user_store = get_user_store(namespace)
+    link_suggester = get_link_suggester(namespace)
 
     def get_user(args: WorkerArgs) -> User:
         with server.get_token_obj(args["token"]) as obj:
@@ -322,23 +325,28 @@ def setup(
         link = link_store.get_link(parent, child)
         return link.get_response(user_store, who=muser, now=now)
 
-    return server, prefix
+    return server, prefix, ns_name
 
 
 def setup_server(
         deploy: bool,
+        ns_name: str | None,
         addr: str | None,
-        port: int | None) -> tuple[QuickServer, str]:
+        port: int | None) -> tuple[QuickServer, str, str]:
+    if ns_name is None:
+        ns_name = envload_str("API_SERVER_NAMESPACE", default="default")
     if addr is None:
-        addr = envload_str("HOST", default="127.0.0.1")
+        addr = envload_str("API_SERVER_HOST", default="127.0.0.1")
     if port is None:
-        port = envload_int("PORT", default=8080)
-    return setup(addr, port, parallel=True, deploy=deploy)
+        port = envload_int("API_SERVER_PORT", default=8080)
+    return setup(ns_name, addr, port, parallel=True, deploy=deploy)
 
 
-def start(server: QuickServer, prefix: str) -> None:
+def start(server: QuickServer, prefix: str, ns_name: str) -> None:
     addr, port = server.server_address
-    print(f"starting API at http://{addr}:{port}{prefix}/")
+    print(
+        f"starting API at http://{addr}:{port}{prefix}/ "
+        f"for namespace {ns_name}")
     try:
         server.serve_forever()
     except KeyboardInterrupt:
