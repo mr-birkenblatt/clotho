@@ -75,11 +75,12 @@ class Message:
             assert MHash.from_message(msg) == msg_hash
             self._msg_hash = msg_hash
 
-    def to_debug(self) -> str:
+    def to_debug(self, limit: bool = True) -> str:
         text = self.get_text()
         text = re.sub(r"\s+", " ", text)
-        if len(text) > SHORT_TEXT_LEN:
-            text = f"{text[:SHORT_TEXT_LEN - 1]}…"
+        if limit:
+            if len(text) > SHORT_TEXT_LEN:
+                text = f"{text[:SHORT_TEXT_LEN - 1]}…"
         return f"{self.get_hash()}({text})"
 
     def get_text(self) -> str:

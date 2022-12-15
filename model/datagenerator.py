@@ -45,11 +45,17 @@ class DataGenerator:
             messages: list[MHash],
             scorer: Scorer,
             now: pd.Timestamp) -> list[Link]:
+        rng = self._rng
         links = self._links
 
         def get_link(msg: MHash) -> Link:
-            res = list(links.get_children(
-                msg, scorer=scorer, now=now, offset=0, limit=1))
+            pcount = max(links.get_all_parents_count(msg, now), 1)
+            res = list(links.get_parents(
+                msg,
+                scorer=scorer,
+                now=now,
+                offset=int(rng.integers(0, pcount)),
+                limit=1))
             if not res:
                 res = [links.get_link(msg, self.get_random_messages(1)[0])]
             return res[0]
@@ -145,6 +151,9 @@ class DataGenerator:
 
     def short_info(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).to_debug()
+
+    def long_info(self, mhash: MHash) -> str:
+        return self._msgs.read_message(mhash).to_debug(False)
 
     def vote_score(self, link: Link) -> float:
         vhonor = link.get_votes("honor").get_total_votes()
