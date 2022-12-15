@@ -5,6 +5,8 @@ from effects.effects import EqType
 from misc.util import get_text_hash, is_hex
 
 
+SHORT_HASH = 6
+SHORT_TEXT_LEN = 25
 TOPIC_START = "t/"
 VALID_TOPIC = re.compile(r"^t\/[a-z0-9_]+$")
 
@@ -13,15 +15,22 @@ class MHash(EqType):
     def __init__(self, msg_hash: str) -> None:
         self._hash = msg_hash
 
+    @staticmethod
+    def parse_size() -> int:
+        return 64
+
     @classmethod
     def parse(cls, msg_hash: str) -> 'MHash':
-        if len(msg_hash) != 64 or not is_hex(msg_hash):
+        if len(msg_hash) != cls.parse_size() or not is_hex(msg_hash):
             raise ValueError(f"cannot parse: {msg_hash}")
         return MHash(msg_hash)
 
     @staticmethod
     def from_message(text: str) -> 'MHash':
         return MHash(get_text_hash(text))
+
+    def to_debug(self) -> str:
+        return self.to_parseable()[:SHORT_HASH]
 
     def to_parseable(self) -> str:
         return self._hash
@@ -44,7 +53,7 @@ class MHash(EqType):
 
 
 def default_print_hook(mhash: MHash) -> str:
-    return mhash.to_parseable()
+    return mhash.to_debug()
 
 
 PRINT_HOOK: Callable[[MHash], str] = default_print_hook
@@ -65,6 +74,13 @@ class Message:
         if msg_hash is not None:
             assert MHash.from_message(msg) == msg_hash
             self._msg_hash = msg_hash
+
+    def to_debug(self) -> str:
+        text = self.get_text()
+        text = re.sub(r"\s+", " ", text)
+        if len(text) > SHORT_TEXT_LEN:
+            text = f"{text[:SHORT_TEXT_LEN - 1]}…"
+        return f"{self.get_hash()}({text})"
 
     def get_text(self) -> str:
         return self._msg

@@ -65,6 +65,15 @@ class LinkStore:
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         raise NotImplementedError()
 
+    def get_all_children_count(self, parent: MHash, now: pd.Timestamp) -> int:
+        return len(list(self.get_all_children(parent, now)))
+
+    def get_all_parents_count(self, child: MHash, now: pd.Timestamp) -> int:
+        return len(list(self.get_all_parents(child, now)))
+
+    def get_all_user_count(self, user: User) -> int:
+        return len(list(self.get_all_user_links(user)))
+
     def limit_results(
             self,
             links: Iterable[Link],

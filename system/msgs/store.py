@@ -23,8 +23,11 @@ class MessageStore:
     def get_topics(
             self,
             offset: int,
-            limit: int | None) -> Iterable[Message]:
+            limit: int | None) -> list[Message]:
         raise NotImplementedError()
+
+    def get_topics_count(self) -> int:
+        return len(self.get_topics(0, None))
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:

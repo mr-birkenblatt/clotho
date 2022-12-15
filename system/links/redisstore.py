@@ -109,9 +109,11 @@ class RedisLinkStore(LinkStore):
         # all children for a given parent
 
         def compute_call(key: PLink, now: pd.Timestamp | None) -> None:
+            prefix = key_children("vlast", key)
+            gap = MHash.parse_size()
             self.r_call.set_value(
                 key,
-                list(self.r_last.get_range_keys(key_children("vlast", key))),
+                list(self.r_last.get_range_gap_keys(prefix, gap)),
                 now)
 
         self.r_call: ListDependentRedisType[PLink] = \
@@ -126,14 +128,17 @@ class RedisLinkStore(LinkStore):
                 pen,
                 parents=(self.r_last,),
                 convert=to_plink,
-                effect=compute_call)
+                effect=compute_call,
+                empty=b"")
 
         # all parents for a given child
 
         def compute_pall(key: CLink, now: pd.Timestamp | None) -> None:
+            prefix, postfix = key_parents("vlast", key)
+            gap = MHash.parse_size()
             self.r_pall.set_value(
                 key,
-                list(self.r_last.get_range_keys(*key_parents("vlast", key))),
+                list(self.r_last.get_range_gap_keys(prefix, gap, postfix)),
                 now)
 
         self.r_pall: ListDependentRedisType[CLink] = \
@@ -148,7 +153,8 @@ class RedisLinkStore(LinkStore):
                 pen,
                 parents=(self.r_last,),
                 convert=to_clink,
-                effect=compute_pall)
+                effect=compute_pall,
+                empty=b"")
 
         # sorted lists by score
 
@@ -190,7 +196,8 @@ class RedisLinkStore(LinkStore):
                 pen,
                 parents=(self.r_call,),
                 convert=lambda pkey: pkey,  # FIXME: use identity
-                effect=compute_call_sorted)
+                effect=compute_call_sorted,
+                empty=b"")
             self.r_call_sorted[sname] = cur_r_call_sorted
 
             # all parents for a given child sorted with score
@@ -221,7 +228,8 @@ class RedisLinkStore(LinkStore):
                 pen,
                 parents=(self.r_pall,),
                 convert=lambda pkey: pkey,  # FIXME: use identity
-                effect=compute_pall_sorted)
+                effect=compute_pall_sorted,
+                empty=b"")
             self.r_pall_sorted[sname] = cur_r_pall_sorted
 
             # all links created by a user sorted with score
@@ -259,7 +267,8 @@ class RedisLinkStore(LinkStore):
                 pen,
                 parents=(self.r_user_links,),
                 convert=identity,
-                effect=compute_user_sorted)
+                effect=compute_user_sorted,
+                empty=b"")
             self.r_user_sorted[sname] = cur_r_user_sorted
 
         for scorer in self.valid_scorers():
@@ -439,6 +448,18 @@ class RedisLinkStore(LinkStore):
         for link in self.r_user_links.get_value(user_id, set()):
             rlink = parse_link(VT_UP, link)
             yield self.get_link(rlink.parent, rlink.child)
+
+    def get_all_children_count(self, parent: MHash, now: pd.Timestamp) -> int:
+        return self.r_call.get_size(
+            PLink(vote_type=VT_UP, parent=parent), when=now)
+
+    def get_all_parents_count(self, child: MHash, now: pd.Timestamp) -> int:
+        return self.r_pall.get_size(
+            CLink(vote_type=VT_UP, child=child), when=now)
+
+    def get_all_user_count(self, user: User) -> int:
+        user_id = user.get_id()
+        return self.r_user_links.get_size(user_id)
 
     def get_children(
             self,

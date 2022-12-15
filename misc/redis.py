@@ -77,6 +77,18 @@ def get_api_config() -> RedisConfig:
     }
 
 
+RedisSlowMode = Literal["once", "always", "never"]
+
+
+REDIS_SLOW_MODE: RedisSlowMode = "once"
+
+
+def set_redis_slow_mode(mode: RedisSlowMode) -> None:
+    global REDIS_SLOW_MODE
+
+    REDIS_SLOW_MODE = mode
+
+
 REDIS_SLOW = 1.0
 REDIS_SLOW_CONTEXT = 3
 REDIS_UNIQUE: set[tuple[str, int, str]] = set()
@@ -240,10 +252,10 @@ class RedisWrapper:
             raise
         finally:
             conn_time = time.monotonic() - conn_start
-            if conn_time > REDIS_SLOW:
+            if conn_time > REDIS_SLOW and REDIS_SLOW_MODE != "never":
                 fun_info = get_relative_function_info(depth=depth + 1)
                 fun_key = fun_info[:3]
-                if fun_key not in REDIS_UNIQUE:
+                if fun_key not in REDIS_UNIQUE or REDIS_SLOW_MODE == "always":
                     fun_fname, fun_line, fun_name, fun_locals = fun_info
                     context = []
                     try:
@@ -554,8 +566,28 @@ class RedisConnection:
                 vals.update(res)
                 if cursor == 0:
                     break
-                if count < 4000:
-                    count = min(4000, count * 2)
+                if count < 1000:
+                    count = int(min(1000, count * 1.2))
+        return (val.decode("utf-8") for val in vals)
+
+    def keys_gap_str(
+            self,
+            prefix: str,
+            gap: int,
+            postfix: str | None = None) -> Iterable[str]:
+        glob = "*" if postfix is None else "?" * gap
+        full_pattern = f"{prefix}{glob}{'' if postfix is None else postfix}"
+        vals: set[bytes] = set()
+        cursor = 0
+        count = 10
+        with self.get_connection(depth=1) as conn:
+            while True:
+                cursor, res = conn.scan(cursor, full_pattern, count)
+                vals.update(res)
+                if cursor == 0:
+                    break
+                if count < 1000:
+                    count = int(min(1000, count * 1.2))
         return (val.decode("utf-8") for val in vals)
 
     def prefix_exists(
@@ -570,8 +602,8 @@ class RedisConnection:
                     return True
                 if cursor == 0:
                     return False
-                if count < 4000:
-                    count = min(4000, count * 2)
+                if count < 1000:
+                    count = int(min(1000, count * 1.2))
 
     @contextlib.contextmanager
     def get_lock(self, name: str) -> Iterator[None]:

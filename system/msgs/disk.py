@@ -90,7 +90,7 @@ class DiskStore(MessageStore):
         self._topic_cache = None
         return topic.get_hash()
 
-    def get_topics(self, offset: int, limit: int | None) -> Iterable[Message]:
+    def get_topics(self, offset: int, limit: int | None) -> list[Message]:
         cur_time = time.monotonic()
         if (self._topic_cache is None
                 or cur_time >= self._topic_update + RELOAD_TOPICS_FREQ):

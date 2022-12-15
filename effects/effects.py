@@ -137,6 +137,9 @@ class SetRootType(Generic[KT, VT], EffectRoot[KT, set[VT]]):
     def has_value(self, key: KT, value: VT) -> bool:
         raise NotImplementedError()
 
+    def get_size(self, key: KT) -> int:
+        raise NotImplementedError()
+
 
 class EffectDependent(Generic[KT, VT], EffectBase[KT]):
     def __init__(
@@ -331,3 +334,19 @@ class ListEffectDependent(Generic[KT, VT], EffectDependent[KT, list[VT]]):
         if slicer.step is not None and slicer.step != 1:
             return res[::slicer.step]
         return res
+
+    def do_get_size(self, key: KT) -> tuple[int | None, pd.Timestamp | None]:
+        value, outdated_ts = self.do_get_value_range(key, 0, None)
+        return None if value is None else len(value), outdated_ts
+
+    def get_size(self, key: KT, when: pd.Timestamp | None) -> int:
+        size, outdated_ts = self.do_get_size(key)
+        if self._is_updating:
+            return 0 if size is None else size
+        is_outdated = self._is_outdated(outdated_ts, when)
+        if is_outdated != "old" and size is not None:
+            self.maybe_compute(key, outdated_ts)
+            return size
+        self.execute_update(key, when)
+        size, _ = self.do_get_size(key)
+        return 0 if size is None else size
