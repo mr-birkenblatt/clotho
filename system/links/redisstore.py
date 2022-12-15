@@ -110,10 +110,11 @@ class RedisLinkStore(LinkStore):
 
         def compute_call(key: PLink, now: pd.Timestamp | None) -> None:
             prefix = key_children("vlast", key)
-            gap = MHash.parse_size()
+            # FIXME properly benchmark gap vs no gap
+            # gap = MHash.parse_size()
             self.r_call.set_value(
                 key,
-                list(self.r_last.get_range_gap_keys(prefix, gap)),
+                list(self.r_last.get_range_keys(prefix)),
                 now)
 
         self.r_call: ListDependentRedisType[PLink] = \
@@ -135,10 +136,11 @@ class RedisLinkStore(LinkStore):
 
         def compute_pall(key: CLink, now: pd.Timestamp | None) -> None:
             prefix, postfix = key_parents("vlast", key)
-            gap = MHash.parse_size()
+            # FIXME properly benchmark gap vs no gap
+            # gap = MHash.parse_size()
             self.r_pall.set_value(
                 key,
-                list(self.r_last.get_range_gap_keys(prefix, gap, postfix)),
+                list(self.r_last.get_range_keys(prefix, postfix)),
                 now)
 
         self.r_pall: ListDependentRedisType[CLink] = \
