@@ -1,10 +1,8 @@
-from misc.redis import set_redis_slow_mode
 from model.datagenerator import DataGenerator
 from system.namespace.store import get_namespace
 
 
 if __name__ == "__main__":
-    set_redis_slow_mode("never")
     ns = get_namespace("test")
     data_gen = DataGenerator(ns, 42)
     for link in data_gen.get_random_links(100):
