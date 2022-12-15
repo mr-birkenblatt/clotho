@@ -11,7 +11,7 @@ from effects.effects import (
     SetRootType,
     ValueRootType,
 )
-from misc.redis import RedisConnection, RedisModule
+from misc.redis import ConfigKey, RedisConnection, RedisModule
 from misc.util import (
     from_timestamp,
     json_compact,
@@ -29,9 +29,12 @@ LT = TypeVar('LT', bound=tuple[EffectBase, ...])
 
 class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def __init__(
-            self, module: RedisModule, key_fn: Callable[[KT], str]) -> None:
+            self,
+            ns_key: ConfigKey,
+            module: RedisModule,
+            key_fn: Callable[[KT], str]) -> None:
         super().__init__()
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
 
     def get_redis_key(self, key: KT) -> str:
@@ -88,12 +91,28 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             for key in self._redis.keys_str(prefix, postfix)
         )
 
+    def get_range_gap_keys(
+            self,
+            prefix: str,
+            gap: int,
+            postfix: str | None = None) -> Iterable[str]:
+        prefix = f"{self._redis.get_prefix()}:{prefix}"
+        fromix = len(prefix)
+        toix = None if not postfix else -len(postfix)
+        return (
+            key[fromix:toix]
+            for key in self._redis.keys_gap_str(prefix, gap, postfix)
+        )
+
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def __init__(
-            self, module: RedisModule, key_fn: Callable[[KT], str]) -> None:
+            self,
+            ns_key: ConfigKey,
+            module: RedisModule,
+            key_fn: Callable[[KT], str]) -> None:
         super().__init__()
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
 
     def get_redis_key(self, key: KT) -> str:
@@ -128,10 +147,16 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
         with self._redis.get_connection(depth=1) as conn:
             return bool(conn.sismember(rkey, val))
 
+    def get_size(self, key: KT) -> int:
+        rkey = self.get_redis_key(key)
+        with self._redis.get_connection(depth=1) as conn:
+            return int(conn.scard(rkey))
+
 
 class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
     def __init__(
             self,
+            ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str],
             key_json: Callable[[KT], bytes],
@@ -146,7 +171,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         super().__init__(parents=parents, effect=effect, convert=convert)
         assert marker_prefix
         assert marker_prefix != value_prefix
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
         self._key_json = key_json
         self._json_key = json_key
@@ -248,6 +273,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
 class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
     def __init__(
             self,
+            ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str],
             key_json: Callable[[KT], bytes],
@@ -258,9 +284,10 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             *,
             parents: tuple[EffectBase[PT], ...],
             convert: Callable[[PT], KT],
-            effect: Callable[[KT, pd.Timestamp | None], None]) -> None:
+            effect: Callable[[KT, pd.Timestamp | None], None],
+            empty: bytes | None) -> None:
         super().__init__(parents=parents, effect=effect, convert=convert)
-        self._redis = RedisConnection(module)
+        self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
         self._key_json = key_json
         self._json_key = json_key
@@ -268,6 +295,8 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
         self._marker_prefix = marker_prefix
         self._marker_queue = marker_queue
         self._update_new_val: Script | None = None
+        self._empty = empty
+        self._empty_str = "" if empty is None else empty.decode("utf-8")
 
     def get_value_redis_key(self, key: KT) -> str:
         value_prefix = self._value_prefix
@@ -322,6 +351,32 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             if now is None or now >= from_timestamp(float(when)):
                 conn.delete(mkey)
 
+    def _convert_list(self, values: list[bytes]) -> list[str]:
+        empty = self._empty
+        if empty is None:
+            return [val.decode("utf-8") for val in values]
+        return [val.decode("utf-8") for val in values if val != empty]
+
+    def _prepare_list(self, value: list[str]) -> list[bytes]:
+        res = [val.encode("utf-8") for val in value]
+        empty = self._empty
+        if empty is None:
+            return res
+        if empty in res:
+            raise ValueError(f"cannot include empty marker in value: {value}")
+        if not value and empty is not None:
+            return [empty]
+        return res
+
+    def _prepare_list_str(self, value: list[str]) -> list[str]:
+        empty = self._empty
+        if (empty is not None
+                and empty in [val.encode("utf-8") for val in value]):
+            raise ValueError(f"cannot include empty marker in value: {value}")
+        if not value and empty is not None:
+            return [self._empty_str]
+        return value
+
     def retrieve_value(
             self, key: KT) -> tuple[list[str] | None, pd.Timestamp | None]:
         # FIXME optimize
@@ -334,18 +389,19 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
                 pipe.get(mkey)
                 has, value, marker = pipe.execute()
         return (
-            [val.decode("utf-8") for val in value] if int(has) else None,
+            self._convert_list(value) if int(has) else None,
             from_timestamp(float(marker)) if marker is not None else None,
         )
 
     def do_set_value(
             self, key: KT, value: list[str], now: pd.Timestamp | None) -> None:
         rkey = self.get_value_redis_key(key)
+        pval = self._prepare_list(value)
         with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.delete(rkey)
-                if value:
-                    pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
+                if pval:
+                    pipe.rpush(rkey, *pval)
                 pipe.execute()
 
     def do_update_value(
@@ -354,24 +410,23 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             value: list[str],
             now: pd.Timestamp | None) -> list[str] | None:
         rkey = self.get_value_redis_key(key)
+        pval = self._prepare_list(value)
         with self._redis.get_connection(depth=1) as conn:
             with conn.pipeline() as pipe:
                 pipe.exists(rkey)
                 pipe.lrange(rkey, 0, -1)
                 pipe.delete(rkey)
-                if value:
-                    pipe.rpush(rkey, *[val.encode("utf-8") for val in value])
+                if pval:
+                    pipe.rpush(rkey, *pval)
                 exec_res = pipe.execute()
         has = exec_res[0]
         res = exec_res[1]
         if not int(has):
             return None
-        return [val.decode("utf-8") for val in res]
+        return self._convert_list(res)
 
     def do_set_new_value(
             self, key: KT, value: list[str], now: pd.Timestamp | None) -> bool:
-        if not value:
-            return False
         if self._update_new_val is None:
             script = Script()
             new_value = script.add_arg("value")
@@ -387,7 +442,7 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             self._update_new_val = script
         rkey = self.get_value_redis_key(key)
         res = self._update_new_val.execute(
-            args={"value": value},
+            args={"value": self._prepare_list_str(value)},
             keys={"rkey": rkey},
             now=now_ts() if now is None else now,
             conn=self._redis,
@@ -421,6 +476,24 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
                     pipe.get(mkey)
                     has, res, marker = pipe.execute()
         return (
-            [val.decode("utf-8") for val in res] if int(has) else None,
+            self._convert_list(res) if int(has) else None,
+            from_timestamp(float(marker)) if marker is not None else None,
+        )
+
+    def do_get_size(self, key: KT) -> tuple[int | None, pd.Timestamp | None]:
+        # FIXME optimize
+        rkey = self.get_value_redis_key(key)
+        mkey = self.get_marker_redis_key(key)
+        with self._redis.get_connection(depth=1) as conn:
+            with conn.pipeline() as pipe:
+                pipe.exists(rkey)
+                pipe.llen(rkey)
+                pipe.lrange(rkey, 0, 0)
+                pipe.get(mkey)
+                has, res, content, marker = pipe.execute()
+        if not self._convert_list(content):
+            res = 0
+        return (
+            int(res) if int(has) else None,
             from_timestamp(float(marker)) if marker is not None else None,
         )

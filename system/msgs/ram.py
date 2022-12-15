@@ -26,10 +26,13 @@ class RamMessageStore(MessageStore):
     def get_topics(
             self,
             offset: int,
-            limit: int | None) -> Iterable[Message]:
+            limit: int | None) -> list[Message]:
         if limit is None:
             return self._topics[offset:]
         return self._topics[offset:offset + limit]
+
+    def get_topics_count(self) -> int:
+        return len(self._topics)
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:

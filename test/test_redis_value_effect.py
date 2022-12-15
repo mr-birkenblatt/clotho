@@ -1,10 +1,11 @@
 from effects.redis import SetRootRedisType, ValueRootRedisType
+from misc.redis import REDIS_TEST_CONFIG
 from misc.util import from_timestamp
 
 
 def test_value() -> None:
     root: ValueRootRedisType[str, int] = ValueRootRedisType(
-        "test", lambda key: key)
+        REDIS_TEST_CONFIG, "test", lambda key: key)
     now_ts = from_timestamp(1670580000.0)
     assert root.maybe_get_value("a") is None
     root.set_value("a", 5, now_ts)
@@ -26,7 +27,8 @@ def test_value() -> None:
 
 def test_set() -> None:
     now_ts = from_timestamp(1670580000.0)
-    root: SetRootRedisType[str] = SetRootRedisType("test", lambda key: key)
+    root: SetRootRedisType[str] = SetRootRedisType(
+        REDIS_TEST_CONFIG, "test", lambda key: key)
     assert root.maybe_get_value("foo") == set()
     assert not root.add_value("foo", "a", now_ts)
     assert root.maybe_get_value("foo") == {"a"}

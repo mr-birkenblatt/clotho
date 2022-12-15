@@ -1,11 +1,12 @@
-from typing import Iterable
+from typing import Iterable, Literal, TypedDict
 
 import pandas as pd
 
-from misc.env import envload_str
+from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
 from system.links.link import Link, RLink, VoteType
 from system.links.scorer import Scorer
 from system.msgs.message import MHash
+from system.namespace.namespace import Namespace
 from system.users.store import UserStore
 from system.users.user import User
 
@@ -64,6 +65,15 @@ class LinkStore:
     def get_all_user_links(self, user: User) -> Iterable[Link]:
         raise NotImplementedError()
 
+    def get_all_children_count(self, parent: MHash, now: pd.Timestamp) -> int:
+        return len(list(self.get_all_children(parent, now)))
+
+    def get_all_parents_count(self, child: MHash, now: pd.Timestamp) -> int:
+        return len(list(self.get_all_parents(child, now)))
+
+    def get_all_user_count(self, user: User) -> int:
+        return len(list(self.get_all_user_links(user)))
+
     def limit_results(
             self,
             links: Iterable[Link],
@@ -112,20 +122,40 @@ class LinkStore:
         return Link(self, parent, child)
 
 
-DEFAULT_LINK_STORE: LinkStore | None = None
+LINK_STORE: dict[Namespace, LinkStore] = {}
 
 
-def get_default_link_store() -> LinkStore:
-    global DEFAULT_LINK_STORE
+def get_link_store(namespace: Namespace) -> LinkStore:
+    res = LINK_STORE.get(namespace)
+    if res is None:
+        res = create_link_store(namespace)
+        LINK_STORE[namespace] = res
+    return res
 
-    if DEFAULT_LINK_STORE is None:
-        DEFAULT_LINK_STORE = get_link_store(
-            envload_str("LINK_STORE", default="redis"))
-    return DEFAULT_LINK_STORE
+
+RedisLinkModule = TypedDict('RedisLinkModule', {
+    "name": Literal["redis"],
+    "host": str,
+    "port": int,
+    "passwd": str,
+    "prefix": str,
+    "path": str,
+})
+LinkModule = RedisLinkModule
 
 
-def get_link_store(name: str) -> LinkStore:
-    if name == "redis":
+def create_link_store(namespace: Namespace) -> LinkStore:
+    lobj = namespace.get_link_module()
+    if lobj["name"] == "redis":
         from system.links.redisstore import RedisLinkStore
-        return RedisLinkStore()
-    raise ValueError(f"unknown link store: {name}")
+
+        ns_key = get_redis_ns_key(namespace.get_name(), "linkstore")
+        if not ns_key[0].startswith("_"):
+            register_redis_ns(ns_key, create_redis_config(
+                lobj["host"],
+                lobj["port"],
+                lobj["passwd"],
+                lobj["prefix"],
+                lobj["path"]))
+        return RedisLinkStore(ns_key)
+    raise ValueError(f"unknown link store: {lobj}")

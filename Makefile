@@ -27,7 +27,8 @@ help:
 	@echo "ts-build	build the ui code"
 	@echo "requirements-check	check whether the env differs from the requirements file"
 	@echo "requirements-complete	check whether the requirements file is complete"
-	@echo "run-test-redis	start redis server for pytest"
+	@echo "run-redis-test	start redis server for pytest"
+	@echo "run-redis-api	start redis server for api (note, this is separate from redis required by modules)"
 	@echo "run-redis	start redis server"
 	@echo "run-api	start api server"
 	@echo "run-web	start web server"
@@ -36,6 +37,9 @@ help:
 
 export LC_ALL=C
 export LANG=C
+
+PYTHON=python3
+NS=default
 
 lint-comment:
 	! ./findpy.sh \
@@ -57,7 +61,7 @@ lint-indent:
 	| xargs grep --color=always -nE "^(\s{4})*\s{1,3}\S.*$$"
 
 lint-forgottenformat:
-	PYTHON=$(PYTHON) && ! ./forgottenformat.sh
+	! PYTHON=$(PYTHON) ./forgottenformat.sh
 
 lint-requirements:
 	locale
@@ -106,16 +110,16 @@ lint-all: \
 	lint-ts
 
 install:
-	PYTHON=$(PYTHON) && ./install.sh
+	PYTHON=$(PYTHON) ./install.sh
 
 install-ts:
 	cd ui && yarn install
 
 requirements-check:
-	PYTHON=$(PYTHON) && ./requirements_check.sh $(FILE)
+	PYTHON=$(PYTHON) ./requirements_check.sh $(FILE)
 
 requirements-complete:
-	PYTHON=$(PYTHON) && ./requirements_complete.sh $(FILE)
+	PYTHON=$(PYTHON) ./requirements_complete.sh $(FILE)
 
 name:
 	git describe --abbrev=10 --tags HEAD
@@ -131,7 +135,7 @@ clean:
 	./clean.sh
 
 pytest:
-	MAKE=$(MAKE) && PYTHON=$(PYTHON) && RESULT_FNAME=$(RESULT_FNAME) && ./run_pytest.sh $(FILE)
+	MAKE=$(MAKE) PYTHON=$(PYTHON) RESULT_FNAME=$(RESULT_FNAME) ./run_pytest.sh $(FILE)
 
 test-ts:
 	cd ui && yarn testall
@@ -142,14 +146,17 @@ ts-unused:
 ts-build:
 	cd ui && yarn build
 
-run-test-redis:
-	cd test && redis-server --port 6380
+run-redis-test:
+	PYTHON=$(PYTHON) NS=_test ./run_redis.sh
+
+run-redis-api:
+	PYTHON=$(PYTHON) NS=_api ./run_redis.sh
 
 run-redis:
-	cd userdata && redis-server ../redis.main.conf
+	PYTHON=$(PYTHON) NS=$(NS) ./run_redis.sh
 
 run-api:
-	python3 -m app
+	API_SERVER_NAMESPACE=$(NS) $(PYTHON) -m app
 
 run-web:
 	cd ui && yarn start
