@@ -76,6 +76,10 @@ class DataGenerator:
             for (parent, child) in zip(parents, children)
         ]
 
+    def get_pc_flip_link(self, link: Link) -> Link:
+        links = self._links
+        return links.get_link(link.get_child(), link.get_parent())
+
     def get_random_paths(self, count: int) -> list[list[int]]:
         rng = self._rng
         prob_next = self._prob_next
@@ -156,9 +160,13 @@ class DataGenerator:
         children = self.get_random_messages(count)
         return self.get_random_links_from_messages(parents, children)
 
-    def get_flips(self, count: int) -> list[bool]:
+    def get_flip_lrs(self, count: int) -> list[bool]:
         rng = self._rng
         return (rng.random(size=count) < 0.5).tolist()
+
+    def get_flip_pcs(self, count: int) -> list[bool]:
+        rng = self._rng
+        return (rng.random(size=count) < 0.01).tolist()
 
     def short_info(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).to_debug()
@@ -266,8 +274,11 @@ class TrainTestGenerator:
             data: DataGenerator,
             left: Link,
             right: Link,
-            flip: bool) -> BatchRow:
-        if flip:
+            flip_lr: bool,
+            flip_pc: bool) -> BatchRow:
+        if flip_pc:
+            left = data.get_pc_flip_link(right)
+        if flip_lr:
             left, right = right, left
         score_left = data.vote_score(left)
         score_right = data.vote_score(right)
@@ -288,11 +299,15 @@ class TrainTestGenerator:
         randos = data.get_truly_random_links(cbs)
         valids = data.get_valid_random_links(
             self._half_compute_batch_size, self._scorer, self._now)
-        flips = data.get_flips(cbs)
+        flip_lrs = data.get_flip_lrs(cbs)
+        flip_pcs = data.get_flip_pcs(cbs)
         assert len(valids) == len(randos)
-        assert len(valids) == len(flips)
-        for (rando, valid, flip) in zip(randos, valids, flips):
-            buff.append(self._compute_row(data, rando, valid, flip))
+        assert len(valids) == len(flip_lrs)
+        assert len(valids) == len(flip_pcs)
+        for row in zip(randos, valids, flip_lrs, flip_pcs):
+            rando, valid, flip_lr, flip_pc = row
+            buff.append(
+                self._compute_row(data, rando, valid, flip_lr, flip_pc))
 
     def _get_batch_for(
             self,
