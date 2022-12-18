@@ -213,6 +213,8 @@ class TrainTestGenerator:
             test: DataGenerator,
             batch_size: int,
             epoch_batches: int,
+            train_val_size: int,
+            test_size: int,
             compute_batch_size: int | None = None,
             reset_train: bool = False,
             scorer: Scorer | None = None,
@@ -226,6 +228,8 @@ class TrainTestGenerator:
         self._test = test
 
         self._batch_size = batch_size
+        self._train_val_size = train_val_size
+        self._test_size = test_size
         cbs = batch_size if compute_batch_size is None else compute_batch_size
         assert cbs > 1
         self._half_compute_batch_size = (cbs + 1) // 2
@@ -239,21 +243,22 @@ class TrainTestGenerator:
         self._train_validation_buff: list[BatchRow] = []
         self._test_buff: list[BatchRow] = []
         self._cur_train_batch = 0
-        self._cur_train_validation_batch = 0
-        self._cur_test_batch = 0
+        self._cur_train_validation_size = 0
+        self._cur_test_size = 0
         self._cur_epoch = 0
 
     def advance_epoch(self) -> None:
-        epoch_batches = self._epoch_batches
-        if (self._cur_train_batch != epoch_batches
-                or self._cur_train_validation_batch != epoch_batches
-                or self._cur_test_batch != epoch_batches):
+        if (self._cur_train_batch != self._epoch_batches
+                or self._cur_train_validation_size != self._train_val_size
+                or self._cur_test_size != self._test_size):
             raise ValueError(
                 "epoch not exhausted! "
                 f"train: {self._cur_train_batch} "
-                f"train validation: {self._cur_train_validation_batch} "
-                f"test: {self._cur_test_batch} "
-                f"batches per epoch: {epoch_batches}")
+                f"train validation: {self._cur_train_validation_size} "
+                f"test: {self._cur_test_size} "
+                f"batches per epoch: {self._epoch_batches} "
+                f"train val size: {self._train_val_size} "
+                f"test size: {self._test_size}")
         if self._reset_train:
             self._train.reset()
         self._train_validation.reset()
@@ -262,8 +267,8 @@ class TrainTestGenerator:
         self._train_validation_buff = []
         self._test_buff = []
         self._cur_train_batch = 0
-        self._cur_train_validation_batch = 0
-        self._cur_test_batch = 0
+        self._cur_train_validation_size = 0
+        self._cur_test_size = 0
         self._cur_epoch += 1
 
     def get_epoch(self) -> int:
@@ -327,18 +332,26 @@ class TrainTestGenerator:
         return res
 
     def next_train_validation_batch(self) -> list[BatchRow] | None:
-        if self._cur_train_validation_batch >= self._epoch_batches:
+        train_val_size = self._train_val_size
+        if self._cur_train_validation_size >= train_val_size:
             return None
         res, self._train_validation_buff = self._get_batch_for(
             self._train_validation, self._train_validation_buff)
-        self._cur_train_validation_batch += 1
+        new_cur_size = self._cur_train_validation_size + len(res)
+        if new_cur_size > train_val_size:
+            res = res[:new_cur_size - train_val_size]
+        self._cur_train_validation_size += len(res)
         return res
 
     def next_test_batch(self) -> list[BatchRow] | None:
-        if self._cur_test_batch >= self._epoch_batches:
+        test_size = self._test_size
+        if self._cur_test_size >= test_size:
             return None
         res, self._test_buff = self._get_batch_for(self._test, self._test_buff)
-        self._cur_test_batch += 1
+        new_cur_size = self._cur_test_size + len(res)
+        if new_cur_size > test_size:
+            res = res[:new_cur_size - test_size]
+        self._cur_test_size += len(res)
         return res
 
     def train_batches(self) -> Iterable[list[BatchRow]]:
@@ -351,7 +364,7 @@ class TrainTestGenerator:
             yield res
 
     def train_validation_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_train_validation_batch >= self._epoch_batches:
+        if self._cur_train_validation_size >= self._train_val_size:
             raise ValueError("train validation batches already exhausted!")
         while True:
             res = self.next_train_validation_batch()
@@ -360,7 +373,7 @@ class TrainTestGenerator:
             yield res
 
     def test_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_test_batch >= self._epoch_batches:
+        if self._cur_test_size >= self._test_size:
             raise ValueError("test batches already exhausted!")
         while True:
             res = self.next_test_batch()
@@ -394,6 +407,8 @@ def create_train_test(
         test_ns: Namespace,
         batch_size: int,
         epoch_batches: int,
+        train_val_size: int,
+        test_size: int,
         train_seed: int = 42,
         train_validation_seed: int = 37,
         test_seed: int = 69,
@@ -408,6 +423,8 @@ def create_train_test(
         test=DataGenerator(test_ns, test_seed),
         batch_size=batch_size,
         epoch_batches=epoch_batches,
+        train_val_size=train_val_size,
+        test_size=test_size,
         compute_batch_size=compute_batch_size,
         reset_train=reset_train,
         scorer=scorer,

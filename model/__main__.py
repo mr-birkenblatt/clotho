@@ -34,7 +34,9 @@ if __name__ == "__main__":
             train_validation_ns=ns,
             test_ns=ns,
             batch_size=3,
-            epoch_batches=2)
+            epoch_batches=2,
+            train_val_size=10,
+            test_size=10)
         for _ in range(4):
             epoch = ttgen.get_epoch()
             print(f"train {epoch}")
