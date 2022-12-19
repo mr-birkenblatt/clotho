@@ -247,6 +247,24 @@ class TrainTestGenerator:
         self._cur_test_size = 0
         self._cur_epoch = 0
 
+    def get_train_batches(self) -> int:
+        return self._epoch_batches
+
+    def get_epoch_train_size(self) -> int:
+        return self._batch_size * self._epoch_batches
+
+    def reset(self) -> None:
+        self._train.reset()
+        self._train_validation.reset()
+        self._test.reset()
+        self._train_buff = []
+        self._train_validation_buff = []
+        self._test_buff = []
+        self._cur_train_batch = 0
+        self._cur_train_validation_size = 0
+        self._cur_test_size = 0
+        self._cur_epoch = 0
+
     def advance_epoch(self) -> None:
         if (self._cur_train_batch != self._epoch_batches
                 or self._cur_train_validation_size != self._train_val_size
