@@ -254,7 +254,7 @@ class TrainTestGenerator:
         return self._train_val_size
 
     def get_epoch_test_size(self) -> int:
-        return self._test
+        return self._test_size
 
     def get_train_batches(self) -> int:
         return self._epoch_batches
