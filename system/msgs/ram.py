@@ -39,5 +39,5 @@ class RamMessageStore(MessageStore):
         keys = list(self._msgs.keys())
         yield from (keys[ix] for ix in rng.choice(len(keys), size=count))
 
-    def enumerate_messages(self) -> Iterable[Message]:
-        yield from self._msgs.values()
+    def enumerate_messages(self) -> Iterable[MHash]:
+        yield from self._msgs.keys()

@@ -131,14 +131,16 @@ class DiskStore(MessageStore):
             remain -= 1
             cur_path = self._path
 
-    def enumerate_messages(self) -> Iterable[Message]:
+    def enumerate_messages(self) -> Iterable[MHash]:
 
-        def get_level(cur_path: str) -> Iterable[Message]:
+        def get_level(cur_path: str) -> Iterable[MHash]:
             for seg, recurse in get_folder(cur_path, MSG_EXT):
                 full = os.path.join(cur_path, seg)
                 if recurse:
                     yield from get_level(full)
                 else:
-                    yield from set(self._load_file(full))
+                    yield from set(
+                        msg.get_hash()
+                        for msg in self._load_file(full))
 
         yield from get_level(self._path)
