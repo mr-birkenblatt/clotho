@@ -64,6 +64,9 @@ class MessageStore:
         rel_start = offset - start
         return res[rel_start:rel_start + limit]
 
+    def enumerate_messages(self) -> Iterable[Message]:
+        raise NotImplementedError()
+
 
 MSG_STORE: dict[Namespace, MessageStore] = {}
 
