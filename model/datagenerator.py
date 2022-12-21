@@ -247,6 +247,15 @@ class TrainTestGenerator:
         self._cur_test_size = 0
         self._cur_epoch = 0
 
+    def get_batch_size(self) -> int:
+        return self._batch_size
+
+    def get_epoch_train_validation_size(self) -> int:
+        return self._train_val_size
+
+    def get_epoch_test_size(self) -> int:
+        return self._test
+
     def get_train_batches(self) -> int:
         return self._epoch_batches
 
