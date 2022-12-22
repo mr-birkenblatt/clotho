@@ -13,13 +13,15 @@ if __name__ == "__main__":
     ns = get_namespace("test")
     if MESSAGE_GENERATION:
         data_gen = DataGenerator(ns, 42)
-        for link in data_gen.get_valid_random_links(100):
+        for link in data_gen.get_valid_random_links(
+                100, conversation_based=True):
             print(
                 f"{data_gen.short_info(link.get_parent())} -- "
                 f"{data_gen.short_info(link.get_child())} -- "
                 f"{data_gen.vote_score(link)}")
         print("====================")
-        for link in data_gen.get_valid_random_links(5):
+        for link in data_gen.get_valid_random_links(
+                5, conversation_based=True):
             print(f"{data_gen.long_info(link.get_parent())}")
             print("--------------------")
             print(f"{data_gen.long_info(link.get_child())}")

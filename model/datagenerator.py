@@ -143,14 +143,18 @@ class DataGenerator:
     def get_valid_random_links(
             self,
             half_count: int,
+            conversation_based: bool,
             scorer: Scorer | None = None,
             now: pd.Timestamp | None = None) -> list[Link]:
         if scorer is None:
             scorer = get_scorer("best")
         if now is None:
             now = now_ts()
-        messages = self.get_random_messages(half_count)
+        mcount = half_count if conversation_based else half_count * 2
+        messages = self.get_random_messages(mcount)
         rlinks = self.get_valid_links_from_messages(messages, scorer, now)
+        if not conversation_based:
+            return rlinks
         paths = self.get_random_paths(half_count)
         plinks = self.get_links_from_paths(paths, scorer, now)
         return [link for pair in zip(rlinks, plinks) for link in pair]
@@ -217,6 +221,7 @@ class TrainTestGenerator:
             test_size: int,
             compute_batch_size: int | None = None,
             reset_train: bool = False,
+            conversation_based: bool = True,
             scorer: Scorer | None = None,
             now: pd.Timestamp | None = None,
             ) -> None:
@@ -236,6 +241,7 @@ class TrainTestGenerator:
         self._epoch_batches = epoch_batches
         self._reset_train = reset_train
 
+        self._conversation_based = conversation_based
         self._scorer = get_scorer("best") if scorer is None else scorer
         self._now = now_ts() if now is None else now
 
@@ -330,7 +336,10 @@ class TrainTestGenerator:
         cbs = self._half_compute_batch_size * 2
         randos = data.get_truly_random_links(cbs)
         valids = data.get_valid_random_links(
-            self._half_compute_batch_size, self._scorer, self._now)
+            self._half_compute_batch_size,
+            self._conversation_based,
+            self._scorer,
+            self._now)
         flip_lrs = data.get_flip_lrs(cbs)
         flip_pcs = data.get_flip_pcs(cbs)
         assert len(valids) == len(randos)
@@ -441,6 +450,7 @@ def create_train_test(
         test_seed: int = 69,
         compute_batch_size: int | None = None,
         reset_train: bool = False,
+        conversation_based: bool = True,
         scorer: Scorer | None = None,
         now: pd.Timestamp | None = None) -> TrainTestGenerator:
     return TrainTestGenerator(
@@ -454,5 +464,6 @@ def create_train_test(
         test_size=test_size,
         compute_batch_size=compute_batch_size,
         reset_train=reset_train,
+        conversation_based=conversation_based,
         scorer=scorer,
         now=now)
