@@ -1,4 +1,5 @@
-from typing import Iterable, TypedDict
+import threading
+from typing import Callable, Iterable, TypedDict
 
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from system.namespace.namespace import Namespace
 
 SEED_MUL = 17
 HONOR_MUL = 10.0
+DOWN_MUL = 0.3
 
 
 class DataGenerator:
@@ -182,7 +184,7 @@ class DataGenerator:
         vhonor = link.get_votes("honor").get_total_votes()
         vup = link.get_votes("up").get_total_votes()
         vdown = link.get_votes("down").get_total_votes()
-        return abs(vup - HONOR_MUL * vhonor - vdown)
+        return abs(vup - HONOR_MUL * vhonor - DOWN_MUL * vdown)
 
     def get_text(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).single_line_text()
@@ -253,6 +255,13 @@ class TrainTestGenerator:
         self._cur_test_size = 0
         self._cur_epoch = 0
 
+        self._th_train: threading.Thread | None = None
+        self._th_train_val: threading.Thread | None = None
+        self._th_test: threading.Thread | None = None
+        self._th_term: bool = False
+        self._lock = threading.RLock()
+        self._cond = threading.Condition(self._lock)
+
     def get_batch_size(self) -> int:
         return self._batch_size
 
@@ -268,13 +277,29 @@ class TrainTestGenerator:
     def get_epoch_train_size(self) -> int:
         return self._batch_size * self._epoch_batches
 
+    def _th_terminate(self) -> None:
+        self._th_term = True
+
+        def done() -> bool:
+            return (
+                self._th_train is None
+                and self._th_train_val is None
+                and self._th_test is None)
+
+        while not done():
+            with self._cond:
+                self._cond.wait_for(done, 1.0)
+
+        self._th_term = False
+
     def reset(self) -> None:
+        self._th_terminate()
         self._train.reset()
         self._train_validation.reset()
         self._test.reset()
-        self._train_buff = []
-        self._train_validation_buff = []
-        self._test_buff = []
+        self._train_buff.clear()
+        self._train_validation_buff.clear()
+        self._test_buff.clear()
         self._cur_train_batch = 0
         self._cur_train_validation_size = 0
         self._cur_test_size = 0
@@ -292,13 +317,14 @@ class TrainTestGenerator:
                 f"batches per epoch: {self._epoch_batches} "
                 f"train val size: {self._train_val_size} "
                 f"test size: {self._test_size}")
+        self._th_terminate()
         if self._reset_train:
             self._train.reset()
         self._train_validation.reset()
         self._test.reset()
-        self._train_buff = []
-        self._train_validation_buff = []
-        self._test_buff = []
+        self._train_buff.clear()
+        self._train_validation_buff.clear()
+        self._test_buff.clear()
         self._cur_train_batch = 0
         self._cur_train_validation_size = 0
         self._cur_test_size = 0
@@ -349,21 +375,114 @@ class TrainTestGenerator:
             rando, valid, flip_lr, flip_pc = row
             buff.append(
                 self._compute_row(data, rando, valid, flip_lr, flip_pc))
+            with self._cond:
+                self._cond.notify_all()
+
+    def _th_compute_batch(
+            self,
+            is_alive: Callable[[], bool],
+            data: DataGenerator,
+            buff: list[BatchRow]) -> None:
+        while len(buff) < self._batch_size * 1.5:
+            with self._lock:
+                if not is_alive():
+                    return
+            self._compute_batch_for(data, buff)
 
     def _get_batch_for(
             self,
-            data: DataGenerator,
-            buff: list[BatchRow]) -> tuple[list[BatchRow], list[BatchRow]]:
-        batch_size = self._batch_size
-        while len(buff) < batch_size:
-            self._compute_batch_for(data, buff)
-        return buff[:batch_size], buff[batch_size:]
+            start_th: Callable[[], None],
+            buff: list[BatchRow]) -> list[BatchRow]:
+        res = []
+
+        def has_rows() -> bool:
+            return bool(buff)
+
+        for _ in range(self._batch_size):
+            while not has_rows():
+                start_th()
+                with self._cond:
+                    self._cond.wait_for(has_rows, 1.0)
+            res.append(buff.pop(0))
+        return res
+
+    def _th_run_train(self) -> None:
+        with self._lock:
+            if self._th_train is not None:
+                return
+
+            def is_alive() -> bool:
+                return self._th_train is th and not self._th_term
+
+            def run() -> None:
+                try:
+                    self._th_compute_batch(
+                        is_alive, self._train, self._train_buff)
+                finally:
+                    with self._lock:
+                        if self._th_train is th:
+                            self._th_train = None
+                    with self._cond:
+                        self._cond.notify_all()
+
+            th = threading.Thread(target=run, daemon=True)
+            self._th_train = th
+            th.start()
+
+    def _th_run_train_val(self) -> None:
+        with self._lock:
+            if self._th_train_val is not None:
+                return
+
+            def is_alive() -> bool:
+                return self._th_train_val is th and not self._th_term
+
+            def run() -> None:
+                try:
+                    self._th_compute_batch(
+                        is_alive,
+                        self._train_validation,
+                        self._train_validation_buff)
+                finally:
+                    with self._lock:
+                        if self._th_train_val is th:
+                            self._th_train_val = None
+                    with self._cond:
+                        self._cond.notify_all()
+
+            th = threading.Thread(target=run, daemon=True)
+            self._th_train_val = th
+            th.start()
+
+    def _th_run_test(self) -> None:
+        with self._lock:
+            if self._th_test is not None:
+                return
+
+            def is_alive() -> bool:
+                return self._th_test is th and not self._th_term
+
+            def run() -> None:
+                try:
+                    self._th_compute_batch(
+                        is_alive,
+                        self._test,
+                        self._test_buff)
+                finally:
+                    with self._lock:
+                        if self._th_test is th:
+                            self._th_test = None
+                    with self._cond:
+                        self._cond.notify_all()
+
+            th = threading.Thread(target=run, daemon=True)
+            self._th_test = th
+            th.start()
 
     def next_train_batch(self) -> list[BatchRow] | None:
         if self._cur_train_batch >= self._epoch_batches:
             return None
-        res, self._train_buff = self._get_batch_for(
-            self._train, self._train_buff)
+        res = self._get_batch_for(self._th_run_train, self._train_buff)
         self._cur_train_batch += 1
         return res
 
@@ -371,8 +490,8 @@ class TrainTestGenerator:
         train_val_size = self._train_val_size
         if self._cur_train_validation_size >= train_val_size:
             return None
-        res, self._train_validation_buff = self._get_batch_for(
-            self._train_validation, self._train_validation_buff)
+        res = self._get_batch_for(
+            self._th_run_train_val, self._train_validation_buff)
         new_cur_size = self._cur_train_validation_size + len(res)
         if new_cur_size > train_val_size:
             res = res[:new_cur_size - train_val_size]
@@ -383,7 +502,7 @@ class TrainTestGenerator:
         test_size = self._test_size
         if self._cur_test_size >= test_size:
             return None
-        res, self._test_buff = self._get_batch_for(self._test, self._test_buff)
+        res = self._get_batch_for(self._th_run_test, self._test_buff)
         new_cur_size = self._cur_test_size + len(res)
         if new_cur_size > test_size:
             res = res[:new_cur_size - test_size]

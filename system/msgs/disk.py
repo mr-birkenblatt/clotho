@@ -21,7 +21,7 @@ class DiskStore(MessageStore):
         path = os.path.join(base_path, msgs_root)
         self._path = os.path.join(path, "msg")
         self._topics = os.path.join(path, "topics.list")
-        self._cache: LRU[MHash, Message] = LRU(10000)
+        self._cache: LRU[MHash, Message] = LRU(50000)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
 
