@@ -383,7 +383,7 @@ class TrainTestGenerator:
             is_alive: Callable[[], bool],
             data: DataGenerator,
             buff: list[BatchRow]) -> None:
-        while len(buff) < self._batch_size * 1.5:
+        while len(buff) < self._batch_size * 3:
             with self._lock:
                 if not is_alive():
                     return
