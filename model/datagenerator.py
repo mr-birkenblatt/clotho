@@ -407,6 +407,8 @@ class TrainTestGenerator:
         return res
 
     def _th_run_train(self) -> None:
+        if self._th_train is not None:
+            return
         with self._lock:
             if self._th_train is not None:
                 return
@@ -430,6 +432,8 @@ class TrainTestGenerator:
             th.start()
 
     def _th_run_train_val(self) -> None:
+        if self._th_train_val is not None:
+            return
         with self._lock:
             if self._th_train_val is not None:
                 return
@@ -455,6 +459,8 @@ class TrainTestGenerator:
             th.start()
 
     def _th_run_test(self) -> None:
+        if self._th_test is not None:
+            return
         with self._lock:
             if self._th_test is not None:
                 return
