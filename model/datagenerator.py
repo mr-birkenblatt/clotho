@@ -13,6 +13,7 @@ from system.msgs.store import get_message_store
 from system.namespace.namespace import Namespace
 
 
+SEED_OFFSET_MUL = 37
 SEED_MUL = 17
 HONOR_MUL = 10.0
 DOWN_MUL = 0.3
@@ -25,24 +26,29 @@ class DataGenerator:
         self._seed = seed
         self._prob_next = 0.71
         self._prob_down = 0.87
-        self._rng = np.random.default_rng(abs(seed))
+        self._seed_offset = 0
+        self._rng = self._get_rng(0)
+        self._rix = 0
+
+    def _get_rng(self, cur_ix: int) -> np.random.Generator:
+        calc = self._seed * (1 + SEED_OFFSET_MUL * self._seed_offset) + 1
+        return np.random.default_rng(abs(calc * (1 + SEED_MUL * cur_ix)))
+
+    def set_seed_offset(self, offset: int) -> None:
+        self._seed_offset = offset
+        self._rng = self._get_rng(0)
         self._rix = 0
 
     def reset(self) -> None:
-        seed = self._seed
-        self._rng = np.random.default_rng(abs(seed))
+        self._seed_offset = 0
+        self._rng = self._get_rng(0)
         self._rix = 0
 
     def get_random_messages(self, count: int) -> list[MHash]:
-        seed = self._seed
         rix = self._rix
         self._rix += count
-
-        def get_rng(cur_ix: int) -> np.random.Generator:
-            return np.random.default_rng(abs(seed + SEED_MUL * cur_ix))
-
         return self._msgs.generate_random_messages(
-            get_rng, rix, count)
+            self._get_rng, rix, count)
 
     def get_valid_links_from_messages(
             self,
@@ -217,10 +223,12 @@ class TrainTestGenerator:
             train: DataGenerator,
             train_validation: DataGenerator,
             test: DataGenerator,
+            test_validation: DataGenerator,
             batch_size: int,
             epoch_batches: int,
             train_val_size: int,
             test_size: int,
+            test_val_size: int,
             compute_batch_size: int | None = None,
             reset_train: bool = False,
             conversation_based: bool = True,
@@ -228,15 +236,20 @@ class TrainTestGenerator:
             now: pd.Timestamp | None = None,
             ) -> None:
         assert train is not train_validation
+        assert train is not test
+        assert train is not test_validation
         assert train_validation is not test
-        assert test is not train
+        assert train_validation is not test_validation
+        assert test is not test_validation
         self._train = train
         self._train_validation = train_validation
         self._test = test
+        self._test_validation = test_validation
 
         self._batch_size = batch_size
         self._train_val_size = train_val_size
         self._test_size = test_size
+        self._test_val_size = test_val_size
         cbs = batch_size if compute_batch_size is None else compute_batch_size
         assert cbs > 1
         self._half_compute_batch_size = (cbs + 1) // 2
@@ -250,14 +263,17 @@ class TrainTestGenerator:
         self._train_buff: list[BatchRow] = []
         self._train_validation_buff: list[BatchRow] = []
         self._test_buff: list[BatchRow] = []
+        self._test_validation_buff: list[BatchRow] = []
         self._cur_train_batch = 0
         self._cur_train_validation_size = 0
         self._cur_test_size = 0
+        self._cur_test_validation_size = 0
         self._cur_epoch = 0
 
         self._th_train: threading.Thread | None = None
         self._th_train_val: threading.Thread | None = None
         self._th_test: threading.Thread | None = None
+        self._th_test_val: threading.Thread | None = None
         self._th_term: bool = False
         self._lock = threading.RLock()
         self._cond = threading.Condition(self._lock)
@@ -270,6 +286,9 @@ class TrainTestGenerator:
 
     def get_epoch_test_size(self) -> int:
         return self._test_size
+
+    def get_epoch_test_validation_size(self) -> int:
+        return self._test_val_size
 
     def get_train_batches(self) -> int:
         return self._epoch_batches
@@ -284,7 +303,8 @@ class TrainTestGenerator:
             return (
                 self._th_train is None
                 and self._th_train_val is None
-                and self._th_test is None)
+                and self._th_test is None
+                and self._th_test_val is None)
 
         while not done():
             with self._cond:
@@ -297,12 +317,15 @@ class TrainTestGenerator:
         self._train.reset()
         self._train_validation.reset()
         self._test.reset()
+        self._test_validation.reset()
         self._train_buff.clear()
         self._train_validation_buff.clear()
         self._test_buff.clear()
+        self._test_validation_buff.clear()
         self._cur_train_batch = 0
         self._cur_train_validation_size = 0
         self._cur_test_size = 0
+        self._cur_test_validation_size = 0
         self._cur_epoch = 0
 
     def advance_epoch(self) -> None:
@@ -318,8 +341,11 @@ class TrainTestGenerator:
                 f"train val size: {self._train_val_size} "
                 f"test size: {self._test_size}")
         self._th_terminate()
+        self._cur_epoch += 1
         if self._reset_train:
             self._train.reset()
+        else:
+            self._train.set_seed_offset(self._cur_epoch)
         self._train_validation.reset()
         self._test.reset()
         self._train_buff.clear()
@@ -328,13 +354,18 @@ class TrainTestGenerator:
         self._cur_train_batch = 0
         self._cur_train_validation_size = 0
         self._cur_test_size = 0
-        self._cur_epoch += 1
 
     def get_epoch(self) -> int:
         return self._cur_epoch
 
+    def set_epoch(self, epoch: int) -> None:
+        self.reset()
+        self._cur_epoch = epoch
+        if not self._reset_train:
+            self._train.set_seed_offset(self._cur_epoch)
+
+    @staticmethod
     def _compute_row(
-            self,
             data: DataGenerator,
             left: Link,
             right: Link,
@@ -485,6 +516,33 @@ class TrainTestGenerator:
             self._th_test = th
             th.start()
 
+    def _th_run_test_val(self) -> None:
+        if self._th_test_val is not None:
+            return
+        with self._lock:
+            if self._th_test_val is not None:
+                return
+
+            def is_alive() -> bool:
+                return self._th_test_val is th and not self._th_term
+
+            def run() -> None:
+                try:
+                    self._th_compute_batch(
+                        is_alive,
+                        self._test_validation,
+                        self._test_validation_buff)
+                finally:
+                    with self._lock:
+                        if self._th_test_val is th:
+                            self._th_test_val = None
+                    with self._cond:
+                        self._cond.notify_all()
+
+            th = threading.Thread(target=run, daemon=True)
+            self._th_test_val = th
+            th.start()
+
     def next_train_batch(self) -> list[BatchRow] | None:
         if self._cur_train_batch >= self._epoch_batches:
             return None
@@ -515,6 +573,18 @@ class TrainTestGenerator:
         self._cur_test_size += len(res)
         return res
 
+    def next_test_validation_batch(self) -> list[BatchRow] | None:
+        test_val_size = self._test_val_size
+        if self._cur_test_validation_size >= test_val_size:
+            return None
+        res = self._get_batch_for(
+            self._th_run_test_val, self._test_validation_buff)
+        new_cur_size = self._cur_test_validation_size + len(res)
+        if new_cur_size > test_val_size:
+            res = res[:new_cur_size - test_val_size]
+        self._cur_test_validation_size += len(res)
+        return res
+
     def train_batches(self) -> Iterable[list[BatchRow]]:
         if self._cur_train_batch >= self._epoch_batches:
             raise ValueError("train batches already exhausted!")
@@ -542,6 +612,15 @@ class TrainTestGenerator:
                 return
             yield res
 
+    def test_validation_batches(self) -> Iterable[list[BatchRow]]:
+        if self._cur_test_validation_size >= self._test_val_size:
+            raise ValueError("test validation batches already exhausted!")
+        while True:
+            res = self.next_test_validation_batch()
+            if res is None:
+                return
+            yield res
+
     def train_dfs(self) -> Iterable[pd.DataFrame]:
         yield from (
             pd.DataFrame(val, columns=COLUMNS)
@@ -560,19 +639,28 @@ class TrainTestGenerator:
             for val in self.test_batches()
         )
 
+    def test_validation_dfs(self) -> Iterable[pd.DataFrame]:
+        yield from (
+            pd.DataFrame(val, columns=COLUMNS)
+            for val in self.test_validation_batches()
+        )
+
 
 def create_train_test(
         *,
         train_ns: Namespace,
         train_validation_ns: Namespace,
         test_ns: Namespace,
+        test_validation_ns: Namespace,
         batch_size: int,
         epoch_batches: int,
         train_val_size: int,
         test_size: int,
+        test_val_size: int,
         train_seed: int = 42,
         train_validation_seed: int = 37,
         test_seed: int = 69,
+        test_validation_seed: int = 23,
         compute_batch_size: int | None = None,
         reset_train: bool = False,
         conversation_based: bool = True,
@@ -583,10 +671,13 @@ def create_train_test(
         train_validation=DataGenerator(
             train_validation_ns, train_validation_seed),
         test=DataGenerator(test_ns, test_seed),
+        test_validation=DataGenerator(
+            test_validation_ns, test_validation_seed),
         batch_size=batch_size,
         epoch_batches=epoch_batches,
         train_val_size=train_val_size,
         test_size=test_size,
+        test_val_size=test_val_size,
         compute_batch_size=compute_batch_size,
         reset_train=reset_train,
         conversation_based=conversation_based,
