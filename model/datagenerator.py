@@ -1,3 +1,4 @@
+import collections
 import threading
 from typing import Callable, Iterable, TypedDict
 
@@ -260,10 +261,12 @@ class TrainTestGenerator:
         self._scorer = get_scorer("best") if scorer is None else scorer
         self._now = now_ts() if now is None else now
 
-        self._train_buff: list[BatchRow] = []
-        self._train_validation_buff: list[BatchRow] = []
-        self._test_buff: list[BatchRow] = []
-        self._test_validation_buff: list[BatchRow] = []
+        self._train_buff: collections.deque[BatchRow] = collections.deque()
+        self._train_validation_buff: collections.deque[BatchRow] = \
+            collections.deque()
+        self._test_buff: collections.deque[BatchRow] = collections.deque()
+        self._test_validation_buff: collections.deque[BatchRow] = \
+            collections.deque()
         self._cur_train_batch = 0
         self._cur_train_validation_size = 0
         self._cur_test_size = 0
@@ -275,6 +278,7 @@ class TrainTestGenerator:
         self._th_test: threading.Thread | None = None
         self._th_test_val: threading.Thread | None = None
         self._th_term: bool = False
+        self._th_err: BaseException | None = None
         self._lock = threading.RLock()
         self._cond = threading.Condition(self._lock)
 
@@ -307,9 +311,11 @@ class TrainTestGenerator:
                 and self._th_test_val is None)
 
         while not done():
+            self._check_err()
             with self._cond:
                 self._cond.wait_for(done, 1.0)
 
+        self._check_err()
         self._th_term = False
 
     def reset(self) -> None:
@@ -389,7 +395,9 @@ class TrainTestGenerator:
         }
 
     def _compute_batch_for(
-            self, data: DataGenerator, buff: list[BatchRow]) -> None:
+            self,
+            data: DataGenerator,
+            buff: collections.deque[BatchRow]) -> None:
         cbs = self._half_compute_batch_size * 2
         randos = data.get_truly_random_links(cbs)
         valids = data.get_valid_random_links(
@@ -413,8 +421,8 @@ class TrainTestGenerator:
             self,
             is_alive: Callable[[], bool],
             data: DataGenerator,
-            buff: list[BatchRow]) -> None:
-        while len(buff) < self._batch_size * 3:
+            buff: collections.deque[BatchRow]) -> None:
+        while len(buff) < self._half_compute_batch_size * 6:
             with self._lock:
                 if not is_alive():
                     return
@@ -423,7 +431,7 @@ class TrainTestGenerator:
     def _get_batch_for(
             self,
             start_th: Callable[[], None],
-            buff: list[BatchRow]) -> list[BatchRow]:
+            buff: collections.deque[BatchRow]) -> list[BatchRow]:
         res = []
 
         def has_rows() -> bool:
@@ -431,11 +439,17 @@ class TrainTestGenerator:
 
         for _ in range(self._batch_size):
             while not has_rows():
+                self._check_err()
                 start_th()
                 with self._cond:
                     self._cond.wait_for(has_rows, 1.0)
-            res.append(buff.pop(0))
+            res.append(buff.popleft())
+        self._check_err()
         return res
+
+    def _check_err(self) -> None:
+        if self._th_err is not None:
+            raise ValueError("error in compute thread") from self._th_err
 
     def _th_run_train(self) -> None:
         if self._th_train is not None:
@@ -451,6 +465,8 @@ class TrainTestGenerator:
                 try:
                     self._th_compute_batch(
                         is_alive, self._train, self._train_buff)
+                except BaseException as e:  # pylint: disable=broad-except
+                    self._th_err = e
                 finally:
                     with self._lock:
                         if self._th_train is th:
@@ -478,6 +494,8 @@ class TrainTestGenerator:
                         is_alive,
                         self._train_validation,
                         self._train_validation_buff)
+                except BaseException as e:  # pylint: disable=broad-except
+                    self._th_err = e
                 finally:
                     with self._lock:
                         if self._th_train_val is th:
@@ -505,6 +523,8 @@ class TrainTestGenerator:
                         is_alive,
                         self._test,
                         self._test_buff)
+                except BaseException as e:  # pylint: disable=broad-except
+                    self._th_err = e
                 finally:
                     with self._lock:
                         if self._th_test is th:
@@ -532,6 +552,8 @@ class TrainTestGenerator:
                         is_alive,
                         self._test_validation,
                         self._test_validation_buff)
+                except BaseException as e:  # pylint: disable=broad-except
+                    self._th_err = e
                 finally:
                     with self._lock:
                         if self._th_test_val is th:
