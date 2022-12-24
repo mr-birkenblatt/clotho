@@ -411,7 +411,9 @@ class TrainTestGenerator:
 
         def after_first(
                 epoch: int, plan: EpochLearningPlan | LearningPlan) -> bool:
-            res: int = plan.get("first_epoch", 0)  # type: ignore
+            res: int | None = plan.get("first_epoch")  # type: ignore
+            if res is None:
+                return True
             return epoch >= res
 
         def before_last(

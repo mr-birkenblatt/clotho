@@ -40,12 +40,28 @@ def run() -> None:
         ns_train = get_namespace("train")
         train_plan: list[EpochLearningPlan] = [
             {
-                "left": {"mode": "random", "flip_pc": 0.0},
+                "left": {"mode": "valid", "flip_pc": 0.5},
                 "right": {"mode": "valid", "flip_pc": 0.0},
                 "flip_lr": 0.5,
-                "first_epoch": None,
+                "first_epoch": 10,
                 "last_epoch": None,
-                "weight": 1.0,
+                "weight": 100,
+            },
+            {
+                "left": {"mode": "random", "flip_pc": 0.0},
+                "right": {"mode": "path", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "first_epoch": None,
+                "last_epoch": 5,
+                "weight": 99,
+            },
+            {
+                "left": None,
+                "right": {"mode": "path", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "first_epoch": None,
+                "last_epoch": 5,
+                "weight": 1,
             },
             {
                 "left": {"mode": "random", "flip_pc": 0.0},
@@ -53,7 +69,15 @@ def run() -> None:
                 "flip_lr": 0.5,
                 "first_epoch": None,
                 "last_epoch": None,
-                "weight": 1.0,
+                "weight": 99,
+            },
+            {
+                "left": None,
+                "right": {"mode": "valid", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "first_epoch": None,
+                "last_epoch": None,
+                "weight": 1,
             }
         ]
         eval_plan: list[LearningPlan] = [
@@ -61,13 +85,13 @@ def run() -> None:
                 "left": {"mode": "random", "flip_pc": 0.0},
                 "right": {"mode": "valid", "flip_pc": 0.0},
                 "flip_lr": 0.5,
-                "weight": 0.99,
+                "weight": 99,
             },
             {
                 "left": None,
                 "right": {"mode": "valid", "flip_pc": 0.0},
                 "flip_lr": 0.5,
-                "weight": 0.01,
+                "weight": 1,
             }
         ]
         ttgen = create_train_test(
