@@ -14,3 +14,7 @@ class EmbeddingProvider:
 
     def get_embedding(self, msg: Message) -> torch.Tensor:
         raise NotImplementedError()
+
+    @staticmethod
+    def num_dimensions() -> int:
+        raise NotImplementedError()

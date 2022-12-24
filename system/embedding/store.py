@@ -24,14 +24,14 @@ class EmbeddingStore:
     def do_add_embedding(
             self,
             name: str,
-            msg: Message,
+            mhash: MHash,
             embed: torch.Tensor) -> None:
         raise NotImplementedError()
 
     def add_embedding(self, name: str, msg: Message) -> torch.Tensor:
         provider = self._providers[name]
         embed = provider.get_embedding(msg)
-        self.do_add_embedding(name, msg, embed)
+        self.do_add_embedding(name, msg.get_hash(), embed)
         return embed
 
     def do_get_embedding(
