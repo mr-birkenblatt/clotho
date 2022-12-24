@@ -1,4 +1,5 @@
-from typing import Iterable
+from contextlib import contextmanager
+from typing import Iterable, Iterator
 
 import torch
 
@@ -53,15 +54,20 @@ class EmbeddingStore:
         msg = msg_store.read_message(mhash)
         return self.add_embedding(name, msg)
 
+    @contextmanager
+    def bulk_add(self) -> Iterator[None]:
+        raise NotImplementedError()
+
     def ensure_all(
             self,
             msg_store: MessageStore,
             names: list[str] | None = None) -> None:
-        if names is None:
-            names = self.get_names()
-        for mhash in msg_store.enumerate_messages():
-            for name in names:
-                self.get_embedding(msg_store, name, mhash)
+        with self.bulk_add():
+            if names is None:
+                names = self.get_names()
+            for mhash in msg_store.enumerate_messages():
+                for name in names:
+                    self.get_embedding(msg_store, name, mhash)
 
     def do_get_closest(
             self, name: str, embed: torch.Tensor) -> Iterable[MHash]:

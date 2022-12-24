@@ -1,7 +1,14 @@
 import pandas as pd
 
 from misc.redis import set_redis_slow_mode
-from model.datagenerator import create_train_test, DataGenerator
+from misc.util import now_ts
+from model.datagenerator import (
+    create_train_test,
+    DataGenerator,
+    EpochLearningPlan,
+    LearningPlan,
+)
+from system.links.scorer import get_scorer
 from system.namespace.store import get_namespace
 
 
@@ -13,14 +20,14 @@ def run() -> None:
     if MESSAGE_GENERATION:
         data_gen = DataGenerator(namespace, 42)
         for link in data_gen.get_valid_random_links(
-                100, conversation_based=True):
+                100, scorer=get_scorer("best"), now=now_ts()):
             print(
                 f"{data_gen.short_info(link.get_parent())} -- "
                 f"{data_gen.short_info(link.get_child())} -- "
                 f"{data_gen.vote_score(link)}")
         print("====================")
         for link in data_gen.get_valid_random_links(
-                5, conversation_based=True):
+                5, scorer=get_scorer("best"), now=now_ts()):
             print(f"{data_gen.long_info(link.get_parent())}")
             print("--------------------")
             print(f"{data_gen.long_info(link.get_child())}")
@@ -31,18 +38,53 @@ def run() -> None:
         pd.set_option("display.max_columns", None)
         pd.set_option("display.max_rows", None)
         ns_train = get_namespace("train")
+        train_plan: list[EpochLearningPlan] = [
+            {
+                "left": {"mode": "random", "flip_pc": 0.0},
+                "right": {"mode": "valid", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "first_epoch": None,
+                "last_epoch": None,
+                "weight": 1.0,
+            },
+            {
+                "left": {"mode": "random", "flip_pc": 0.0},
+                "right": {"mode": "valid", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "first_epoch": None,
+                "last_epoch": None,
+                "weight": 1.0,
+            }
+        ]
+        eval_plan: list[LearningPlan] = [
+            {
+                "left": {"mode": "random", "flip_pc": 0.0},
+                "right": {"mode": "valid", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "weight": 0.99,
+            },
+            {
+                "left": None,
+                "right": {"mode": "valid", "flip_pc": 0.0},
+                "flip_lr": 0.5,
+                "weight": 0.01,
+            }
+        ]
         ttgen = create_train_test(
             train_ns=ns_train,
             train_validation_ns=ns_train,
             test_ns=namespace,
             test_validation_ns=namespace,
+            train_learning_plan=train_plan,
+            train_val_learning_plan=eval_plan,
+            test_learning_plan=eval_plan,
+            test_val_learning_plan=eval_plan,
             batch_size=4,
             epoch_batches=100,
             train_val_size=500,
             test_size=500,
             test_val_size=500,
-            compute_batch_size=10,
-            conversation_based=False)
+            compute_batch_size=10)
         ttgen.set_epoch(3)
         bar = "=" * 42
         for _ in range(4):

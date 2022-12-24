@@ -75,6 +75,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             cache: EmbeddingCache) -> None:
         super().__init__(providers)
         self._cache = cache
+        self._bulk = False
 
     def do_build_index(
             self,
@@ -109,6 +110,15 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 cache.all_embeddings(name))
             cache.clear_staging()
 
+    @contextmanager
+    def bulk_add(self) -> Iterator[None]:
+        try:
+            self._bulk = True
+            with self._cache.get_lock():
+                yield
+        finally:
+            self._bulk = False
+
     def do_add_embedding(
             self,
             name: str,
@@ -118,7 +128,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         with cache.get_lock():
             cache.set_embedding(name, mhash, embed)
             cache.add_staging_embedding(name, mhash, embed)
-            if cache.staging_count(name) > REBUILD_THRESHOLD:
+            if (not self._bulk
+                    and cache.staging_count(name) > REBUILD_THRESHOLD):
                 self.build_index(name)
 
     def do_get_embedding(
