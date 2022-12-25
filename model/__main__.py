@@ -42,6 +42,7 @@ def run() -> None:
             {
                 "left": {"mode": "valid", "flip_pc": 0.5},
                 "right": {"mode": "valid", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
                 "first_epoch": 10,
                 "last_epoch": None,
@@ -50,48 +51,54 @@ def run() -> None:
             {
                 "left": {"mode": "random", "flip_pc": 0.0},
                 "right": {"mode": "path", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
                 "first_epoch": None,
                 "last_epoch": 5,
-                "weight": 99,
+                "weight": 60,
             },
             {
                 "left": None,
                 "right": {"mode": "path", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
                 "first_epoch": None,
                 "last_epoch": 5,
-                "weight": 1,
+                "weight": 40,
             },
             {
                 "left": {"mode": "random", "flip_pc": 0.0},
                 "right": {"mode": "valid", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
                 "first_epoch": None,
                 "last_epoch": None,
-                "weight": 99,
+                "weight": 60,
             },
             {
                 "left": None,
                 "right": {"mode": "valid", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
                 "first_epoch": None,
                 "last_epoch": None,
-                "weight": 1,
+                "weight": 40,
             }
         ]
         eval_plan: list[LearningPlan] = [
             {
                 "left": {"mode": "random", "flip_pc": 0.0},
                 "right": {"mode": "valid", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
-                "weight": 99,
+                "weight": 60,
             },
             {
                 "left": None,
                 "right": {"mode": "valid", "flip_pc": 0.0},
+                "min_text_length": 20,
                 "flip_lr": 0.5,
-                "weight": 1,
+                "weight": 40,
             }
         ]
         ttgen = create_train_test(

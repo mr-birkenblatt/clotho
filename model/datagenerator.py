@@ -31,6 +31,7 @@ RowGen = TypedDict('RowGen', {
 LearningPlan = TypedDict('LearningPlan', {
     "left": RowGen | None,
     "right": RowGen,
+    "min_text_length": int | None,
     "flip_lr": float,
     "weight": float,
 })
@@ -39,6 +40,7 @@ EpochLearningPlan = TypedDict('EpochLearningPlan', {
     "right": RowGen,
     "first_epoch": int | None,
     "last_epoch": int | None,
+    "min_text_length": int | None,
     "flip_lr": float,
     "weight": float,
 })
@@ -428,6 +430,7 @@ class TrainTestGenerator:
             {
                 "left": lplan["left"],
                 "right": lplan["right"],
+                "min_text_length": lplan["min_text_length"],
                 "flip_lr": lplan["flip_lr"],
                 "weight": lplan["weight"],
             }
@@ -469,6 +472,7 @@ class TrainTestGenerator:
             key: collections.deque(gen(key, kcount))
             for key, kcount in rcounts.items()
         }
+        produced = 0
         for ix, pentry in enumerate(plan):
             right = pentry["right"]
             right_link = links[right["mode"]].popleft()
@@ -494,19 +498,41 @@ class TrainTestGenerator:
             else:
                 name = f"{name_left}--{name_right}"
 
+            text_pl = data.get_text(left_link.get_parent())
+            text_cl = data.get_text(left_link.get_child())
+            text_pr = data.get_text(right_link.get_parent())
+            text_cr = data.get_text(right_link.get_child())
+            mtl = pentry["min_text_length"]
+            if mtl is not None:
+                texts = [
+                    text_pl,
+                    text_cl,
+                    text_pr,
+                    text_cr,
+                ]
+                if any(len(txt) < mtl for txt in texts):
+                    continue
+
             score_left = data.vote_score(left_link)
             score_right = data.vote_score(right_link)
+            if score_left == score_right:
+                continue
             sway_right = float(sigmoid(score_right - score_left))
             yield {
-                "parent_left": data.get_text(left_link.get_parent()),
-                "child_left": data.get_text(left_link.get_child()),
-                "parent_right": data.get_text(right_link.get_parent()),
-                "child_right": data.get_text(right_link.get_child()),
+                "parent_left": text_pl,
+                "child_left": text_cl,
+                "parent_right": text_pr,
+                "child_right": text_cr,
                 "sway_left": 1.0 - sway_right,
                 "sway_right": sway_right,
                 "correct_is_right": score_right > score_left,
                 "gen_name": name,
             }
+            produced += 1
+        if produced == 0:
+            print(
+                "WARNING: current setting produced no output "
+                "likely resulting in an infinite loop")
 
     def _compute_batch_for(
             self,
