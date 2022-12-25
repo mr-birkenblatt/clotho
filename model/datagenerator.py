@@ -235,6 +235,7 @@ BatchRow = TypedDict('BatchRow', {
     "gen_name": str,
 })
 COLUMNS = [
+    "gen_name",
     "parent_left",
     "child_left",
     "parent_right",
