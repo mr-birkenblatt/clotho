@@ -1,3 +1,7 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors
 from torch.utils.data import communication as communication
 from torch.utils.data.dataloader import _DatasetKind as _DatasetKind
 from torch.utils.data.dataloader import DataLoader as DataLoader

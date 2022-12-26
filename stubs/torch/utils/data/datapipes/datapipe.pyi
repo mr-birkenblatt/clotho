@@ -1,3 +1,7 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors
 from typing import Callable, Dict, Iterator, Optional, TypeVar
 
 from _typeshed import Incomplete
@@ -8,6 +12,7 @@ from torch.utils.data.dataset import Dataset, IterableDataset
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
 
+
 class IterDataPipe(IterableDataset[T_co], metaclass=_IterDataPipeMeta):
     functions: Dict[str, Callable]
     reduce_ex_hook: Optional[Callable]
@@ -17,8 +22,12 @@ class IterDataPipe(IterableDataset[T_co], metaclass=_IterDataPipeMeta):
     def __getattr__(self, attribute_name): ...
     @classmethod
     def register_function(cls, function_name, function) -> None: ...
+
     @classmethod
-    def register_datapipe_as_function(cls, function_name, cls_to_register, enable_df_api_tracing: bool = ...): ...
+    def register_datapipe_as_function(
+        cls, function_name, cls_to_register,
+        enable_df_api_tracing: bool = ...): ...
+
     def __reduce_ex__(self, *args, **kwargs): ...
     @classmethod
     def set_getstate_hook(cls, hook_fn) -> None: ...
@@ -26,7 +35,10 @@ class IterDataPipe(IterableDataset[T_co], metaclass=_IterDataPipeMeta):
     def set_reduce_ex_hook(cls, hook_fn) -> None: ...
     def reset(self) -> None: ...
 
-class DFIterDataPipe(IterDataPipe): ...
+
+class DFIterDataPipe(IterDataPipe):
+    ...
+
 
 class MapDataPipe(Dataset[T_co], metaclass=_DataPipeMeta):
     functions: Dict[str, Callable]
@@ -45,15 +57,21 @@ class MapDataPipe(Dataset[T_co], metaclass=_DataPipeMeta):
     @classmethod
     def set_reduce_ex_hook(cls, hook_fn) -> None: ...
 
+
 class _DataPipeSerializationWrapper:
     def __init__(self, datapipe) -> None: ...
     def __len__(self): ...
 
-class _IterDataPipeSerializationWrapper(_DataPipeSerializationWrapper, IterDataPipe):
+
+class _IterDataPipeSerializationWrapper(
+        _DataPipeSerializationWrapper, IterDataPipe):
     def __iter__(self): ...
 
-class _MapDataPipeSerializationWrapper(_DataPipeSerializationWrapper, MapDataPipe):
+
+class _MapDataPipeSerializationWrapper(
+        _DataPipeSerializationWrapper, MapDataPipe):
     def __getitem__(self, idx): ...
+
 
 class DataChunk(list):
     items: Incomplete

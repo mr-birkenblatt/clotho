@@ -1,3 +1,7 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors
 from io import IOBase
 from typing import Iterable, Optional, Tuple
 
@@ -10,9 +14,15 @@ class FileOpenerIterDataPipe(IterDataPipe[Tuple[str, IOBase]]):
     mode: Incomplete
     encoding: Incomplete
     length: Incomplete
-    def __init__(self, datapipe: Iterable[str], mode: str = ..., encoding: Optional[str] = ..., length: int = ...) -> None: ...
+
+    def __init__(
+        self, datapipe: Iterable[str], mode: str = ...,
+        encoding: Optional[str] = ..., length: int = ...) -> None: ...
+
     def __iter__(self): ...
     def __len__(self): ...
 
+
 class FileLoaderIterDataPipe(IterDataPipe[Tuple[str, IOBase]]):
-    def __new__(cls, datapipe: Iterable[str], mode: str = ..., length: int = ...): ...
+    def __new__(
+        cls, datapipe: Iterable[str], mode: str = ..., length: int = ...): ...

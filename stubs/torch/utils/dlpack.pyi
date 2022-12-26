@@ -16,4 +16,5 @@ class DLDeviceType(enum.IntEnum):
     kDLROCM: Incomplete
     kDLExtDev: Incomplete
 
+
 def from_dlpack(ext_tensor: Any) -> torch.Tensor: ...
