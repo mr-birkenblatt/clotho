@@ -263,7 +263,10 @@ def highest_number(
         match = re.search(NUMBER_PATTERN, text)
         if match is None:
             return None
-        return int(match.group())
+        try:
+            return int(match.group())
+        except ValueError:
+            return None
 
     res = None
     res_num = 0
