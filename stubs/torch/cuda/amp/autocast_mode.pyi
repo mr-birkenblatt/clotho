@@ -1,0 +1,19 @@
+from typing import Any
+
+import torch
+from _typeshed import Incomplete
+from torch._six import string_classes as string_classes
+
+
+HAS_NUMPY: bool
+
+class autocast(torch.amp.autocast_mode.autocast):
+    device: str
+    fast_dtype: Incomplete
+    def __init__(self, enabled: bool = ..., dtype: torch.dtype = ..., cache_enabled: bool = ...) -> None: ...
+    def __enter__(self): ...
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any): ...
+    def __call__(self, func): ...
+
+def custom_fwd(fwd: Incomplete | None = ..., **kwargs): ...
+def custom_bwd(bwd): ...

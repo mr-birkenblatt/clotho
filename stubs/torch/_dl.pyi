@@ -1,0 +1,3 @@
+RTLD_GLOBAL: int
+RTLD_LAZY: int
+RTLD_NOW: int

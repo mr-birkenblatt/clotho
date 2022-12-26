@@ -1,0 +1,9 @@
+from _typeshed import Incomplete
+from torch.utils.data.datapipes.datapipe import MapDataPipe
+
+
+class SequenceWrapperMapDataPipe(MapDataPipe):
+    sequence: Incomplete
+    def __init__(self, sequence, deepcopy: bool = ...) -> None: ...
+    def __getitem__(self, index): ...
+    def __len__(self): ...

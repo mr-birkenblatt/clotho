@@ -1,0 +1,9 @@
+from _typeshed import Incomplete
+
+
+log: Incomplete
+
+class ErrorHandler:
+    def initialize(self) -> None: ...
+    def record_exception(self, e: BaseException) -> None: ...
+    def dump_error_file(self, rootcause_error_file: str, error_code: int = ...): ...

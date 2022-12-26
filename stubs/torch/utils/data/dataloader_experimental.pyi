@@ -1,0 +1,13 @@
+from _typeshed import Incomplete
+
+
+class _ThreadingDataLoader2:
+    threads: Incomplete
+    datapipes: Incomplete
+    collate_fn: Incomplete
+    def __init__(self, datapipe, num_workers: int = ..., collate_fn: Incomplete | None = ...) -> None: ...
+    def __iter__(self): ...
+    def __del__(self) -> None: ...
+
+class DataLoader2:
+    def __new__(cls, dataset, batch_size: int = ..., shuffle: Incomplete | None = ..., sampler: Incomplete | None = ..., batch_sampler: Incomplete | None = ..., num_workers: int = ..., collate_fn: Incomplete | None = ..., pin_memory: bool = ..., drop_last: bool = ..., timeout: int = ..., worker_init_fn: Incomplete | None = ..., *, prefetch_factor: int = ..., persistent_workers: bool = ..., batch_outside_worker: bool = ..., parallelism_mode: str = ...): ...

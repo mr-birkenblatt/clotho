@@ -1,0 +1,9 @@
+from typing import List, Optional
+
+from torch.jit._script import RecursiveScriptModule as RecursiveScriptModule
+from torch.jit._script import ScriptModule as ScriptModule
+
+
+def freeze(mod, preserved_attrs: Optional[List[str]] = ..., optimize_numerics: bool = ...): ...
+def run_frozen_optimizations(mod, optimize_numerics: bool = ..., preserved_methods: Optional[List[str]] = ...): ...
+def optimize_for_inference(mod: ScriptModule, other_methods: Optional[List[str]] = ...) -> ScriptModule: ...

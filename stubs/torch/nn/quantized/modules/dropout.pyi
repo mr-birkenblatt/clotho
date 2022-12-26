@@ -1,0 +1,9 @@
+import torch.nn.quantized.functional
+
+
+class Dropout(torch.nn.Dropout):
+    def forward(self, input): ...
+    @classmethod
+    def from_float(cls, mod): ...
+    @classmethod
+    def from_reference(cls, mod, scale, zero_point): ...
