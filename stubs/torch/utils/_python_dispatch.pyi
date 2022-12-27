@@ -23,7 +23,7 @@ class TorchDispatchModeInfo(_ModeInfo):
 
 def enable_torch_dispatch_mode(
     mode, *, replace: Incomplete | None = ...,
-        ignore_preexisting: bool = ...) -> Iterator[None]: ...
+    ignore_preexisting: bool = ...) -> Iterator[None]: ...
 
 
 class TorchDispatchMetaInitErrorInfo(MetaInitErrorInfo):

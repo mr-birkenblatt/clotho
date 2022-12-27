@@ -36,15 +36,13 @@ def exporter_context(
 
 def export(
     model, args, f, export_params: bool = ..., verbose: bool = ...,
-        training: Incomplete | None = ...,
-        input_names: Incomplete | None = ...,
-        output_names: Incomplete | None = ..., operator_export_type=...,
-        opset_version: Incomplete | None = ...,
-        do_constant_folding: bool = ...,
-        dynamic_axes: Incomplete | None = ...,
-        keep_initializers_as_inputs: Incomplete | None = ...,
-        custom_opsets: Incomplete | None = ...,
-        export_modules_as_functions: bool = ...) -> None: ...
+    training: Incomplete | None = ..., input_names: Incomplete | None = ...,
+    output_names: Incomplete | None = ..., operator_export_type=...,
+    opset_version: Incomplete | None = ..., do_constant_folding: bool = ...,
+    dynamic_axes: Incomplete | None = ...,
+    keep_initializers_as_inputs: Incomplete | None = ...,
+    custom_opsets: Incomplete | None = ...,
+    export_modules_as_functions: bool = ...) -> None: ...
 
 
 def warn_on_static_input_change(input_states) -> None: ...
@@ -55,15 +53,14 @@ def unpack_quantized_tensor(value): ...
 
 def export_to_pretty_string(
     model, args, export_params: bool = ..., verbose: bool = ...,
-        training: Incomplete | None = ...,
-        input_names: Incomplete | None = ...,
-        output_names: Incomplete | None = ..., operator_export_type=...,
-        export_type: Incomplete | None = ..., google_printer: bool = ...,
-        opset_version: Incomplete | None = ...,
-        keep_initializers_as_inputs: Incomplete | None = ...,
-        custom_opsets: Incomplete | None = ..., add_node_names: bool = ...,
-        do_constant_folding: bool = ...,
-        dynamic_axes: Incomplete | None = ...): ...
+    training: Incomplete | None = ..., input_names: Incomplete | None = ...,
+    output_names: Incomplete | None = ..., operator_export_type=...,
+    export_type: Incomplete | None = ..., google_printer: bool = ...,
+    opset_version: Incomplete | None = ...,
+    keep_initializers_as_inputs: Incomplete | None = ...,
+    custom_opsets: Incomplete | None = ..., add_node_names: bool = ...,
+    do_constant_folding: bool = ...,
+    dynamic_axes: Incomplete | None = ...): ...
 
 
 def unconvertible_ops(

@@ -20,8 +20,8 @@ class FuzzedSparseTensor(FuzzedTensor):
         min_elements: Optional[int] = ..., max_elements: Optional[int] = ...,
         dim_parameter: Optional[str] = ..., sparse_dim: Optional[str] = ...,
         nnz: Optional[str] = ..., density: Optional[str] = ...,
-        coalesced: Optional[str] = ..., dtype=...,
-        cuda: bool = ...) -> None: ...
+        coalesced: Optional[
+                str] = ..., dtype=..., cuda: bool = ...) -> None: ...
 
     @staticmethod
     def sparse_tensor_constructor(

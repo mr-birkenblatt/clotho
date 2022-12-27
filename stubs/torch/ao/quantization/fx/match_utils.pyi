@@ -24,7 +24,7 @@ from .quantization_patterns import QuantizeHandler as QuantizeHandler
 
 
 MatchResult = Tuple[Node, List[Node], Optional[Pattern], QuantizeHandler,
-        QConfigAny]
+            QConfigAny]
 
 
 def is_match(modules, node, pattern, max_uses=...): ...
@@ -32,9 +32,8 @@ def is_match(modules, node, pattern, max_uses=...): ...
 
 def find_matches(
     graph: Graph, modules: Dict[str, torch.nn.Module],
-        patterns: Dict[Pattern, QuantizeHandler],
-        root_node_getter_mapping: Dict[Pattern, Callable],
-        qconfig_map: Dict[str, QConfigAny],
-        standalone_module_names: List[str] = ...,
-        standalone_module_classes: List[Callable] = ...,
-        custom_module_classes: List[Any] = ...) -> Dict[str, MatchResult]: ...
+    patterns: Dict[Pattern, QuantizeHandler],
+    root_node_getter_mapping: Dict[Pattern, Callable], qconfig_map: Dict[str,
+            QConfigAny], standalone_module_names: List[str] = ...,
+    standalone_module_classes: List[Callable] = ...,
+    custom_module_classes: List[Any] = ...) -> Dict[str, MatchResult]: ...

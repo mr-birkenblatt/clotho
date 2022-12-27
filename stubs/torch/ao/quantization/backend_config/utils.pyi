@@ -16,8 +16,8 @@ from ..quantization_types import Pattern as Pattern
 
 
 def get_pattern_to_dtype_configs(
-    backend_config_dict: Dict[str, Any]) -> Dict[Pattern, List[Dict[str,
-                Any]]]: ...
+    backend_config_dict: Dict[str, Any]) -> Dict[Pattern, List[Dict[
+                        str, Any]]]: ...
 
 
 def get_qat_module_classes(
@@ -37,8 +37,8 @@ def get_root_module_to_quantized_reference_module(
 
 
 def get_fuser_method_mapping(
-    backend_config_dict: Dict[str, Any]) -> Dict[Pattern,
-        Union[nn.Sequential, Callable]]: ...
+    backend_config_dict: Dict[str, Any]) -> Dict[Pattern, Union[
+                nn.Sequential, Callable]]: ...
 
 
 def get_module_to_qat_module(

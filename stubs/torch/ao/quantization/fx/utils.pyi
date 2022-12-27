@@ -46,15 +46,15 @@ def get_per_tensor_qparams(activation_post_process): ...
 
 
 def get_quantize_node_info(
-    activation_post_process: Callable) -> Optional[Tuple[str, Union[Callable,
-                str], Dict[str, Any]]]: ...
+    activation_post_process: Callable) -> Optional[Tuple[str, Union[
+                        Callable, str], Dict[str, Any]]]: ...
 
 
 def quantize_node(
     in_node: Node, obs_module: torch.nn.Module, obs_node: Node,
-        modules: Dict[str, torch.nn.Module], quantized_graph: Graph,
-        node_name_to_scope: Dict[str, Tuple[str, type]], is_input: bool,
-        output_prefix: str = ...) -> Node: ...
+    modules: Dict[str, torch.nn.Module], quantized_graph: Graph,
+    node_name_to_scope: Dict[str, Tuple[str, type]], is_input: bool,
+    output_prefix: str = ...) -> Node: ...
 
 
 def get_custom_module_class_keys(
@@ -85,14 +85,13 @@ def assert_and_get_unique_device(module: torch.nn.Module) -> Any: ...
 
 def create_getattr_from_value(
     module: torch.nn.Module, graph: Graph, prefix: str,
-        value: Any) -> Node: ...
+    value: Any) -> Node: ...
 
 
 def create_qparam_nodes(
     node_name: str, scale: Any, zero_point: Any, modules: Dict[str,
             torch.nn.Module], quantized_graph: Graph,
-        node_name_to_scope: Dict[str, Tuple[str, type]]) -> Tuple[Node,
-        Node]: ...
+    node_name_to_scope: Dict[str, Tuple[str, type]]) -> Tuple[Node, Node]: ...
 
 
 def all_node_args_have_no_tensors(
@@ -110,13 +109,13 @@ class NodeInfo(NamedTuple):
     op: Incomplete
     target: Incomplete
 NON_OBSERVABLE_ARG_DICT: Dict[NodeInfo, Dict[Union[type, torch.dtype],
-            Callable[[Node], List[int]]]]
+                    Callable[[Node], List[int]]]]
 EMPTY_ARG_DICT: Dict[Union[type, torch.dtype], Callable[[Node], List[int]]]
 
 
 def get_non_observable_arg_indexes_and_types(
-    node: Node) -> Dict[Union[type, torch.dtype], Callable[[Node],
-            List[int]]]: ...
+    node: Node) -> Dict[Union[type, torch.dtype], Callable[[Node], List[
+                        int]]]: ...
 
 
 def node_return_type_is_int(node: Node) -> bool: ...
@@ -127,10 +126,10 @@ def is_get_tensor_info_node(node: Node) -> bool: ...
 
 def maybe_get_next_module(
     node: Node, modules: Dict[str, nn.Module],
-        target_module_type: Optional[Type[nn.Module]] = ...,
-        target_functional_type: Any = ...) -> Optional[Node]: ...
+    target_module_type: Optional[Type[nn.Module]] = ...,
+    target_functional_type: Any = ...) -> Optional[Node]: ...
 
 
 def create_node_from_old_node_preserve_meta(
     quantized_graph: Graph, create_node_args: Tuple[Any, ...],
-        old_node: Node) -> Node: ...
+    old_node: Node) -> Node: ...

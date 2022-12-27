@@ -169,4 +169,4 @@ coverage-report-ts:
 	cd ui/coverage/lcov-report && open index.html
 
 stubgen:
-	PYTHON=$(PYTHON) ./stubgen.sh $(PKG)
+	PYTHON=$(PYTHON) FORCE=$(FORCE) ./stubgen.sh $(PKG)

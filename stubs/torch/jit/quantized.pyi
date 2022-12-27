@@ -65,8 +65,8 @@ class QuantizedLSTMCell(QuantizedRNNCellBase):
     def __init__(self, other) -> None: ...
 
     def forward(
-        self, input: Tensor, hx: Optional[Tuple[Tensor,
-                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+        self, input: Tensor, hx: Optional[Tuple[
+                        Tensor, Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
 
 class QuantizedGRUCell(QuantizedRNNCellBase):
@@ -96,8 +96,8 @@ class QuantizedRNNBase(torch.jit.ScriptModule):
         self, input: Tensor, batch_sizes: Optional[Tensor]) -> None: ...
 
     def get_expected_hidden_size(
-        self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-        int, int]: ...
+        self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[
+            int, int, int]: ...
 
     def check_hidden_size(
         self, hx: Tensor, expected_hidden_size: Tuple[int, int, int],
@@ -118,21 +118,22 @@ class QuantizedLSTM(QuantizedRNNBase):
     def forward_impl(
         self, input: Tensor, hx: Optional[Tuple[Tensor, Tensor]],
         batch_sizes: Optional[Tensor], max_batch_size: int,
-        sorted_indices: Optional[Tensor]) -> Tuple[Tensor, Tuple[Tensor,
-            Tensor]]: ...
+        sorted_indices: Optional[Tensor]) -> Tuple[Tensor, Tuple[
+                    Tensor, Tensor]]: ...
 
     def forward_tensor(
-        self, input: Tensor, hx: Optional[Tuple[Tensor,
-                Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
+        self, input: Tensor, hx: Optional[Tuple[
+                        Tensor, Tensor]] = ...) -> Tuple[Tensor, Tuple[
+                    Tensor, Tensor]]: ...
 
     def forward_packed(
         self, input: PackedSequence, hx: Optional[Tuple[Tensor,
-                Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor,
-            Tensor]]: ...
+                        Tensor]] = ...) -> Tuple[PackedSequence, Tuple[
+                    Tensor, Tensor]]: ...
 
     def permute_hidden(
-        self, hx: Tuple[Tensor, Tensor],
-        permutation: Optional[Tensor]) -> Tuple[Tensor, Tensor]: ...
+        self, hx: Tuple[Tensor, Tensor], permutation: Optional[
+                Tensor]) -> Tuple[Tensor, Tensor]: ...
 
     def check_forward_args(
         self, input: Tensor, hidden: Tuple[Tensor, Tensor],
@@ -151,12 +152,12 @@ class QuantizedGRU(QuantizedRNNBase):
         sorted_indices: Optional[Tensor]) -> Tuple[Tensor, Tensor]: ...
 
     def forward_tensor(
-        self, input: Tensor, hx: Optional[Tensor] = ...) -> Tuple[Tensor,
-        Tensor]: ...
+        self, input: Tensor, hx: Optional[Tensor] = ...) -> Tuple[
+            Tensor, Tensor]: ...
 
     def forward_packed(
-        self, input: PackedSequence,
-        hx: Optional[Tensor] = ...) -> Tuple[PackedSequence, Tensor]: ...
+        self, input: PackedSequence, hx: Optional[Tensor] = ...) -> Tuple[
+            PackedSequence, Tensor]: ...
 
     def forward(self, input, hx: Incomplete | None = ...): ...
 

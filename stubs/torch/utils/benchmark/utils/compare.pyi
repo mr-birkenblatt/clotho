@@ -25,7 +25,7 @@ class _Column:
 
     def __init__(
         self, grouped_results: List[Tuple[Optional[common.Measurement],
-                ...]], time_scale: float, time_unit: str,
+                        ...]], time_scale: float, time_unit: str,
         trim_significant_figures: bool, highlight_warnings: bool) -> None: ...
 
     def get_results_for(self, group): ...

@@ -34,7 +34,8 @@ class TensorMeta(torch.Tensor):
     @staticmethod
     def __new__(
         cls, tensorlike: Optional[Union[TensorMeta, NumberType,
-                torch.Tensor]] = ..., *, shape: Optional[ShapeType] = ...,
+                        torch.Tensor]] = ..., *,
+        shape: Optional[ShapeType] = ...,
         strides: Optional[StrideType] = ...,
         dtype: Optional[torch.dtype] = ...,
         device: Optional[Union[torch.device, str]] = ...): ...
@@ -138,8 +139,8 @@ def get_higher_type(a: type, b: type) -> type: ...
 
 def get_higher_dtype(
     a: Optional[Union[torch.dtype, TensorLikeType, NumberType]],
-        b: Optional[Union[torch.dtype, TensorLikeType,
-                NumberType]]) -> Optional[torch.dtype]: ...
+    b: Optional[Union[torch.dtype, TensorLikeType, NumberType]]) -> Optional[
+        torch.dtype]: ...
 
 
 def is_weakly_lesser_type(a: type, b: type) -> bool: ...
@@ -162,10 +163,8 @@ class ELEMENTWISE_TYPE_PROMOTION_KIND(Enum):
 
 
 def elementwise_dtypes(
-    *_args,
-        type_promotion_kind:
-        ELEMENTWISE_TYPE_PROMOTION_KIND) -> Tuple[torch.dtype,
-        torch.dtype]: ...
+    *_args, type_promotion_kind: ELEMENTWISE_TYPE_PROMOTION_KIND) -> Tuple[
+        torch.dtype, torch.dtype]: ...
 
 
 def wrap_device(d: Union[str, torch.device]) -> torch.device: ...
@@ -187,4 +186,4 @@ def reduction_dims(
 
 def check_in_bounds_for_storage(
     a: torch._TypedStorage, shape: ShapeType, strides: StrideType,
-        storage_offset: int): ...
+    storage_offset: int): ...

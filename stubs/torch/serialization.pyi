@@ -97,13 +97,13 @@ class _open_zipfile_writer_buffer(_opener):
 
 def save(
     obj, f: Union[str, os.PathLike, BinaryIO, IO[bytes]], pickle_module=...,
-        pickle_protocol=...,
-        _use_new_zipfile_serialization: bool = ...) -> None: ...
+    pickle_protocol=...,
+    _use_new_zipfile_serialization: bool = ...) -> None: ...
 
 
 def load(
     f, map_location: Incomplete | None = ..., pickle_module=...,
-        **pickle_load_args): ...
+    **pickle_load_args): ...
 
 
 class StorageType:

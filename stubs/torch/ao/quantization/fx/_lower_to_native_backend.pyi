@@ -77,13 +77,13 @@ DYNAMIC_LOWER_MODULE_MAP: Dict[Type[nn.Module], Type[nn.Module]]
 WEIGHT_ONLY_LOWER_MODULE_MAP: Dict[Type[nn.Module], Type[nn.Module]]
 SPECIAL_PATTERN_LOWER_MODULE_MAP: Incomplete
 STATIC_LOWER_FUSED_MODULE_MAP: Dict[Type[nn.Module], Tuple[Type[nn.Module],
-            Type[WeightedQuantizedModule]]]
+                    Type[WeightedQuantizedModule]]]
 DYNAMIC_LOWER_FUSED_MODULE_MAP: Dict[Type[nn.Module], Tuple[Type[nn.Module],
-            Type[nn.Module]]]
+                    Type[nn.Module]]]
 STATIC_LOWER_FUNCTIONAL_MAP: Dict[Callable, Tuple[Callable, Callable]]
 WEIGHT_PREPACK_OPS: Set[Callable]
 DYNAMIC_LOWER_FUNCTIONAL_MAP: Dict[Callable, Dict[Tuple[torch.dtype,
-                torch.dtype], Tuple[Callable, Optional[Callable]]]]
+                            torch.dtype], Tuple[Callable, Optional[Callable]]]]
 CONV_FUNCTIONAL_OPS: Set[Callable]
 QBIN_OP_MAPPING: Dict[Union[Callable, str], Callable]
 QBIN_RELU_OP_MAPPING: Dict[Union[Callable, str], Callable]
@@ -91,7 +91,7 @@ QBIN_RELU_OP_MAPPING: Dict[Union[Callable, str], Callable]
 
 def fold_weight(
     quantized: QuantizedGraphModule, node_name_to_scope: Dict[str, Tuple[str,
-                type]]) -> QuantizedGraphModule: ...
+                    type]]) -> QuantizedGraphModule: ...
 
 
 def special_pattern_replacement(model: QuantizedGraphModule): ...

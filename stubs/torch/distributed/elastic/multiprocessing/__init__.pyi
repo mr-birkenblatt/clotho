@@ -37,6 +37,6 @@ log: Incomplete
 
 def start_processes(
     name: str, entrypoint: Union[Callable, str], args: Dict[int, Tuple],
-        envs: Dict[int, Dict[str, str]], log_dir: str,
-        start_method: str = ..., redirects: Union[Std, Dict[int, Std]] = ...,
-        tee: Union[Std, Dict[int, Std]] = ...) -> PContext: ...
+    envs: Dict[int, Dict[str, str]], log_dir: str, start_method: str = ...,
+    redirects: Union[Std, Dict[int, Std]] = ..., tee: Union[Std, Dict[int,
+                    Std]] = ...) -> PContext: ...

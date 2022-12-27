@@ -39,18 +39,18 @@ class NormalizeArgs(Transformer):
 
     def call_function(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-            Any], arg_types: Optional[Tuple[Any, ...]] = ...,
+                Any], arg_types: Optional[Tuple[Any, ...]] = ...,
         kwarg_types: Optional[Dict[str, Any]] = ...): ...
 
     def call_module(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-            Any]): ...
+                Any]): ...
 
 
 class NormalizeOperators(AnnotateTypesWithSchema):
     binary_magic_method_remap: Dict[Callable[[Any, Any], Any], Callable[[Any,
-                Any], Any]]
+                            Any], Any]]
 
     def call_function(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-            Any]): ...
+                Any]): ...

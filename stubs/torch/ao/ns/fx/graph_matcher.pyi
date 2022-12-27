@@ -66,8 +66,8 @@ class SubgraphTypeRelationship(enum.Enum):
 
 def get_matching_subgraph_pairs(
     gm_a: GraphModule, gm_b: GraphModule,
-        base_name_to_sets_of_related_ops: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...,
-        unmatchable_types_map: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...) -> Dict[str, Tuple[NSSubgraph,
-            NSSubgraph]]: ...
+    base_name_to_sets_of_related_ops: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...,
+    unmatchable_types_map: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...) -> Dict[str, Tuple[
+                NSSubgraph, NSSubgraph]]: ...

@@ -30,7 +30,7 @@ DEFAULT_STATIC_QUANT_MODULE_MAPPINGS: Dict[Callable, Any]
 DEFAULT_QAT_MODULE_MAPPINGS: Dict[Callable, Any]
 DEFAULT_DYNAMIC_QUANT_MODULE_MAPPINGS: Dict[Callable, Any]
 DEFAULT_FLOAT_TO_QUANTIZED_OPERATOR_MAPPINGS: Dict[Union[Callable, str],
-        Callable]
+            Callable]
 DEFAULT_MODULE_TO_ACT_POST_PROCESS: Dict[Callable, Callable]
 DEFAULT_STATIC_SPARSE_QUANT_MODULE_MAPPINGS: Dict[Callable, Any]
 DEFAULT_DYNAMIC_SPARSE_QUANT_MODULE_MAPPINGS: Dict[Callable, Any]
@@ -55,14 +55,14 @@ def get_default_static_sparse_quant_module_mappings(
 
 def get_static_quant_module_class(
     float_module_class: Callable,
-        additional_static_quant_mapping: Optional[Dict[Callable, Any]] = ...,
-        is_reference: bool = ...) -> Any: ...
+    additional_static_quant_mapping: Optional[Dict[Callable, Any]] = ...,
+    is_reference: bool = ...) -> Any: ...
 
 
 def get_dynamic_quant_module_class(
     float_module_class: Callable,
-        additional_dynamic_quant_mapping: Optional[Dict[Callable,
-                Any]] = ...) -> Any: ...
+    additional_dynamic_quant_mapping: Optional[Dict[
+                    Callable, Any]] = ...) -> Any: ...
 
 
 def get_default_qat_module_mappings() -> Dict[Callable, Any]: ...

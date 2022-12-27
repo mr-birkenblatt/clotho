@@ -109,12 +109,12 @@ class AutoQuantizationState(torch.nn.Module):
     def first_call_op_prepare_before_hook(
         self, op: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any],
         qtensor_id: List[int], fqn: str, root_module: torch.nn.Module,
-        op_quantizeability_type: OpQuantizeabilityType) -> Tuple[Tuple[Any,
-            ...], Dict[str, Any]]: ...
+        op_quantizeability_type: OpQuantizeabilityType) -> Tuple[Tuple[
+                    Any, ...], Dict[str, Any]]: ...
 
     def op_prepare_before_hook(
-        self, op: Callable, args: Tuple[Any, ...], kwargs: Dict[str,
-            Any]) -> Tuple[Tuple[Any, ...], Dict[str, Any]]: ...
+        self, op: Callable, args: Tuple[Any, ...], kwargs: Dict[
+                str, Any]) -> Tuple[Tuple[Any, ...], Dict[str, Any]]: ...
 
     def first_call_op_prepare_after_hook(
         self, op: Callable, output: Any, args: Tuple[Any, ...],
@@ -127,8 +127,8 @@ class AutoQuantizationState(torch.nn.Module):
 
     def op_convert_before_hook(
         self, op: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any],
-        root_module: torch.nn.Module) -> Tuple[Callable, Tuple[Any, ...],
-        Dict[str, Any]]: ...
+        root_module: torch.nn.Module) -> Tuple[Callable, Tuple[
+                    Any, ...], Dict[str, Any]]: ...
 
     def op_convert_after_hook(
         self, op: Callable, output, global_op_idx: List[int]) -> Any: ...

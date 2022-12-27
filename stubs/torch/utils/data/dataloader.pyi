@@ -55,8 +55,8 @@ class DataLoader:
     def __init__(
         self, dataset: Dataset[T_co], batch_size: Optional[int] = ...,
         shuffle: Optional[bool] = ..., sampler: Union[Sampler, Iterable,
-            None] = ..., batch_sampler: Union[Sampler[Sequence],
-            Iterable[Sequence], None] = ..., num_workers: int = ...,
+                None] = ..., batch_sampler: Union[Sampler[Sequence],
+                Iterable[Sequence], None] = ..., num_workers: int = ...,
         collate_fn: Optional[_collate_fn_t] = ..., pin_memory: bool = ...,
         drop_last: bool = ..., timeout: float = ...,
         worker_init_fn: Optional[_worker_init_fn_t] = ...,

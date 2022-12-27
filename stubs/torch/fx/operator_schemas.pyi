@@ -44,14 +44,12 @@ def type_matches(signature_type: Any, argument_type: Any): ...
 
 def normalize_function(
     target: Callable, args: Tuple[Any], kwargs: Optional[Dict[str,
-                Any]] = ..., arg_types: Optional[Tuple[Any]] = ...,
-        kwarg_types: Optional[Dict[str, Any]] = ...,
-        normalize_to_only_use_kwargs:
-        bool = ...) -> Optional[ArgsKwargsPair]: ...
+                    Any]] = ..., arg_types: Optional[Tuple[Any]] = ...,
+    kwarg_types: Optional[Dict[str, Any]] = ...,
+    normalize_to_only_use_kwargs: bool = ...) -> Optional[ArgsKwargsPair]: ...
 
 
 def normalize_module(
     root: torch.nn.Module, target: str, args: Tuple[Any],
-        kwargs: Optional[Dict[str, Any]] = ...,
-        normalize_to_only_use_kwargs:
-        bool = ...) -> Optional[ArgsKwargsPair]: ...
+    kwargs: Optional[Dict[str, Any]] = ...,
+    normalize_to_only_use_kwargs: bool = ...) -> Optional[ArgsKwargsPair]: ...

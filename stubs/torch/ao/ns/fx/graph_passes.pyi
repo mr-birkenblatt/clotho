@@ -47,14 +47,13 @@ from .utils import (
 def add_loggers_to_model(
     gm: GraphModule, node_to_instrument_inputs_to_ref_node_name: Dict[Node,
             Tuple[str, str]],
-        node_to_instrument_outputs_to_ref_node_name: Dict[Node, Tuple[str,
-                str]], logger_cls: Callable,
-        model_name: str) -> GraphModule: ...
+    node_to_instrument_outputs_to_ref_node_name: Dict[Node, Tuple[str, str]],
+    logger_cls: Callable, model_name: str) -> GraphModule: ...
 
 
 def create_a_shadows_b(
     name_a: str, gm_a: GraphModule, name_b: str, gm_b: GraphModule,
-        matched_subgraph_pairs: Dict[str, Tuple[NSSubgraph, NSSubgraph]],
-        logger_cls: Callable, should_log_inputs: bool,
-        node_type_to_io_type_map: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...) -> GraphModule: ...
+    matched_subgraph_pairs: Dict[str, Tuple[NSSubgraph, NSSubgraph]],
+    logger_cls: Callable, should_log_inputs: bool,
+    node_type_to_io_type_map: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...) -> GraphModule: ...

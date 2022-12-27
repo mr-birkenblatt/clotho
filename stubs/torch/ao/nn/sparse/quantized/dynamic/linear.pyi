@@ -36,8 +36,8 @@ class Linear(torch.nn.Module):
 
     def set_weight_bias(
         self, w: torch.Tensor, b: Optional[torch.Tensor],
-        row_block_size: Optional[int],
-        col_block_size: Optional[int]) -> None: ...
+        row_block_size: Optional[int], col_block_size: Optional[
+                int]) -> None: ...
 
     @classmethod
     def from_float(cls, mod): ...

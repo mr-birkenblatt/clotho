@@ -63,7 +63,7 @@ class ProfilerAction(Enum):
 
 def schedule(
     *, wait: int, warmup: int, active: int, repeat: int = ...,
-        skip_first: int = ...) -> Callable: ...
+    skip_first: int = ...) -> Callable: ...
 
 
 def tensorboard_trace_handler(

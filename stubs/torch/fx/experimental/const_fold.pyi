@@ -36,5 +36,6 @@ def get_unique_attr_name_in_module(
 
 def split_const_subgraphs(
     module: Union[torch.nn.Module, torch.fx.GraphModule],
-        skip_folding_node_fn: Optional[Callable[[torch.fx.Node],
-                bool]] = ...) -> FoldedGraphModule: ...
+    skip_folding_node_fn: Optional[Callable[[
+                            torch.fx.Node],
+                    bool]] = ...) -> FoldedGraphModule: ...

@@ -40,7 +40,7 @@ class _Orthogonal(Module):
 
 def orthogonal(
     module: Module, name: str = ..., orthogonal_map: Optional[str] = ..., *,
-        use_trivialization: bool = ...) -> Module: ...
+    use_trivialization: bool = ...) -> Module: ...
 
 
 class _SpectralNorm(Module):
@@ -58,4 +58,4 @@ class _SpectralNorm(Module):
 
 def spectral_norm(
     module: Module, name: str = ..., n_power_iterations: int = ...,
-        eps: float = ..., dim: Optional[int] = ...) -> Module: ...
+    eps: float = ..., dim: Optional[int] = ...) -> Module: ...

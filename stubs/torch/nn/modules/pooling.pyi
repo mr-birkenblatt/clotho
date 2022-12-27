@@ -209,8 +209,8 @@ class _LPPoolNd(Module):
 
     def __init__(
         self, norm_type: float, kernel_size: _size_any_t,
-        stride: Optional[_size_any_t] = ...,
-        ceil_mode: bool = ...) -> None: ...
+        stride: Optional[
+                _size_any_t] = ..., ceil_mode: bool = ...) -> None: ...
 
     def extra_repr(self) -> str: ...
 

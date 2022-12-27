@@ -46,5 +46,5 @@ def symeig(
 
 
 def solve(
-    input: Tensor, A: Tensor, *,
-        out: Incomplete | None = ...) -> Tuple[Tensor, Tensor]: ...
+    input: Tensor, A: Tensor, *, out: Incomplete | None = ...) -> Tuple[
+        Tensor, Tensor]: ...

@@ -24,8 +24,8 @@ def wrap_torch_function(dispatcher: Callable): ...
 
 
 def handle_torch_function(
-    public_api: Callable, relevant_args: Iterable[Any], *args,
-        **kwargs) -> Any: ...
+    public_api: Callable, relevant_args: Iterable[
+            Any], *args, **kwargs) -> Any: ...
 
 
 has_torch_function: Incomplete

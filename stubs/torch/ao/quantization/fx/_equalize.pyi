@@ -69,7 +69,7 @@ class _WeightEqualizationObserver(nn.Module):
 
 def calculate_equalization_scale(
     input_obs: _InputEqualizationObserver,
-        weight_obs: _WeightEqualizationObserver) -> torch.Tensor: ...
+    weight_obs: _WeightEqualizationObserver) -> torch.Tensor: ...
 
 
 class EqualizationQConfig:
@@ -95,8 +95,8 @@ def is_equalization_observer(observer: nn.Module) -> bool: ...
 
 def get_op_node_and_weight_eq_obs(
     input_eq_obs_node: Node, model: GraphModule, modules: Dict[str,
-            nn.Module]) -> Tuple[Optional[Node],
-        Optional[_WeightEqualizationObserver]]: ...
+            nn.Module]) -> Tuple[Optional[Node], Optional[
+                _WeightEqualizationObserver]]: ...
 
 
 def maybe_get_weight_eq_obs_node(
@@ -104,8 +104,8 @@ def maybe_get_weight_eq_obs_node(
 
 
 def maybe_get_next_input_eq_obs(
-    node: Node, modules: Dict[str,
-            nn.Module]) -> Optional[_InputEqualizationObserver]: ...
+    node: Node, modules: Dict[str, nn.Module]) -> Optional[
+        _InputEqualizationObserver]: ...
 
 
 def maybe_get_next_equalization_scale(
@@ -118,14 +118,14 @@ def scale_input_observer(
 
 def scale_weight_node(
     node: Node, modules: Dict[str, nn.Module],
-        equalization_scale: torch.Tensor,
-        next_equalization_scale: Optional[torch.Tensor]) -> None: ...
+    equalization_scale: torch.Tensor,
+    next_equalization_scale: Optional[torch.Tensor]) -> None: ...
 
 
 def scale_weight_functional(
     op_node: Node, model: GraphModule, modules: Dict[str, nn.Module],
-        equalization_scale: torch.Tensor,
-        next_equalization_scale: Optional[torch.Tensor]) -> None: ...
+    equalization_scale: torch.Tensor,
+    next_equalization_scale: Optional[torch.Tensor]) -> None: ...
 
 
 def clear_weight_quant_obs_node(
@@ -136,19 +136,18 @@ def remove_node(model: GraphModule, node: Node, prev_node: Node): ...
 
 
 def update_obs_for_equalization(
-    model: GraphModule, modules: Dict[str, nn.Module]) -> Dict[str,
-        _WeightEqualizationObserver]: ...
+    model: GraphModule, modules: Dict[str, nn.Module]) -> Dict[
+        str, _WeightEqualizationObserver]: ...
 
 
 def convert_eq_obs(
     model: GraphModule, modules: Dict[str, nn.Module],
-        weight_eq_obs_dict: Dict[str,
-            _WeightEqualizationObserver]) -> None: ...
+    weight_eq_obs_dict: Dict[str, _WeightEqualizationObserver]) -> None: ...
 
 
 def get_layer_sqnr_dict(
-    model_a: nn.Module, model_b: nn.Module, x: torch.Tensor) -> Dict[str,
-        float]: ...
+    model_a: nn.Module, model_b: nn.Module, x: torch.Tensor) -> Dict[
+        str, float]: ...
 
 
 def get_equalization_qconfig_dict(

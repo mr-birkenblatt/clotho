@@ -81,8 +81,8 @@ from .utils import WEIGHT_INDEX_DICT as WEIGHT_INDEX_DICT
 
 
 def restore_state(
-    observed: torch.nn.Module) -> Tuple[Dict[str, Tuple[str, type]],
-        Dict[str, Any], Set[str]]: ...
+    observed: torch.nn.Module) -> Tuple[Dict[str, Tuple[str, type]], Dict[
+                str, Any], Set[str]]: ...
 
 
 def has_none_qconfig(
@@ -113,39 +113,39 @@ def maybe_recursive_remove_dequantize(arg: Any, node: Node, graph: Graph): ...
 
 def get_module_path_and_prefix(
     obs_node: Node, node_name_to_scope: Dict[str, Tuple[str, type]],
-        qconfig_map: Dict[str, QConfigAny]): ...
+    qconfig_map: Dict[str, QConfigAny]): ...
 
 
 def insert_dequantize_node(node: Node, graph: Graph): ...
 
 
 def maybe_get_observer_for_node(
-    node: Node, modules: Dict[str,
-            torch.nn.Module]) -> Optional[torch.nn.Module]: ...
+    node: Node, modules: Dict[str, torch.nn.Module]) -> Optional[
+        torch.nn.Module]: ...
 
 
 def convert_standalone_module(
     node: Node, modules: Dict[str, torch.nn.Module],
-        model: torch.fx.GraphModule, is_reference: bool,
-        backend_config_dict: Optional[Dict[str, Any]]): ...
+    model: torch.fx.GraphModule, is_reference: bool,
+    backend_config_dict: Optional[Dict[str, Any]]): ...
 
 
 def convert_weighted_module(
     node: Node, modules: Dict[str, torch.nn.Module],
-        observed_node_names: Set[str], qconfig_map: Dict[str, QConfigAny],
-        backend_config_dict: Dict[str, Any]): ...
+    observed_node_names: Set[str], qconfig_map: Dict[str, QConfigAny],
+    backend_config_dict: Dict[str, Any]): ...
 
 
 def convert_custom_module(
     node: Node, graph: Graph, modules: Dict[str, torch.nn.Module],
-        custom_module_class_mapping: Dict[Callable, Callable],
-        statically_quantized_custom_module_nodes: Set[Node]): ...
+    custom_module_class_mapping: Dict[Callable, Callable],
+    statically_quantized_custom_module_nodes: Set[Node]): ...
 
 
 def convert(
     model: GraphModule, is_reference: bool = ...,
-        convert_custom_config_dict: Dict[str, Any] = ...,
-        is_standalone_module: bool = ..., _remove_qconfig_flag: bool = ...,
-        convert_qconfig_dict: Dict[str, Any] = ...,
-        backend_config_dict: Optional[Dict[str,
-                Any]] = ...) -> torch.nn.Module: ...
+    convert_custom_config_dict: Dict[str, Any] = ...,
+    is_standalone_module: bool = ..., _remove_qconfig_flag: bool = ...,
+    convert_qconfig_dict: Dict[str, Any] = ...,
+    backend_config_dict: Optional[Dict[
+                    str, Any]] = ...) -> torch.nn.Module: ...

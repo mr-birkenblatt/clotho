@@ -24,9 +24,10 @@ class LintCode(Enum):
 
 def optimize_for_mobile(
     script_module: torch.jit.ScriptModule,
-        optimization_blocklist: Optional[Set[MobileOptimizerType]] = ...,
-        preserved_methods: Optional[List[AnyStr]] = ...,
-        backend: str = ...) -> torch.jit.RecursiveScriptModule: ...
+    optimization_blocklist: Optional[Set[MobileOptimizerType]] = ...,
+    preserved_methods: Optional[List[
+                    AnyStr]] = ...,
+    backend: str = ...) -> torch.jit.RecursiveScriptModule: ...
 
 
 def generate_mobile_module_lints(script_module: torch.jit.ScriptModule): ...

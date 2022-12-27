@@ -119,7 +119,7 @@ def trace_with_inputs(
 
 def is_leaf(
     m: torch.nn.Module, prepare_custom_config_dict: Optional[Dict[str,
-                Any]]) -> bool: ...
+                    Any]]) -> bool: ...
 
 
 class FuncOutputObsType(enum.Enum):
@@ -150,7 +150,7 @@ def get_weight_argument_info(op: Callable) -> Optional[Tuple[int, str]]: ...
 
 def get_op_packing_only_uses_module_attributes(
     op: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any],
-        module: torch.nn.Module) -> bool: ...
+    module: torch.nn.Module) -> bool: ...
 
 
 def get_quantized_op(
@@ -182,18 +182,18 @@ def get_weight_arg_idx(op: Callable) -> Optional[int]: ...
 
 def iterate_and_apply(
     args: Any, flattened_tensor_infos: List[Optional[QTensorInfo]],
-        func: Callable,
-        flattened_tensor_infos_idx: Incomplete | None = ...) -> Any: ...
+    func: Callable,
+    flattened_tensor_infos_idx: Incomplete | None = ...) -> Any: ...
 
 
 def get_producer_of_seen_q_op_info(
     idx_to_seen_q_op_info: Dict[int, SeenQOpInfo],
-        cur_seen_q_op_info: SeenQOpInfo) -> Optional[SeenQOpInfo]: ...
+    cur_seen_q_op_info: SeenQOpInfo) -> Optional[SeenQOpInfo]: ...
 
 
 def get_users_of_seen_q_op_info(
     idx_to_seen_q_op_info: Dict[int, SeenQOpInfo],
-        cur_seen_q_op_info: SeenQOpInfo) -> List[SeenQOpInfo]: ...
+    cur_seen_q_op_info: SeenQOpInfo) -> List[SeenQOpInfo]: ...
 
 
 class HookType(enum.Enum):
@@ -208,8 +208,8 @@ def get_torch_function_hook_type(
 
 
 def get_module_hook_type(
-    parent_module: Optional[torch.nn.Module],
-        cur_module: torch.nn.Module) -> HookType: ...
+    parent_module: Optional[
+            torch.nn.Module], cur_module: torch.nn.Module) -> HookType: ...
 
 
 def clone_detach_tensor_without_dispatch(x: torch.Tensor) -> torch.Tensor: ...
@@ -217,14 +217,15 @@ def clone_detach_tensor_without_dispatch(x: torch.Tensor) -> torch.Tensor: ...
 
 def get_input_args_quant_dequant_info(
     seen_q_op_info: SeenQOpInfo, tensor_id_to_scale_zp: Dict[int,
-            Tuple[torch.Tensor,
-                torch.Tensor]]) -> Tuple[List[Optional[Tuple[float, int,
-                    torch.dtype]]], List[bool], bool]: ...
+            Tuple[torch.Tensor, torch.Tensor]]) -> Tuple[List[Optional[Tuple[
+                                float, int, torch.dtype]]], List[
+                bool], bool]: ...
 
 
 def get_cur_qconfig(
-    qconfig_dict: Dict[str, Any], cur_fqn: str,
-        cur_op_type: Callable) -> Optional[QConfigAny]: ...
+    qconfig_dict: Dict[
+            str, Any], cur_fqn: str, cur_op_type: Callable) -> Optional[
+        QConfigAny]: ...
 
 
 class AutoQuantizationStateModuleDict(torch.nn.ModuleDict):

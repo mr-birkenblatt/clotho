@@ -32,8 +32,8 @@ class FuseHandler(ABC, metaclass=abc.ABCMeta):
         self, load_arg: Callable, named_modules: Dict[str, torch.nn.Module],
         fused_graph: Graph, root_node: Node, extra_inputs: List[Any],
         matched_node_pattern: NodePattern, fuse_custom_config_dict: Dict[str,
-            Any], fuser_method_mapping: Optional[Dict[Pattern,
-                Union[torch.nn.Sequential, Callable]]],
+                Any], fuser_method_mapping: Optional[Dict[Pattern,
+                        Union[torch.nn.Sequential, Callable]]],
         is_qat: bool) -> Node: ...
 
 
@@ -44,6 +44,6 @@ class DefaultFuseHandler(FuseHandler):
         self, load_arg: Callable, named_modules: Dict[str, torch.nn.Module],
         fused_graph: Graph, root_node: Node, extra_inputs: List[Any],
         matched_node_pattern: NodePattern, fuse_custom_config_dict: Dict[str,
-            Any], fuser_method_mapping: Optional[Dict[Pattern,
-                Union[torch.nn.Sequential, Callable]]],
+                Any], fuser_method_mapping: Optional[Dict[Pattern,
+                        Union[torch.nn.Sequential, Callable]]],
         is_qat: bool) -> Node: ...

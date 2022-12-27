@@ -177,7 +177,7 @@ def create_script_list(obj, type_hint: Incomplete | None = ...): ...
 
 def script(
     obj, optimize: Incomplete | None = ..., _frames_up: int = ...,
-        _rcb: Incomplete | None = ..., example_inputs: Union[List[Tuple],
+    _rcb: Incomplete | None = ..., example_inputs: Union[List[Tuple],
             Dict[Callable, List[Tuple]], None] = ...): ...
 
 
@@ -209,8 +209,8 @@ class _ScriptProfileTable:
     source_range: Incomplete
 
     def __init__(
-        self, cols: List[_ScriptProfileColumn],
-        source_range: List[int]) -> None: ...
+        self, cols: List[_ScriptProfileColumn], source_range: List[
+                int]) -> None: ...
 
     def dump_string(self): ...
 

@@ -16,7 +16,7 @@ def materialize_lines(lines: List[str], indentation: int) -> str: ...
 
 def gen_from_template(
     dir: str, template_name: str, output_name: str,
-        replacements: List[Tuple[str, Any, int]]): ...
+    replacements: List[Tuple[str, Any, int]]): ...
 
 
 def find_file_paths(
@@ -34,8 +34,8 @@ def parse_datapipe_file(
 
 
 def parse_datapipe_files(
-    file_paths: Set[str]) -> Tuple[Dict[str, str], Dict[str, str],
-        Set[str]]: ...
+    file_paths: Set[str]) -> Tuple[Dict[str, str], Dict[str, str], Set[
+                str]]: ...
 
 
 def split_outside_bracket(line: str, delimiter: str = ...) -> List[str]: ...
@@ -46,9 +46,9 @@ def process_signature(line: str) -> str: ...
 
 def get_method_definitions(
     file_path: Union[str, List[str]], files_to_exclude: Set[str],
-        deprecated_files: Set[str], default_output_type: str,
-        method_to_special_output_type: Dict[str, str],
-        root: str = ...) -> List[str]: ...
+    deprecated_files: Set[str], default_output_type: str,
+    method_to_special_output_type: Dict[str, str], root: str = ...) -> List[
+        str]: ...
 
 
 iterDP_file_path: str

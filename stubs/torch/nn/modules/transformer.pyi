@@ -102,7 +102,7 @@ class TransformerEncoderLayer(Module):
     def __init__(
         self, d_model: int, nhead: int, dim_feedforward: int = ...,
         dropout: float = ..., activation: Union[str, Callable[[Tensor],
-                Tensor]] = ..., layer_norm_eps: float = ...,
+                        Tensor]] = ..., layer_norm_eps: float = ...,
         batch_first: bool = ..., norm_first: bool = ...,
         device: Incomplete | None = ...,
         dtype: Incomplete | None = ...) -> None: ...
@@ -131,7 +131,7 @@ class TransformerDecoderLayer(Module):
     def __init__(
         self, d_model: int, nhead: int, dim_feedforward: int = ...,
         dropout: float = ..., activation: Union[str, Callable[[Tensor],
-                Tensor]] = ..., layer_norm_eps: float = ...,
+                        Tensor]] = ..., layer_norm_eps: float = ...,
         batch_first: bool = ..., norm_first: bool = ...,
         device: Incomplete | None = ...,
         dtype: Incomplete | None = ...) -> None: ...

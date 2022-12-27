@@ -33,10 +33,10 @@ from .qconfig_dict_utils import (
 
 def prepare(
     model, qconfig_dict, example_inputs, inplace: bool = ...,
-        allow_list: Incomplete | None = ...,
-        observer_non_leaf_module_list: Incomplete | None = ...,
-        prepare_custom_config_dict: Incomplete | None = ...,
-        fuse_modules: bool = ...): ...
+    allow_list: Incomplete | None = ...,
+    observer_non_leaf_module_list: Incomplete | None = ...,
+    prepare_custom_config_dict: Incomplete | None = ...,
+    fuse_modules: bool = ...): ...
 
 
 def convert(model: torch.nn.Module) -> torch.nn.Module: ...

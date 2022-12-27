@@ -44,8 +44,8 @@ class ChildFailedError(Exception):
     failures: Incomplete
 
     def __init__(
-        self, name: str, failures: Dict[GlobalRank,
-            ProcessFailure]) -> None: ...
+        self, name: str, failures: Dict[
+                GlobalRank, ProcessFailure]) -> None: ...
 
     def get_first_failure(self) -> Tuple[GlobalRank, ProcessFailure]: ...
 
@@ -54,5 +54,5 @@ class ChildFailedError(Exception):
 
 
 def record(
-    fn: Callable[..., T],
-        error_handler: Optional[ErrorHandler] = ...) -> Callable[..., T]: ...
+    fn: Callable[..., T], error_handler: Optional[
+            ErrorHandler] = ...) -> Callable[..., T]: ...

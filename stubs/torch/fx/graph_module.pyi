@@ -37,12 +37,12 @@ def reduce_graph_module(
 
 def reduce_package_graph_module(
     importer: PackageImporter, body: Dict[Any, Any],
-        generated_module_name: str) -> torch.nn.Module: ...
+    generated_module_name: str) -> torch.nn.Module: ...
 
 
 def reduce_deploy_graph_module(
-    importer: PackageImporter, body: Dict[Any, Any],
-        import_block: str) -> torch.nn.Module: ...
+    importer: PackageImporter, body: Dict[
+            Any, Any], import_block: str) -> torch.nn.Module: ...
 
 
 class _WrappedCall:

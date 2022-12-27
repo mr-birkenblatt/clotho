@@ -84,7 +84,7 @@ class SplitResult(NamedTuple):
 
 def generate_inputs_for_submodules(
     model: torch.nn.Module, inputs: Sequence[Any],
-        target_submodules: Iterable[str]) -> Dict[str, Any]: ...
+    target_submodules: Iterable[str]) -> Dict[str, Any]: ...
 
 
 class _SplitterBase:

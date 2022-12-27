@@ -47,7 +47,8 @@ class cuBLASModule:
 
 
 def preferred_linalg_library(
-    backend: Union[None, str,
+    backend: Union[
+            None, str,
             torch._C._LinalgBackend] = ...) -> torch._C._LinalgBackend: ...
 
 

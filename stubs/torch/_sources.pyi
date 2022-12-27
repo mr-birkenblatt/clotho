@@ -17,8 +17,8 @@ from torch._C._jit_tree_views import SourceRangeFactory as SourceRangeFactory
 
 
 def get_source_lines_and_file(
-    obj: Any, error_msg: Optional[str] = ...) -> Tuple[List[str], int,
-        Optional[str]]: ...
+    obj: Any, error_msg: Optional[str] = ...) -> Tuple[List[
+                str], int, Optional[str]]: ...
 
 
 def normalize_source_lines(sourcelines: List[str]) -> List[str]: ...

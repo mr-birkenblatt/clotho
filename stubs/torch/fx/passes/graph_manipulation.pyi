@@ -27,7 +27,7 @@ from torch.fx.passes.shape_prop import ShapeProp as ShapeProp
 
 def replace_target_nodes_with(
     fx_module: GraphModule, old_op: str, old_target: Target, new_op: str,
-        new_target: Target): ...
+    new_target: Target): ...
 
 
 class size_bytes(NamedTuple):
@@ -36,8 +36,8 @@ class size_bytes(NamedTuple):
 
 
 def get_size_of_all_nodes(
-    fx_module: GraphModule,
-        args: Optional[List[torch.Tensor]] = ...) -> None: ...
+    fx_module: GraphModule, args: Optional[List[
+                    torch.Tensor]] = ...) -> None: ...
 
 
 def get_tensor_meta(node: Node) -> Any: ...
@@ -53,8 +53,8 @@ def serialize_stride(stride: Tuple[int]) -> str: ...
 
 
 def serialize_tensor_quantization(
-    tensor: torch.Tensor, weights: Dict, pcq_prefix: str) -> Tuple[Dict,
-        Dict]: ...
+    tensor: torch.Tensor, weights: Dict, pcq_prefix: str) -> Tuple[
+        Dict, Dict]: ...
 
 
 def serialize_weight(
@@ -63,7 +63,7 @@ def serialize_weight(
 
 def serialize_leaf_module(
     node: Node, weights_metadata: Dict, weights: Dict,
-        name_prefix: str) -> Dict: ...
+    name_prefix: str) -> Dict: ...
 
 
 def serialize_module(

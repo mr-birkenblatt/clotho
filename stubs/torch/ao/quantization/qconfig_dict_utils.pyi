@@ -20,7 +20,7 @@ from .utils import get_combined_dict as get_combined_dict
 
 def get_object_type_qconfig(
     qconfig_dict: Any, object_type: Union[Callable, str],
-        fallback_qconfig: QConfigAny) -> QConfigAny: ...
+    fallback_qconfig: QConfigAny) -> QConfigAny: ...
 
 
 def get_module_name_regex_qconfig(

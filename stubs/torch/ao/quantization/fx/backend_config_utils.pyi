@@ -22,5 +22,5 @@ def get_fusion_pattern_to_fuse_handler_cls(
 
 
 def get_native_quant_patterns(
-    additional_quant_patterns: Dict[Pattern,
-            QuantizerCls] = ...) -> Dict[Pattern, QuantizerCls]: ...
+    additional_quant_patterns: Dict[Pattern, QuantizerCls] = ...) -> Dict[
+        Pattern, QuantizerCls]: ...

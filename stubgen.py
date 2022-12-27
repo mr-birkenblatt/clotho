@@ -83,36 +83,49 @@ def process(fin: IO[str], fout: IO[str]) -> None:
         def count_paren(text: str) -> int:
             count = 0
             for char in text:
-                if char in ["(", "["]:
+                if char == "(":
                     count += 1
-                elif char in [")", "]"]:
+                elif char == ")":
                     count -= 1
+                elif char == "[":
+                    count += 2
+                elif char == "]":
+                    count -= 2
             return count
 
         first_paren = outline.find("(") + 1
+        need_extra = 0 if cur_indent else 1
         paren_count = 0
         if first_paren > 0:
             paren_count += count_paren(outline[:first_paren])
             write_line(f"{outline[:first_paren]}\n")
             outline = f"{cur_indent}{add_indent}{outline[first_paren:]}"
+        after_type = False
         while len(outline) > max_len or not outline.strip():
             end_ix = max_len - 2
-            right_cutoff = outline.rfind(",", 0, end_ix) + 1
-            if right_cutoff <= 0:
-                right_cutoff = outline.rfind(":", 0, end_ix) + 1
-                if right_cutoff <= 0:
-                    right_cutoff = outline.rfind(" ", 0, end_ix)
-                    if right_cutoff < 0:
-                        raise ValueError(
-                            "could not find any way to shorten line: "
-                            f"{outline}")
+            if outline.find("->", 0, end_ix) >= 0:
+                after_type = True
+            for bpoint in ("[(,: " if after_type else ",:[( "):
+                ws_add = 0 if bpoint == " " else 1
+                right_cutoff = (
+                    outline.find(bpoint, 0, end_ix)
+                    if bpoint in ["[("]
+                    else outline.rfind(bpoint, 0, end_ix)) + ws_add
+                if right_cutoff >= ws_add:
+                    break
+                if bpoint == " ":
+                    raise ValueError(
+                        "could not find any way to shorten line: "
+                        f"{outline}")
             paren_count += count_paren(outline[:right_cutoff])
             if paren_count == 0:
                 bslash = " \\"
             else:
                 bslash = ""
-            need_extra = 0 if cur_indent else 1
-            extra_indent = add_indent * (paren_count + need_extra)
+            paren_extra = 0 if first_paren > 0 else need_extra
+            if is_class:
+                paren_extra += 1
+            extra_indent = add_indent * (paren_count + paren_extra)
             write_line(f"{outline[:right_cutoff].rstrip()}{bslash}\n")
             outline = \
                 f"{cur_indent}{extra_indent}{outline[right_cutoff:].lstrip()}"

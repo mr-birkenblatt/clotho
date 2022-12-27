@@ -45,5 +45,5 @@ rendezvous_iterator: Generator[Tuple[Store, int, int], None, None]
 
 def init_rpc(
     name, backend: Incomplete | None = ..., rank: int = ...,
-        world_size: Incomplete | None = ...,
-        rpc_backend_options: Incomplete | None = ...) -> None: ...
+    world_size: Incomplete | None = ...,
+    rpc_backend_options: Incomplete | None = ...) -> None: ...

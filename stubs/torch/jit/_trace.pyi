@@ -63,17 +63,17 @@ def wrap_check_inputs(check_inputs): ...
 
 def trace(
     func, example_inputs, optimize: Incomplete | None = ...,
-        check_trace: bool = ..., check_inputs: Incomplete | None = ...,
-        check_tolerance: float = ..., strict: bool = ...,
-        _force_outplace: bool = ..., _module_class: Incomplete | None = ...,
-        _compilation_unit=...): ...
+    check_trace: bool = ..., check_inputs: Incomplete | None = ...,
+    check_tolerance: float = ..., strict: bool = ...,
+    _force_outplace: bool = ..., _module_class: Incomplete | None = ...,
+    _compilation_unit=...): ...
 
 
 def trace_module(
     mod, inputs, optimize: Incomplete | None = ..., check_trace: bool = ...,
-        check_inputs: Incomplete | None = ..., check_tolerance: float = ...,
-        strict: bool = ..., _force_outplace: bool = ...,
-        _module_class: Incomplete | None = ..., _compilation_unit=...): ...
+    check_inputs: Incomplete | None = ..., check_tolerance: float = ...,
+    strict: bool = ..., _force_outplace: bool = ...,
+    _module_class: Incomplete | None = ..., _compilation_unit=...): ...
 
 
 def is_tracing(): ...

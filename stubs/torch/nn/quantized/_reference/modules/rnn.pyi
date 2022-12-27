@@ -49,8 +49,8 @@ class RNNCell(RNNCellBase):
         self, input_size: int, hidden_size: int, bias: bool = ...,
         nonlinearity: str = ..., device: Incomplete | None = ...,
         dtype: Incomplete | None = ...,
-        weight_qparams_dict: Optional[Dict[str, Dict[str,
-                    Any]]] = ...) -> None: ...
+        weight_qparams_dict: Optional[Dict[str, Dict[
+                                str, Any]]] = ...) -> None: ...
 
     def forward(self, input: Tensor, hx: Optional[Tensor] = ...) -> Tensor: ...
     @classmethod
@@ -62,12 +62,12 @@ class LSTMCell(RNNCellBase):
     def __init__(
         self, input_size: int, hidden_size: int, bias: bool = ...,
         device: Incomplete | None = ..., dtype: Incomplete | None = ...,
-        weight_qparams_dict: Optional[Dict[str, Dict[str,
-                    Any]]] = ...) -> None: ...
+        weight_qparams_dict: Optional[Dict[str, Dict[
+                                str, Any]]] = ...) -> None: ...
 
     def forward(
-        self, input: Tensor, hx: Optional[Tuple[Tensor,
-                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+        self, input: Tensor, hx: Optional[Tuple[
+                        Tensor, Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
     @classmethod
     def from_float(cls, mod, weight_qparams_dict): ...
@@ -78,8 +78,8 @@ class GRUCell(RNNCellBase):
     def __init__(
         self, input_size: int, hidden_size: int, bias: bool = ...,
         device: Incomplete | None = ..., dtype: Incomplete | None = ...,
-        weight_qparams_dict: Optional[Dict[str, Dict[str,
-                    Any]]] = ...) -> None: ...
+        weight_qparams_dict: Optional[Dict[str, Dict[
+                                str, Any]]] = ...) -> None: ...
 
     def forward(self, input: Tensor, hx: Optional[Tensor] = ...) -> Tensor: ...
     @classmethod
@@ -94,20 +94,20 @@ class RNNBase(nn.RNNBase):
         dropout: float = ..., bidirectional: bool = ...,
         proj_size: int = ..., device: Incomplete | None = ...,
         dtype: Incomplete | None = ...,
-        weight_qparams_dict: Optional[Dict[str, Dict[str,
-                    Any]]] = ...) -> None: ...
+        weight_qparams_dict: Optional[Dict[str, Dict[
+                                str, Any]]] = ...) -> None: ...
 
 
 class LSTM(RNNBase):
     def __init__(self, *args, **kwargs) -> None: ...
 
     def permute_hidden(
-        self, hx: Tuple[Tensor, Tensor],
-        permutation: Optional[Tensor]) -> Tuple[Tensor, Tensor]: ...
+        self, hx: Tuple[Tensor, Tensor], permutation: Optional[
+                Tensor]) -> Tuple[Tensor, Tensor]: ...
 
     def get_expected_cell_size(
-        self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-        int, int]: ...
+        self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[
+            int, int, int]: ...
 
     def check_forward_args(
         self, input: Tensor, hidden: Tuple[Tensor, Tensor],

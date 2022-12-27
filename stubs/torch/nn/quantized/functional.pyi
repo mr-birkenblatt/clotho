@@ -17,14 +17,14 @@ from torch.jit.annotations import BroadcastingList2 as BroadcastingList2
 
 def avg_pool2d(
     input, kernel_size, stride: Incomplete | None = ..., padding: int = ...,
-        ceil_mode: bool = ..., count_include_pad: bool = ...,
-        divisor_override: Incomplete | None = ...): ...
+    ceil_mode: bool = ..., count_include_pad: bool = ...,
+    divisor_override: Incomplete | None = ...): ...
 
 
 def avg_pool3d(
     input, kernel_size, stride: Incomplete | None = ..., padding: int = ...,
-        ceil_mode: bool = ..., count_include_pad: bool = ...,
-        divisor_override: Incomplete | None = ...): ...
+    ceil_mode: bool = ..., count_include_pad: bool = ...,
+    divisor_override: Incomplete | None = ...): ...
 
 
 def adaptive_avg_pool2d(
@@ -37,59 +37,59 @@ def adaptive_avg_pool3d(
 
 def conv1d(
     input, weight, bias, stride: int = ..., padding: int = ...,
-        dilation: int = ..., groups: int = ..., padding_mode: str = ...,
-        scale: float = ..., zero_point: int = ..., dtype=...): ...
+    dilation: int = ..., groups: int = ..., padding_mode: str = ...,
+    scale: float = ..., zero_point: int = ..., dtype=...): ...
 
 
 def conv2d(
     input, weight, bias, stride: int = ..., padding: int = ...,
-        dilation: int = ..., groups: int = ..., padding_mode: str = ...,
-        scale: float = ..., zero_point: int = ..., dtype=...): ...
+    dilation: int = ..., groups: int = ..., padding_mode: str = ...,
+    scale: float = ..., zero_point: int = ..., dtype=...): ...
 
 
 def conv3d(
     input, weight, bias, stride: int = ..., padding: int = ...,
-        dilation: int = ..., groups: int = ..., padding_mode: str = ...,
-        scale: float = ..., zero_point: int = ..., dtype=...): ...
+    dilation: int = ..., groups: int = ..., padding_mode: str = ...,
+    scale: float = ..., zero_point: int = ..., dtype=...): ...
 
 
 def interpolate(
     input, size: Incomplete | None = ...,
-        scale_factor: Incomplete | None = ..., mode: str = ...,
-        align_corners: Incomplete | None = ...): ...
+    scale_factor: Incomplete | None = ..., mode: str = ...,
+    align_corners: Incomplete | None = ...): ...
 
 
 def linear(
     input: Tensor, weight: Tensor, bias: Optional[Tensor] = ...,
-        scale: Optional[float] = ...,
-        zero_point: Optional[int] = ...) -> Tensor: ...
+    scale: Optional[float] = ..., zero_point: Optional[
+            int] = ...) -> Tensor: ...
 
 
 def max_pool1d(
     input, kernel_size, stride: Incomplete | None = ..., padding: int = ...,
-        dilation: int = ..., ceil_mode: bool = ...,
-        return_indices: bool = ...): ...
+    dilation: int = ..., ceil_mode: bool = ...,
+    return_indices: bool = ...): ...
 
 
 def max_pool2d(
     input, kernel_size, stride: Incomplete | None = ..., padding: int = ...,
-        dilation: int = ..., ceil_mode: bool = ...,
-        return_indices: bool = ...): ...
+    dilation: int = ..., ceil_mode: bool = ...,
+    return_indices: bool = ...): ...
 
 
 def celu(
     input: Tensor, scale: float, zero_point: int,
-        alpha: float = ...) -> Tensor: ...
+    alpha: float = ...) -> Tensor: ...
 
 
 def leaky_relu(
     input: Tensor, negative_slope: float = ..., inplace: bool = ...,
-        scale: Optional[float] = ..., zero_point: Optional[int] = ...): ...
+    scale: Optional[float] = ..., zero_point: Optional[int] = ...): ...
 
 
 def hardtanh(
     input: Tensor, min_val: float = ..., max_val: float = ...,
-        inplace: bool = ...) -> Tensor: ...
+    inplace: bool = ...) -> Tensor: ...
 
 
 def hardswish(input: Tensor, scale: float, zero_point: int) -> Tensor: ...
@@ -100,7 +100,7 @@ def threshold(input: Tensor, threshold: float, value: float) -> Tensor: ...
 
 def elu(
     input: Tensor, scale: float, zero_point: int,
-        alpha: float = ...) -> Tensor: ...
+    alpha: float = ...) -> Tensor: ...
 
 
 def hardsigmoid(input: Tensor, inplace: bool = ...) -> Tensor: ...
@@ -111,15 +111,15 @@ def clamp(input: Tensor, min_: float, max_: float) -> Tensor: ...
 
 def upsample(
     input, size: Incomplete | None = ...,
-        scale_factor: Incomplete | None = ..., mode: str = ...,
-        align_corners: Incomplete | None = ...): ...
+    scale_factor: Incomplete | None = ..., mode: str = ...,
+    align_corners: Incomplete | None = ...): ...
 
 
 def upsample_bilinear(
     input, size: Incomplete | None = ...,
-        scale_factor: Incomplete | None = ...): ...
+    scale_factor: Incomplete | None = ...): ...
 
 
 def upsample_nearest(
     input, size: Incomplete | None = ...,
-        scale_factor: Incomplete | None = ...): ...
+    scale_factor: Incomplete | None = ...): ...

@@ -32,5 +32,5 @@ class Partition:
 
 def split_module(
     m: GraphModule, root_m: torch.nn.Module,
-        split_callback: Callable[[torch.fx.node.Node], int],
-        qualname_map: Optional[Dict[str, str]] = ...): ...
+    split_callback: Callable[[torch.fx.node.Node], int],
+    qualname_map: Optional[Dict[str, str]] = ...): ...

@@ -75,47 +75,45 @@ class NSTracer(quantize_fx.QuantizationTracer):
 
 def extract_weights(
     model_name_a: str, model_a: nn.Module, model_name_b: str,
-        model_b: nn.Module,
-        base_name_to_sets_of_related_ops: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...,
-        unmatchable_types_map: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...,
-        op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
-                    Callable]]] = ...) -> NSResultsType: ...
+    model_b: nn.Module, base_name_to_sets_of_related_ops: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...,
+    unmatchable_types_map: Optional[Dict[str, Set[NSNodeTargetType]]] = ...,
+    op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
+                            Callable]]] = ...) -> NSResultsType: ...
 
 
 def add_loggers(
     name_a: str, model_a: nn.Module, name_b: str, model_b: nn.Module,
-        logger_cls: Callable, should_log_inputs: bool = ...,
-        base_name_to_sets_of_related_ops: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...,
-        unmatchable_types_map: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...) -> Tuple[nn.Module,
-        nn.Module]: ...
+    logger_cls: Callable, should_log_inputs: bool = ...,
+    base_name_to_sets_of_related_ops: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...,
+    unmatchable_types_map: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...) -> Tuple[
+        nn.Module, nn.Module]: ...
 
 
 def extract_logger_info(
     model_a: nn.Module, model_b: nn.Module, logger_cls: Callable,
-        model_name_to_use_for_layer_names: str) -> NSResultsType: ...
+    model_name_to_use_for_layer_names: str) -> NSResultsType: ...
 
 
 def add_shadow_loggers(
     name_a: str, model_a: nn.Module, name_b: str, model_b: nn.Module,
-        logger_cls: Callable, should_log_inputs: bool = ...,
-        base_name_to_sets_of_related_ops: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...,
-        node_type_to_io_type_map: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...,
-        unmatchable_types_map: Optional[Dict[str,
-                Set[NSNodeTargetType]]] = ...) -> nn.Module: ...
+    logger_cls: Callable, should_log_inputs: bool = ...,
+    base_name_to_sets_of_related_ops: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...,
+    node_type_to_io_type_map: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...,
+    unmatchable_types_map: Optional[Dict[str,
+                    Set[NSNodeTargetType]]] = ...) -> nn.Module: ...
 
 
 def extract_shadow_logger_info(
     model_a_shadows_b: nn.Module, logger_cls: Callable,
-        model_name_to_use_for_layer_names: str) -> NSResultsType: ...
+    model_name_to_use_for_layer_names: str) -> NSResultsType: ...
 
 
 def extend_logger_results_with_comparison(
     results: NSResultsType, model_name_1: str, model_name_2: str,
-        comparison_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
-        comparison_name: str) -> None: ...
+    comparison_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
+    comparison_name: str) -> None: ...

@@ -51,9 +51,8 @@ enable_logging: bool
 
 def add_auto_observation(
     model: torch.nn.Module, qconfig_dict: Dict[str, Any],
-        example_inputs: Tuple[Any], input_dtypes: Any = ...,
-        prepare_custom_config_dict: Dict[str,
-            Any] = ...) -> torch.nn.Module: ...
+    example_inputs: Tuple[Any], input_dtypes: Any = ...,
+    prepare_custom_config_dict: Dict[str, Any] = ...) -> torch.nn.Module: ...
 
 
 def add_auto_convert(module: torch.nn.Module) -> torch.nn.Module: ...

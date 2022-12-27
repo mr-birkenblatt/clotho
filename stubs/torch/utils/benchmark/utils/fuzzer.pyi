@@ -56,8 +56,8 @@ class Fuzzer:
 
     def __init__(
         self, parameters: List[Union[FuzzedParameter,
-                List[FuzzedParameter]]], tensors: List[Union[FuzzedTensor,
-                List[FuzzedTensor]]],
+                        List[FuzzedParameter]]],
+        tensors: List[Union[FuzzedTensor, List[FuzzedTensor]]],
         constraints: Optional[List[Callable]] = ...,
         seed: Optional[int] = ...) -> None: ...
 

@@ -70,5 +70,6 @@ def get_op_to_type_to_weight_extraction_fn(
 
 def extract_weight_from_node(
     node: Node, gm: GraphModule,
-        op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
-                    Callable]]] = ...) -> Optional[NSSingleResultType]: ...
+    op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
+                            Callable]]] = ...) -> Optional[
+        NSSingleResultType]: ...

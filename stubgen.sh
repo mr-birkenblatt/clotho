@@ -5,6 +5,7 @@ set -ex
 PYTHON="${PYTHON:-python3}"
 STUBGEN="${STUBGEN:-stubgen}"
 OUTPUT="${OUTPUT:-stubs}"
+FORCE="${FORCE:-}"
 PACKAGE="${1}"
 FULL_OUTPUT="${OUTPUT}/${PACKAGE}"
 TMP_FILE="~tmp"
@@ -13,6 +14,16 @@ STUBGEN_HEAD="stubgen.head"
 if [ -z "${PACKAGE}" ]; then
     echo "usage: ${0} <package>"
     exit 1
+fi
+
+if [ -d "${FULL_OUTPUT}" ]; then
+    if [ -z "${FORCE}" ]; then
+        echo "output exists! aborting.. set FORCE=1 to overwrite"
+        exit 1
+    else
+        echo "removing existing output"
+        rm -r "${FULL_OUTPUT}"
+    fi
 fi
 
 ${STUBGEN} -p "${PACKAGE}" -o "${OUTPUT}"

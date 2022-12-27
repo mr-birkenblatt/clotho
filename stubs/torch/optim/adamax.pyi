@@ -28,6 +28,6 @@ class Adamax(Optimizer):
 
 def adamax(
     params: List[Tensor], grads: List[Tensor], exp_avgs: List[Tensor],
-        exp_infs: List[Tensor], state_steps: List[Tensor],
-        foreach: bool = ..., maximize: bool = ..., *, eps: float,
-        beta1: float, beta2: float, lr: float, weight_decay: float): ...
+    exp_infs: List[Tensor], state_steps: List[Tensor], foreach: bool = ...,
+    maximize: bool = ..., *, eps: float, beta1: float, beta2: float,
+    lr: float, weight_decay: float): ...

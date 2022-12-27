@@ -88,27 +88,27 @@ class QuantizationTracer(Tracer):
 
 def fuse_fx(
     model: torch.nn.Module, fuse_custom_config_dict: Optional[Dict[str,
-                Any]] = ..., backend_config_dict: Optional[Dict[str,
-                Any]] = ...) -> GraphModule: ...
+                    Any]] = ..., backend_config_dict: Optional[Dict[str,
+                    Any]] = ...) -> GraphModule: ...
 
 
 def prepare_fx(
     model: torch.nn.Module, qconfig_dict: Any,
-        prepare_custom_config_dict: Optional[Dict[str, Any]] = ...,
-        equalization_qconfig_dict: Optional[Dict[str, Any]] = ...,
-        backend_config_dict: Optional[Dict[str,
-                Any]] = ...) -> ObservedGraphModule: ...
+    prepare_custom_config_dict: Optional[Dict[str, Any]] = ...,
+    equalization_qconfig_dict: Optional[Dict[str, Any]] = ...,
+    backend_config_dict: Optional[Dict[
+                    str, Any]] = ...) -> ObservedGraphModule: ...
 
 
 def prepare_qat_fx(
     model: torch.nn.Module, qconfig_dict: Any,
-        prepare_custom_config_dict: Optional[Dict[str, Any]] = ...,
-        backend_config_dict: Optional[Dict[str,
-                Any]] = ...) -> ObservedGraphModule: ...
+    prepare_custom_config_dict: Optional[Dict[str, Any]] = ...,
+    backend_config_dict: Optional[Dict[
+                    str, Any]] = ...) -> ObservedGraphModule: ...
 
 
 def convert_fx(
     graph_module: GraphModule, is_reference: bool = ...,
-        convert_custom_config_dict: Optional[Dict[str, Any]] = ...,
-        _remove_qconfig: bool = ..., qconfig_dict: Dict[str, Any] = ...,
-        backend_config_dict: Dict[str, Any] = ...) -> torch.nn.Module: ...
+    convert_custom_config_dict: Optional[Dict[str, Any]] = ...,
+    _remove_qconfig: bool = ..., qconfig_dict: Dict[str, Any] = ...,
+    backend_config_dict: Dict[str, Any] = ...) -> torch.nn.Module: ...

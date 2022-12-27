@@ -30,6 +30,6 @@ def record_rdzv_event(event: RdzvEvent) -> None: ...
 
 def construct_and_record_rdzv_event(
     run_id: str, message: str, node_state: NodeState, name: str = ...,
-        hostname: str = ..., pid: Optional[int] = ...,
-        master_endpoint: str = ..., local_id: Optional[int] = ...,
-        rank: Optional[int] = ...) -> None: ...
+    hostname: str = ..., pid: Optional[int] = ...,
+    master_endpoint: str = ..., local_id: Optional[int] = ...,
+    rank: Optional[int] = ...) -> None: ...

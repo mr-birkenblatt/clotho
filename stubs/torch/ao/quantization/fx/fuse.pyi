@@ -41,6 +41,5 @@ from .pattern_utils import sorted_patterns_dict as sorted_patterns_dict
 
 def fuse(
     model: GraphModule, is_qat: bool,
-        fuse_custom_config_dict: Optional[Dict[str, Any]] = ...,
-        backend_config_dict: Optional[Dict[str,
-                Any]] = ...) -> GraphModule: ...
+    fuse_custom_config_dict: Optional[Dict[str, Any]] = ...,
+    backend_config_dict: Optional[Dict[str, Any]] = ...) -> GraphModule: ...

@@ -230,8 +230,8 @@ class MultiheadAttention(Module):
         self, query: Tensor, key: Tensor, value: Tensor,
         key_padding_mask: Optional[Tensor] = ..., need_weights: bool = ...,
         attn_mask: Optional[Tensor] = ...,
-        average_attn_weights: bool = ...) -> Tuple[Tensor,
-        Optional[Tensor]]: ...
+        average_attn_weights: bool = ...) -> Tuple[Tensor, Optional[
+                    Tensor]]: ...
 
 
 class PReLU(Module):

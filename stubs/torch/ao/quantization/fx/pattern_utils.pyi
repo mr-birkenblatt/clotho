@@ -23,7 +23,7 @@ from ..qconfig import QConfigAny as QConfigAny
 
 QuantizeHandler = Any
 MatchResult = Tuple[Node, List[Node], Optional[Pattern], QuantizeHandler,
-        QConfigAny]
+            QConfigAny]
 DEFAULT_FUSION_PATTERNS: Incomplete
 
 
@@ -50,5 +50,5 @@ def get_default_output_activation_post_process_map(
 
 
 def sorted_patterns_dict(
-    patterns_dict: Dict[Pattern, QuantizeHandler]) -> Dict[Pattern,
-        QuantizeHandler]: ...
+    patterns_dict: Dict[Pattern, QuantizeHandler]) -> Dict[
+        Pattern, QuantizeHandler]: ...

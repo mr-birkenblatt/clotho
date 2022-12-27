@@ -33,5 +33,5 @@ class _SubgraphMatcher:
 
 
 def replace_pattern(
-    gm: GraphModule, pattern: Callable,
-        replacement: Callable) -> List[Match]: ...
+    gm: GraphModule, pattern: Callable, replacement: Callable) -> List[
+        Match]: ...

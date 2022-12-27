@@ -20,7 +20,7 @@ from torch.nn.utils.parametrize import is_parametrized as is_parametrized
 
 
 Pattern = Union[Callable, Tuple[Callable, Callable], Tuple[Callable,
-            Tuple[Callable, Callable]], Any]
+                    Tuple[Callable, Callable]], Any]
 
 
 class MatchAllNode:
@@ -93,7 +93,7 @@ def check_min_max_valid(
 
 def calculate_qmin_qmax(
     quant_min: int, quant_max: int, has_customized_qrange: bool,
-        dtype: torch.dtype, reduce_range: bool) -> Tuple[int, int]: ...
+    dtype: torch.dtype, reduce_range: bool) -> Tuple[int, int]: ...
 
 
 def has_no_children_ignoring_parametrizations(module): ...

@@ -21,12 +21,12 @@ class GradcheckError(RuntimeError):
 
 def get_numerical_jacobian(
     fn, inputs, target: Incomplete | None = ..., eps: float = ...,
-        grad_out: float = ...): ...
+    grad_out: float = ...): ...
 
 
 def get_numerical_jacobian_wrt_specific_input(
     fn, input_idx, inputs, outputs, eps, input: Incomplete | None = ...,
-        is_forward_ad: bool = ...) -> Tuple[torch.Tensor, ...]: ...
+    is_forward_ad: bool = ...) -> Tuple[torch.Tensor, ...]: ...
 
 
 def get_analytical_jacobian(
@@ -35,20 +35,20 @@ def get_analytical_jacobian(
 
 def gradcheck(
     func: Callable[..., Union[_TensorOrTensors]], inputs: _TensorOrTensors,
-        *, eps: float = ..., atol: float = ..., rtol: float = ...,
-        raise_exception: bool = ..., check_sparse_nnz: bool = ...,
-        nondet_tol: float = ..., check_undefined_grad: bool = ...,
-        check_grad_dtypes: bool = ..., check_batched_grad: bool = ...,
-        check_batched_forward_grad: bool = ..., check_forward_ad: bool = ...,
-        check_backward_ad: bool = ..., fast_mode: bool = ...) -> bool: ...
+    *, eps: float = ..., atol: float = ..., rtol: float = ...,
+    raise_exception: bool = ..., check_sparse_nnz: bool = ...,
+    nondet_tol: float = ..., check_undefined_grad: bool = ...,
+    check_grad_dtypes: bool = ..., check_batched_grad: bool = ...,
+    check_batched_forward_grad: bool = ..., check_forward_ad: bool = ...,
+    check_backward_ad: bool = ..., fast_mode: bool = ...) -> bool: ...
 
 
 def gradgradcheck(
     func: Callable[..., _TensorOrTensors], inputs: _TensorOrTensors,
-        grad_outputs: Optional[_TensorOrTensors] = ..., *, eps: float = ...,
-        atol: float = ..., rtol: float = ...,
-        gen_non_contig_grad_outputs: bool = ..., raise_exception: bool = ...,
-        nondet_tol: float = ..., check_undefined_grad: bool = ...,
-        check_grad_dtypes: bool = ..., check_batched_grad: bool = ...,
-        check_fwd_over_rev: bool = ..., check_rev_over_rev: bool = ...,
-        fast_mode: bool = ...) -> bool: ...
+    grad_outputs: Optional[_TensorOrTensors] = ..., *, eps: float = ...,
+    atol: float = ..., rtol: float = ...,
+    gen_non_contig_grad_outputs: bool = ..., raise_exception: bool = ...,
+    nondet_tol: float = ..., check_undefined_grad: bool = ...,
+    check_grad_dtypes: bool = ..., check_batched_grad: bool = ...,
+    check_fwd_over_rev: bool = ..., check_rev_over_rev: bool = ...,
+    fast_mode: bool = ...) -> bool: ...

@@ -60,15 +60,15 @@ def match_extensions(filename: str, extensions: Iterable) -> bool: ...
 
 def matched_files_iter(
     root_path: str, includes: Iterable = ..., ignores: Iterable = ...,
-        extensions: Iterable = ..., out_of_place_only: bool = ...,
-        is_pytorch_extension: bool = ...) -> Iterator[str]: ...
+    extensions: Iterable = ..., out_of_place_only: bool = ...,
+    is_pytorch_extension: bool = ...) -> Iterator[str]: ...
 
 
 def preprocess_file_and_save_result(
     output_directory: str, filepath: str, all_files: Iterable,
-        header_include_dirs: Iterable, stats: Dict[str, List],
-        hip_clang_launch: bool, is_pytorch_extension: bool,
-        clean_ctx: GeneratedFileCleaner, show_progress: bool) -> None: ...
+    header_include_dirs: Iterable, stats: Dict[str, List],
+    hip_clang_launch: bool, is_pytorch_extension: bool,
+    clean_ctx: GeneratedFileCleaner, show_progress: bool) -> None: ...
 
 
 def compute_stats(stats) -> None: ...
@@ -151,10 +151,9 @@ RE_CU_SUFFIX: Incomplete
 
 def preprocessor(
     output_directory: str, filepath: str, all_files: Iterable,
-        header_include_dirs: Iterable, stats: Dict[str, List],
-        hip_clang_launch: bool, is_pytorch_extension: bool,
-        clean_ctx: GeneratedFileCleaner,
-        show_progress: bool) -> HipifyResult: ...
+    header_include_dirs: Iterable, stats: Dict[str, List],
+    hip_clang_launch: bool, is_pytorch_extension: bool,
+    clean_ctx: GeneratedFileCleaner, show_progress: bool) -> HipifyResult: ...
 
 
 def file_specific_replacement(
@@ -178,12 +177,10 @@ def str2bool(v): ...
 
 def hipify(
     project_directory: str, show_detailed: bool = ...,
-        extensions: Iterable = ..., header_extensions: Iterable = ...,
-        output_directory: str = ..., header_include_dirs: Iterable = ...,
-        includes: Iterable = ..., extra_files: Iterable = ...,
-        out_of_place_only: bool = ..., ignores: Iterable = ...,
-        show_progress: bool = ..., hip_clang_launch: bool = ...,
-        is_pytorch_extension: bool = ...,
-        hipify_extra_files_only: bool = ...,
-        clean_ctx:
-        Optional[GeneratedFileCleaner] = ...) -> HipifyFinalResult: ...
+    extensions: Iterable = ..., header_extensions: Iterable = ...,
+    output_directory: str = ..., header_include_dirs: Iterable = ...,
+    includes: Iterable = ..., extra_files: Iterable = ...,
+    out_of_place_only: bool = ..., ignores: Iterable = ...,
+    show_progress: bool = ..., hip_clang_launch: bool = ...,
+    is_pytorch_extension: bool = ..., hipify_extra_files_only: bool = ...,
+    clean_ctx: Optional[GeneratedFileCleaner] = ...) -> HipifyFinalResult: ...

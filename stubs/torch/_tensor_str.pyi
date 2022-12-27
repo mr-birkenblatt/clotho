@@ -26,9 +26,9 @@ PRINT_OPTS: Incomplete
 
 def set_printoptions(
     precision: Incomplete | None = ..., threshold: Incomplete | None = ...,
-        edgeitems: Incomplete | None = ...,
-        linewidth: Incomplete | None = ..., profile: Incomplete | None = ...,
-        sci_mode: Incomplete | None = ...) -> None: ...
+    edgeitems: Incomplete | None = ..., linewidth: Incomplete | None = ...,
+    profile: Incomplete | None = ...,
+    sci_mode: Incomplete | None = ...) -> None: ...
 
 
 def tensor_totype(t): ...

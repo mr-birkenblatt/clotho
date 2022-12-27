@@ -37,28 +37,28 @@ def set_dir(d) -> None: ...
 
 def list(
     github, force_reload: bool = ..., skip_validation: bool = ...,
-        trust_repo: Incomplete | None = ...): ...
+    trust_repo: Incomplete | None = ...): ...
 
 
 def help(
     github, model, force_reload: bool = ..., skip_validation: bool = ...,
-        trust_repo: Incomplete | None = ...): ...
+    trust_repo: Incomplete | None = ...): ...
 
 
 def load(
     repo_or_dir, model, *args, source: str = ...,
-        trust_repo: Incomplete | None = ..., force_reload: bool = ...,
-        verbose: bool = ..., skip_validation: bool = ..., **kwargs): ...
+    trust_repo: Incomplete | None = ..., force_reload: bool = ...,
+    verbose: bool = ..., skip_validation: bool = ..., **kwargs): ...
 
 
 def download_url_to_file(
     url, dst, hash_prefix: Incomplete | None = ...,
-        progress: bool = ...) -> None: ...
+    progress: bool = ...) -> None: ...
 
 
 def load_state_dict_from_url(
     url: str, model_dir: Optional[str] = ...,
-        map_location: Optional[Union[Callable[[str], str], Dict[str,
-                    str]]] = ..., progress: bool = ...,
-        check_hash: bool = ..., file_name: Optional[str] = ...) -> Dict[str,
-        Any]: ...
+    map_location: Optional[Union[Callable[[str], str], Dict[str,
+                            str]]] = ..., progress: bool = ...,
+    check_hash: bool = ..., file_name: Optional[str] = ...) -> Dict[
+        str, Any]: ...

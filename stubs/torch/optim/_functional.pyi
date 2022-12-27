@@ -27,5 +27,5 @@ from .sgd import sgd as sgd
 
 def sparse_adam(
     params: List[Tensor], grads: List[Tensor], exp_avgs: List[Tensor],
-        exp_avg_sqs: List[Tensor], state_steps: List[int], *, eps: float,
-        beta1: float, beta2: float, lr: float): ...
+    exp_avg_sqs: List[Tensor], state_steps: List[int], *, eps: float,
+    beta1: float, beta2: float, lr: float): ...

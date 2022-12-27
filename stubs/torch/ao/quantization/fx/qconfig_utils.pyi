@@ -34,8 +34,7 @@ from ..utils import get_qconfig_dtypes as get_qconfig_dtypes
 
 def maybe_adjust_qconfig_for_module_name_object_type_order(
     qconfig_dict: Any, cur_module_path: str, cur_object_type: Callable,
-        cur_object_type_idx: int,
-        fallback_qconfig: QConfigAny) -> QConfigAny: ...
+    cur_object_type_idx: int, fallback_qconfig: QConfigAny) -> QConfigAny: ...
 
 
 def update_qconfig_for_fusion(
@@ -44,7 +43,7 @@ def update_qconfig_for_fusion(
 
 def generate_qconfig_map(
     root: torch.nn.Module, modules: Dict[str, torch.nn.Module],
-        input_graph: Graph, qconfig_dict: Any, node_name_to_scope: Dict[str,
+    input_graph: Graph, qconfig_dict: Any, node_name_to_scope: Dict[str,
             Tuple[str, type]]) -> Dict[str, QConfigAny]: ...
 
 
@@ -69,7 +68,7 @@ def check_is_valid_fuse_custom_config_dict(
 
 def compare_prepare_convert_qconfig_dict(
     prepare_qconfig_dict: Dict[str, Dict[Any, Any]],
-        convert_qconfig_dict: Dict[str, Dict[Any, Any]]) -> None: ...
+    convert_qconfig_dict: Dict[str, Dict[Any, Any]]) -> None: ...
 
 
 def is_qconfig_supported_by_dtype_configs(

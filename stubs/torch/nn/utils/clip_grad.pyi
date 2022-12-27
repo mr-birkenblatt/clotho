@@ -14,12 +14,12 @@ from torch._six import inf as inf
 
 def clip_grad_norm_(
     parameters: _tensor_or_tensors, max_norm: float, norm_type: float = ...,
-        error_if_nonfinite: bool = ...) -> torch.Tensor: ...
+    error_if_nonfinite: bool = ...) -> torch.Tensor: ...
 
 
 def clip_grad_norm(
     parameters: _tensor_or_tensors, max_norm: float, norm_type: float = ...,
-        error_if_nonfinite: bool = ...) -> torch.Tensor: ...
+    error_if_nonfinite: bool = ...) -> torch.Tensor: ...
 
 
 def clip_grad_value_(

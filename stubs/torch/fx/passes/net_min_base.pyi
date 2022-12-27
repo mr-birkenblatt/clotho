@@ -62,7 +62,9 @@ class _MinimizerBase:
     def __init__(
         self, module: torch.fx.GraphModule, sample_input: Tensors,
         compare_fn: Callable[[TensorOrTensors, TensorOrTensors, Names],
-            Tuple[float, bool]], settings: _MinimizerSettingBase) -> None: ...
+                Tuple[
+                        float, bool]],
+        settings: _MinimizerSettingBase) -> None: ...
 
     def run_a(
         self, mod: torch.fx.GraphModule,
@@ -76,5 +78,5 @@ class _MinimizerBase:
         self, start: Optional[str] = ..., end: Optional[str] = ...): ...
 
     def minimize(
-        self, start: Optional[str] = ...,
-        end: Optional[str] = ...) -> NodeSet: ...
+        self, start: Optional[str] = ..., end: Optional[
+                str] = ...) -> NodeSet: ...

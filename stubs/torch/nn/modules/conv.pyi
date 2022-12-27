@@ -43,7 +43,7 @@ class _ConvNd(Module):
 
     def __init__(
         self, in_channels: int, out_channels: int, kernel_size: Tuple[int,
-            ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
+                ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
         dilation: Tuple[int, ...], transposed: bool,
         output_padding: Tuple[int, ...], groups: int, bias: bool,
         padding_mode: str, device: Incomplete | None = ...,
@@ -113,8 +113,8 @@ class ConvTranspose1d(_ConvTransposeNd):
         dtype: Incomplete | None = ...) -> None: ...
 
     def forward(
-        self, input: Tensor,
-        output_size: Optional[List[int]] = ...) -> Tensor: ...
+        self, input: Tensor, output_size: Optional[List[
+                        int]] = ...) -> Tensor: ...
 
 
 class ConvTranspose2d(_ConvTransposeNd):
@@ -129,8 +129,8 @@ class ConvTranspose2d(_ConvTransposeNd):
         dtype: Incomplete | None = ...) -> None: ...
 
     def forward(
-        self, input: Tensor,
-        output_size: Optional[List[int]] = ...) -> Tensor: ...
+        self, input: Tensor, output_size: Optional[List[
+                        int]] = ...) -> Tensor: ...
 
 
 class ConvTranspose3d(_ConvTransposeNd):
@@ -145,8 +145,8 @@ class ConvTranspose3d(_ConvTransposeNd):
         dtype: Incomplete | None = ...) -> None: ...
 
     def forward(
-        self, input: Tensor,
-        output_size: Optional[List[int]] = ...) -> Tensor: ...
+        self, input: Tensor, output_size: Optional[List[
+                        int]] = ...) -> Tensor: ...
 
 
 class _ConvTransposeMixin(_ConvTransposeNd):

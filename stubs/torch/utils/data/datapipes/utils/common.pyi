@@ -19,8 +19,7 @@ def match_masks(name: str, masks: Union[str, List[str]]) -> bool: ...
 
 def get_file_pathnames_from_root(
     root: str, masks: Union[str, List[str]], recursive: bool = ...,
-        abspath: bool = ...,
-        non_deterministic: bool = ...) -> Iterable[str]: ...
+    abspath: bool = ..., non_deterministic: bool = ...) -> Iterable[str]: ...
 
 
 def get_file_binaries_from_pathnames(

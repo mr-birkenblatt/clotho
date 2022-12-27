@@ -80,10 +80,10 @@ def get_partition_to_latency_mapping(
 
 def get_comm_latency_between(
     parent_partition: Partition, child_partition: Partition,
-        transfer_rate_bytes_per_sec: float): ...
+    transfer_rate_bytes_per_sec: float): ...
 
 
 def get_latency_of_partitioned_graph(
     partitions: List[Partition],
-        partition_to_latency_mapping: Dict[Partition, PartitionLatency],
-        transfer_rate_bytes_per_sec: float): ...
+    partition_to_latency_mapping: Dict[Partition, PartitionLatency],
+    transfer_rate_bytes_per_sec: float): ...

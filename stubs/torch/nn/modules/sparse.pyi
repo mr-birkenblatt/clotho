@@ -83,5 +83,5 @@ class EmbeddingBag(Module):
         cls, embeddings: Tensor, freeze: bool = ...,
         max_norm: Optional[float] = ..., norm_type: float = ...,
         scale_grad_by_freq: bool = ..., mode: str = ..., sparse: bool = ...,
-        include_last_offset: bool = ...,
-        padding_idx: Optional[int] = ...) -> EmbeddingBag: ...
+        include_last_offset: bool = ..., padding_idx: Optional[
+                int] = ...) -> EmbeddingBag: ...
