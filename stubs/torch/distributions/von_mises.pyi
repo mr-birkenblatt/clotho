@@ -12,9 +12,7 @@ from _typeshed import Incomplete
 from torch.distributions import constraints as constraints
 from torch.distributions.distribution import Distribution as Distribution
 from torch.distributions.utils import broadcast_all as broadcast_all
-
-
-        lazy_property as lazy_property
+from torch.distributions.utils import lazy_property as lazy_property
 
 
 class VonMises(Distribution):

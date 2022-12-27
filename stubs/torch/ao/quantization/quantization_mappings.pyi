@@ -8,20 +8,17 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Dict, Optional, Set, Union
+
 from torch import nn as nn
 from torch.ao.quantization.fake_quantize import (
     default_fixed_qparams_range_0to1_fake_quant as default_fixed_qparams_range_0to1_fake_quant,
 )
-
-
-        default_fixed_qparams_range_neg1to1_fake_quant as \
-        default_fixed_qparams_range_neg1to1_fake_quant
+from torch.ao.quantization.fake_quantize import (
+    default_fixed_qparams_range_neg1to1_fake_quant as default_fixed_qparams_range_neg1to1_fake_quant,
+)
 from torch.ao.quantization.stubs import DeQuantStub as DeQuantStub
-
-
-        QuantStub as QuantStub
-from typing import Any, Callable, Dict, Optional, Set, Union
-
+from torch.ao.quantization.stubs import QuantStub as QuantStub
 from torch.ao.quantization.utils import get_combined_dict as get_combined_dict
 from torch.nn.utils.parametrize import (
     type_before_parametrizations as type_before_parametrizations,
@@ -58,14 +55,14 @@ def get_default_static_sparse_quant_module_mappings(
 
 def get_static_quant_module_class(
     float_module_class: Callable,
-    additional_static_quant_mapping: Optional[Dict[Callable, Any]] = ...,
-    is_reference: bool = ...) -> Any: ...
+        additional_static_quant_mapping: Optional[Dict[Callable, Any]] = ...,
+        is_reference: bool = ...) -> Any: ...
 
 
 def get_dynamic_quant_module_class(
     float_module_class: Callable,
-    additional_dynamic_quant_mapping: Optional[Dict[Callable,
-    Any]] = ...) -> Any: ...
+        additional_dynamic_quant_mapping: Optional[Dict[Callable,
+                Any]] = ...) -> Any: ...
 
 
 def get_default_qat_module_mappings() -> Dict[Callable, Any]: ...

@@ -16,31 +16,31 @@ from _typeshed import Incomplete
 
 def all_reduce(
     inputs, outputs: Incomplete | None = ..., op=...,
-    streams: Incomplete | None = ...,
-    comms: Incomplete | None = ...) -> None: ...
+        streams: Incomplete | None = ...,
+        comms: Incomplete | None = ...) -> None: ...
 
 
 def reduce(
     inputs: Sequence[torch.Tensor], output: Optional[Union[torch.Tensor,
-    Sequence[torch.Tensor]]] = ..., root: int = ..., op: int = ...,
-    streams: Optional[Sequence[torch.cuda.Stream]] = ...,
-    comms: Incomplete | None = ..., *,
-    outputs: Optional[Sequence[torch.Tensor]] = ...) -> None: ...
+                Sequence[torch.Tensor]]] = ..., root: int = ...,
+        op: int = ..., streams: Optional[Sequence[torch.cuda.Stream]] = ...,
+        comms: Incomplete | None = ..., *,
+        outputs: Optional[Sequence[torch.Tensor]] = ...) -> None: ...
 
 
 def broadcast(
     inputs: Sequence[torch.Tensor], root: int = ...,
-    streams: Incomplete | None = ...,
-    comms: Incomplete | None = ...) -> None: ...
+        streams: Incomplete | None = ...,
+        comms: Incomplete | None = ...) -> None: ...
 
 
 def all_gather(
     inputs: Sequence[torch.Tensor], outputs: Sequence[torch.Tensor],
-    streams: Incomplete | None = ...,
-    comms: Incomplete | None = ...) -> None: ...
+        streams: Incomplete | None = ...,
+        comms: Incomplete | None = ...) -> None: ...
 
 
 def reduce_scatter(
     inputs: Sequence[torch.Tensor], outputs: Sequence[torch.Tensor],
-    op: int = ..., streams: Incomplete | None = ...,
-    comms: Incomplete | None = ...) -> None: ...
+        op: int = ..., streams: Incomplete | None = ...,
+        comms: Incomplete | None = ...) -> None: ...

@@ -9,13 +9,21 @@
 
 
 from collections import OrderedDict
-from typing import Any, Iterable, Iterator, Mapping, Optional, Tuple
+from typing import (
+    Any,
+    Iterable,
+    Iterator,
+    Mapping,
+    Optional,
+    overload,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from ..parameter import Parameter as Parameter
 from .module import Module as Module
 
-
-        TypeVar, Union, overload
 
 T = TypeVar('T', bound=Module)
 
@@ -116,7 +124,7 @@ class ParameterDict(Module):
 
     def update(
         self, parameters: Union[Mapping[str, Any],
-        'ParameterDict']) -> None: ...
+            'ParameterDict']) -> None: ...
 
     def extra_repr(self) -> str: ...
     def __call__(self, input) -> None: ...

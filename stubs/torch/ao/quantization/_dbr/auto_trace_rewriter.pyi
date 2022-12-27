@@ -8,20 +8,18 @@
 # pylint: disable=protected-access
 
 
+from types import ModuleType
+from typing import Any, Callable, Dict, Tuple
+
 import torch.fx
+from _typeshed import Incomplete
 
 from .mappings import conv_ops as conv_ops
 from .quantization_state import AutoQuantizationState as AutoQuantizationState
 from .utils import (
     AutoQuantizationStateModuleDict as AutoQuantizationStateModuleDict,
 )
-
-
-        get_packable_arg_idxs as get_packable_arg_idxs
-from types import ModuleType
-from typing import Any, Callable, Dict, Tuple
-
-from _typeshed import Incomplete
+from .utils import get_packable_arg_idxs as get_packable_arg_idxs
 
 
 class AllModuleTracer(torch.fx.Tracer):

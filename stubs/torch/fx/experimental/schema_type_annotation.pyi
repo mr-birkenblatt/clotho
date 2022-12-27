@@ -30,11 +30,11 @@ class AnnotateTypesWithSchema(Transformer):
 
     def call_function(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]): ...
+            Any]): ...
 
     def call_module(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]): ...
+            Any]): ...
 
     def get_attr(
         self, target: torch.fx.node.Target, args: Tuple[Argument, ...],

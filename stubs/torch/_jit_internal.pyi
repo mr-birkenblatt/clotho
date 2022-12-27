@@ -11,17 +11,16 @@
 import contextlib
 import pickle
 import weakref
+from typing import Any, Callable, Dict, List, Tuple, Type
 
 import torch.distributed.rpc
 from _typeshed import Incomplete
 from torch._C._distributed_rpc import PyRRef as PyRRef
 from torch._sources import fake_range as fake_range
-
-
-        get_source_lines_and_file as get_source_lines_and_file,
-        parse_def as parse_def
-from typing import Any, Callable, Dict, List, Tuple, Type
-
+from torch._sources import (
+    get_source_lines_and_file as get_source_lines_and_file,
+)
+from torch._sources import parse_def as parse_def
 from torch.distributed.rpc import RRef as RRef
 from torch.futures import Future as Future
 
@@ -59,7 +58,7 @@ def createResolutionCallbackForClassMethods(cls): ...
 
 def boolean_dispatch(
     arg_name, arg_index, default, if_true, if_false, module_name,
-    func_name): ...
+        func_name): ...
 
 
 class FunctionModifiers:

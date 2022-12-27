@@ -13,9 +13,9 @@ from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch._jit_internal import Dict as Dict
 from torch._jit_internal import List as List
-
-
-        Optional as Optional, Tuple as Tuple, Union as Union
+from torch._jit_internal import Optional as Optional
+from torch._jit_internal import Tuple as Tuple
+from torch._jit_internal import Union as Union
 from torch.nn.utils.rnn import PackedSequence as PackedSequence
 
 
@@ -56,7 +56,7 @@ class RNNBase(torch.nn.Module):
 
     def get_expected_hidden_size(
         self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-            int, int]: ...
+        int, int]: ...
 
     def check_hidden_size(
         self, hx: Tensor, expected_hidden_size: Tuple[int, int, int],
@@ -88,11 +88,12 @@ class LSTM(RNNBase):
 
     def forward_tensor(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
 
     def forward_packed(
         self, input: PackedSequence, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor, Tensor]]: ...
+                Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor,
+            Tensor]]: ...
 
     def permute_hidden(
         self, hx: Tuple[Tensor, Tensor],
@@ -124,7 +125,7 @@ class GRU(RNNBase):
 
     def forward_tensor(
         self, input: Tensor, hx: Optional[Tensor] = ...) -> Tuple[Tensor,
-            Tensor]: ...
+        Tensor]: ...
 
     def forward_packed(
         self, input: PackedSequence,
@@ -184,7 +185,7 @@ class LSTMCell(RNNCellBase):
 
     def forward(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
     @classmethod
     def from_float(cls, mod): ...

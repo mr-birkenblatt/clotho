@@ -50,7 +50,7 @@ class RNNCell(RNNCellBase):
         nonlinearity: str = ..., device: Incomplete | None = ...,
         dtype: Incomplete | None = ...,
         weight_qparams_dict: Optional[Dict[str, Dict[str,
-        Any]]] = ...) -> None: ...
+                    Any]]] = ...) -> None: ...
 
     def forward(self, input: Tensor, hx: Optional[Tensor] = ...) -> Tensor: ...
     @classmethod
@@ -63,11 +63,11 @@ class LSTMCell(RNNCellBase):
         self, input_size: int, hidden_size: int, bias: bool = ...,
         device: Incomplete | None = ..., dtype: Incomplete | None = ...,
         weight_qparams_dict: Optional[Dict[str, Dict[str,
-        Any]]] = ...) -> None: ...
+                    Any]]] = ...) -> None: ...
 
     def forward(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
     @classmethod
     def from_float(cls, mod, weight_qparams_dict): ...
@@ -79,7 +79,7 @@ class GRUCell(RNNCellBase):
         self, input_size: int, hidden_size: int, bias: bool = ...,
         device: Incomplete | None = ..., dtype: Incomplete | None = ...,
         weight_qparams_dict: Optional[Dict[str, Dict[str,
-        Any]]] = ...) -> None: ...
+                    Any]]] = ...) -> None: ...
 
     def forward(self, input: Tensor, hx: Optional[Tensor] = ...) -> Tensor: ...
     @classmethod
@@ -95,7 +95,7 @@ class RNNBase(nn.RNNBase):
         proj_size: int = ..., device: Incomplete | None = ...,
         dtype: Incomplete | None = ...,
         weight_qparams_dict: Optional[Dict[str, Dict[str,
-        Any]]] = ...) -> None: ...
+                    Any]]] = ...) -> None: ...
 
 
 class LSTM(RNNBase):
@@ -107,7 +107,7 @@ class LSTM(RNNBase):
 
     def get_expected_cell_size(
         self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-            int, int]: ...
+        int, int]: ...
 
     def check_forward_args(
         self, input: Tensor, hidden: Tuple[Tensor, Tensor],

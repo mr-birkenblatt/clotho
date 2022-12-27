@@ -275,7 +275,7 @@ class TripletMarginWithDistanceLoss(_Loss):
 
     def __init__(
         self, *, distance_function: Optional[Callable[[Tensor, Tensor],
-        Tensor]] = ..., margin: float = ..., swap: bool = ...,
+                Tensor]] = ..., margin: float = ..., swap: bool = ...,
         reduction: str = ...) -> None: ...
 
     def forward(

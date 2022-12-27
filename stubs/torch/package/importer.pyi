@@ -9,16 +9,15 @@
 
 
 import abc
-
-from ._mangling import demangle as demangle
-
-
-        get_mangle_prefix as get_mangle_prefix, is_mangled as is_mangled
 from abc import ABC, abstractmethod
 from types import ModuleType
 from typing import Any, Dict, Optional, Tuple
 
 from _typeshed import Incomplete
+
+from ._mangling import demangle as demangle
+from ._mangling import get_mangle_prefix as get_mangle_prefix
+from ._mangling import is_mangled as is_mangled
 
 
 class ObjNotFoundError(Exception):

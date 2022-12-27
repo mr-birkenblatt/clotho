@@ -14,6 +14,5 @@ from .more import unifiable as unifiable
 from .variable import isvar as isvar
 from .variable import Var as Var
 from .variable import var as var
-
-
-        variables as variables, vars as vars
+from .variable import variables as variables
+from .variable import vars as vars

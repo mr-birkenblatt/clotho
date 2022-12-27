@@ -9,16 +9,15 @@
 
 
 import abc
-
-from .utils import FakeSparsity as FakeSparsity
-
-
-        fqn_to_module as fqn_to_module, module_to_fqn as module_to_fqn
 from typing import Dict, Optional, Tuple
 
 from _typeshed import Incomplete
 from torch import nn as nn
 from torch.nn.utils import parametrize as parametrize
+
+from .utils import FakeSparsity as FakeSparsity
+from .utils import fqn_to_module as fqn_to_module
+from .utils import module_to_fqn as module_to_fqn
 
 
 SUPPORTED_MODULES: Incomplete

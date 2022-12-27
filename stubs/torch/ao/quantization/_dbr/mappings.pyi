@@ -8,17 +8,18 @@
 # pylint: disable=protected-access
 
 
+from typing import Callable
+
 from _typeshed import Incomplete
 from torch.ao.quantization.quantization_mappings import (
     DEFAULT_DYNAMIC_QUANT_MODULE_MAPPINGS as DEFAULT_DYNAMIC_QUANT_MODULE_MAPPINGS,
 )
-
-
-        DEFAULT_REFERENCE_STATIC_QUANT_MODULE_MAPPINGS as \
-        DEFAULT_REFERENCE_STATIC_QUANT_MODULE_MAPPINGS,
-        DEFAULT_STATIC_QUANT_MODULE_MAPPINGS as \
-        DEFAULT_STATIC_QUANT_MODULE_MAPPINGS
-from typing import Callable
+from torch.ao.quantization.quantization_mappings import (
+    DEFAULT_REFERENCE_STATIC_QUANT_MODULE_MAPPINGS as DEFAULT_REFERENCE_STATIC_QUANT_MODULE_MAPPINGS,
+)
+from torch.ao.quantization.quantization_mappings import (
+    DEFAULT_STATIC_QUANT_MODULE_MAPPINGS as DEFAULT_STATIC_QUANT_MODULE_MAPPINGS,
+)
 
 
 toq: Incomplete
@@ -38,4 +39,4 @@ a_related_to_b: Incomplete
 
 def ops_are_related(
     cur_op: Callable, expected_op_type: Callable,
-    type_is_module: bool) -> bool: ...
+        type_is_module: bool) -> bool: ...

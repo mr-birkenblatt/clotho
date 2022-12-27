@@ -11,6 +11,6 @@
 from . import eventloop as eventloop
 from . import iter as iter
 from . import map as map
-
-
-        messages as messages, protocol as protocol, queue as queue
+from . import messages as messages
+from . import protocol as protocol
+from . import queue as queue

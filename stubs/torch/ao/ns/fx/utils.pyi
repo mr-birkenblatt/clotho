@@ -9,26 +9,21 @@
 
 
 import enum
-
-import torch
-
-from .ns_types import NSNodeTargetType as NSNodeTargetType
-
-
-        NSResultsType as NSResultsType
-from _typeshed import Incomplete
-from torch.ao.quantization import FakeQuantizeBase as FakeQuantizeBase
-
-
-        ObserverBase as ObserverBase
 from typing import Callable, Dict, List, Optional, Set, Tuple, Union
 
+import torch
+from _typeshed import Incomplete
+from torch.ao.quantization import FakeQuantizeBase as FakeQuantizeBase
+from torch.ao.quantization import ObserverBase as ObserverBase
 from torch.ao.quantization.quantize import (
     is_activation_post_process as is_activation_post_process,
 )
 from torch.ao.quantization.utils import getattr_from_fqn as getattr_from_fqn
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node
+
+from .ns_types import NSNodeTargetType as NSNodeTargetType
+from .ns_types import NSResultsType as NSResultsType
 
 
 toq: Incomplete
@@ -44,15 +39,15 @@ class NodeInputOrOutputType(enum.Enum):
 
 def get_node_first_input_and_output_type(
     node: Node, gm: GraphModule, logger_cls: Callable,
-    node_type_to_io_type_map: Dict[str,
-    Set[NSNodeTargetType]]) -> Tuple[NodeInputOrOutputType,
+        node_type_to_io_type_map: Dict[str,
+            Set[NSNodeTargetType]]) -> Tuple[NodeInputOrOutputType,
         NodeInputOrOutputType]: ...
 
 
 def get_node_input_qparams(
     node: Node, gm: GraphModule, node_type_to_io_type_map: Dict[str,
-    Set[NSNodeTargetType]]) -> Optional[Tuple[Union[torch.Tensor, float],
-        Union[torch.Tensor, int]]]: ...
+            Set[NSNodeTargetType]]) -> Optional[Tuple[Union[torch.Tensor,
+                float], Union[torch.Tensor, int]]]: ...
 
 
 def return_first_non_observer_node(node: Node, gm: GraphModule) -> Node: ...

@@ -80,14 +80,22 @@ def process(fin: IO[str], fout: IO[str]) -> None:
         if is_class_def and gap < 1:
             write_line("\n")
 
+        def count_paren(text: str) -> int:
+            count = 0
+            for char in text:
+                if char in ["(", "["]:
+                    count += 1
+                elif char in [")", "]"]:
+                    count -= 1
+            return count
+
         first_paren = outline.find("(") + 1
-        in_paren = False
+        paren_count = 0
         if first_paren > 0:
+            paren_count += count_paren(outline[:first_paren])
             write_line(f"{outline[:first_paren]}\n")
             outline = f"{cur_indent}{add_indent}{outline[first_paren:]}"
-            in_paren = True
         while len(outline) > max_len or not outline.strip():
-            bslash = ""
             end_ix = max_len - 2
             right_cutoff = outline.rfind(",", 0, end_ix) + 1
             if right_cutoff <= 0:
@@ -98,13 +106,13 @@ def process(fin: IO[str], fout: IO[str]) -> None:
                         raise ValueError(
                             "could not find any way to shorten line: "
                             f"{outline}")
-                    bslash = " \\"
-            if outline.find(")", 0, right_cutoff) >= 0:
-                in_paren = False
-            if in_paren:
-                extra_indent = add_indent
+            paren_count += count_paren(outline[:right_cutoff])
+            if paren_count == 0:
+                bslash = " \\"
             else:
-                extra_indent = f"{add_indent}{add_indent}"
+                bslash = ""
+            need_extra = 0 if cur_indent else 1
+            extra_indent = add_indent * (paren_count + need_extra)
             write_line(f"{outline[:right_cutoff].rstrip()}{bslash}\n")
             outline = \
                 f"{cur_indent}{extra_indent}{outline[right_cutoff:].lstrip()}"

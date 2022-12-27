@@ -8,15 +8,22 @@
 # pylint: disable=protected-access
 
 
-from ..common_types import _ratio_2_t, _ratio_3_t, _size_1_t, _size_2_opt_t
-
-
-        _size_2_t, _size_3_opt_t, _size_3_t, _size_any_opt_t, _size_any_t
 from typing import List, Optional
 
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 
+from ..common_types import (
+    _ratio_2_t,
+    _ratio_3_t,
+    _size_1_t,
+    _size_2_opt_t,
+    _size_2_t,
+    _size_3_opt_t,
+    _size_3_t,
+    _size_any_opt_t,
+    _size_any_t,
+)
 from .module import Module as Module
 
 

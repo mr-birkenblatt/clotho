@@ -8,7 +8,18 @@
 # pylint: disable=protected-access
 
 
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import torch
 from _typeshed import Incomplete
@@ -16,8 +27,6 @@ from torch._C import ListType as ListType
 from torch._C import TupleType as TupleType
 from torch.jit._recursive import wrap_cpp_module as wrap_cpp_module
 
-
-        Tuple, TypeVar, Union
 
 T = TypeVar('T')
 MAX_RAW_TENSOR_SIZE: int
@@ -31,24 +40,27 @@ class InflatableArg(NamedTuple):
 
 def bundle_inputs(
     model: torch.jit.ScriptModule, inputs: Union[Optional[Sequence[Tuple[Any,
-    ...]]], Dict[Callable, Optional[Sequence[Tuple[Any, ...]]]]],
-    info: Optional[Union[List[str], Dict[Callable, List[str]]]] = ..., *,
-    _receive_inflate_expr:
-    Optional[List[str]] = ...) -> torch.jit.ScriptModule: ...
+                        ...]]], Dict[Callable, Optional[Sequence[Tuple[Any,
+                            ...]]]]], info: Optional[Union[List[str],
+                Dict[Callable, List[str]]]] = ..., *,
+        _receive_inflate_expr:
+        Optional[List[str]] = ...) -> torch.jit.ScriptModule: ...
 
 
 def augment_model_with_bundled_inputs(
     model: torch.jit.ScriptModule, inputs: Optional[Sequence[Tuple[Any,
-    ...]]] = ..., _receive_inflate_expr: Optional[List[str]] = ...,
-    info: Optional[List[str]] = ..., skip_size_check: bool = ...) -> None: ...
+                    ...]]] = ...,
+        _receive_inflate_expr: Optional[List[str]] = ...,
+        info: Optional[List[str]] = ...,
+        skip_size_check: bool = ...) -> None: ...
 
 
 def augment_many_model_functions_with_bundled_inputs(
     model: torch.jit.ScriptModule, inputs: Dict[Callable,
-    Optional[Sequence[Tuple[Any, ...]]]],
-    _receive_inflate_expr: Optional[List[str]] = ...,
-    info: Optional[Dict[Callable, List[str]]] = ...,
-    skip_size_check: bool = ...) -> None: ...
+            Optional[Sequence[Tuple[Any, ...]]]],
+        _receive_inflate_expr: Optional[List[str]] = ...,
+        info: Optional[Dict[Callable, List[str]]] = ...,
+        skip_size_check: bool = ...) -> None: ...
 
 
 def bundle_randn(*size, dtype: Incomplete | None = ...): ...

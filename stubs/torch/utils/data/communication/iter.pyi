@@ -40,7 +40,8 @@ def EnsureNonBlockingDataPipe(validated_datapipe): ...
 
 def DataPipeBehindQueues(
     source_datapipe, protocol, full_stop: bool = ...,
-    blocking_request_get: bool = ...) -> Generator[Incomplete, None, None]: ...
+        blocking_request_get: bool = ...) -> Generator[Incomplete, None,
+        None]: ...
 
 
 class QueueWrapper(NonBlocking):

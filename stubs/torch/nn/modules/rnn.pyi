@@ -52,7 +52,7 @@ class RNNBase(Module):
 
     def get_expected_hidden_size(
         self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-            int, int]: ...
+        int, int]: ...
 
     def check_hidden_size(
         self, hx: Tensor, expected_hidden_size: Tuple[int, int, int],
@@ -75,7 +75,7 @@ class RNN(RNNBase):
     @overload
     def forward(
         self, input: Tensor, hx: Optional[Tensor] = ...) -> Tuple[Tensor,
-            Tensor]: ...
+        Tensor]: ...
 
     @overload
     def forward(
@@ -88,7 +88,7 @@ class LSTM(RNNBase):
 
     def get_expected_cell_size(
         self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-            int, int]: ...
+        int, int]: ...
 
     def check_forward_args(
         self, input: Tensor, hidden: Tuple[Tensor, Tensor],
@@ -101,12 +101,13 @@ class LSTM(RNNBase):
     @overload
     def forward(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
 
     @overload
     def forward(
         self, input: PackedSequence, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor, Tensor]]: ...
+                Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor,
+            Tensor]]: ...
 
 
 class GRU(RNNBase):
@@ -115,7 +116,7 @@ class GRU(RNNBase):
     @overload
     def forward(
         self, input: Tensor, hx: Optional[Tensor] = ...) -> Tuple[Tensor,
-            Tensor]: ...
+        Tensor]: ...
 
     @overload
     def forward(
@@ -163,7 +164,7 @@ class LSTMCell(RNNCellBase):
 
     def forward(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
 
 class GRUCell(RNNCellBase):

@@ -9,6 +9,7 @@
 
 
 import enum
+from typing import Optional, Tuple
 
 import torch
 from _typeshed import Incomplete
@@ -16,21 +17,23 @@ from torch._namedtensor_internals import (
     check_serializing_named_tensor as check_serializing_named_tensor,
 )
 from torch._namedtensor_internals import is_ellipsis as is_ellipsis
-
-
-        resolve_ellipsis as resolve_ellipsis,
-        single_ellipsis_index as single_ellipsis_index,
-        unzip_namedshape as unzip_namedshape, update_names as update_names
+from torch._namedtensor_internals import resolve_ellipsis as resolve_ellipsis
+from torch._namedtensor_internals import (
+    single_ellipsis_index as single_ellipsis_index,
+)
+from torch._namedtensor_internals import unzip_namedshape as unzip_namedshape
+from torch._namedtensor_internals import update_names as update_names
 from torch.overrides import (
     get_default_nowrap_functions as get_default_nowrap_functions,
 )
-
-
-        handle_torch_function as handle_torch_function,
-        has_torch_function as has_torch_function,
-        has_torch_function_unary as has_torch_function_unary,
-        has_torch_function_variadic as has_torch_function_variadic
-from typing import Optional, Tuple
+from torch.overrides import handle_torch_function as handle_torch_function
+from torch.overrides import has_torch_function as has_torch_function
+from torch.overrides import (
+    has_torch_function_unary as has_torch_function_unary,
+)
+from torch.overrides import (
+    has_torch_function_variadic as has_torch_function_variadic,
+)
 
 
 class Tensor(torch._C._TensorBase):

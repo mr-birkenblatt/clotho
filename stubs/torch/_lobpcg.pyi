@@ -27,7 +27,7 @@ class LOBPCGAutogradFunction(torch.autograd.Function):
         ortho_iparams: Optional[Dict[str, int]] = ...,
         ortho_fparams: Optional[Dict[str, float]] = ...,
         ortho_bparams: Optional[Dict[str, bool]] = ...) -> Tuple[Tensor,
-            Tensor]: ...
+        Tensor]: ...
 
     @staticmethod
     def backward(ctx, D_grad, U_grad): ...
@@ -35,13 +35,13 @@ class LOBPCGAutogradFunction(torch.autograd.Function):
 
 def lobpcg(
     A: Tensor, k: Optional[int] = ..., B: Optional[Tensor] = ...,
-    X: Optional[Tensor] = ..., n: Optional[int] = ...,
-    iK: Optional[Tensor] = ..., niter: Optional[int] = ...,
-    tol: Optional[float] = ..., largest: Optional[bool] = ...,
-    method: Optional[str] = ..., tracker: None = ...,
-    ortho_iparams: Optional[Dict[str, int]] = ...,
-    ortho_fparams: Optional[Dict[str, float]] = ...,
-    ortho_bparams: Optional[Dict[str, bool]] = ...) -> Tuple[Tensor,
+        X: Optional[Tensor] = ..., n: Optional[int] = ...,
+        iK: Optional[Tensor] = ..., niter: Optional[int] = ...,
+        tol: Optional[float] = ..., largest: Optional[bool] = ...,
+        method: Optional[str] = ..., tracker: None = ...,
+        ortho_iparams: Optional[Dict[str, int]] = ...,
+        ortho_fparams: Optional[Dict[str, float]] = ...,
+        ortho_bparams: Optional[Dict[str, bool]] = ...) -> Tuple[Tensor,
         Tensor]: ...
 
 
@@ -66,7 +66,7 @@ class LOBPCG:
     def __init__(
         self, A: Optional[Tensor], B: Optional[Tensor], X: Tensor,
         iK: Optional[Tensor], iparams: Dict[str, int], fparams: Dict[str,
-        float], bparams: Dict[str, bool], method: str,
+            float], bparams: Dict[str, bool], method: str,
         tracker: None) -> None: ...
 
     def update(self) -> None: ...

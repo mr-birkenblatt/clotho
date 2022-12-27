@@ -8,6 +8,18 @@
 # pylint: disable=protected-access
 
 
+from enum import Enum
+from pathlib import Path
+from typing import Any, BinaryIO, List, Sequence, Union
+
+from _typeshed import Incomplete
+from torch.serialization import location_tag as location_tag
+from torch.serialization import (
+    normalize_storage_type as normalize_storage_type,
+)
+from torch.types import Storage as Storage
+from torch.utils.hooks import RemovableHandle as RemovableHandle
+
 from ._digraph import DiGraph as DiGraph
 from ._mangling import demangle as demangle
 from ._mangling import is_mangled as is_mangled
@@ -19,21 +31,8 @@ from .find_file_dependencies import (
 from .glob_group import GlobGroup as GlobGroup
 from .glob_group import GlobPattern as GlobPattern
 from .importer import Importer as Importer
-
-
-        OrderedImporter as OrderedImporter, sys_importer as sys_importer
-from enum import Enum
-from pathlib import Path
-
-from _typeshed import Incomplete
-from torch.serialization import location_tag as location_tag
-
-
-        normalize_storage_type as normalize_storage_type
-from typing import Any, BinaryIO, List, Sequence, Union
-
-from torch.types import Storage as Storage
-from torch.utils.hooks import RemovableHandle as RemovableHandle
+from .importer import OrderedImporter as OrderedImporter
+from .importer import sys_importer as sys_importer
 
 
 ActionHook: Incomplete
@@ -86,7 +85,7 @@ class PackageExporter:
 
     def __init__(
         self, f: Union[str, Path, BinaryIO], importer: Union[Importer,
-        Sequence[Importer]] = ...) -> None: ...
+            Sequence[Importer]] = ...) -> None: ...
 
     def save_source_file(
         self, module_name: str, file_or_directory: str,

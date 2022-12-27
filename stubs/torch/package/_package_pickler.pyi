@@ -8,14 +8,14 @@
 # pylint: disable=protected-access
 
 
-from .importer import Importer as Importer
-
-
-        ObjMismatchError as ObjMismatchError,
-        ObjNotFoundError as ObjNotFoundError, sys_importer as sys_importer
 from pickle import _Pickler
 
 from _typeshed import Incomplete
+
+from .importer import Importer as Importer
+from .importer import ObjMismatchError as ObjMismatchError
+from .importer import ObjNotFoundError as ObjNotFoundError
+from .importer import sys_importer as sys_importer
 
 
 class PackagePickler(_Pickler):

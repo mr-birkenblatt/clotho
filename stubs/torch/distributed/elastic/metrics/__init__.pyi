@@ -8,18 +8,22 @@
 # pylint: disable=protected-access
 
 
+from typing import Optional
+
 from torch.distributed.elastic.metrics.static_init import *
 
+from .api import configure as configure
 from .api import ConsoleMetricHandler as ConsoleMetricHandler
-
-
-        MetricData as MetricData, MetricHandler as MetricHandler,
-        MetricsConfig as MetricsConfig,
-        NullMetricHandler as NullMetricHandler, configure as configure,
-        getStream as getStream, get_elapsed_time_ms as get_elapsed_time_ms,
-        prof as prof, profile as profile, publish_metric as publish_metric,
-        put_metric as put_metric
-from typing import Optional
+from .api import get_elapsed_time_ms as get_elapsed_time_ms
+from .api import getStream as getStream
+from .api import MetricData as MetricData
+from .api import MetricHandler as MetricHandler
+from .api import MetricsConfig as MetricsConfig
+from .api import NullMetricHandler as NullMetricHandler
+from .api import prof as prof
+from .api import profile as profile
+from .api import publish_metric as publish_metric
+from .api import put_metric as put_metric
 
 
 def initialize_metrics(cfg: Optional[MetricsConfig] = ...): ...

@@ -9,13 +9,12 @@
 
 
 import multiprocessing as mp
+from typing import Any, Dict, List, Set
 
 from .api import RequestQueue as RequestQueue
 from .api import TimerClient as TimerClient
-
-
-        TimerRequest as TimerRequest, TimerServer as TimerServer
-from typing import Any, Dict, List, Set
+from .api import TimerRequest as TimerRequest
+from .api import TimerServer as TimerServer
 
 
 class LocalTimerClient(TimerClient):

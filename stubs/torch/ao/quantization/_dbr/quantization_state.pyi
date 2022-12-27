@@ -8,51 +8,58 @@
 # pylint: disable=protected-access
 
 
-import torch
-
-from .function_fusion import (
-    get_seen_q_op_info_of_end_of_fusion as get_seen_q_op_info_of_end_of_fusion,
-)
-
-
-        get_seen_q_op_info_of_start_of_fusion as \
-        get_seen_q_op_info_of_start_of_fusion,
-        match_fusion_patterns as match_fusion_patterns
-from .mappings import conv_ops as conv_ops
-from .mappings import ops_are_related as ops_are_related
-from .utils import FuncOutputDTypeType as FuncOutputDTypeType
-
-
-        FuncOutputObsType as FuncOutputObsType,
-        OpQuantizeabilityType as OpQuantizeabilityType,
-        QTensorInfo as QTensorInfo, SeenNonQOpInfo as SeenNonQOpInfo,
-        SeenQOpInfo as SeenQOpInfo,
-        clone_detach_tensor_without_dispatch as \
-        clone_detach_tensor_without_dispatch,
-        converted_func_needs_scale_zp as converted_func_needs_scale_zp,
-        get_cur_qconfig as get_cur_qconfig,
-        get_func_output_dtype_type as get_func_output_dtype_type,
-        get_func_output_obs_type as get_func_output_obs_type,
-        get_input_args_quant_dequant_info as \
-        get_input_args_quant_dequant_info,
-        get_input_observed_arg_idxs as get_input_observed_arg_idxs,
-        get_op_packing_only_uses_module_attributes as \
-        get_op_packing_only_uses_module_attributes,
-        get_packable_arg_idxs as get_packable_arg_idxs,
-        get_packable_nontensor_arg_idxs as get_packable_nontensor_arg_idxs,
-        get_packable_tensor_arg_idxs as get_packable_tensor_arg_idxs,
-        get_packable_tensor_kwarg_names as get_packable_tensor_kwarg_names,
-        get_param_name as get_param_name,
-        get_quantized_op as get_quantized_op,
-        get_weight_arg_idx as get_weight_arg_idx,
-        iterate_and_apply as iterate_and_apply,
-        op_needs_quantization as op_needs_quantization
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import torch
 from _typeshed import Incomplete
 from torch.ao.quantization.utils import (
     activation_is_int32_quantized as activation_is_int32_quantized,
 )
+
+from .function_fusion import (
+    get_seen_q_op_info_of_end_of_fusion as get_seen_q_op_info_of_end_of_fusion,
+)
+from .function_fusion import (
+    get_seen_q_op_info_of_start_of_fusion as get_seen_q_op_info_of_start_of_fusion,
+)
+from .function_fusion import match_fusion_patterns as match_fusion_patterns
+from .mappings import conv_ops as conv_ops
+from .mappings import ops_are_related as ops_are_related
+from .utils import (
+    clone_detach_tensor_without_dispatch as clone_detach_tensor_without_dispatch,
+)
+from .utils import (
+    converted_func_needs_scale_zp as converted_func_needs_scale_zp,
+)
+from .utils import FuncOutputDTypeType as FuncOutputDTypeType
+from .utils import FuncOutputObsType as FuncOutputObsType
+from .utils import get_cur_qconfig as get_cur_qconfig
+from .utils import get_func_output_dtype_type as get_func_output_dtype_type
+from .utils import get_func_output_obs_type as get_func_output_obs_type
+from .utils import (
+    get_input_args_quant_dequant_info as get_input_args_quant_dequant_info,
+)
+from .utils import get_input_observed_arg_idxs as get_input_observed_arg_idxs
+from .utils import (
+    get_op_packing_only_uses_module_attributes as get_op_packing_only_uses_module_attributes,
+)
+from .utils import get_packable_arg_idxs as get_packable_arg_idxs
+from .utils import (
+    get_packable_nontensor_arg_idxs as get_packable_nontensor_arg_idxs,
+)
+from .utils import get_packable_tensor_arg_idxs as get_packable_tensor_arg_idxs
+from .utils import (
+    get_packable_tensor_kwarg_names as get_packable_tensor_kwarg_names,
+)
+from .utils import get_param_name as get_param_name
+from .utils import get_quantized_op as get_quantized_op
+from .utils import get_weight_arg_idx as get_weight_arg_idx
+from .utils import iterate_and_apply as iterate_and_apply
+from .utils import op_needs_quantization as op_needs_quantization
+from .utils import OpQuantizeabilityType as OpQuantizeabilityType
+from .utils import QTensorInfo as QTensorInfo
+from .utils import SeenNonQOpInfo as SeenNonQOpInfo
+from .utils import SeenQOpInfo as SeenQOpInfo
 
 
 OpConvertInfo: Incomplete
@@ -107,7 +114,7 @@ class AutoQuantizationState(torch.nn.Module):
 
     def op_prepare_before_hook(
         self, op: Callable, args: Tuple[Any, ...], kwargs: Dict[str,
-        Any]) -> Tuple[Tuple[Any, ...], Dict[str, Any]]: ...
+            Any]) -> Tuple[Tuple[Any, ...], Dict[str, Any]]: ...
 
     def first_call_op_prepare_after_hook(
         self, op: Callable, output: Any, args: Tuple[Any, ...],
@@ -121,7 +128,7 @@ class AutoQuantizationState(torch.nn.Module):
     def op_convert_before_hook(
         self, op: Callable, args: Tuple[Any, ...], kwargs: Dict[str, Any],
         root_module: torch.nn.Module) -> Tuple[Callable, Tuple[Any, ...],
-            Dict[str, Any]]: ...
+        Dict[str, Any]]: ...
 
     def op_convert_after_hook(
         self, op: Callable, output, global_op_idx: List[int]) -> Any: ...

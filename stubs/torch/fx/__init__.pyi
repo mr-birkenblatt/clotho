@@ -9,10 +9,10 @@
 
 
 from ._symbolic_trace import PH as PH
-
-
-        ProxyableClassMeta as ProxyableClassMeta, Tracer as Tracer,
-        symbolic_trace as symbolic_trace, wrap as wrap
+from ._symbolic_trace import ProxyableClassMeta as ProxyableClassMeta
+from ._symbolic_trace import symbolic_trace as symbolic_trace
+from ._symbolic_trace import Tracer as Tracer
+from ._symbolic_trace import wrap as wrap
 from .graph import CodeGen as CodeGen
 from .graph import Graph as Graph
 from .graph_module import GraphModule as GraphModule

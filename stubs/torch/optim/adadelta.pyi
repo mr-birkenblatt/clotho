@@ -28,5 +28,5 @@ class Adadelta(Optimizer):
 
 def adadelta(
     params: List[Tensor], grads: List[Tensor], square_avgs: List[Tensor],
-    acc_deltas: List[Tensor], foreach: bool = ..., *, lr: float, rho: float,
-    eps: float, weight_decay: float, maximize: bool): ...
+        acc_deltas: List[Tensor], foreach: bool = ..., *, lr: float,
+        rho: float, eps: float, weight_decay: float, maximize: bool): ...

@@ -9,18 +9,14 @@
 
 
 import torch
-
-from .mappings import conv_ops as conv_ops
-
-
-        conv_prepack_fns as conv_prepack_fns
 from _typeshed import Incomplete
 from torch.quantization import FakeQuantizeBase as FakeQuantizeBase
+from torch.quantization import ObserverBase as ObserverBase
 
+from .mappings import conv_ops as conv_ops
+from .mappings import conv_prepack_fns as conv_prepack_fns
 from .quantization_state import AutoQuantizationState as AutoQuantizationState
 
-
-        ObserverBase as ObserverBase
 
 toq: Incomplete
 

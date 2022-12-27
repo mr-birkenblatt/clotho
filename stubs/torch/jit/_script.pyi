@@ -8,6 +8,8 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
+
 import torch
 from _typeshed import Incomplete
 from torch._classes import classes as classes
@@ -16,33 +18,28 @@ from torch.jit._monkeytype_config import (
     JitTypeTraceConfig as JitTypeTraceConfig,
 )
 from torch.jit._monkeytype_config import JitTypeTraceStore as JitTypeTraceStore
-
-from ._serialization import validate_map_location as validate_map_location
-
-
-        monkeytype_trace as monkeytype_trace
+from torch.jit._monkeytype_config import monkeytype_trace as monkeytype_trace
+from torch.jit._recursive import (
+    infer_methods_to_compile as infer_methods_to_compile,
+)
 from torch.jit._recursive import ScriptMethodStub as ScriptMethodStub
-
-
-        infer_methods_to_compile as infer_methods_to_compile,
-        wrap_cpp_module as wrap_cpp_module
+from torch.jit._recursive import wrap_cpp_module as wrap_cpp_module
 from torch.jit.frontend import get_default_args as get_default_args
-
-
-        get_jit_class_def as get_jit_class_def, get_jit_def as get_jit_def
+from torch.jit.frontend import get_jit_class_def as get_jit_class_def
+from torch.jit.frontend import get_jit_def as get_jit_def
 from torch.nn import Module as Module
 from torch.overrides import has_torch_function as has_torch_function
-
-
-        has_torch_function_unary as has_torch_function_unary,
-        has_torch_function_variadic as has_torch_function_variadic
+from torch.overrides import (
+    has_torch_function_unary as has_torch_function_unary,
+)
+from torch.overrides import (
+    has_torch_function_variadic as has_torch_function_variadic,
+)
 from torch.package import PackageExporter as PackageExporter
-
-
-        PackageImporter as PackageImporter
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
-
+from torch.package import PackageImporter as PackageImporter
 from torch.utils import set_module as set_module
+
+from ._serialization import validate_map_location as validate_map_location
 
 
 type_trace_db: Incomplete
@@ -180,8 +177,8 @@ def create_script_list(obj, type_hint: Incomplete | None = ...): ...
 
 def script(
     obj, optimize: Incomplete | None = ..., _frames_up: int = ...,
-    _rcb: Incomplete | None = ..., example_inputs: Union[List[Tuple],
-    Dict[Callable, List[Tuple]], None] = ...): ...
+        _rcb: Incomplete | None = ..., example_inputs: Union[List[Tuple],
+            Dict[Callable, List[Tuple]], None] = ...): ...
 
 
 def interface(obj): ...

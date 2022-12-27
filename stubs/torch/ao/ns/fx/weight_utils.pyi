@@ -8,23 +8,21 @@
 # pylint: disable=protected-access
 
 
-import torch
-import torch.nn as nn
-
-from .ns_types import NSSingleResultType as NSSingleResultType
-
-
-        NSSingleResultValuesType as NSSingleResultValuesType
-from .utils import get_target_type_str as get_target_type_str
-
-
-        getattr_from_fqn as getattr_from_fqn,
-        return_first_non_observer_node as return_first_non_observer_node
 from typing import Callable, Dict, List, Optional
 
+import torch
+import torch.nn as nn
 from _typeshed import Incomplete
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node
+
+from .ns_types import NSSingleResultType as NSSingleResultType
+from .ns_types import NSSingleResultValuesType as NSSingleResultValuesType
+from .utils import get_target_type_str as get_target_type_str
+from .utils import getattr_from_fqn as getattr_from_fqn
+from .utils import (
+    return_first_non_observer_node as return_first_non_observer_node,
+)
 
 
 toq: Incomplete
@@ -72,5 +70,5 @@ def get_op_to_type_to_weight_extraction_fn(
 
 def extract_weight_from_node(
     node: Node, gm: GraphModule,
-    op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
-    Callable]]] = ...) -> Optional[NSSingleResultType]: ...
+        op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
+                    Callable]]] = ...) -> Optional[NSSingleResultType]: ...

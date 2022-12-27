@@ -11,10 +11,12 @@
 import torch
 from torch.nn import BatchNorm1d as BatchNorm1d
 from torch.nn import BatchNorm2d as BatchNorm2d
-
-
-        BatchNorm3d as BatchNorm3d, Conv1d as Conv1d, Conv2d as Conv2d,
-        Conv3d as Conv3d, Linear as Linear, ReLU as ReLU
+from torch.nn import BatchNorm3d as BatchNorm3d
+from torch.nn import Conv1d as Conv1d
+from torch.nn import Conv2d as Conv2d
+from torch.nn import Conv3d as Conv3d
+from torch.nn import Linear as Linear
+from torch.nn import ReLU as ReLU
 from torch.nn.utils.parametrize import (
     type_before_parametrizations as type_before_parametrizations,
 )

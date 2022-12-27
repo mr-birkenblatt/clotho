@@ -8,14 +8,14 @@
 # pylint: disable=protected-access
 
 
+from _typeshed import Incomplete
+from torch._utils import ExceptionWrapper as ExceptionWrapper
+
 from . import collate as collate
 from . import fetch as fetch
 from . import pin_memory as pin_memory
-
-
-        signal_handling as signal_handling, worker as worker
-from _typeshed import Incomplete
-from torch._utils import ExceptionWrapper as ExceptionWrapper
+from . import signal_handling as signal_handling
+from . import worker as worker
 
 
 IS_WINDOWS: Incomplete

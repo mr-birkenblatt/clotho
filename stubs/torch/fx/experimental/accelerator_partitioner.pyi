@@ -8,19 +8,28 @@
 # pylint: disable=protected-access
 
 
+from typing import Dict, List, NamedTuple, Tuple
+
 import torch
 from _typeshed import Incomplete
 from torch.fx.experimental.partitioner_utils import Device as Device
-
-
-        NodeLatency as NodeLatency, Partition as Partition,
-        PartitionMode as PartitionMode,
-        PartitionerConfig as PartitionerConfig,
-        get_extra_size_of as get_extra_size_of,
-        get_latency_of_partitioned_graph as get_latency_of_partitioned_graph,
-        get_partition_to_latency_mapping as get_partition_to_latency_mapping
-from typing import Dict, List, NamedTuple, Tuple
-
+from torch.fx.experimental.partitioner_utils import (
+    get_extra_size_of as get_extra_size_of,
+)
+from torch.fx.experimental.partitioner_utils import (
+    get_latency_of_partitioned_graph as get_latency_of_partitioned_graph,
+)
+from torch.fx.experimental.partitioner_utils import (
+    get_partition_to_latency_mapping as get_partition_to_latency_mapping,
+)
+from torch.fx.experimental.partitioner_utils import NodeLatency as NodeLatency
+from torch.fx.experimental.partitioner_utils import Partition as Partition
+from torch.fx.experimental.partitioner_utils import (
+    PartitionerConfig as PartitionerConfig,
+)
+from torch.fx.experimental.partitioner_utils import (
+    PartitionMode as PartitionMode,
+)
 from torch.fx.graph_module import GraphModule as GraphModule
 from torch.fx.node import map_arg as map_arg
 from torch.fx.node import Node as Node
@@ -63,7 +72,7 @@ def reset_partition_device(partitions) -> None: ...
 
 def combine_two_partitions(
     partition_0: Partition, partition_1: Partition,
-    partitions: List[Partition]) -> None: ...
+        partitions: List[Partition]) -> None: ...
 
 
 def set_parents_and_children(partitions: List[Partition]) -> None: ...
@@ -84,7 +93,7 @@ def get_logical_id_to_device(devices: List[Device]) -> Dict[int, Device]: ...
 
 def get_device_partition_stats(
     partitions: List[Partition], devices: List[Device]) -> Tuple[Dict[Device,
-        List[Partition]], Dict[Device, int], List[Partition]]: ...
+            List[Partition]], Dict[Device, int], List[Partition]]: ...
 
 
 def get_device_to_partitions_mapping(

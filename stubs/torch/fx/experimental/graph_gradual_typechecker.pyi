@@ -14,10 +14,9 @@ from torch.fx.experimental.unification import Var as Var
 from torch.fx.node import Node as Node
 from torch.fx.node import Target as Target
 from torch.fx.tensor_type import Dyn as Dyn
+from torch.fx.tensor_type import is_consistent as is_consistent
+from torch.fx.tensor_type import is_more_precise as is_more_precise
 from torch.fx.tensor_type import TensorType as TensorType
-
-
-        is_consistent as is_consistent, is_more_precise as is_more_precise
 from torch.nn.modules.batchnorm import BatchNorm2d as BatchNorm2d
 from torch.nn.modules.conv import Conv2d as Conv2d
 

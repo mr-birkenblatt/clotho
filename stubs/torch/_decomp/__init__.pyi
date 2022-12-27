@@ -19,10 +19,10 @@ decomposition_table: Dict[torch._ops.OpOverload, Callable]
 
 def register_decomposition(
     aten_op, registry: Incomplete | None = ..., *,
-    disable_meta: bool = ...): ...
+        disable_meta: bool = ...): ...
 
 
 def get_decompositions(
     aten_ops: Sequence[Union[torch._ops.OpOverload,
-    torch._ops.OpOverloadPacket]]) -> Dict[torch._ops.OpOverload,
+                torch._ops.OpOverloadPacket]]) -> Dict[torch._ops.OpOverload,
         Callable]: ...

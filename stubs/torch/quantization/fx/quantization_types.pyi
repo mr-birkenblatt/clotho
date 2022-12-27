@@ -9,6 +9,6 @@
 
 
 from torch.ao.quantization.quantization_types import Pattern as Pattern
-
-
-        QuantizerCls as QuantizerCls
+from torch.ao.quantization.quantization_types import (
+    QuantizerCls as QuantizerCls,
+)

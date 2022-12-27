@@ -8,13 +8,14 @@
 # pylint: disable=protected-access
 
 
+from _typeshed import Incomplete
+
 from .expanded_weights_utils import (
     set_grad_sample_if_exists as set_grad_sample_if_exists,
 )
-
-
-        unpack_expanded_weight_or_tensor as unpack_expanded_weight_or_tensor
-from _typeshed import Incomplete
+from .expanded_weights_utils import (
+    unpack_expanded_weight_or_tensor as unpack_expanded_weight_or_tensor,
+)
 
 
 THRESHOLD: int
@@ -28,7 +29,7 @@ def conv_args_and_kwargs(kwarg_names, expanded_args_and_kwargs): ...
 
 def conv_normalizer(
     input, weight, bias: Incomplete | None = ..., stride: int = ...,
-    padding: int = ..., dilation: int = ..., groups: int = ...): ...
+        padding: int = ..., dilation: int = ..., groups: int = ...): ...
 
 
 def conv_backward(func, ctx, grad_output): ...
@@ -36,12 +37,12 @@ def conv_backward(func, ctx, grad_output): ...
 
 def conv_unfold_weight_grad_sample(
     input, grad_output, weight_shape, kernel_size, stride, padding, dilation,
-    groups, func): ...
+        groups, func): ...
 
 
 def conv_group_weight_grad_sample(
     input, grad_output, weight_shape, stride, padding, dilation, batch_size,
-    func): ...
+        func): ...
 
 
 def unfold3d(tensor, kernel_size, padding, stride, dilation): ...

@@ -9,15 +9,13 @@
 
 
 from collections.abc import Generator
+from typing import Optional, Sequence, Union
 
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch.nn.modules.container import Module as Module
-
-
-        ModuleDict as ModuleDict, ModuleList as ModuleList
-from typing import Optional, Sequence, Union
-
+from torch.nn.modules.container import ModuleDict as ModuleDict
+from torch.nn.modules.container import ModuleList as ModuleList
 from torch.nn.parameter import Parameter as Parameter
 
 
@@ -40,7 +38,7 @@ class ParametrizationList(ModuleList):
 
 def register_parametrization(
     module: Module, tensor_name: str, parametrization: Module, *,
-    unsafe: bool = ...) -> Module: ...
+        unsafe: bool = ...) -> Module: ...
 
 
 def is_parametrized(
@@ -49,7 +47,7 @@ def is_parametrized(
 
 def remove_parametrizations(
     module: Module, tensor_name: str,
-    leave_parametrized: bool = ...) -> Module: ...
+        leave_parametrized: bool = ...) -> Module: ...
 
 
 def type_before_parametrizations(module: Module) -> type: ...
@@ -57,4 +55,4 @@ def type_before_parametrizations(module: Module) -> type: ...
 
 def transfer_parametrizations_and_params(
     from_module: Module, to_module: Module,
-    tensor_name: Optional[str] = ...) -> Module: ...
+        tensor_name: Optional[str] = ...) -> Module: ...

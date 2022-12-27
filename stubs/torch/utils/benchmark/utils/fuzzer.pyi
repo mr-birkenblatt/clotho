@@ -56,8 +56,9 @@ class Fuzzer:
 
     def __init__(
         self, parameters: List[Union[FuzzedParameter,
-        List[FuzzedParameter]]], tensors: List[Union[FuzzedTensor,
-        List[FuzzedTensor]]], constraints: Optional[List[Callable]] = ...,
+                List[FuzzedParameter]]], tensors: List[Union[FuzzedTensor,
+                List[FuzzedTensor]]],
+        constraints: Optional[List[Callable]] = ...,
         seed: Optional[int] = ...) -> None: ...
 
     def take(self, n) -> Generator[Incomplete, None, None]: ...

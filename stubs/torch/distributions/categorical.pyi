@@ -13,9 +13,8 @@ from torch._six import nan as nan
 from torch.distributions import constraints as constraints
 from torch.distributions.distribution import Distribution as Distribution
 from torch.distributions.utils import lazy_property as lazy_property
-
-
-        logits_to_probs as logits_to_probs, probs_to_logits as probs_to_logits
+from torch.distributions.utils import logits_to_probs as logits_to_probs
+from torch.distributions.utils import probs_to_logits as probs_to_logits
 
 
 class Categorical(Distribution):

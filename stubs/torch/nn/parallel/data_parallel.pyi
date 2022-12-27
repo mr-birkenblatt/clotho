@@ -37,5 +37,5 @@ class DataParallel(Module):
 
 def data_parallel(
     module, inputs, device_ids: Incomplete | None = ...,
-    output_device: Incomplete | None = ..., dim: int = ...,
-    module_kwargs: Incomplete | None = ...): ...
+        output_device: Incomplete | None = ..., dim: int = ...,
+        module_kwargs: Incomplete | None = ...): ...

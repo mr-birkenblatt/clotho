@@ -29,7 +29,7 @@ class SGD(Optimizer):
 
 def sgd(
     params: List[Tensor], d_p_list: List[Tensor],
-    momentum_buffer_list: List[Optional[Tensor]],
-    has_sparse_grad: bool = ..., foreach: bool = ..., *, weight_decay: float,
-    momentum: float, lr: float, dampening: float, nesterov: bool,
-    maximize: bool): ...
+        momentum_buffer_list: List[Optional[Tensor]],
+        has_sparse_grad: bool = ..., foreach: bool = ..., *,
+        weight_decay: float, momentum: float, lr: float, dampening: float,
+        nesterov: bool, maximize: bool): ...

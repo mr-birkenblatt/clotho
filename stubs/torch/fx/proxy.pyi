@@ -8,22 +8,19 @@
 # pylint: disable=protected-access
 
 
-from ._compatibility import compatibility as compatibility
-from .graph import Graph as Graph
-from .graph import magic_methods as magic_methods
-
-
-        reflectable_magic_methods as reflectable_magic_methods
-from .node import Argument as Argument
-from .node import Node as Node
-from .node import Target as Target
-
-
-        base_types as base_types, map_aggregate as map_aggregate
 from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Tuple
 
 from _typeshed import Incomplete
 
+from ._compatibility import compatibility as compatibility
+from .graph import Graph as Graph
+from .graph import magic_methods as magic_methods
+from .graph import reflectable_magic_methods as reflectable_magic_methods
+from .node import Argument as Argument
+from .node import base_types as base_types
+from .node import map_aggregate as map_aggregate
+from .node import Node as Node
+from .node import Target as Target
 from .operator_schemas import (
     check_for_mutable_operation as check_for_mutable_operation,
 )
@@ -48,7 +45,7 @@ class TracerBase:
         self, kind: str, target: Target, args: Tuple[Any, ...],
         kwargs: Dict[str, Any], name: Optional[str] = ...,
         type_expr: Optional[Any] = ..., proxy_factory_fn: Callable[[Node],
-        'Proxy'] = ...): ...
+            'Proxy'] = ...): ...
 
     def create_arg(self, a: Any) -> Argument: ...
     def to_bool(self, obj: Proxy) -> bool: ...

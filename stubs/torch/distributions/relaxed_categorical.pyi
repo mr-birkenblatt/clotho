@@ -17,9 +17,7 @@ from torch.distributions.transformed_distribution import (
 )
 from torch.distributions.transforms import ExpTransform as ExpTransform
 from torch.distributions.utils import broadcast_all as broadcast_all
-
-
-        clamp_probs as clamp_probs
+from torch.distributions.utils import clamp_probs as clamp_probs
 
 
 class ExpRelaxedCategorical(Distribution):

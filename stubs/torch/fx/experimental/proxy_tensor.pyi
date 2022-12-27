@@ -41,8 +41,8 @@ class PythonKeyTracer(Tracer):
 
 def dispatch_trace(
     root: Union[torch.nn.Module, Callable],
-    concrete_args: Optional[Tuple[Any, ...]] = ...,
-    trace_factory_functions: bool = ...) -> GraphModule: ...
+        concrete_args: Optional[Tuple[Any, ...]] = ...,
+        trace_factory_functions: bool = ...) -> GraphModule: ...
 
 
 class ProxyTorchDispatchMode(TorchDispatchMode):
@@ -56,4 +56,4 @@ class ProxyTorchDispatchMode(TorchDispatchMode):
 
 def make_fx(
     f, decomposition_table: Incomplete | None = ...,
-    trace_factory_functions: bool = ...): ...
+        trace_factory_functions: bool = ...): ...

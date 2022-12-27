@@ -208,7 +208,7 @@ default_float_qparams_observer_4bit: Incomplete
 default_fixed_qparams_range_neg1to1_observer: Incomplete
 default_fixed_qparams_range_0to1_observer: Incomplete
 default_symmetric_fixed_qparams_observer = \
-        default_fixed_qparams_range_neg1to1_observer
+    default_fixed_qparams_range_neg1to1_observer
 default_affine_fixed_qparams_observer = \
-        default_fixed_qparams_range_0to1_observer
+    default_fixed_qparams_range_0to1_observer
 default_reuse_input_observer = ReuseInputObserver

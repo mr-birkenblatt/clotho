@@ -24,7 +24,7 @@ class _ConvNd(nn.modules.conv._ConvNd):
 
     def __init__(
         self, in_channels: int, out_channels: int, kernel_size: Tuple[int,
-        ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
+            ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
         dilation: Tuple[int, ...], transposed: bool,
         output_padding: Tuple[int, ...], groups: int, bias: bool,
         padding_mode: str, qconfig: Incomplete | None = ...,

@@ -8,6 +8,8 @@
 # pylint: disable=protected-access
 
 
+from typing import Dict, List, NamedTuple, Set, Type
+
 import torch
 from _typeshed import Incomplete
 from torch._sources import fake_range as fake_range
@@ -15,12 +17,9 @@ from torch.jit._check import (
     AttributeTypeIsSupportedChecker as AttributeTypeIsSupportedChecker,
 )
 from torch.jit.frontend import get_class_properties as get_class_properties
-
-
-        get_default_args as get_default_args,
-        get_jit_class_def as get_jit_class_def, get_jit_def as get_jit_def
-from typing import Dict, List, NamedTuple, Set, Type
-
+from torch.jit.frontend import get_default_args as get_default_args
+from torch.jit.frontend import get_jit_class_def as get_jit_class_def
+from torch.jit.frontend import get_jit_def as get_jit_def
 from torch.nn import Module as Module
 
 

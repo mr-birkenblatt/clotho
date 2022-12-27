@@ -8,21 +8,20 @@
 # pylint: disable=protected-access
 
 
+from typing import Optional, Tuple
+
 import torch
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch.nn.init import constant_ as constant_
+from torch.nn.init import xavier_normal_ as xavier_normal_
+from torch.nn.init import xavier_uniform_ as xavier_uniform_
+from torch.nn.parameter import Parameter as Parameter
 
 from .linear import (
     NonDynamicallyQuantizableLinear as NonDynamicallyQuantizableLinear,
 )
 from .module import Module as Module
-
-
-        xavier_normal_ as xavier_normal_, xavier_uniform_ as xavier_uniform_
-from typing import Optional, Tuple
-
-from torch.nn.parameter import Parameter as Parameter
 
 
 class Threshold(Module):
@@ -232,7 +231,7 @@ class MultiheadAttention(Module):
         key_padding_mask: Optional[Tensor] = ..., need_weights: bool = ...,
         attn_mask: Optional[Tensor] = ...,
         average_attn_weights: bool = ...) -> Tuple[Tensor,
-            Optional[Tensor]]: ...
+        Optional[Tensor]]: ...
 
 
 class PReLU(Module):

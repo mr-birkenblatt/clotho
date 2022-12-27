@@ -8,16 +8,15 @@
 # pylint: disable=protected-access
 
 
-from . import HAS_NUMPY as HAS_NUMPY
-from . import IS_WINDOWS as IS_WINDOWS
-
-
-        MP_STATUS_CHECK_INTERVAL as MP_STATUS_CHECK_INTERVAL,
-        signal_handling as signal_handling
 from typing import Optional
 
 from _typeshed import Incomplete
 from torch._utils import ExceptionWrapper as ExceptionWrapper
+
+from . import HAS_NUMPY as HAS_NUMPY
+from . import IS_WINDOWS as IS_WINDOWS
+from . import MP_STATUS_CHECK_INTERVAL as MP_STATUS_CHECK_INTERVAL
+from . import signal_handling as signal_handling
 
 
 class ManagerWatchdog:

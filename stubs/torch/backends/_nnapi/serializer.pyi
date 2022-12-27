@@ -322,5 +322,5 @@ class _NnapiSerializer:
 
 def serialize_model(
     module, inputs, *, config: Incomplete | None = ...,
-    return_shapes: Incomplete | None = ...,
-    use_int16_for_qint16: bool = ...): ...
+        return_shapes: Incomplete | None = ...,
+        use_int16_for_qint16: bool = ...): ...

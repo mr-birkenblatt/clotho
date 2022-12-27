@@ -41,7 +41,7 @@ class EmbeddingBag(nn.EmbeddingBag, ReferenceQuantizedModule):
         _weight: Optional[Tensor] = ..., include_last_offset: bool = ...,
         padding_idx: Optional[int] = ..., device: Incomplete | None = ...,
         dtype: Incomplete | None = ..., weight_qparams: Optional[Dict[str,
-        Any]] = ...) -> None: ...
+                Any]] = ...) -> None: ...
 
     def forward(
         self, input: Tensor, offsets: Optional[Tensor] = ...,

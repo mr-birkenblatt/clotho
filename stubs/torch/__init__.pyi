@@ -9,36 +9,33 @@
 
 
 import builtins
+from collections.abc import Generator as Generator
+from math import e as e
+from math import inf as inf
+from math import nan as nan
+from math import pi as pi
+from typing import Type as Type
+from typing import Union
 
 from torch._C import *
 from torch._C._VariableFunctions import *
+from torch.autograd import enable_grad as enable_grad
+from torch.autograd import inference_mode as inference_mode
+from torch.autograd import no_grad as no_grad
 
 from ._lobpcg import lobpcg as lobpcg
 from ._tensor import Tensor as Tensor
 from ._tensor_str import set_printoptions as set_printoptions
 from .functional import *
 from .random import get_rng_state as get_rng_state
-
-
-        initial_seed as initial_seed, manual_seed as manual_seed,
-        seed as seed, set_rng_state as set_rng_state
-from collections.abc import Generator as Generator
-from math import e as e
-from math import inf as inf
-from math import nan as nan
-from math import pi as pi
-
-from torch.autograd import enable_grad as enable_grad
-
+from .random import initial_seed as initial_seed
+from .random import manual_seed as manual_seed
+from .random import seed as seed
+from .random import set_rng_state as set_rng_state
 from .serialization import load as load
 from .serialization import save as save
 from .storage import _LegacyStorage
 from .storage import _TypedStorage as _TypedStorage
-
-
-        inference_mode as inference_mode, no_grad as no_grad
-from typing import Type as Type
-from typing import Union
 
 
 def typename(o): ...

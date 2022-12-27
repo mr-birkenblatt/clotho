@@ -20,7 +20,7 @@ from torch.utils.benchmark.op_fuzzers.spectral import (
 
 def run_benchmark(
     name: str, function: object, dtype: torch.dtype, seed: int, device: str,
-    samples: int, probability_regular: float): ...
+        samples: int, probability_regular: float): ...
 
 
 class Benchmark(NamedTuple):

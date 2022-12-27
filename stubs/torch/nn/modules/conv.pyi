@@ -8,19 +8,18 @@
 # pylint: disable=protected-access
 
 
+from typing import List, Optional, Tuple, Union
+
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch._torch_docs import reproducibility_notes as reproducibility_notes
 from torch.nn.parameter import Parameter as Parameter
+from torch.nn.parameter import UninitializedParameter as UninitializedParameter
 
 from .. import init as init
 from ..common_types import _size_1_t, _size_2_t, _size_3_t
 from .lazy import LazyModuleMixin as LazyModuleMixin
 from .module import Module as Module
-
-
-        UninitializedParameter as UninitializedParameter
-from typing import List, Optional, Tuple, Union
 
 
 convolution_notes: Incomplete
@@ -44,7 +43,7 @@ class _ConvNd(Module):
 
     def __init__(
         self, in_channels: int, out_channels: int, kernel_size: Tuple[int,
-        ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
+            ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
         dilation: Tuple[int, ...], transposed: bool,
         output_padding: Tuple[int, ...], groups: int, bias: bool,
         padding_mode: str, device: Incomplete | None = ...,

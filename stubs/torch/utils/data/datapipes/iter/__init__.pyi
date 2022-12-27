@@ -26,29 +26,36 @@ from torch.utils.data.datapipes.iter.combining import (
 from torch.utils.data.datapipes.iter.combining import (
     DemultiplexerIterDataPipe as Demultiplexer,
 )
-
-
-        ForkerIterDataPipe as Forker, MultiplexerIterDataPipe as Multiplexer,
-        ZipperIterDataPipe as Zipper
+from torch.utils.data.datapipes.iter.combining import (
+    ForkerIterDataPipe as Forker,
+)
+from torch.utils.data.datapipes.iter.combining import (
+    MultiplexerIterDataPipe as Multiplexer,
+)
+from torch.utils.data.datapipes.iter.combining import (
+    ZipperIterDataPipe as Zipper,
+)
 from torch.utils.data.datapipes.iter.filelister import (
     FileListerIterDataPipe as FileLister,
 )
 from torch.utils.data.datapipes.iter.fileopener import (
     FileLoaderIterDataPipe as FileLoader,
 )
-
-
-        FileOpenerIterDataPipe as FileOpener
+from torch.utils.data.datapipes.iter.fileopener import (
+    FileOpenerIterDataPipe as FileOpener,
+)
 from torch.utils.data.datapipes.iter.grouping import (
     BatcherIterDataPipe as Batcher,
 )
 from torch.utils.data.datapipes.iter.grouping import (
     GrouperIterDataPipe as Grouper,
 )
-
-
-        ShardingFilterIterDataPipe as ShardingFilter,
-        UnBatcherIterDataPipe as UnBatcher
+from torch.utils.data.datapipes.iter.grouping import (
+    ShardingFilterIterDataPipe as ShardingFilter,
+)
+from torch.utils.data.datapipes.iter.grouping import (
+    UnBatcherIterDataPipe as UnBatcher,
+)
 from torch.utils.data.datapipes.iter.routeddecoder import (
     RoutedDecoderIterDataPipe as RoutedDecoder,
 )

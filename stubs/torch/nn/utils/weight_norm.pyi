@@ -8,14 +8,13 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, TypeVar
+
 from torch import norm_except_dim as norm_except_dim
 from torch.nn.parameter import Parameter as Parameter
+from torch.nn.parameter import UninitializedParameter as UninitializedParameter
 
 from ..modules import Module as Module
-
-
-        UninitializedParameter as UninitializedParameter
-from typing import Any, TypeVar
 
 
 class WeightNorm:

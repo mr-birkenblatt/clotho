@@ -8,13 +8,11 @@
 # pylint: disable=protected-access
 
 
-from _typeshed import Incomplete
-from torch.distributions import Categorical as Categorical
-
-
-        constraints as constraints
 from typing import Dict
 
+from _typeshed import Incomplete
+from torch.distributions import Categorical as Categorical
+from torch.distributions import constraints as constraints
 from torch.distributions.distribution import Distribution as Distribution
 
 

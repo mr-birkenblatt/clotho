@@ -29,7 +29,7 @@ class Adam(Optimizer):
 
 def adam(
     params: List[Tensor], grads: List[Tensor], exp_avgs: List[Tensor],
-    exp_avg_sqs: List[Tensor], max_exp_avg_sqs: List[Tensor],
-    state_steps: List[Tensor], foreach: bool = ..., capturable: bool = ...,
-    *, amsgrad: bool, beta1: float, beta2: float, lr: float,
-    weight_decay: float, eps: float, maximize: bool): ...
+        exp_avg_sqs: List[Tensor], max_exp_avg_sqs: List[Tensor],
+        state_steps: List[Tensor], foreach: bool = ...,
+        capturable: bool = ..., *, amsgrad: bool, beta1: float, beta2: float,
+        lr: float, weight_decay: float, eps: float, maximize: bool): ...

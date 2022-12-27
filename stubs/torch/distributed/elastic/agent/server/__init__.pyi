@@ -10,8 +10,8 @@
 
 from .api import ElasticAgent as ElasticAgent
 from .api import RunResult as RunResult
-
-
-        SimpleElasticAgent as SimpleElasticAgent, Worker as Worker,
-        WorkerGroup as WorkerGroup, WorkerSpec as WorkerSpec,
-        WorkerState as WorkerState
+from .api import SimpleElasticAgent as SimpleElasticAgent
+from .api import Worker as Worker
+from .api import WorkerGroup as WorkerGroup
+from .api import WorkerSpec as WorkerSpec
+from .api import WorkerState as WorkerState

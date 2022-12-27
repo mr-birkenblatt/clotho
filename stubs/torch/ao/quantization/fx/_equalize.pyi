@@ -8,24 +8,22 @@
 # pylint: disable=protected-access
 
 
-import torch
-import torch.nn as nn
-
-from ..observer import ObserverBase as ObserverBase
-
-
-        PerChannelMinMaxObserver as PerChannelMinMaxObserver
-from ..utils import check_min_max_valid as check_min_max_valid
-from .utils import WEIGHT_INDEX_DICT as WEIGHT_INDEX_DICT
-
-
-        get_new_attr_name_with_prefix as get_new_attr_name_with_prefix,
-        maybe_get_next_module as maybe_get_next_module
 from typing import Any, Dict, Optional, Tuple
 
+import torch
+import torch.nn as nn
 from _typeshed import Incomplete
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node
+
+from ..observer import ObserverBase as ObserverBase
+from ..observer import PerChannelMinMaxObserver as PerChannelMinMaxObserver
+from ..utils import check_min_max_valid as check_min_max_valid
+from .utils import (
+    get_new_attr_name_with_prefix as get_new_attr_name_with_prefix,
+)
+from .utils import maybe_get_next_module as maybe_get_next_module
+from .utils import WEIGHT_INDEX_DICT as WEIGHT_INDEX_DICT
 
 
 def reshape_scale(
@@ -71,7 +69,7 @@ class _WeightEqualizationObserver(nn.Module):
 
 def calculate_equalization_scale(
     input_obs: _InputEqualizationObserver,
-    weight_obs: _WeightEqualizationObserver) -> torch.Tensor: ...
+        weight_obs: _WeightEqualizationObserver) -> torch.Tensor: ...
 
 
 class EqualizationQConfig:
@@ -97,7 +95,7 @@ def is_equalization_observer(observer: nn.Module) -> bool: ...
 
 def get_op_node_and_weight_eq_obs(
     input_eq_obs_node: Node, model: GraphModule, modules: Dict[str,
-    nn.Module]) -> Tuple[Optional[Node],
+            nn.Module]) -> Tuple[Optional[Node],
         Optional[_WeightEqualizationObserver]]: ...
 
 
@@ -107,7 +105,7 @@ def maybe_get_weight_eq_obs_node(
 
 def maybe_get_next_input_eq_obs(
     node: Node, modules: Dict[str,
-    nn.Module]) -> Optional[_InputEqualizationObserver]: ...
+            nn.Module]) -> Optional[_InputEqualizationObserver]: ...
 
 
 def maybe_get_next_equalization_scale(
@@ -120,14 +118,14 @@ def scale_input_observer(
 
 def scale_weight_node(
     node: Node, modules: Dict[str, nn.Module],
-    equalization_scale: torch.Tensor,
-    next_equalization_scale: Optional[torch.Tensor]) -> None: ...
+        equalization_scale: torch.Tensor,
+        next_equalization_scale: Optional[torch.Tensor]) -> None: ...
 
 
 def scale_weight_functional(
     op_node: Node, model: GraphModule, modules: Dict[str, nn.Module],
-    equalization_scale: torch.Tensor,
-    next_equalization_scale: Optional[torch.Tensor]) -> None: ...
+        equalization_scale: torch.Tensor,
+        next_equalization_scale: Optional[torch.Tensor]) -> None: ...
 
 
 def clear_weight_quant_obs_node(
@@ -144,7 +142,8 @@ def update_obs_for_equalization(
 
 def convert_eq_obs(
     model: GraphModule, modules: Dict[str, nn.Module],
-    weight_eq_obs_dict: Dict[str, _WeightEqualizationObserver]) -> None: ...
+        weight_eq_obs_dict: Dict[str,
+            _WeightEqualizationObserver]) -> None: ...
 
 
 def get_layer_sqnr_dict(

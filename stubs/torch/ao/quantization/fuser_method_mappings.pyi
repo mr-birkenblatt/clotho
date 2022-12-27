@@ -8,13 +8,13 @@
 # pylint: disable=protected-access
 
 
+from typing import Callable, Dict, Optional, Tuple, Union
+
 import torch.nn as nn
 from _typeshed import Incomplete
+from torch.ao.quantization.utils import get_combined_dict as get_combined_dict
 from torch.ao.quantization.utils import MatchAllNode as MatchAllNode
-
-
-        Pattern as Pattern, get_combined_dict as get_combined_dict
-from typing import Callable, Dict, Optional, Tuple, Union
+from torch.ao.quantization.utils import Pattern as Pattern
 
 
 def fuse_conv_bn(is_qat, conv, bn): ...
@@ -56,4 +56,4 @@ def get_valid_patterns(op_pattern): ...
 
 def get_fuser_method_new(
     op_pattern: Pattern, fuser_method_mapping: Optional[Dict[Pattern,
-    Union[nn.Sequential, Callable]]] = ...): ...
+                Union[nn.Sequential, Callable]]] = ...): ...

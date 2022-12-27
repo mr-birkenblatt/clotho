@@ -14,10 +14,10 @@ from torch.distributions.exp_family import (
     ExponentialFamily as ExponentialFamily,
 )
 from torch.distributions.utils import broadcast_all as broadcast_all
-
-
-        clamp_probs as clamp_probs, lazy_property as lazy_property,
-        logits_to_probs as logits_to_probs, probs_to_logits as probs_to_logits
+from torch.distributions.utils import clamp_probs as clamp_probs
+from torch.distributions.utils import lazy_property as lazy_property
+from torch.distributions.utils import logits_to_probs as logits_to_probs
+from torch.distributions.utils import probs_to_logits as probs_to_logits
 from torch.nn.functional import (
     binary_cross_entropy_with_logits as binary_cross_entropy_with_logits,
 )

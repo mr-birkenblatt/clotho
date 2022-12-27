@@ -8,29 +8,25 @@
 # pylint: disable=protected-access
 
 
-from ..modules import Module as Module
-from .scatter_gather import gather as gather
-from .scatter_gather import is_namedtuple as is_namedtuple
-
-
-        scatter_kwargs as scatter_kwargs
 from collections.abc import Generator
 from enum import Enum
+from typing import Any, Callable
 
 from _typeshed import Incomplete
 from torch.autograd import Function as Function
 from torch.autograd import Variable as Variable
 from torch.distributed.algorithms.join import Join as Join
-
-
-        JoinHook as JoinHook, Joinable as Joinable
+from torch.distributed.algorithms.join import Joinable as Joinable
+from torch.distributed.algorithms.join import JoinHook as JoinHook
 from torch.distributed.distributed_c10d import ReduceOp as ReduceOp
 from torch.distributed.rpc import RRef as RRef
 from torch.utils._pytree import tree_flatten as tree_flatten
+from torch.utils._pytree import tree_unflatten as tree_unflatten
 
-
-        tree_unflatten as tree_unflatten
-from typing import Any, Callable
+from ..modules import Module as Module
+from .scatter_gather import gather as gather
+from .scatter_gather import is_namedtuple as is_namedtuple
+from .scatter_gather import scatter_kwargs as scatter_kwargs
 
 
 RPC_AVAILABLE: bool

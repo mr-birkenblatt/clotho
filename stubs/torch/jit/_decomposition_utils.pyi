@@ -9,6 +9,4 @@
 
 
 from torch._ops import OpOverload as OpOverload
-
-
-        OpOverloadPacket as OpOverloadPacket
+from torch._ops import OpOverloadPacket as OpOverloadPacket

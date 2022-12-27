@@ -19,7 +19,7 @@ log: Incomplete
 
 def tail_logfile(
     header: str, file: str, dst: TextIO, finished: Event,
-    interval_sec: float): ...
+        interval_sec: float): ...
 
 
 class TailLog:

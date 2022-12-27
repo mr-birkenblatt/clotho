@@ -11,13 +11,11 @@
 import torch
 
 from .conv_utils import conv_args_and_kwargs as conv_args_and_kwargs
-
-
-        conv_backward as conv_backward
+from .conv_utils import conv_backward as conv_backward
 from .expanded_weights_impl import ExpandedWeight as ExpandedWeight
-
-
-        implements_per_sample_grads as implements_per_sample_grads
+from .expanded_weights_impl import (
+    implements_per_sample_grads as implements_per_sample_grads,
+)
 from .expanded_weights_utils import forward_helper as forward_helper
 
 

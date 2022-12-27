@@ -34,11 +34,11 @@ class NnapiModule(torch.nn.Module):
 
 def convert_model_to_nnapi(
     model, inputs, serializer: Incomplete | None = ...,
-    return_shapes: Incomplete | None = ...,
-    use_int16_for_qint16: bool = ...): ...
+        return_shapes: Incomplete | None = ...,
+        use_int16_for_qint16: bool = ...): ...
 
 
 def process_for_nnapi(
     model, inputs, serializer: Incomplete | None = ...,
-    return_shapes: Incomplete | None = ...,
-    use_int16_for_qint16: bool = ...): ...
+        return_shapes: Incomplete | None = ...,
+        use_int16_for_qint16: bool = ...): ...

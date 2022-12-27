@@ -8,15 +8,14 @@
 # pylint: disable=protected-access
 
 
-from .conflict import AmbiguityWarning as AmbiguityWarning
-
-
-        ambiguities as ambiguities, ordering as ordering,
-        super_signature as super_signature
 from collections.abc import Generator
 
 from _typeshed import Incomplete
 
+from .conflict import ambiguities as ambiguities
+from .conflict import AmbiguityWarning as AmbiguityWarning
+from .conflict import ordering as ordering
+from .conflict import super_signature as super_signature
 from .utils import expand_tuples as expand_tuples
 from .variadic import isvariadic as isvariadic
 from .variadic import Variadic as Variadic

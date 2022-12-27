@@ -8,12 +8,11 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Optional, Type, Union
+
 from _typeshed import Incomplete
 from torch.utils.data.datapipes.datapipe import IterDataPipe as IterDataPipe
-
-
-        MapDataPipe as MapDataPipe
-from typing import Any, Callable, Optional, Type, Union
+from torch.utils.data.datapipes.datapipe import MapDataPipe as MapDataPipe
 
 
 class functional_datapipe:

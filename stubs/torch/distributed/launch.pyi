@@ -10,9 +10,8 @@
 
 from _typeshed import Incomplete
 from torch.distributed.run import get_args_parser as get_args_parser
+from torch.distributed.run import run as run
 
-
-        run as run
 
 logger: Incomplete
 

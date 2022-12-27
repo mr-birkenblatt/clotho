@@ -8,18 +8,17 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Optional
+
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch.nn.parameter import Parameter as Parameter
+from torch.nn.parameter import UninitializedBuffer as UninitializedBuffer
+from torch.nn.parameter import UninitializedParameter as UninitializedParameter
 
 from .. import init as init
 from .lazy import LazyModuleMixin as LazyModuleMixin
 from .module import Module as Module
-
-
-        UninitializedBuffer as UninitializedBuffer,
-        UninitializedParameter as UninitializedParameter
-from typing import Any, Optional
 
 
 class _NormBase(Module):

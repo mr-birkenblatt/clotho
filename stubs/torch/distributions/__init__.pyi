@@ -15,10 +15,7 @@ from .categorical import Categorical as Categorical
 from .cauchy import Cauchy as Cauchy
 from .chi2 import Chi2 as Chi2
 from .constraint_registry import biject_to as biject_to
-from .transforms import *
-
-
-        transform_to as transform_to
+from .constraint_registry import transform_to as transform_to
 from .continuous_bernoulli import ContinuousBernoulli as ContinuousBernoulli
 from .dirichlet import Dirichlet as Dirichlet
 from .distribution import Distribution as Distribution
@@ -47,9 +44,9 @@ from .multivariate_normal import MultivariateNormal as MultivariateNormal
 from .negative_binomial import NegativeBinomial as NegativeBinomial
 from .normal import Normal as Normal
 from .one_hot_categorical import OneHotCategorical as OneHotCategorical
-
-
-        OneHotCategoricalStraightThrough as OneHotCategoricalStraightThrough
+from .one_hot_categorical import (
+    OneHotCategoricalStraightThrough as OneHotCategoricalStraightThrough,
+)
 from .pareto import Pareto as Pareto
 from .poisson import Poisson as Poisson
 from .relaxed_bernoulli import RelaxedBernoulli as RelaxedBernoulli
@@ -60,6 +57,7 @@ from .studentT import StudentT as StudentT
 from .transformed_distribution import (
     TransformedDistribution as TransformedDistribution,
 )
+from .transforms import *
 from .uniform import Uniform as Uniform
 from .von_mises import VonMises as VonMises
 from .weibull import Weibull as Weibull

@@ -9,16 +9,22 @@
 
 
 import enum
-from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    NoReturn,
+    Optional,
+    overload,
+    Tuple,
+    Union,
+)
 
 from _typeshed import Incomplete
 from torch.utils.benchmark.utils import common
 from torch.utils.benchmark.utils.valgrind_wrapper import (
     timer_interface as valgrind_timer_interface,
 )
-
-
-        overload
 
 
 def timer() -> float: ...
@@ -36,7 +42,7 @@ class CPPTimer:
 
     def __init__(
         self, stmt: str, setup: str, global_setup: str, timer: Callable[[],
-        float], globals: Dict[str, Any]) -> None: ...
+            float], globals: Dict[str, Any]) -> None: ...
 
     def timeit(self, number: int) -> float: ...
 
@@ -46,7 +52,7 @@ class Timer:
     def __init__(
         self, stmt: str = ..., setup: str = ..., global_setup: str = ...,
         timer: Callable[[], float] = ..., globals: Optional[Dict[str,
-        Any]] = ..., label: Optional[str] = ...,
+                Any]] = ..., label: Optional[str] = ...,
         sub_label: Optional[str] = ..., description: Optional[str] = ...,
         env: Optional[str] = ..., num_threads: int = ...,
         language: Union[Language, str] = ...) -> None: ...
@@ -56,12 +62,12 @@ class Timer:
 
     def autorange(
         self, callback: Optional[Callable[[int, float],
-        NoReturn]] = ...) -> None: ...
+                NoReturn]] = ...) -> None: ...
 
     def adaptive_autorange(
         self, threshold: float = ..., *, min_run_time: float = ...,
         max_run_time: float = ..., callback: Optional[Callable[[int, float],
-        NoReturn]] = ...) -> common.Measurement: ...
+                NoReturn]] = ...) -> common.Measurement: ...
 
     def blocked_autorange(
         self, callback: Optional[Callable[[int, float], NoReturn]] = ...,

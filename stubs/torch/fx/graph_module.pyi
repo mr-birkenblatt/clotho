@@ -9,19 +9,18 @@
 
 
 import os
+from typing import Any, Dict, Optional, Union
 
 import torch.overrides
 from _typeshed import Incomplete
 from torch.package import Importer as Importer
+from torch.package import PackageExporter as PackageExporter
+from torch.package import PackageImporter as PackageImporter
+from torch.package import sys_importer as sys_importer
 
 from ._compatibility import compatibility as compatibility
 from .graph import Graph as Graph
 from .graph import PythonCode as PythonCode
-
-
-        PackageExporter as PackageExporter,
-        PackageImporter as PackageImporter, sys_importer as sys_importer
-from typing import Any, Dict, Optional, Union
 
 
 class _EvalCacheLoader:
@@ -38,12 +37,12 @@ def reduce_graph_module(
 
 def reduce_package_graph_module(
     importer: PackageImporter, body: Dict[Any, Any],
-    generated_module_name: str) -> torch.nn.Module: ...
+        generated_module_name: str) -> torch.nn.Module: ...
 
 
 def reduce_deploy_graph_module(
     importer: PackageImporter, body: Dict[Any, Any],
-    import_block: str) -> torch.nn.Module: ...
+        import_block: str) -> torch.nn.Module: ...
 
 
 class _WrappedCall:

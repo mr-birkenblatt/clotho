@@ -51,7 +51,7 @@ class Std(IntFlag):
 
 def to_map(
     val_or_map: Union[Std, Dict[int, Std]],
-    local_world_size: int) -> Dict[int, Std]: ...
+        local_world_size: int) -> Dict[int, Std]: ...
 
 
 class RunProcsResult:
@@ -75,7 +75,7 @@ class PContext(abc.ABC, metaclass=abc.ABCMeta):
 
     def __init__(
         self, name: str, entrypoint: Union[Callable, str], args: Dict[int,
-        Tuple], envs: Dict[int, Dict[str, str]], stdouts: Dict[int, str],
+            Tuple], envs: Dict[int, Dict[str, str]], stdouts: Dict[int, str],
         stderrs: Dict[int, str], tee_stdouts: Dict[int, str],
         tee_stderrs: Dict[int, str], error_files: Dict[int, str]) -> None: ...
 

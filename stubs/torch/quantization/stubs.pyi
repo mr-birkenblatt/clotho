@@ -9,6 +9,5 @@
 
 
 from torch.ao.quantization.stubs import DeQuantStub as DeQuantStub
-
-
-        QuantStub as QuantStub, QuantWrapper as QuantWrapper
+from torch.ao.quantization.stubs import QuantStub as QuantStub
+from torch.ao.quantization.stubs import QuantWrapper as QuantWrapper

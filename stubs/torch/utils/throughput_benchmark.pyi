@@ -13,7 +13,7 @@ from _typeshed import Incomplete
 
 def format_time(
     time_us: Incomplete | None = ..., time_ms: Incomplete | None = ...,
-    time_s: Incomplete | None = ...): ...
+        time_s: Incomplete | None = ...): ...
 
 
 class ExecutionStats:

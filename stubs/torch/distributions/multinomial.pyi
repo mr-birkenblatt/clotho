@@ -11,9 +11,7 @@
 from _typeshed import Incomplete
 from torch._six import inf as inf
 from torch.distributions import Categorical as Categorical
-
-
-        constraints as constraints
+from torch.distributions import constraints as constraints
 from torch.distributions.binomial import Binomial as Binomial
 from torch.distributions.distribution import Distribution as Distribution
 from torch.distributions.utils import broadcast_all as broadcast_all

@@ -12,14 +12,12 @@ import abc
 import typing as t
 
 import torch.fx
+from _typeshed import Incomplete
+from torch.fx._compatibility import compatibility as compatibility
 
 from .shape_prop import TensorMetadata as TensorMetadata
 from .tools_common import CALLABLE_NODE_OPS as CALLABLE_NODE_OPS
-
-
-        get_node_target as get_node_target
-from _typeshed import Incomplete
-from torch.fx._compatibility import compatibility as compatibility
+from .tools_common import get_node_target as get_node_target
 
 
 TargetTypeName = str

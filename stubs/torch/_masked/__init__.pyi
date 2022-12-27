@@ -19,87 +19,96 @@ DimOrDims = Optional[Union[int, Tuple[int], List[int]]]
 
 def sum(
     input: Tensor, dim: DimOrDims = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def prod(
     input: Tensor, dim: DimOrDims = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def cumsum(
     input: Tensor, dim: int, *, dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def cumprod(
     input: Tensor, dim: int, *, dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def amax(
     input: Tensor, dim: DimOrDims = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def amin(
     input: Tensor, dim: DimOrDims = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def argmax(
     input: Tensor, dim: int = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def argmin(
     input: Tensor, dim: int = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def mean(
     input: Tensor, dim: DimOrDims = ..., *, keepdim: Optional[bool] = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def median(
     input: Tensor, dim: int = ..., *, keepdim: bool = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def norm(
     input: Tensor, ord: Optional[float] = ..., dim: DimOrDims = ..., *,
-    keepdim: Optional[bool] = ..., dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        keepdim: Optional[bool] = ..., dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def var(
     input: Tensor, dim: DimOrDims = ..., unbiased: Optional[bool] = ..., *,
-    keepdim: Optional[bool] = ..., dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        keepdim: Optional[bool] = ..., dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def std(
     input: Tensor, dim: DimOrDims = ..., unbiased: Optional[bool] = ..., *,
-    keepdim: Optional[bool] = ..., dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        keepdim: Optional[bool] = ..., dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def softmax(
     input: Tensor, dim: int, *, dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def log_softmax(
     input: Tensor, dim: int, *, dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def softmin(
     input: Tensor, dim: int, *, dtype: Optional[DType] = ...,
-    mask: Optional[Tensor] = ...) -> Tensor: ...
+        mask: Optional[Tensor] = ...) -> Tensor: ...
 
 
 def normalize(
     input: Tensor, ord: float, dim: int, *, eps: float = ...,
-    dtype: Optional[DType] = ..., mask: Optional[Tensor] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...,
+        mask: Optional[Tensor] = ...) -> Tensor: ...

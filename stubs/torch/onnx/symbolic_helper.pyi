@@ -22,7 +22,7 @@ def parse_args(*arg_descriptors): ...
 
 def quantized_args(
     *arg_q_descriptors: bool, scale: Optional[float] = ...,
-    zero_point: Optional[int] = ...): ...
+        zero_point: Optional[int] = ...): ...
 
 
 def is_caffe2_aten_fallback(): ...
@@ -33,14 +33,14 @@ def check_training_mode(op_train_mode, op_name) -> None: ...
 
 def dequantize_helper(
     g, qtensor: _C.Value,
-    qdtype:
-    Optional[torch.onnx.TensorProtoDataType] = ...) -> Tuple[_C.Value,
+        qdtype:
+        Optional[torch.onnx.TensorProtoDataType] = ...) -> Tuple[_C.Value,
         _C.Value, _C.Value, Optional[_C.Value]]: ...
 
 
 def quantize_helper(
     g, tensor: _C.Value, scale: _C.Value, zero_point: _C.Value,
-    axis: Optional[_C.Value] = ...) -> _C.Value: ...
+        axis: Optional[_C.Value] = ...) -> _C.Value: ...
 
 
 def requantize_bias_helper(

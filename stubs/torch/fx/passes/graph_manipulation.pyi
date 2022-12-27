@@ -8,17 +8,17 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+
 import torch
 from torch.fx._compatibility import compatibility as compatibility
 from torch.fx.graph import Graph as Graph
 from torch.fx.graph_module import GraphModule as GraphModule
 from torch.fx.node import Argument as Argument
+from torch.fx.node import map_aggregate as map_aggregate
+from torch.fx.node import map_arg as map_arg
 from torch.fx.node import Node as Node
-
-
-        Target as Target, map_aggregate as map_aggregate, map_arg as map_arg
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
-
+from torch.fx.node import Target as Target
 from torch.fx.passes.param_fetch import (
     lift_lowering_attrs_to_nodes as lift_lowering_attrs_to_nodes,
 )
@@ -27,7 +27,7 @@ from torch.fx.passes.shape_prop import ShapeProp as ShapeProp
 
 def replace_target_nodes_with(
     fx_module: GraphModule, old_op: str, old_target: Target, new_op: str,
-    new_target: Target): ...
+        new_target: Target): ...
 
 
 class size_bytes(NamedTuple):
@@ -37,7 +37,7 @@ class size_bytes(NamedTuple):
 
 def get_size_of_all_nodes(
     fx_module: GraphModule,
-    args: Optional[List[torch.Tensor]] = ...) -> None: ...
+        args: Optional[List[torch.Tensor]] = ...) -> None: ...
 
 
 def get_tensor_meta(node: Node) -> Any: ...
@@ -63,7 +63,7 @@ def serialize_weight(
 
 def serialize_leaf_module(
     node: Node, weights_metadata: Dict, weights: Dict,
-    name_prefix: str) -> Dict: ...
+        name_prefix: str) -> Dict: ...
 
 
 def serialize_module(

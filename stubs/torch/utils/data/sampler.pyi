@@ -8,13 +8,20 @@
 # pylint: disable=protected-access
 
 
-from typing import Iterable, Iterator, List, Optional, Sequence, Sized
+from typing import (
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Sequence,
+    Sized,
+    TypeVar,
+    Union,
+)
 
 from _typeshed import Incomplete
 from torch import Tensor
 
-
-        TypeVar, Union
 
 T_co = TypeVar('T_co', covariant=True)
 

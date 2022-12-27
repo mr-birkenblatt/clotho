@@ -12,11 +12,12 @@ import torch.nn as nn
 from _typeshed import Incomplete
 from torch.nn.intrinsic import LinearReLU as LinearReLU
 from torch.nn.utils.parametrize import is_parametrized as is_parametrized
-
-
-        transfer_parametrizations_and_params as \
-        transfer_parametrizations_and_params,
-        type_before_parametrizations as type_before_parametrizations
+from torch.nn.utils.parametrize import (
+    transfer_parametrizations_and_params as transfer_parametrizations_and_params,
+)
+from torch.nn.utils.parametrize import (
+    type_before_parametrizations as type_before_parametrizations,
+)
 
 
 class Linear(nn.Linear):

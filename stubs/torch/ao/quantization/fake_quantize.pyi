@@ -10,26 +10,28 @@
 
 import abc
 from abc import ABC, abstractmethod
+from typing import Any, Tuple
 
 import torch
 from _typeshed import Incomplete
+from torch.ao.quantization.observer import (
+    default_fixed_qparams_range_0to1_observer as default_fixed_qparams_range_0to1_observer,
+)
+from torch.ao.quantization.observer import (
+    default_fixed_qparams_range_neg1to1_observer as default_fixed_qparams_range_neg1to1_observer,
+)
 from torch.ao.quantization.observer import (
     FixedQParamsObserver as FixedQParamsObserver,
 )
 from torch.ao.quantization.observer import (
     HistogramObserver as HistogramObserver,
 )
-
-
-        MovingAverageMinMaxObserver as MovingAverageMinMaxObserver,
-        MovingAveragePerChannelMinMaxObserver as \
-        MovingAveragePerChannelMinMaxObserver,
-        default_fixed_qparams_range_0to1_observer as \
-        default_fixed_qparams_range_0to1_observer,
-        default_fixed_qparams_range_neg1to1_observer as \
-        default_fixed_qparams_range_neg1to1_observer
-from typing import Any, Tuple
-
+from torch.ao.quantization.observer import (
+    MovingAverageMinMaxObserver as MovingAverageMinMaxObserver,
+)
+from torch.ao.quantization.observer import (
+    MovingAveragePerChannelMinMaxObserver as MovingAveragePerChannelMinMaxObserver,
+)
 from torch.nn import Module as Module
 
 
@@ -94,9 +96,9 @@ default_dynamic_fake_quant: Incomplete
 default_fixed_qparams_range_neg1to1_fake_quant: Incomplete
 default_fixed_qparams_range_0to1_fake_quant: Incomplete
 default_symmetric_fixed_qparams_fake_quant = \
-        default_fixed_qparams_range_neg1to1_fake_quant
+    default_fixed_qparams_range_neg1to1_fake_quant
 default_affine_fixed_qparams_fake_quant = \
-        default_fixed_qparams_range_0to1_fake_quant
+    default_fixed_qparams_range_0to1_fake_quant
 default_per_channel_weight_fake_quant: Incomplete
 default_embedding_fake_quant: Incomplete
 default_embedding_fake_quant_4bit: Incomplete

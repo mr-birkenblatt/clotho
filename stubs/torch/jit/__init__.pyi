@@ -8,52 +8,54 @@
 # pylint: disable=protected-access
 
 
+from typing import Any
+
 from _typeshed import Incomplete
+from torch._jit_internal import export as export
 from torch._jit_internal import Final as Final
 from torch._jit_internal import Future as Future
-
-
-        export as export, ignore as ignore, is_scripting as is_scripting,
-        unused as unused
+from torch._jit_internal import ignore as ignore
+from torch._jit_internal import is_scripting as is_scripting
+from torch._jit_internal import unused as unused
 from torch.jit._async import fork as fork
 from torch.jit._async import wait as wait
 from torch.jit._freeze import freeze as freeze
-
-
-        optimize_for_inference as optimize_for_inference,
-        run_frozen_optimizations as run_frozen_optimizations
+from torch.jit._freeze import optimize_for_inference as optimize_for_inference
+from torch.jit._freeze import (
+    run_frozen_optimizations as run_frozen_optimizations,
+)
 from torch.jit._fuser import fuser as fuser
-
-
-        last_executed_optimized_graph as last_executed_optimized_graph,
-        optimized_execution as optimized_execution,
-        set_fusion_strategy as set_fusion_strategy
+from torch.jit._fuser import (
+    last_executed_optimized_graph as last_executed_optimized_graph,
+)
+from torch.jit._fuser import optimized_execution as optimized_execution
+from torch.jit._fuser import set_fusion_strategy as set_fusion_strategy
 from torch.jit._script import Attribute as Attribute
-
-
-        CompilationUnit as CompilationUnit,
-        RecursiveScriptClass as RecursiveScriptClass,
-        RecursiveScriptModule as RecursiveScriptModule,
-        ScriptFunction as ScriptFunction, ScriptModule as ScriptModule,
-        ScriptWarning as ScriptWarning, interface as interface,
-        script as script, script_method as script_method
+from torch.jit._script import CompilationUnit as CompilationUnit
+from torch.jit._script import interface as interface
+from torch.jit._script import RecursiveScriptClass as RecursiveScriptClass
+from torch.jit._script import RecursiveScriptModule as RecursiveScriptModule
+from torch.jit._script import script as script
+from torch.jit._script import script_method as script_method
+from torch.jit._script import ScriptFunction as ScriptFunction
+from torch.jit._script import ScriptModule as ScriptModule
+from torch.jit._script import ScriptWarning as ScriptWarning
 from torch.jit._serialization import (
     jit_module_from_flatbuffer as jit_module_from_flatbuffer,
 )
 from torch.jit._serialization import load as load
 from torch.jit._serialization import save as save
-
-
-        save_jit_module_to_flatbuffer as save_jit_module_to_flatbuffer
+from torch.jit._serialization import (
+    save_jit_module_to_flatbuffer as save_jit_module_to_flatbuffer,
+)
+from torch.jit._trace import is_tracing as is_tracing
 from torch.jit._trace import ONNXTracedModule as ONNXTracedModule
-
-
-        TopLevelTracedModule as TopLevelTracedModule,
-        TracedModule as TracedModule, TracerWarning as TracerWarning,
-        TracingCheckError as TracingCheckError, is_tracing as is_tracing,
-        trace as trace, trace_module as trace_module
-from typing import Any
-
+from torch.jit._trace import TopLevelTracedModule as TopLevelTracedModule
+from torch.jit._trace import trace as trace
+from torch.jit._trace import trace_module as trace_module
+from torch.jit._trace import TracedModule as TracedModule
+from torch.jit._trace import TracerWarning as TracerWarning
+from torch.jit._trace import TracingCheckError as TracingCheckError
 from torch.utils import set_module as set_module
 
 

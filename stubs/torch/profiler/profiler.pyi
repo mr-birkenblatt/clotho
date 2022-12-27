@@ -9,14 +9,12 @@
 
 
 from enum import Enum
+from typing import Any, Callable, Iterable, Optional
 
 from _typeshed import Incomplete
 from torch._C._autograd import _ExperimentalConfig
+from torch.autograd import kineto_available as kineto_available
 from torch.autograd import ProfilerActivity as ProfilerActivity
-
-
-        kineto_available as kineto_available
-from typing import Any, Callable, Iterable, Optional
 
 
 def supported_activities(): ...
@@ -65,7 +63,7 @@ class ProfilerAction(Enum):
 
 def schedule(
     *, wait: int, warmup: int, active: int, repeat: int = ...,
-    skip_first: int = ...) -> Callable: ...
+        skip_first: int = ...) -> Callable: ...
 
 
 def tensorboard_trace_handler(

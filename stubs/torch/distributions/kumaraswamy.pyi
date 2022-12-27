@@ -18,9 +18,7 @@ from torch.distributions.transforms import AffineTransform as AffineTransform
 from torch.distributions.transforms import PowerTransform as PowerTransform
 from torch.distributions.uniform import Uniform as Uniform
 from torch.distributions.utils import broadcast_all as broadcast_all
-
-
-        euler_constant as euler_constant
+from torch.distributions.utils import euler_constant as euler_constant
 
 
 class Kumaraswamy(TransformedDistribution):

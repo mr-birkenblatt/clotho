@@ -9,6 +9,7 @@
 
 
 from enum import Enum
+from typing import Callable, List, Optional, Tuple
 
 import torch
 import torch._prims.utils as utils
@@ -17,10 +18,7 @@ from torch import Tensor as Tensor
 from torch._decomp import register_decomposition as register_decomposition
 from torch._prims.wrappers import out_wrapper_multi as out_wrapper_multi
 from torch.utils._pytree import tree_flatten as tree_flatten
-
-
-        tree_map as tree_map
-from typing import Callable, List, Optional, Tuple
+from torch.utils._pytree import tree_map as tree_map
 
 
 aten: Incomplete
@@ -53,12 +51,12 @@ def softplus_backward(
 
 def elu(
     self, alpha: float = ..., scale: float = ...,
-    input_scale: float = ...) -> Tensor: ...
+        input_scale: float = ...) -> Tensor: ...
 
 
 def elu_backward(
     grad_output: Tensor, alpha: float, scale: float, input_scale: float,
-    is_result: bool, self_or_result: Tensor): ...
+        is_result: bool, self_or_result: Tensor): ...
 
 
 def hardsigmoid(self) -> Tensor: ...
@@ -92,7 +90,7 @@ def leaky_relu(self, negative_slope: float = ...) -> Tensor: ...
 
 def leaky_relu_backward(
     grad_output: Tensor, self: Tensor, negative_slope: float,
-    self_is_result: bool): ...
+        self_is_result: bool): ...
 
 
 def gelu(self, approximate: str = ...) -> Tensor: ...
@@ -121,7 +119,7 @@ def prelu_backward(
 
 def rrelu_with_noise_backward(
     grad_output: Tensor, self: Tensor, noise: Tensor, lower: float,
-    upper: float, training: bool, self_is_result: bool) -> Tensor: ...
+        upper: float, training: bool, self_is_result: bool) -> Tensor: ...
 
 
 def log_sigmoid_backward(
@@ -139,7 +137,7 @@ def l1_loss(self, target: Tensor, reduction: int = ...) -> Tensor: ...
 
 def l1_loss_backward(
     grad_output: Tensor, self: Tensor, target: Tensor,
-    reduction: int = ...): ...
+        reduction: int = ...): ...
 
 
 def mse_loss(self, target: Tensor, reduction: int = ...) -> Tensor: ...
@@ -151,39 +149,39 @@ def mse_loss_backward(
 
 def huber_loss(
     self, target: Tensor, reduction: int = ...,
-    delta: float = ...) -> Tensor: ...
+        delta: float = ...) -> Tensor: ...
 
 
 def huber_loss_backward(
     grad_output: Tensor, self: Tensor, target: Tensor, reduction: int,
-    delta: float): ...
+        delta: float): ...
 
 
 def nll_loss_backward(
     grad_output: Tensor, self: Tensor, target: Tensor,
-    weight: Optional[Tensor], reduction: int, ignore_index: int,
-    total_weight: Tensor) -> Tensor: ...
+        weight: Optional[Tensor], reduction: int, ignore_index: int,
+        total_weight: Tensor) -> Tensor: ...
 
 
 def nll_loss2d_backward(
     grad_output: Tensor, self: Tensor, target: Tensor,
-    weight: Optional[Tensor], reduction: int, ignore_index: int,
-    total_weight: Tensor) -> Tensor: ...
+        weight: Optional[Tensor], reduction: int, ignore_index: int,
+        total_weight: Tensor) -> Tensor: ...
 
 
 def binary_cross_entropy(
     self, target: Tensor, weight: Optional[Tensor] = ...,
-    reduction: int = ...) -> Tensor: ...
+        reduction: int = ...) -> Tensor: ...
 
 
 def binary_cross_entropy_backward(
     grad_output: Tensor, self: Tensor, target: Tensor,
-    weight: Optional[Tensor] = ..., reduction: int = ...) -> Tensor: ...
+        weight: Optional[Tensor] = ..., reduction: int = ...) -> Tensor: ...
 
 
 def slice_backward(
     grad_output: Tensor, input_sizes: List[int], dim: int, start: int,
-    end: int, step: int): ...
+        end: int, step: int): ...
 
 
 def select_backward(
@@ -192,17 +190,18 @@ def select_backward(
 
 def diagonal_backward(
     grad_output: Tensor, input_sizes: List[int], offset: int, dim1: int,
-    dim2: int): ...
+        dim2: int): ...
 
 
 def im2col_backward(
     grad_output: Tensor, input_size: List[int], kernel_size: List[int],
-    dilation: List[int], padding: List[int], stride: List[int]) -> Tensor: ...
+        dilation: List[int], padding: List[int],
+        stride: List[int]) -> Tensor: ...
 
 
 def col2im_backward(
     grad_output: Tensor, kernel_size: List[int], dilation: List[int],
-    padding: List[int], stride: List[int]) -> Tensor: ...
+        padding: List[int], stride: List[int]) -> Tensor: ...
 
 
 def masked_fill_Scalar(self, mask: Tensor, value: float) -> Tensor: ...
@@ -220,7 +219,7 @@ def logit(self, eps: Optional[float] = ...) -> Tensor: ...
 
 def logit_backward(
     grad_output: Tensor, self: Tensor,
-    eps: Optional[float] = ...) -> Tensor: ...
+        eps: Optional[float] = ...) -> Tensor: ...
 
 
 def native_dropout(input: Tensor, p: float, train: Optional[bool]): ...
@@ -240,12 +239,12 @@ def rsub_Scalar(self, other: float, alpha: float = ...) -> Tensor: ...
 
 def embedding(
     weight: Tensor, indices: Tensor, padding_idx: int = ...,
-    scale_grad_by_freq: bool = ..., sparse: bool = ...) -> Tensor: ...
+        scale_grad_by_freq: bool = ..., sparse: bool = ...) -> Tensor: ...
 
 
 def embedding_dense_backward(
     grad_output: Tensor, indices: Tensor, num_weights: int, padding_idx: int,
-    scale_grad_by_freq: bool): ...
+        scale_grad_by_freq: bool): ...
 
 
 def prod(x: List[int]): ...
@@ -264,21 +263,22 @@ def addmm(
 
 def native_layer_norm(
     input: Tensor, normalized_shape: List[int], weight: Optional[Tensor],
-    bias: Optional[Tensor], eps: float) -> Tuple[Tensor, Tensor, Tensor]: ...
+        bias: Optional[Tensor], eps: float) -> Tuple[Tensor, Tensor,
+        Tensor]: ...
 
 
 def native_layer_norm_backward(
     grad_out: Tensor, input: Tensor, normalized_shape: List[int],
-    mean: Tensor, rstd: Tensor, weight: Optional[Tensor],
-    bias: Optional[Tensor],
-    output_mask: List[bool]) -> Tuple[Optional[Tensor], Optional[Tensor],
+        mean: Tensor, rstd: Tensor, weight: Optional[Tensor],
+        bias: Optional[Tensor],
+        output_mask: List[bool]) -> Tuple[Optional[Tensor], Optional[Tensor],
         Optional[Tensor]]: ...
 
 
 def native_batch_norm(
     input: Tensor, weight: Optional[Tensor], bias: Optional[Tensor],
-    running_mean: Optional[Tensor], running_var: Optional[Tensor],
-    training: bool, momentum: float, eps: float) -> Tuple[Tensor, Tensor,
+        running_mean: Optional[Tensor], running_var: Optional[Tensor],
+        training: bool, momentum: float, eps: float) -> Tuple[Tensor, Tensor,
         Tensor]: ...
 
 
@@ -299,12 +299,12 @@ def xlogy(self, other: Tensor) -> Tensor: ...
 
 def var_correction(
     x: Tensor, dims: Optional[List[int]], correction: Optional[int] = ...,
-    keepdim: bool = ...): ...
+        keepdim: bool = ...): ...
 
 
 def std_decomposition(
     x: Tensor, dims: List[int], correction: int = ...,
-    keepdim: bool = ...): ...
+        keepdim: bool = ...): ...
 
 
 def detach_decomposition(x): ...
@@ -312,15 +312,15 @@ def detach_decomposition(x): ...
 
 def cudnn_batch_norm(
     input: Tensor, weight: Tensor, bias: Optional[Tensor],
-    running_mean: Optional[Tensor], running_var: Optional[Tensor],
-    training: bool, exponential_average_factor: float, epsilon: float): ...
+        running_mean: Optional[Tensor], running_var: Optional[Tensor],
+        training: bool, exponential_average_factor: float, epsilon: float): ...
 
 
 def cudnn_batch_norm_backward(
     input: Tensor, grad_output: Tensor, weight: Tensor,
-    running_mean: Optional[Tensor], running_var: Optional[Tensor],
-    save_mean: Optional[Tensor], save_var: Optional[Tensor], epsilon: float,
-    reserveSpace: Tensor): ...
+        running_mean: Optional[Tensor], running_var: Optional[Tensor],
+        save_mean: Optional[Tensor], save_var: Optional[Tensor],
+        epsilon: float, reserveSpace: Tensor): ...
 
 
 def rot90(self, k: int = ..., dims: List[int] = ...) -> Tensor: ...

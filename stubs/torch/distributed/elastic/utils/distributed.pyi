@@ -19,8 +19,8 @@ log: Incomplete
 
 def create_c10d_store(
     is_server: bool, server_addr: str, server_port: int = ...,
-    world_size: int = ..., timeout: float = ...,
-    wait_for_workers: bool = ..., retries: int = ...): ...
+        world_size: int = ..., timeout: float = ...,
+        wait_for_workers: bool = ..., retries: int = ...): ...
 
 
 def get_free_port(): ...

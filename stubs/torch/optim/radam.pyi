@@ -27,6 +27,6 @@ class RAdam(Optimizer):
 
 def radam(
     params: List[Tensor], grads: List[Tensor], exp_avgs: List[Tensor],
-    exp_avg_sqs: List[Tensor], state_steps: List[Tensor],
-    foreach: bool = ..., *, beta1: float, beta2: float, lr: float,
-    weight_decay: float, eps: float): ...
+        exp_avg_sqs: List[Tensor], state_steps: List[Tensor],
+        foreach: bool = ..., *, beta1: float, beta2: float, lr: float,
+        weight_decay: float, eps: float): ...

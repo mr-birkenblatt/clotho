@@ -17,7 +17,7 @@ from ..quantization_types import Pattern as Pattern
 
 def get_pattern_to_dtype_configs(
     backend_config_dict: Dict[str, Any]) -> Dict[Pattern, List[Dict[str,
-        Any]]]: ...
+                Any]]]: ...
 
 
 def get_qat_module_classes(

@@ -94,26 +94,26 @@ def library_paths(cuda: bool = ...) -> List[str]: ...
 
 def load(
     name, sources: Union[str, List[str]],
-    extra_cflags: Incomplete | None = ...,
-    extra_cuda_cflags: Incomplete | None = ...,
-    extra_ldflags: Incomplete | None = ...,
-    extra_include_paths: Incomplete | None = ...,
-    build_directory: Incomplete | None = ..., verbose: bool = ...,
-    with_cuda: Optional[bool] = ..., is_python_module: bool = ...,
-    is_standalone: bool = ..., keep_intermediates: bool = ...): ...
+        extra_cflags: Incomplete | None = ...,
+        extra_cuda_cflags: Incomplete | None = ...,
+        extra_ldflags: Incomplete | None = ...,
+        extra_include_paths: Incomplete | None = ...,
+        build_directory: Incomplete | None = ..., verbose: bool = ...,
+        with_cuda: Optional[bool] = ..., is_python_module: bool = ...,
+        is_standalone: bool = ..., keep_intermediates: bool = ...): ...
 
 
 def load_inline(
     name, cpp_sources, cuda_sources: Incomplete | None = ...,
-    functions: Incomplete | None = ...,
-    extra_cflags: Incomplete | None = ...,
-    extra_cuda_cflags: Incomplete | None = ...,
-    extra_ldflags: Incomplete | None = ...,
-    extra_include_paths: Incomplete | None = ...,
-    build_directory: Incomplete | None = ..., verbose: bool = ...,
-    with_cuda: Incomplete | None = ..., is_python_module: bool = ...,
-    with_pytorch_error_handling: bool = ...,
-    keep_intermediates: bool = ...): ...
+        functions: Incomplete | None = ...,
+        extra_cflags: Incomplete | None = ...,
+        extra_cuda_cflags: Incomplete | None = ...,
+        extra_ldflags: Incomplete | None = ...,
+        extra_include_paths: Incomplete | None = ...,
+        build_directory: Incomplete | None = ..., verbose: bool = ...,
+        with_cuda: Incomplete | None = ..., is_python_module: bool = ...,
+        with_pytorch_error_handling: bool = ...,
+        keep_intermediates: bool = ...): ...
 
 
 def is_ninja_available(): ...

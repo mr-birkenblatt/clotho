@@ -8,20 +8,19 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Dict, Optional, Tuple
+
+from _typeshed import Incomplete
+
 from ._compatibility import compatibility as compatibility
 from ._symbolic_trace import Tracer as Tracer
 from .graph import Graph as Graph
 from .graph_module import GraphModule as GraphModule
 from .node import Argument as Argument
+from .node import map_aggregate as map_aggregate
+from .node import map_arg as map_arg
 from .node import Node as Node
 from .node import Target as Target
-
-
-        map_aggregate as map_aggregate, map_arg as map_arg
-from typing import Any, Dict, Optional, Tuple
-
-from _typeshed import Incomplete
-
 from .proxy import Proxy as Proxy
 
 
@@ -45,27 +44,27 @@ class Interpreter:
 
     def placeholder(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def get_attr(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def call_function(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def call_method(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def call_module(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def output(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def fetch_attr(self, target: str): ...
     def fetch_args_kwargs_from_env(self, n: Node) -> Tuple[Tuple, Dict]: ...
@@ -80,18 +79,18 @@ class Transformer(Interpreter):
 
     def placeholder(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Proxy: ...
+            Any]) -> Proxy: ...
 
     def get_attr(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Proxy: ...
+            Any]) -> Proxy: ...
 
     def call_module(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def call_function(
         self, target: Target, args: Tuple[Argument, ...], kwargs: Dict[str,
-        Any]) -> Any: ...
+            Any]) -> Any: ...
 
     def transform(self) -> GraphModule: ...

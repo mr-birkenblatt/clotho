@@ -8,13 +8,17 @@
 # pylint: disable=protected-access
 
 
+from .fused import _FusedModule as _FusedModule
 from .fused import BNReLU2d as BNReLU2d
 from .fused import BNReLU3d as BNReLU3d
-
-
-        ConvBn1d as ConvBn1d, ConvBn2d as ConvBn2d, ConvBn3d as ConvBn3d,
-        ConvBnReLU1d as ConvBnReLU1d, ConvBnReLU2d as ConvBnReLU2d,
-        ConvBnReLU3d as ConvBnReLU3d, ConvReLU1d as ConvReLU1d,
-        ConvReLU2d as ConvReLU2d, ConvReLU3d as ConvReLU3d,
-        LinearBn1d as LinearBn1d, LinearReLU as LinearReLU,
-        _FusedModule as _FusedModule
+from .fused import ConvBn1d as ConvBn1d
+from .fused import ConvBn2d as ConvBn2d
+from .fused import ConvBn3d as ConvBn3d
+from .fused import ConvBnReLU1d as ConvBnReLU1d
+from .fused import ConvBnReLU2d as ConvBnReLU2d
+from .fused import ConvBnReLU3d as ConvBnReLU3d
+from .fused import ConvReLU1d as ConvReLU1d
+from .fused import ConvReLU2d as ConvReLU2d
+from .fused import ConvReLU3d as ConvReLU3d
+from .fused import LinearBn1d as LinearBn1d
+from .fused import LinearReLU as LinearReLU

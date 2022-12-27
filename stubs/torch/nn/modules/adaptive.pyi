@@ -8,17 +8,15 @@
 # pylint: disable=protected-access
 
 
-from . import Linear as Linear
-from . import ModuleList as ModuleList
-
-
-        Sequential as Sequential
 from typing import List, NamedTuple, Sequence
 
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 
 from ..functional import log_softmax as log_softmax
+from . import Linear as Linear
+from . import ModuleList as ModuleList
+from . import Sequential as Sequential
 from .module import Module as Module
 
 

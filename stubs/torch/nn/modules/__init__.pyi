@@ -12,139 +12,155 @@ from .activation import CELU as CELU
 from .activation import ELU as ELU
 from .activation import GELU as GELU
 from .activation import GLU as GLU
-
-
-        Hardshrink as Hardshrink, Hardsigmoid as Hardsigmoid,
-        Hardswish as Hardswish, Hardtanh as Hardtanh, LeakyReLU as LeakyReLU,
-        LogSigmoid as LogSigmoid, LogSoftmax as LogSoftmax, Mish as Mish,
-        MultiheadAttention as MultiheadAttention, PReLU as PReLU,
-        RReLU as RReLU, ReLU as ReLU, ReLU6 as ReLU6, SELU as SELU,
-        SiLU as SiLU, Sigmoid as Sigmoid, Softmax as Softmax,
-        Softmax2d as Softmax2d, Softmin as Softmin, Softplus as Softplus,
-        Softshrink as Softshrink, Softsign as Softsign, Tanh as Tanh,
-        Tanhshrink as Tanhshrink, Threshold as Threshold
+from .activation import Hardshrink as Hardshrink
+from .activation import Hardsigmoid as Hardsigmoid
+from .activation import Hardswish as Hardswish
+from .activation import Hardtanh as Hardtanh
+from .activation import LeakyReLU as LeakyReLU
+from .activation import LogSigmoid as LogSigmoid
+from .activation import LogSoftmax as LogSoftmax
+from .activation import Mish as Mish
+from .activation import MultiheadAttention as MultiheadAttention
+from .activation import PReLU as PReLU
+from .activation import ReLU as ReLU
+from .activation import ReLU6 as ReLU6
+from .activation import RReLU as RReLU
+from .activation import SELU as SELU
+from .activation import Sigmoid as Sigmoid
+from .activation import SiLU as SiLU
+from .activation import Softmax as Softmax
+from .activation import Softmax2d as Softmax2d
+from .activation import Softmin as Softmin
+from .activation import Softplus as Softplus
+from .activation import Softshrink as Softshrink
+from .activation import Softsign as Softsign
+from .activation import Tanh as Tanh
+from .activation import Tanhshrink as Tanhshrink
+from .activation import Threshold as Threshold
 from .adaptive import AdaptiveLogSoftmaxWithLoss as AdaptiveLogSoftmaxWithLoss
 from .batchnorm import BatchNorm1d as BatchNorm1d
-
-
-        BatchNorm2d as BatchNorm2d, BatchNorm3d as BatchNorm3d,
-        LazyBatchNorm1d as LazyBatchNorm1d,
-        LazyBatchNorm2d as LazyBatchNorm2d,
-        LazyBatchNorm3d as LazyBatchNorm3d, SyncBatchNorm as SyncBatchNorm
+from .batchnorm import BatchNorm2d as BatchNorm2d
+from .batchnorm import BatchNorm3d as BatchNorm3d
+from .batchnorm import LazyBatchNorm1d as LazyBatchNorm1d
+from .batchnorm import LazyBatchNorm2d as LazyBatchNorm2d
+from .batchnorm import LazyBatchNorm3d as LazyBatchNorm3d
+from .batchnorm import SyncBatchNorm as SyncBatchNorm
 from .channelshuffle import ChannelShuffle as ChannelShuffle
 from .container import Container as Container
 from .container import ModuleDict as ModuleDict
-
-
-        ModuleList as ModuleList, ParameterDict as ParameterDict,
-        ParameterList as ParameterList, Sequential as Sequential
+from .container import ModuleList as ModuleList
+from .container import ParameterDict as ParameterDict
+from .container import ParameterList as ParameterList
+from .container import Sequential as Sequential
 from .conv import Conv1d as Conv1d
 from .conv import Conv2d as Conv2d
 from .conv import Conv3d as Conv3d
-
-
-        ConvTranspose1d as ConvTranspose1d,
-        ConvTranspose2d as ConvTranspose2d,
-        ConvTranspose3d as ConvTranspose3d, LazyConv1d as LazyConv1d,
-        LazyConv2d as LazyConv2d, LazyConv3d as LazyConv3d,
-        LazyConvTranspose1d as LazyConvTranspose1d,
-        LazyConvTranspose2d as LazyConvTranspose2d,
-        LazyConvTranspose3d as LazyConvTranspose3d
+from .conv import ConvTranspose1d as ConvTranspose1d
+from .conv import ConvTranspose2d as ConvTranspose2d
+from .conv import ConvTranspose3d as ConvTranspose3d
+from .conv import LazyConv1d as LazyConv1d
+from .conv import LazyConv2d as LazyConv2d
+from .conv import LazyConv3d as LazyConv3d
+from .conv import LazyConvTranspose1d as LazyConvTranspose1d
+from .conv import LazyConvTranspose2d as LazyConvTranspose2d
+from .conv import LazyConvTranspose3d as LazyConvTranspose3d
 from .distance import CosineSimilarity as CosineSimilarity
-
-
-        PairwiseDistance as PairwiseDistance
+from .distance import PairwiseDistance as PairwiseDistance
 from .dropout import AlphaDropout as AlphaDropout
 from .dropout import Dropout as Dropout
-
-
-        Dropout1d as Dropout1d, Dropout2d as Dropout2d,
-        Dropout3d as Dropout3d, FeatureAlphaDropout as FeatureAlphaDropout
+from .dropout import Dropout1d as Dropout1d
+from .dropout import Dropout2d as Dropout2d
+from .dropout import Dropout3d as Dropout3d
+from .dropout import FeatureAlphaDropout as FeatureAlphaDropout
 from .flatten import Flatten as Flatten
 from .flatten import Unflatten as Unflatten
 from .fold import Fold as Fold
 from .fold import Unfold as Unfold
 from .instancenorm import InstanceNorm1d as InstanceNorm1d
-
-
-        InstanceNorm2d as InstanceNorm2d, InstanceNorm3d as InstanceNorm3d,
-        LazyInstanceNorm1d as LazyInstanceNorm1d,
-        LazyInstanceNorm2d as LazyInstanceNorm2d,
-        LazyInstanceNorm3d as LazyInstanceNorm3d
+from .instancenorm import InstanceNorm2d as InstanceNorm2d
+from .instancenorm import InstanceNorm3d as InstanceNorm3d
+from .instancenorm import LazyInstanceNorm1d as LazyInstanceNorm1d
+from .instancenorm import LazyInstanceNorm2d as LazyInstanceNorm2d
+from .instancenorm import LazyInstanceNorm3d as LazyInstanceNorm3d
 from .linear import Bilinear as Bilinear
 from .linear import Identity as Identity
-
-
-        LazyLinear as LazyLinear, Linear as Linear
+from .linear import LazyLinear as LazyLinear
+from .linear import Linear as Linear
 from .loss import BCELoss as BCELoss
 from .loss import BCEWithLogitsLoss as BCEWithLogitsLoss
-
-
-        CTCLoss as CTCLoss, CosineEmbeddingLoss as CosineEmbeddingLoss,
-        CrossEntropyLoss as CrossEntropyLoss,
-        GaussianNLLLoss as GaussianNLLLoss,
-        HingeEmbeddingLoss as HingeEmbeddingLoss, HuberLoss as HuberLoss,
-        KLDivLoss as KLDivLoss, L1Loss as L1Loss, MSELoss as MSELoss,
-        MarginRankingLoss as MarginRankingLoss,
-        MultiLabelMarginLoss as MultiLabelMarginLoss,
-        MultiLabelSoftMarginLoss as MultiLabelSoftMarginLoss,
-        MultiMarginLoss as MultiMarginLoss, NLLLoss as NLLLoss,
-        NLLLoss2d as NLLLoss2d, PoissonNLLLoss as PoissonNLLLoss,
-        SmoothL1Loss as SmoothL1Loss, SoftMarginLoss as SoftMarginLoss,
-        TripletMarginLoss as TripletMarginLoss,
-        TripletMarginWithDistanceLoss as TripletMarginWithDistanceLoss
+from .loss import CosineEmbeddingLoss as CosineEmbeddingLoss
+from .loss import CrossEntropyLoss as CrossEntropyLoss
+from .loss import CTCLoss as CTCLoss
+from .loss import GaussianNLLLoss as GaussianNLLLoss
+from .loss import HingeEmbeddingLoss as HingeEmbeddingLoss
+from .loss import HuberLoss as HuberLoss
+from .loss import KLDivLoss as KLDivLoss
+from .loss import L1Loss as L1Loss
+from .loss import MarginRankingLoss as MarginRankingLoss
+from .loss import MSELoss as MSELoss
+from .loss import MultiLabelMarginLoss as MultiLabelMarginLoss
+from .loss import MultiLabelSoftMarginLoss as MultiLabelSoftMarginLoss
+from .loss import MultiMarginLoss as MultiMarginLoss
+from .loss import NLLLoss as NLLLoss
+from .loss import NLLLoss2d as NLLLoss2d
+from .loss import PoissonNLLLoss as PoissonNLLLoss
+from .loss import SmoothL1Loss as SmoothL1Loss
+from .loss import SoftMarginLoss as SoftMarginLoss
+from .loss import TripletMarginLoss as TripletMarginLoss
+from .loss import (
+    TripletMarginWithDistanceLoss as TripletMarginWithDistanceLoss,
+)
 from .module import Module as Module
 from .normalization import CrossMapLRN2d as CrossMapLRN2d
-
-
-        GroupNorm as GroupNorm, LayerNorm as LayerNorm,
-        LocalResponseNorm as LocalResponseNorm
+from .normalization import GroupNorm as GroupNorm
+from .normalization import LayerNorm as LayerNorm
+from .normalization import LocalResponseNorm as LocalResponseNorm
 from .padding import ConstantPad1d as ConstantPad1d
-
-
-        ConstantPad2d as ConstantPad2d, ConstantPad3d as ConstantPad3d,
-        ReflectionPad1d as ReflectionPad1d,
-        ReflectionPad2d as ReflectionPad2d,
-        ReflectionPad3d as ReflectionPad3d,
-        ReplicationPad1d as ReplicationPad1d,
-        ReplicationPad2d as ReplicationPad2d,
-        ReplicationPad3d as ReplicationPad3d, ZeroPad2d as ZeroPad2d
+from .padding import ConstantPad2d as ConstantPad2d
+from .padding import ConstantPad3d as ConstantPad3d
+from .padding import ReflectionPad1d as ReflectionPad1d
+from .padding import ReflectionPad2d as ReflectionPad2d
+from .padding import ReflectionPad3d as ReflectionPad3d
+from .padding import ReplicationPad1d as ReplicationPad1d
+from .padding import ReplicationPad2d as ReplicationPad2d
+from .padding import ReplicationPad3d as ReplicationPad3d
+from .padding import ZeroPad2d as ZeroPad2d
 from .pixelshuffle import PixelShuffle as PixelShuffle
-
-
-        PixelUnshuffle as PixelUnshuffle
+from .pixelshuffle import PixelUnshuffle as PixelUnshuffle
 from .pooling import AdaptiveAvgPool1d as AdaptiveAvgPool1d
-
-
-        AdaptiveAvgPool2d as AdaptiveAvgPool2d,
-        AdaptiveAvgPool3d as AdaptiveAvgPool3d,
-        AdaptiveMaxPool1d as AdaptiveMaxPool1d,
-        AdaptiveMaxPool2d as AdaptiveMaxPool2d,
-        AdaptiveMaxPool3d as AdaptiveMaxPool3d, AvgPool1d as AvgPool1d,
-        AvgPool2d as AvgPool2d, AvgPool3d as AvgPool3d,
-        FractionalMaxPool2d as FractionalMaxPool2d,
-        FractionalMaxPool3d as FractionalMaxPool3d, LPPool1d as LPPool1d,
-        LPPool2d as LPPool2d, MaxPool1d as MaxPool1d, MaxPool2d as MaxPool2d,
-        MaxPool3d as MaxPool3d, MaxUnpool1d as MaxUnpool1d,
-        MaxUnpool2d as MaxUnpool2d, MaxUnpool3d as MaxUnpool3d
+from .pooling import AdaptiveAvgPool2d as AdaptiveAvgPool2d
+from .pooling import AdaptiveAvgPool3d as AdaptiveAvgPool3d
+from .pooling import AdaptiveMaxPool1d as AdaptiveMaxPool1d
+from .pooling import AdaptiveMaxPool2d as AdaptiveMaxPool2d
+from .pooling import AdaptiveMaxPool3d as AdaptiveMaxPool3d
+from .pooling import AvgPool1d as AvgPool1d
+from .pooling import AvgPool2d as AvgPool2d
+from .pooling import AvgPool3d as AvgPool3d
+from .pooling import FractionalMaxPool2d as FractionalMaxPool2d
+from .pooling import FractionalMaxPool3d as FractionalMaxPool3d
+from .pooling import LPPool1d as LPPool1d
+from .pooling import LPPool2d as LPPool2d
+from .pooling import MaxPool1d as MaxPool1d
+from .pooling import MaxPool2d as MaxPool2d
+from .pooling import MaxPool3d as MaxPool3d
+from .pooling import MaxUnpool1d as MaxUnpool1d
+from .pooling import MaxUnpool2d as MaxUnpool2d
+from .pooling import MaxUnpool3d as MaxUnpool3d
 from .rnn import GRU as GRU
 from .rnn import GRUCell as GRUCell
 from .rnn import LSTM as LSTM
-
-
-        LSTMCell as LSTMCell, RNN as RNN, RNNBase as RNNBase,
-        RNNCell as RNNCell, RNNCellBase as RNNCellBase
+from .rnn import LSTMCell as LSTMCell
+from .rnn import RNN as RNN
+from .rnn import RNNBase as RNNBase
+from .rnn import RNNCell as RNNCell
+from .rnn import RNNCellBase as RNNCellBase
 from .sparse import Embedding as Embedding
 from .sparse import EmbeddingBag as EmbeddingBag
 from .transformer import Transformer as Transformer
-
-
-        TransformerDecoder as TransformerDecoder,
-        TransformerDecoderLayer as TransformerDecoderLayer,
-        TransformerEncoder as TransformerEncoder,
-        TransformerEncoderLayer as TransformerEncoderLayer
+from .transformer import TransformerDecoder as TransformerDecoder
+from .transformer import TransformerDecoderLayer as TransformerDecoderLayer
+from .transformer import TransformerEncoder as TransformerEncoder
+from .transformer import TransformerEncoderLayer as TransformerEncoderLayer
 from .upsampling import Upsample as Upsample
-
-
-        UpsamplingBilinear2d as UpsamplingBilinear2d,
-        UpsamplingNearest2d as UpsamplingNearest2d
+from .upsampling import UpsamplingBilinear2d as UpsamplingBilinear2d
+from .upsampling import UpsamplingNearest2d as UpsamplingNearest2d

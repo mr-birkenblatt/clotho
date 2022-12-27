@@ -8,16 +8,16 @@
 # pylint: disable=protected-access
 
 
+from typing import Optional
+
 import torch
 from _typeshed import Incomplete
 from torch.nn.quantized.modules.utils import (
+    hide_packed_params_repr as hide_packed_params_repr,
+)
+from torch.nn.quantized.modules.utils import (
     WeightedQuantizedModule as WeightedQuantizedModule,
 )
-
-
-        hide_packed_params_repr as hide_packed_params_repr
-from typing import Optional
-
 from torch.nn.utils.fusion import (
     fuse_linear_bn_weights as fuse_linear_bn_weights,
 )

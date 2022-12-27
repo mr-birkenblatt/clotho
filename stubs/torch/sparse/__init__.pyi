@@ -22,7 +22,7 @@ mm: Incomplete
 
 def sum(
     input: Tensor, dim: DimOrDims = ...,
-    dtype: Optional[DType] = ...) -> Tensor: ...
+        dtype: Optional[DType] = ...) -> Tensor: ...
 
 
 softmax: Incomplete

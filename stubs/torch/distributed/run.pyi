@@ -9,6 +9,7 @@
 
 
 from argparse import ArgumentParser
+from typing import Callable, List, Tuple, Union
 
 from _typeshed import Incomplete
 from torch.distributed.argparse_util import check_env as check_env
@@ -17,11 +18,8 @@ from torch.distributed.elastic.multiprocessing import Std as Std
 from torch.distributed.elastic.multiprocessing.errors import record as record
 from torch.distributed.elastic.utils import macros as macros
 from torch.distributed.elastic.utils.logging import get_logger as get_logger
+from torch.distributed.launcher.api import elastic_launch as elastic_launch
 from torch.distributed.launcher.api import LaunchConfig as LaunchConfig
-
-
-        elastic_launch as elastic_launch
-from typing import Callable, List, Tuple, Union
 
 
 log: Incomplete

@@ -30,6 +30,6 @@ class Adagrad(Optimizer):
 
 def adagrad(
     params: List[Tensor], grads: List[Tensor], state_sums: List[Tensor],
-    state_steps: List[Tensor], has_sparse_grad: bool = ...,
-    foreach: bool = ..., *, lr: float, weight_decay: float, lr_decay: float,
-    eps: float, maximize: bool): ...
+        state_steps: List[Tensor], has_sparse_grad: bool = ...,
+        foreach: bool = ..., *, lr: float, weight_decay: float,
+        lr_decay: float, eps: float, maximize: bool): ...

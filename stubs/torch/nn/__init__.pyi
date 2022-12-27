@@ -14,10 +14,8 @@ from . import utils as utils
 from .modules import *
 from .parallel import DataParallel as DataParallel
 from .parameter import Parameter as Parameter
-
-
-        UninitializedBuffer as UninitializedBuffer,
-        UninitializedParameter as UninitializedParameter
+from .parameter import UninitializedBuffer as UninitializedBuffer
+from .parameter import UninitializedParameter as UninitializedParameter
 
 
 def factory_kwargs(kwargs): ...

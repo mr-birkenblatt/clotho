@@ -8,15 +8,13 @@
 # pylint: disable=protected-access
 
 
-import monkeytype
-from _typeshed import Incomplete
-from monkeytype.db.base import CallTraceStore, CallTraceStoreLogger
-
-
-        CallTraceThunk as CallTraceThunk
 from types import CodeType
 from typing import Dict, Iterable, List, Optional
 
+import monkeytype
+from _typeshed import Incomplete
+from monkeytype.db.base import CallTraceStore, CallTraceStoreLogger
+from monkeytype.db.base import CallTraceThunk as CallTraceThunk
 from monkeytype.tracing import CallTrace as CallTrace
 from monkeytype.tracing import CodeFilter as CodeFilter
 

@@ -27,5 +27,6 @@ class Rprop(Optimizer):
 
 def rprop(
     params: List[Tensor], grads: List[Tensor], prevs: List[Tensor],
-    step_sizes: List[Tensor], foreach: bool = ..., *, step_size_min: float,
-    step_size_max: float, etaminus: float, etaplus: float): ...
+        step_sizes: List[Tensor], foreach: bool = ..., *,
+        step_size_min: float, step_size_max: float, etaminus: float,
+        etaplus: float): ...

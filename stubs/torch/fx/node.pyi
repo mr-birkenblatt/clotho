@@ -8,21 +8,18 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
 import torch
+from _typeshed import Incomplete
+from torch.fx.operator_schemas import ArgsKwargsPair as ArgsKwargsPair
+from torch.fx.operator_schemas import normalize_function as normalize_function
+from torch.fx.operator_schemas import normalize_module as normalize_module
 
 from ._compatibility import compatibility as compatibility
 from .graph import Graph as Graph
 from .immutable_collections import immutable_dict as immutable_dict
-
-
-        immutable_list as immutable_list
-from _typeshed import Incomplete
-from torch.fx.operator_schemas import ArgsKwargsPair as ArgsKwargsPair
-
-
-        normalize_function as normalize_function,
-        normalize_module as normalize_module
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from .immutable_collections import immutable_list as immutable_list
 
 
 BaseArgumentTypes: Incomplete
@@ -74,7 +71,7 @@ class Node:
 
     def replace_all_uses_with(
         self, replace_with: Node, delete_user_cb: Callable[[Node],
-        bool] = ...) -> List['Node']: ...
+            bool] = ...) -> List['Node']: ...
 
     def is_impure(self): ...
 

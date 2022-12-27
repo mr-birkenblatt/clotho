@@ -34,11 +34,11 @@ class LSTMCell(torch.nn.Module):
 
     def forward(
         self, x: Tensor, hidden: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
     def initialize_hidden(
         self, batch_size: int, is_quantized: bool = ...) -> Tuple[Tensor,
-            Tensor]: ...
+        Tensor]: ...
 
     @classmethod
     def from_params(

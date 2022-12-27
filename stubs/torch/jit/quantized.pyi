@@ -66,7 +66,7 @@ class QuantizedLSTMCell(QuantizedRNNCellBase):
 
     def forward(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tensor]: ...
 
 
 class QuantizedGRUCell(QuantizedRNNCellBase):
@@ -97,7 +97,7 @@ class QuantizedRNNBase(torch.jit.ScriptModule):
 
     def get_expected_hidden_size(
         self, input: Tensor, batch_sizes: Optional[Tensor]) -> Tuple[int,
-            int, int]: ...
+        int, int]: ...
 
     def check_hidden_size(
         self, hx: Tensor, expected_hidden_size: Tuple[int, int, int],
@@ -123,11 +123,12 @@ class QuantizedLSTM(QuantizedRNNBase):
 
     def forward_tensor(
         self, input: Tensor, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
+                Tensor]] = ...) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
 
     def forward_packed(
         self, input: PackedSequence, hx: Optional[Tuple[Tensor,
-        Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor, Tensor]]: ...
+                Tensor]] = ...) -> Tuple[PackedSequence, Tuple[Tensor,
+            Tensor]]: ...
 
     def permute_hidden(
         self, hx: Tuple[Tensor, Tensor],
@@ -151,7 +152,7 @@ class QuantizedGRU(QuantizedRNNBase):
 
     def forward_tensor(
         self, input: Tensor, hx: Optional[Tensor] = ...) -> Tuple[Tensor,
-            Tensor]: ...
+        Tensor]: ...
 
     def forward_packed(
         self, input: PackedSequence,

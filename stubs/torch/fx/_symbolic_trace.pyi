@@ -8,26 +8,22 @@
 # pylint: disable=protected-access
 
 
+from types import ModuleType
+from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union
+
 import torch
+from _typeshed import Incomplete
+from torch._C import ScriptObject as ScriptObject
 
 from ._compatibility import compatibility as compatibility
 from .graph import Graph as Graph
 from .graph_module import GraphModule as GraphModule
 from .node import Argument as Argument
 from .node import base_types as base_types
-
-
-        map_aggregate as map_aggregate
+from .node import map_aggregate as map_aggregate
 from .proxy import ParameterProxy as ParameterProxy
 from .proxy import Proxy as Proxy
-
-
-        TracerBase as TracerBase
-from types import ModuleType
-from typing import Any, Callable, Dict, NamedTuple, Optional, Tuple, Union
-
-from _typeshed import Incomplete
-from torch._C import ScriptObject as ScriptObject
+from .proxy import TracerBase as TracerBase
 
 
 HAS_VARSTUFF: Incomplete
@@ -119,4 +115,4 @@ def wrap(fn_or_name: Union[str, Callable]): ...
 
 def symbolic_trace(
     root: Union[torch.nn.Module, Callable[..., Any]],
-    concrete_args: Optional[Dict[str, Any]] = ...) -> GraphModule: ...
+        concrete_args: Optional[Dict[str, Any]] = ...) -> GraphModule: ...

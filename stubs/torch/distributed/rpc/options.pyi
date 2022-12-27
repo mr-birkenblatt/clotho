@@ -22,7 +22,7 @@ class TensorPipeRpcBackendOptions(_TensorPipeRpcBackendOptionsBase):
     def __init__(
         self, *, num_worker_threads: int = ..., rpc_timeout: float = ...,
         init_method: str = ..., device_maps: Optional[Dict[str,
-        Dict[DeviceType, DeviceType]]] = ...,
+                Dict[DeviceType, DeviceType]]] = ...,
         devices: Optional[List[DeviceType]] = ...,
         _transports: Optional[List] = ...,
         _channels: Optional[List] = ...) -> None: ...

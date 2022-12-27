@@ -9,10 +9,9 @@
 
 
 from torch.utils.benchmark import FuzzedParameter as FuzzedParameter
-
-
-        FuzzedTensor as FuzzedTensor, Fuzzer as Fuzzer,
-        ParameterAlias as ParameterAlias
+from torch.utils.benchmark import FuzzedTensor as FuzzedTensor
+from torch.utils.benchmark import Fuzzer as Fuzzer
+from torch.utils.benchmark import ParameterAlias as ParameterAlias
 
 
 class BinaryOpFuzzer(Fuzzer):

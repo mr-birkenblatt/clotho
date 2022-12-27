@@ -9,21 +9,18 @@
 
 
 from contextlib import ContextDecorator
+from typing import Any, Optional
 
 from _typeshed import Incomplete
 from torch.autograd import DeviceType as DeviceType
-
-
-        ProfilerActivity as ProfilerActivity,
-        ProfilerConfig as ProfilerConfig, ProfilerState as ProfilerState,
-        kineto_available as kineto_available
+from torch.autograd import kineto_available as kineto_available
+from torch.autograd import ProfilerActivity as ProfilerActivity
+from torch.autograd import ProfilerConfig as ProfilerConfig
+from torch.autograd import ProfilerState as ProfilerState
 from torch.autograd.profiler_util import EventList as EventList
-
-
-        FunctionEvent as FunctionEvent,
-        MEMORY_EVENT_NAME as MEMORY_EVENT_NAME, MemRecordsAcc as MemRecordsAcc
-from typing import Any, Optional
-
+from torch.autograd.profiler_util import FunctionEvent as FunctionEvent
+from torch.autograd.profiler_util import MEMORY_EVENT_NAME as MEMORY_EVENT_NAME
+from torch.autograd.profiler_util import MemRecordsAcc as MemRecordsAcc
 from torch.futures import Future as Future
 
 

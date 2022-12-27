@@ -8,23 +8,18 @@
 # pylint: disable=protected-access
 
 
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+)
+
 import torch
-
-from .graph_drawer import FxGraphDrawer as FxGraphDrawer
-from .operator_support import OperatorSupportBase as OperatorSupportBase
-
-
-        get_node_target as get_node_target
-from .shape_prop import ShapeProp as ShapeProp
-from .split_utils import split_by_tags as split_by_tags
-from .tools_common import CALLABLE_NODE_OPS as CALLABLE_NODE_OPS
-
-
-        FxNetAccFusionsFinder as FxNetAccFusionsFinder, NodeList as NodeList,
-        NodeSet as NodeSet, Tensors as Tensors,
-        is_node_output_tensor as is_node_output_tensor
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence
-
 from _typeshed import Incomplete
 from torch.fx._compatibility import compatibility as compatibility
 from torch.fx.node import map_arg as map_arg
@@ -32,8 +27,17 @@ from torch.fx.passes.graph_manipulation import (
     get_size_of_node as get_size_of_node,
 )
 
-
-        Tuple
+from .graph_drawer import FxGraphDrawer as FxGraphDrawer
+from .operator_support import get_node_target as get_node_target
+from .operator_support import OperatorSupportBase as OperatorSupportBase
+from .shape_prop import ShapeProp as ShapeProp
+from .split_utils import split_by_tags as split_by_tags
+from .tools_common import CALLABLE_NODE_OPS as CALLABLE_NODE_OPS
+from .tools_common import FxNetAccFusionsFinder as FxNetAccFusionsFinder
+from .tools_common import is_node_output_tensor as is_node_output_tensor
+from .tools_common import NodeList as NodeList
+from .tools_common import NodeSet as NodeSet
+from .tools_common import Tensors as Tensors
 
 
 class _SplitterSettingBase:
@@ -80,7 +84,7 @@ class SplitResult(NamedTuple):
 
 def generate_inputs_for_submodules(
     model: torch.nn.Module, inputs: Sequence[Any],
-    target_submodules: Iterable[str]) -> Dict[str, Any]: ...
+        target_submodules: Iterable[str]) -> Dict[str, Any]: ...
 
 
 class _SplitterBase:

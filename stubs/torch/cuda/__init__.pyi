@@ -8,33 +8,28 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, List, Optional, Tuple, Union
+
 import torch._C
+from _typeshed import Incomplete
+from torch.storage import _LegacyStorage
+from torch.types import Device as Device
 
 from . import amp as amp
 from . import jiterator as jiterator
 from . import nvtx as nvtx
-from .memory import *
-from .random import *
-
-
-        profiler as profiler, sparse as sparse
+from . import profiler as profiler
+from . import sparse as sparse
 from .graphs import CUDAGraph as CUDAGraph
 from .graphs import graph as graph
-
-
-        graph_pool_handle as graph_pool_handle,
-        is_current_stream_capturing as is_current_stream_capturing,
-        make_graphed_callables as make_graphed_callables
+from .graphs import graph_pool_handle as graph_pool_handle
+from .graphs import is_current_stream_capturing as is_current_stream_capturing
+from .graphs import make_graphed_callables as make_graphed_callables
+from .memory import *
+from .random import *
 from .streams import Event as Event
 from .streams import ExternalStream as ExternalStream
-
-
-        Stream as Stream
-from typing import Any, List, Optional, Tuple, Union
-
-from _typeshed import Incomplete
-from torch.storage import _LegacyStorage
-from torch.types import Device as Device
+from .streams import Stream as Stream
 
 
 class _LazySeedTracker:

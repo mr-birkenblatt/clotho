@@ -13,9 +13,7 @@ from torch._C._distributed_autograd import backward as backward
 from torch._C._distributed_autograd import (
     DistAutogradContext as DistAutogradContext,
 )
-
-
-        get_gradients as get_gradients
+from torch._C._distributed_autograd import get_gradients as get_gradients
 
 
 def is_available(): ...

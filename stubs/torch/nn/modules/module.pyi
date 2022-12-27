@@ -8,7 +8,19 @@
 # pylint: disable=protected-access
 
 
-from typing import Any, Callable, Dict, Iterator, Mapping, Optional, Set
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    overload,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from _typeshed import Incomplete
 from torch import device as device
@@ -18,8 +30,6 @@ from torch import Tensor as Tensor
 from ...utils.hooks import RemovableHandle as RemovableHandle
 from ..parameter import Parameter as Parameter
 
-
-        Tuple, TypeVar, Union, overload
 
 T = TypeVar('T', bound='Module')
 
@@ -38,12 +48,12 @@ def register_module_forward_hook(
 
 def register_module_backward_hook(
     hook: Callable[[Module, _grad_t, _grad_t], Union[None,
-    Tensor]]) -> RemovableHandle: ...
+                Tensor]]) -> RemovableHandle: ...
 
 
 def register_module_full_backward_hook(
     hook: Callable[[Module, _grad_t, _grad_t], Union[None,
-    Tensor]]) -> RemovableHandle: ...
+                Tensor]]) -> RemovableHandle: ...
 
 
 class Module:
@@ -94,11 +104,11 @@ class Module:
 
     def register_backward_hook(
         self, hook: Callable[[Module, _grad_t, _grad_t], Union[None,
-        Tensor]]) -> RemovableHandle: ...
+                Tensor]]) -> RemovableHandle: ...
 
     def register_full_backward_hook(
         self, hook: Callable[[Module, _grad_t, _grad_t], Union[None,
-        Tensor]]) -> RemovableHandle: ...
+                Tensor]]) -> RemovableHandle: ...
 
     def register_forward_pre_hook(
         self, hook: Callable[..., None]) -> RemovableHandle: ...
@@ -123,7 +133,7 @@ class Module:
     @overload
     def state_dict(
         self, *, prefix: str = ..., keep_vars: bool = ...) -> Dict[str,
-            Any]: ...
+        Any]: ...
 
     def register_load_state_dict_post_hook(self, hook): ...
 

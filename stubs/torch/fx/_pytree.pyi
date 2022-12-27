@@ -8,12 +8,11 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Dict, List, Type
+
 from torch.utils._pytree import LeafSpec as LeafSpec
 from torch.utils._pytree import PyTree as PyTree
-
-
-        TreeSpec as TreeSpec
-from typing import Any, Callable, Dict, List, Type
+from torch.utils._pytree import TreeSpec as TreeSpec
 
 
 FlattenFuncSpec = Callable[[PyTree, TreeSpec], List]

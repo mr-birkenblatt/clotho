@@ -8,11 +8,10 @@
 # pylint: disable=protected-access
 
 
-from .dispatcher import Dispatcher as Dispatcher
-
-
-        MethodDispatcher as MethodDispatcher
 from _typeshed import Incomplete
+
+from .dispatcher import Dispatcher as Dispatcher
+from .dispatcher import MethodDispatcher as MethodDispatcher
 
 
 global_namespace: Incomplete

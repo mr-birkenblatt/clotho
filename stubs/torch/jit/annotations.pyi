@@ -8,22 +8,29 @@
 # pylint: disable=protected-access
 
 
-from .._jit_internal import Any as Any
-
-
-        BroadcastingList1 as BroadcastingList1,
-        BroadcastingList2 as BroadcastingList2,
-        BroadcastingList3 as BroadcastingList3, Dict as Dict, List as List,
-        Tuple as Tuple, is_dict as is_dict, is_list as is_list,
-        is_optional as is_optional, is_tuple as is_tuple, is_union as is_union
 from _typeshed import Incomplete
 from torch._C import AnyType as AnyType
 from torch._C import ComplexType as ComplexType
+from torch._C import DictType as DictType
+from torch._C import FloatType as FloatType
+from torch._C import IntType as IntType
+from torch._C import ListType as ListType
+from torch._C import StringType as StringType
+from torch._C import TensorType as TensorType
+from torch._C import TupleType as TupleType
 
-
-        DictType as DictType, FloatType as FloatType, IntType as IntType,
-        ListType as ListType, StringType as StringType,
-        TensorType as TensorType, TupleType as TupleType
+from .._jit_internal import Any as Any
+from .._jit_internal import BroadcastingList1 as BroadcastingList1
+from .._jit_internal import BroadcastingList2 as BroadcastingList2
+from .._jit_internal import BroadcastingList3 as BroadcastingList3
+from .._jit_internal import Dict as Dict
+from .._jit_internal import is_dict as is_dict
+from .._jit_internal import is_list as is_list
+from .._jit_internal import is_optional as is_optional
+from .._jit_internal import is_tuple as is_tuple
+from .._jit_internal import is_union as is_union
+from .._jit_internal import List as List
+from .._jit_internal import Tuple as Tuple
 
 
 class Module:

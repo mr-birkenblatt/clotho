@@ -40,13 +40,14 @@ class SymbolicContext:
 
 def export(
     model, args, f, export_params: bool = ..., verbose: bool = ...,
-    training=..., input_names: Incomplete | None = ...,
-    output_names: Incomplete | None = ..., operator_export_type=...,
-    opset_version: Incomplete | None = ..., do_constant_folding: bool = ...,
-    dynamic_axes: Incomplete | None = ...,
-    keep_initializers_as_inputs: Incomplete | None = ...,
-    custom_opsets: Incomplete | None = ...,
-    export_modules_as_functions: bool = ...): ...
+        training=..., input_names: Incomplete | None = ...,
+        output_names: Incomplete | None = ..., operator_export_type=...,
+        opset_version: Incomplete | None = ...,
+        do_constant_folding: bool = ...,
+        dynamic_axes: Incomplete | None = ...,
+        keep_initializers_as_inputs: Incomplete | None = ...,
+        custom_opsets: Incomplete | None = ...,
+        export_modules_as_functions: bool = ...): ...
 
 
 def export_to_pretty_string(*args, **kwargs) -> str: ...
