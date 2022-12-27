@@ -111,8 +111,8 @@ def node_arg_is_bias(node: Node, arg: Any) -> bool: ...
 
 
 def is_input_arg_dtype_supported_by_backend(
-    arg: Argument, node: Node, node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    arg: Argument, node: Node,
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     dtype_config: Dict[str, torch.dtype]) -> bool: ...
 
 
