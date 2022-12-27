@@ -87,18 +87,17 @@ class LSTM(RNNBase):
                     Tensor, Tensor]]: ...
 
     def forward_tensor(
-        self, input: Tensor, hx: Optional[Tuple[
-                        Tensor, Tensor]] = ...) -> Tuple[Tensor, Tuple[
-                    Tensor, Tensor]]: ...
+        self, input: Tensor, hx: Optional[Tuple[Tensor, Tensor]] = ...,
+        ) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
 
     def forward_packed(
-        self, input: PackedSequence, hx: Optional[Tuple[Tensor,
-                        Tensor]] = ...) -> Tuple[PackedSequence, Tuple[
-                    Tensor, Tensor]]: ...
+        self, input: PackedSequence,
+        hx: Optional[Tuple[Tensor, Tensor]] = ...,
+        ) -> Tuple[PackedSequence, Tuple[Tensor, Tensor]]: ...
 
     def permute_hidden(
-        self, hx: Tuple[Tensor, Tensor], permutation: Optional[
-                Tensor]) -> Tuple[Tensor, Tensor]: ...
+        self, hx: Tuple[Tensor, Tensor],
+        permutation: Optional[Tensor]) -> Tuple[Tensor, Tensor]: ...
 
     def check_forward_args(
         self, input: Tensor, hidden: Tuple[Tensor, Tensor],

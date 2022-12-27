@@ -10,8 +10,8 @@
 
 from typing import Any, Dict, Optional
 
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch import Tensor as Tensor
 
 from .utils import ReferenceQuantizedModule as ReferenceQuantizedModule
@@ -40,8 +40,8 @@ class EmbeddingBag(nn.EmbeddingBag, ReferenceQuantizedModule):
         scale_grad_by_freq: bool = ..., mode: str = ..., sparse: bool = ...,
         _weight: Optional[Tensor] = ..., include_last_offset: bool = ...,
         padding_idx: Optional[int] = ..., device: Incomplete | None = ...,
-        dtype: Incomplete | None = ..., weight_qparams: Optional[Dict[str,
-                        Any]] = ...) -> None: ...
+        dtype: Incomplete | None = ...,
+        weight_qparams: Optional[Dict[str, Any]] = ...) -> None: ...
 
     def forward(
         self, input: Tensor, offsets: Optional[Tensor] = ...,

@@ -8,13 +8,11 @@
 # pylint: disable=protected-access,no-name-in-module,undefined-variable
 
 
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch.nn.intrinsic import LinearReLU as LinearReLU
 from torch.nn.utils.parametrize import is_parametrized as is_parametrized
-from torch.nn.utils.parametrize import (
-    transfer_parametrizations_and_params as transfer_parametrizations_and_params,
-)
+from torch.nn.utils.parametrize import transfer_parametrizations_and_params
 from torch.nn.utils.parametrize import (
     type_before_parametrizations as type_before_parametrizations,
 )

@@ -34,6 +34,9 @@ from ..parameter import Parameter as Parameter
 T = TypeVar('T', bound='Module')
 
 
+_grad_t: Any = ...
+
+
 class _IncompatibleKeys:
     ...
 
@@ -47,13 +50,15 @@ def register_module_forward_hook(
 
 
 def register_module_backward_hook(
-    hook: Callable[[Module, _grad_t, _grad_t], Union[
-                    None, Tensor]]) -> RemovableHandle: ...
+    hook: Callable[
+        [Module, _grad_t, _grad_t],
+        Union[None, Tensor]]) -> RemovableHandle: ...
 
 
 def register_module_full_backward_hook(
-    hook: Callable[[Module, _grad_t, _grad_t], Union[
-                    None, Tensor]]) -> RemovableHandle: ...
+    hook: Callable[
+        [Module, _grad_t, _grad_t],
+        Union[None, Tensor]]) -> RemovableHandle: ...
 
 
 class Module:
@@ -103,12 +108,14 @@ class Module:
     def to(self, tensor: Tensor, non_blocking: bool = ...) -> T: ...
 
     def register_backward_hook(
-        self, hook: Callable[[Module, _grad_t, _grad_t], Union[None,
-                        Tensor]]) -> RemovableHandle: ...
+        self, hook: Callable[
+            [Module, _grad_t, _grad_t],
+            Union[None, Tensor]]) -> RemovableHandle: ...
 
     def register_full_backward_hook(
-        self, hook: Callable[[Module, _grad_t, _grad_t], Union[None,
-                        Tensor]]) -> RemovableHandle: ...
+        self, hook: Callable[
+            [Module, _grad_t, _grad_t],
+            Union[None, Tensor]]) -> RemovableHandle: ...
 
     def register_forward_pre_hook(
         self, hook: Callable[..., None]) -> RemovableHandle: ...

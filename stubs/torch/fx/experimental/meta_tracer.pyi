@@ -94,6 +94,6 @@ class MetaTracer(torch.fx.Tracer):
 
 
 def symbolic_trace(
-    root: Union[torch.nn.Module, Callable[..., Any]], meta_args: Dict[str,
-            torch.Tensor] = ..., concrete_args: Optional[Dict[str,
-                    Any]] = ...) -> torch.fx.GraphModule: ...
+    root: Union[torch.nn.Module, Callable[..., Any]],
+    meta_args: Dict[str, torch.Tensor] = ...,
+    concrete_args: Optional[Dict[str, Any]] = ...) -> torch.fx.GraphModule: ...

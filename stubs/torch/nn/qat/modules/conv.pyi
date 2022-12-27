@@ -10,8 +10,8 @@
 
 from typing import Tuple, TypeVar, Union
 
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch.nn.common_types import _size_1_t, _size_2_t, _size_3_t
 
 
@@ -23,8 +23,9 @@ class _ConvNd(nn.modules.conv._ConvNd):
     weight_fake_quant: Incomplete
 
     def __init__(
-        self, in_channels: int, out_channels: int, kernel_size: Tuple[int,
-                ...], stride: Tuple[int, ...], padding: Tuple[int, ...],
+        self, in_channels: int, out_channels: int,
+        kernel_size: Tuple[int, ...],
+        stride: Tuple[int, ...], padding: Tuple[int, ...],
         dilation: Tuple[int, ...], transposed: bool,
         output_padding: Tuple[int, ...], groups: int, bias: bool,
         padding_mode: str, qconfig: Incomplete | None = ...,
@@ -33,7 +34,8 @@ class _ConvNd(nn.modules.conv._ConvNd):
 
     def forward(self, input): ...
     @staticmethod
-    def from_float(cls, mod): ...
+    def from_float(mod): ...
+
     def to_float(self): ...
 
 

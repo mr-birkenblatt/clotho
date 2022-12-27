@@ -10,8 +10,8 @@
 
 from typing import Any, Dict, Optional, Tuple
 
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch import Tensor as Tensor
 from torch.nn.utils.rnn import PackedSequence as PackedSequence
 

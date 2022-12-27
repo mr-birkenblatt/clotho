@@ -11,8 +11,8 @@
 from typing import Any, Dict, List, Optional
 
 import torch
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch.nn.common_types import _size_1_t
 
 from .utils import ReferenceQuantizedModule as ReferenceQuantizedModule
@@ -21,7 +21,7 @@ from .utils import ReferenceQuantizedModule as ReferenceQuantizedModule
 class _ConvNd(torch.nn.modules.conv._ConvNd, ReferenceQuantizedModule):
     __annotations__: Incomplete
     @staticmethod
-    def from_float(cls, float_conv, weight_qparams): ...
+    def from_float(float_conv, weight_qparams): ...
 
 
 class Conv1d(_ConvNd, nn.Conv1d):
@@ -31,8 +31,8 @@ class Conv1d(_ConvNd, nn.Conv1d):
         stride: _size_1_t = ..., padding: _size_1_t = ...,
         dilation: _size_1_t = ..., groups: int = ..., bias: bool = ...,
         padding_mode: str = ..., device: Incomplete | None = ...,
-        dtype: Incomplete | None = ..., weight_qparams: Optional[Dict[str,
-                        Any]] = ...) -> None: ...
+        dtype: Incomplete | None = ...,
+        weight_qparams: Optional[Dict[str, Any]] = ...) -> None: ...
 
     def forward(self, x: torch.Tensor) -> torch.Tensor: ...
     @classmethod
@@ -69,7 +69,7 @@ class Conv3d(_ConvNd, nn.Conv3d):
 
 class _ConvTransposeNd(_ConvNd, torch.nn.modules.conv._ConvTransposeNd):
     @staticmethod
-    def from_float(cls, float_conv, weight_qparams): ...
+    def from_float(float_conv, weight_qparams): ...
 
 
 class ConvTranspose1d(_ConvTransposeNd, nn.ConvTranspose1d):
@@ -83,8 +83,8 @@ class ConvTranspose1d(_ConvTransposeNd, nn.ConvTranspose1d):
         weight_qparams: Optional[Dict[str, Any]] = ...) -> None: ...
 
     def forward(
-        self, x: torch.Tensor, output_size: Optional[List[
-                        int]] = ...) -> torch.Tensor: ...
+        self, x: torch.Tensor,
+        output_size: Optional[List[int]] = ...) -> torch.Tensor: ...
 
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
@@ -100,8 +100,8 @@ class ConvTranspose2d(_ConvTransposeNd, nn.ConvTranspose2d):
         weight_qparams: Optional[Dict[str, Any]] = ...) -> None: ...
 
     def forward(
-        self, x: torch.Tensor, output_size: Optional[List[
-                        int]] = ...) -> torch.Tensor: ...
+        self, x: torch.Tensor,
+        output_size: Optional[List[int]] = ...) -> torch.Tensor: ...
 
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
@@ -117,8 +117,8 @@ class ConvTranspose3d(_ConvTransposeNd, nn.ConvTranspose3d):
         weight_qparams: Optional[Dict[str, Any]] = ...) -> None: ...
 
     def forward(
-        self, x: torch.Tensor, output_size: Optional[List[
-                        int]] = ...) -> torch.Tensor: ...
+        self, x: torch.Tensor,
+        output_size: Optional[List[int]] = ...) -> torch.Tensor: ...
 
     @classmethod
     def from_float(cls, float_conv, weight_qparams): ...
