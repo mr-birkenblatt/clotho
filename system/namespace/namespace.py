@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
+    from system.embedding.store import EmbedModule
     from system.links.store import LinkModule
     from system.msgs.store import MsgsModule
     from system.namespace.load import NamespaceObj
@@ -28,6 +29,9 @@ class Namespace:
 
     def get_users_module(self) -> 'UsersModule':
         return self._obj["users"]
+
+    def get_embed_module(self) -> 'EmbedModule':
+        return self._obj["embed"]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, self.__class__):

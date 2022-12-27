@@ -35,6 +35,9 @@ def get_test_namespace() -> Namespace:
             "users": {
                 "name": "ram",
             },
+            "embed": {
+                "name": "none",
+            },
         })
     return TEST_NAMESPACE
 

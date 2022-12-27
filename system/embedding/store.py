@@ -1,11 +1,12 @@
 from contextlib import contextmanager
-from typing import Iterable, Iterator
+from typing import Iterable, Iterator, Literal, TypedDict
 
 import torch
 
 from model.embedding import EmbeddingProvider
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
+from system.namespace.namespace import Namespace
 
 
 class EmbeddingStore:
@@ -83,3 +84,37 @@ class EmbeddingStore:
             mhash: MHash) -> Iterable[MHash]:
         yield from self.do_get_closest(
             name, self.get_embedding(msg_store, name, mhash))
+
+
+EMBED_STORE: dict[Namespace, EmbeddingStore] = {}
+
+
+def get_embed_store(namespace: Namespace) -> EmbeddingStore:
+    res = EMBED_STORE.get(namespace)
+    if res is None:
+        res = create_embed_store(namespace)
+        EMBED_STORE[namespace] = res
+    return res
+
+
+RedisEmbedModule = TypedDict('RedisEmbedModule', {
+    "name": Literal["redis"],
+    "host": str,
+    "port": int,
+    "passwd": str,
+    "prefix": str,
+    "path": str,
+})
+NoEmbedModule = TypedDict('NoEmbedModule', {
+    "name": Literal["none"],
+})
+EmbedModule = RedisEmbedModule | NoEmbedModule
+
+
+def create_embed_store(namespace: Namespace) -> EmbeddingStore:
+    eobj = namespace.get_embed_module()
+    if eobj["name"] == "redis":
+        return object()
+    if eobj["name"] == "none":
+        return object()
+    raise ValueError(f"unknown embed store: {eobj}")

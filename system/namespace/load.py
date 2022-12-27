@@ -1,6 +1,7 @@
 import re
 from typing import Any, TypedDict
 
+from system.embedding.store import EmbedModule
 from system.links.store import LinkModule
 from system.msgs.store import MsgsModule
 from system.suggest.suggest import SuggestModule
@@ -12,6 +13,7 @@ NamespaceObj = TypedDict('NamespaceObj', {
     "links": LinkModule,
     "suggest": SuggestModule,
     "users": UsersModule,
+    "embed": EmbedModule,
 })
 
 
@@ -78,6 +80,27 @@ def users_from_obj(ns_name: str, obj: dict[str, Any]) -> UsersModule:
     return res
 
 
+def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
+    res: EmbedModule
+    name = obj.get("name", "none")
+    if name == "none":
+        res = {
+            "name": "none",
+        }
+    elif name == "redis":
+        res = {
+            "name": "redis",
+            "host": obj.get("host", "localhost"),
+            "port": int(obj.get("port", 6379)),
+            "passwd": obj.get("passwd", ""),
+            "prefix": obj.get("prefix", f"{ns_name}"),
+            "path": obj.get("path", f"{ns_name}"),
+        }
+    else:
+        raise ValueError(f"invalid name {name} {obj}")
+    return res
+
+
 VALID_NS_NAME = re.compile(r"^[a-z][a-z0-9_-]+$")
 
 
@@ -89,4 +112,5 @@ def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
         "links": links_from_obj(ns_name, obj.get("links", {})),
         "suggest": suggest_from_obj(obj.get("suggest", {})),
         "users": users_from_obj(ns_name, obj.get("users", {})),
+        "embed": embed_from_obj(ns_name, obj.get("embed", {})),
     }
