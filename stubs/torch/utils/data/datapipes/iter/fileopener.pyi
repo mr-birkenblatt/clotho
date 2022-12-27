@@ -1,7 +1,8 @@
 # pylint: disable=multiple-statements,unused-argument,invalid-name
 # pylint: disable=too-few-public-methods,useless-import-alias,unused-import
 # pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
-# pylint: disable=abstract-method,too-many-ancestors
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level
 from io import IOBase
 from typing import Iterable, Optional, Tuple
 

@@ -1,11 +1,18 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
 from collections.abc import Iterable
 from typing import Dict, Iterator, List, Optional
 
 from _typeshed import Incomplete
-
-from . import constants as constants
-from .cuda_to_hip_mappings import CUDA_TO_HIP_MAPPINGS as CUDA_TO_HIP_MAPPINGS
-from .cuda_to_hip_mappings import MATH_TRANSPILATIONS as MATH_TRANSPILATIONS
+from torch.utils.hipify import constants as constants
+from torch.utils.hipify.cuda_to_hip_mappings import (
+    CUDA_TO_HIP_MAPPINGS as CUDA_TO_HIP_MAPPINGS,
+)
+from torch.utils.hipify.cuda_to_hip_mappings import (
+    MATH_TRANSPILATIONS as MATH_TRANSPILATIONS,
+)
 
 
 HipifyResult = Dict[str, Optional[str]]
