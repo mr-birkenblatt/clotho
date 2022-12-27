@@ -3,7 +3,8 @@ from typing import Iterable, Iterator, Literal, TypedDict
 
 import torch
 
-from model.embedding import EmbeddingProvider
+from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
+from model.embedding import EmbeddingProvider, get_embed_providers
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
 from system.namespace.namespace import Namespace
@@ -56,18 +57,18 @@ class EmbeddingStore:
         return self.add_embedding(name, msg)
 
     @contextmanager
-    def bulk_add(self) -> Iterator[None]:
+    def bulk_add(self, name: str) -> Iterator[None]:
         raise NotImplementedError()
 
     def ensure_all(
             self,
             msg_store: MessageStore,
             names: list[str] | None = None) -> None:
-        with self.bulk_add():
-            if names is None:
-                names = self.get_names()
-            for mhash in msg_store.enumerate_messages():
-                for name in names:
+        if names is None:
+            names = self.get_names()
+        for name in names:
+            with self.bulk_add(name):
+                for mhash in msg_store.enumerate_messages():
                     self.get_embedding(msg_store, name, mhash)
 
     def do_get_closest(
@@ -104,6 +105,7 @@ RedisEmbedModule = TypedDict('RedisEmbedModule', {
     "passwd": str,
     "prefix": str,
     "path": str,
+    "index": Literal["annoy"],
 })
 NoEmbedModule = TypedDict('NoEmbedModule', {
     "name": Literal["none"],
@@ -113,8 +115,25 @@ EmbedModule = RedisEmbedModule | NoEmbedModule
 
 def create_embed_store(namespace: Namespace) -> EmbeddingStore:
     eobj = namespace.get_embed_module()
+    providers = get_embed_providers(namespace)
     if eobj["name"] == "redis":
-        return object()
+        from system.embedding.annoy import AnnoyEmbeddingStore
+        from system.embedding.rediscache import RedisEmbeddingCache
+
+        ns_key = get_redis_ns_key(namespace.get_name(), "embedding")
+        cache = RedisEmbeddingCache(ns_key)
+        if eobj["index"] != "annoy":
+            raise ValueError(f"unsupported embedding index: {eobj['index']}")
+        if not ns_key[0].startswith("_"):
+            register_redis_ns(ns_key, create_redis_config(
+                eobj["host"],
+                eobj["port"],
+                eobj["passwd"],
+                eobj["prefix"],
+                eobj["path"]))
+        return AnnoyEmbeddingStore(providers, cache, eobj["path"])
     if eobj["name"] == "none":
-        return object()
+        from system.embedding.noembed import NoEmbedding
+
+        return NoEmbedding(providers)
     raise ValueError(f"unknown embed store: {eobj}")

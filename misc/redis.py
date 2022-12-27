@@ -117,10 +117,11 @@ class RedisFunctionList(Protocol):  # pylint: disable=too-few-public-methods
 
 
 RedisModule = Literal[
+    "embed",
     "link",
     "locks",
-    "token",
     "test",
+    "token",
 ]
 LOCK_MODULE: RedisModule = "locks"
 

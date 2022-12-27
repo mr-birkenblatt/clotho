@@ -14,17 +14,21 @@ CLOSEST_COUNT = 10
 
 class EmbeddingCache:
     @contextmanager
-    def get_lock(self) -> Iterator[None]:
+    def get_lock(self, name: str) -> Iterator[None]:
         raise NotImplementedError()
 
-    def set_embedding(
+    def set_map_embedding(
             self, name: str, mhash: MHash, embed: torch.Tensor) -> None:
         raise NotImplementedError()
 
-    def get_embedding(self, name: str, mhash: MHash) -> torch.Tensor | None:
+    def get_map_embedding(
+            self, name: str, mhash: MHash) -> torch.Tensor | None:
         raise NotImplementedError()
 
     def get_entry_by_index(self, name: str, index: int) -> MHash:
+        raise NotImplementedError()
+
+    def add_embedding(self, name: str, embed: torch.Tensor) -> int:
         raise NotImplementedError()
 
     def embedding_count(self, name: str) -> int:
@@ -33,8 +37,11 @@ class EmbeddingCache:
     def embeddings(self, name: str) -> Iterable[tuple[int, torch.Tensor]]:
         raise NotImplementedError()
 
+    def clear_embeddings(self, name: str) -> None:
+        raise NotImplementedError()
+
     def add_staging_embedding(
-            self, name: str, mhash: MHash, embed: torch.Tensor) -> None:
+            self, name: str, embed: torch.Tensor) -> None:
         raise NotImplementedError()
 
     def staging_embeddings(
@@ -50,16 +57,8 @@ class EmbeddingCache:
     def staging_count(self, name: str) -> int:
         raise NotImplementedError()
 
-    def clear_staging(self) -> None:
+    def clear_staging(self, name: str) -> None:
         raise NotImplementedError()
-
-    def all_embeddings(self, name: str) -> Iterable[tuple[int, torch.Tensor]]:
-        yield from self.embeddings(name)
-        offset = self.staging_offset(name)
-        yield from (
-            (offset + ix, embed)
-            for (ix, embed) in self.staging_embeddings(name)
-        )
 
     def get_by_index(self, name: str, index: int) -> MHash:
         offset = self.staging_offset(name)
@@ -77,11 +76,19 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         self._cache = cache
         self._bulk = False
 
-    def do_build_index(
+    def do_index_init(
+            self,
+            name: str) -> None:
+        raise NotImplementedError()
+
+    def do_index_add(
             self,
             name: str,
-            num_dimensions: int,
-            elements: Iterable[tuple[int, torch.Tensor]]) -> None:
+            index: int,
+            embed: torch.Tensor) -> None:
+        raise NotImplementedError()
+
+    def do_index_finish(self, name: str) -> None:
         raise NotImplementedError()
 
     def get_index_closest(
@@ -100,22 +107,29 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def is_bigger_better() -> bool:
         raise NotImplementedError()
 
+    def num_dimensions(self, name: str) -> int:
+        provider = self.get_provider(name)
+        return provider.num_dimensions()
+
     def build_index(self, name: str) -> None:
         cache = self._cache
-        with cache.get_lock():
-            provider = self.get_provider(name)
-            self.do_build_index(
-                name,
-                provider.num_dimensions(),
-                cache.all_embeddings(name))
-            cache.clear_staging()
+        with cache.get_lock(name):
+            self.do_index_init(name)
+            for index, embed in cache.embeddings(name):
+                self.do_index_add(name, index, embed)
+            for _, embed in cache.staging_embeddings(name):
+                index = cache.add_embedding(name, embed)
+                self.do_index_add(name, index, embed)
+            self.do_index_finish(name)
+            cache.clear_staging(name)
 
     @contextmanager
-    def bulk_add(self) -> Iterator[None]:
+    def bulk_add(self, name: str) -> Iterator[None]:
         try:
             self._bulk = True
-            with self._cache.get_lock():
+            with self._cache.get_lock(name):
                 yield
+                self.build_index(name)
         finally:
             self._bulk = False
 
@@ -125,9 +139,9 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             mhash: MHash,
             embed: torch.Tensor) -> None:
         cache = self._cache
-        with cache.get_lock():
+        with cache.get_lock(name):
             cache.set_embedding(name, mhash, embed)
-            cache.add_staging_embedding(name, mhash, embed)
+            cache.add_staging_embedding(name, embed)
             if (not self._bulk
                     and cache.staging_count(name) > REBUILD_THRESHOLD):
                 self.build_index(name)

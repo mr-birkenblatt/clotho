@@ -1,6 +1,7 @@
 import re
 from typing import Any, TypedDict
 
+from model.embedding import EmbeddingProviderModule
 from system.embedding.store import EmbedModule
 from system.links.store import LinkModule
 from system.msgs.store import MsgsModule
@@ -14,6 +15,7 @@ NamespaceObj = TypedDict('NamespaceObj', {
     "suggest": SuggestModule,
     "users": UsersModule,
     "embed": EmbedModule,
+    "model": EmbeddingProviderModule,
 })
 
 
@@ -101,6 +103,25 @@ def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
     return res
 
 
+def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
+    res: EmbeddingProviderModule
+    name = obj.get("name", "none")
+    if name == "none":
+        res = {
+            "name": "none",
+        }
+    elif name == "transformer":
+        res = {
+            "name": "transformer",
+            "fname": obj["fname"],
+            "version": int(obj["version"]),
+            "is_harness": bool(obj["is_harness"]),
+        }
+    else:
+        raise ValueError(f"invalid name {name} {obj}")
+    return res
+
+
 VALID_NS_NAME = re.compile(r"^[a-z][a-z0-9_-]+$")
 
 
@@ -113,4 +134,5 @@ def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
         "suggest": suggest_from_obj(obj.get("suggest", {})),
         "users": users_from_obj(ns_name, obj.get("users", {})),
         "embed": embed_from_obj(ns_name, obj.get("embed", {})),
+        "model": model_from_obj(obj.get("model", {})),
     }
