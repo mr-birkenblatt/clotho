@@ -5,7 +5,7 @@
 # pylint: disable=relative-beyond-top-level,redefined-outer-name
 # pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
 # pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
-# pylint: disable=protected-access
+# pylint: disable=protected-access,no-name-in-module,undefined-variable
 
 
 from typing import (
@@ -39,24 +39,25 @@ class InflatableArg(NamedTuple):
 
 
 def bundle_inputs(
-    model: torch.jit.ScriptModule, inputs: Union[Optional[Sequence[Tuple[Any,
-                                    ...]]], Dict[Callable,
-                    Optional[Sequence[Tuple[Any, ...]]]]],
+    model: torch.jit.ScriptModule,
+    inputs: Union[
+        Optional[Sequence[Tuple[Any, ...]]],
+        Dict[Callable, Optional[Sequence[Tuple[Any, ...]]]]],
     info: Optional[Union[List[str], Dict[Callable, List[str]]]] = ..., *,
     _receive_inflate_expr: Optional[List[
                     str]] = ...) -> torch.jit.ScriptModule: ...
 
 
 def augment_model_with_bundled_inputs(
-    model: torch.jit.ScriptModule, inputs: Optional[Sequence[Tuple[Any,
-                            ...]]] = ...,
+    model: torch.jit.ScriptModule,
+    inputs: Optional[Sequence[Tuple[Any, ...]]] = ...,
     _receive_inflate_expr: Optional[List[str]] = ...,
     info: Optional[List[str]] = ..., skip_size_check: bool = ...) -> None: ...
 
 
 def augment_many_model_functions_with_bundled_inputs(
-    model: torch.jit.ScriptModule, inputs: Dict[Callable,
-            Optional[Sequence[Tuple[Any, ...]]]],
+    model: torch.jit.ScriptModule,
+    inputs: Dict[Callable, Optional[Sequence[Tuple[Any, ...]]]],
     _receive_inflate_expr: Optional[List[str]] = ...,
     info: Optional[Dict[Callable, List[str]]] = ...,
     skip_size_check: bool = ...) -> None: ...
