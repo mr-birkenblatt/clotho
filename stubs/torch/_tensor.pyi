@@ -1,36 +1,45 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 import enum
-from typing import Optional, Tuple
 
 import torch
 from _typeshed import Incomplete
-from torch._namedtensor_internals import (
-    check_serializing_named_tensor as check_serializing_named_tensor,
-)
-from torch._namedtensor_internals import is_ellipsis as is_ellipsis
-from torch._namedtensor_internals import resolve_ellipsis as resolve_ellipsis
-from torch._namedtensor_internals import (
-    single_ellipsis_index as single_ellipsis_index,
-)
-from torch._namedtensor_internals import unzip_namedshape as unzip_namedshape
-from torch._namedtensor_internals import update_names as update_names
-from torch.overrides import (
-    get_default_nowrap_functions as get_default_nowrap_functions,
-)
-from torch.overrides import handle_torch_function as handle_torch_function
-from torch.overrides import has_torch_function as has_torch_function
-from torch.overrides import (
-    has_torch_function_unary as has_torch_function_unary,
-)
-from torch.overrides import (
-    has_torch_function_variadic as has_torch_function_variadic,
-)
+from torch._namedtensor_internals import as, check_serializing_named_tensor
+
+
+        check_serializing_named_tensor, is_ellipsis as is_ellipsis,
+        resolve_ellipsis as resolve_ellipsis,
+        single_ellipsis_index as single_ellipsis_index,
+        unzip_namedshape as unzip_namedshape, update_names as update_names
+from torch.overrides import as, get_default_nowrap_functions
+
+
+        get_default_nowrap_functions,
+        handle_torch_function as handle_torch_function,
+        has_torch_function as has_torch_function,
+        has_torch_function_unary as has_torch_function_unary,
+        has_torch_function_variadic as has_torch_function_variadic
+from typing import Optional, Tuple
 
 
 class Tensor(torch._C._TensorBase):
     def __deepcopy__(self, memo): ...
     def __reduce_ex__(self, proto): ...
     def storage(self): ...
-    def backward(self, gradient: Incomplete | None = ..., retain_graph: Incomplete | None = ..., create_graph: bool = ..., inputs: Incomplete | None = ...): ...
+
+    def backward(
+        self, gradient: Incomplete | None = ...,
+        retain_graph: Incomplete | None = ..., create_graph: bool = ...,
+        inputs: Incomplete | None = ...): ...
+
     def register_hook(self, hook): ...
     def reinforce(self, reward): ...
     detach: Incomplete
@@ -38,16 +47,40 @@ class Tensor(torch._C._TensorBase):
     def is_shared(self): ...
     def share_memory_(self): ...
     def __reversed__(self): ...
-    def norm(self, p: str = ..., dim: Incomplete | None = ..., keepdim: bool = ..., dtype: Incomplete | None = ...): ...
+
+    def norm(
+        self, p: str = ..., dim: Incomplete | None = ...,
+        keepdim: bool = ..., dtype: Incomplete | None = ...): ...
+
     def solve(self, other): ...
     def lu(self, pivot: bool = ..., get_infos: bool = ...): ...
-    def stft(self, n_fft: int, hop_length: Optional[int] = ..., win_length: Optional[int] = ..., window: Optional[Tensor] = ..., center: bool = ..., pad_mode: str = ..., normalized: bool = ..., onesided: Optional[bool] = ..., return_complex: Optional[bool] = ...): ...
-    def istft(self, n_fft: int, hop_length: Optional[int] = ..., win_length: Optional[int] = ..., window: Optional[Tensor] = ..., center: bool = ..., normalized: bool = ..., onesided: Optional[bool] = ..., length: Optional[int] = ..., return_complex: bool = ...): ...
+
+    def stft(
+        self, n_fft: int, hop_length: Optional[int] = ...,
+        win_length: Optional[int] = ..., window: Optional[Tensor] = ...,
+        center: bool = ..., pad_mode: str = ..., normalized: bool = ...,
+        onesided: Optional[bool] = ...,
+        return_complex: Optional[bool] = ...): ...
+
+    def istft(
+        self, n_fft: int, hop_length: Optional[int] = ...,
+        win_length: Optional[int] = ..., window: Optional[Tensor] = ...,
+        center: bool = ..., normalized: bool = ...,
+        onesided: Optional[bool] = ..., length: Optional[int] = ...,
+        return_complex: bool = ...): ...
+
     def resize(self, *sizes): ...
     def resize_as(self, tensor): ...
     def split(self, split_size, dim: int = ...): ...
-    def unique(self, sorted: bool = ..., return_inverse: bool = ..., return_counts: bool = ..., dim: Incomplete | None = ...): ...
-    def unique_consecutive(self, return_inverse: bool = ..., return_counts: bool = ..., dim: Incomplete | None = ...): ...
+
+    def unique(
+        self, sorted: bool = ..., return_inverse: bool = ...,
+        return_counts: bool = ..., dim: Incomplete | None = ...): ...
+
+    def unique_consecutive(
+        self, return_inverse: bool = ..., return_counts: bool = ...,
+        dim: Incomplete | None = ...): ...
+
     def __rsub__(self, other): ...
     def __rdiv__(self, other): ...
     __rtruediv__: Incomplete
@@ -87,8 +120,11 @@ class Tensor(torch._C._TensorBase):
     @grad.setter
     def grad(self, new_grad): ...
     def grad(self): ...
+
     @classmethod
-    def __torch_function__(cls, func, types, args=..., kwargs: Incomplete | None = ...): ...
+    def __torch_function__(
+        cls, func, types, args=..., kwargs: Incomplete | None = ...): ...
+
     __torch_dispatch__: Incomplete
     def __dlpack__(self, stream: Incomplete | None = ...): ...
     def __dlpack_device__(self) -> Tuple[enum.IntEnum, int]: ...

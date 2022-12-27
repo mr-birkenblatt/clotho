@@ -2,7 +2,12 @@
 # pylint: disable=too-few-public-methods,useless-import-alias,unused-import
 # pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
 # pylint: disable=abstract-method,too-many-ancestors,import-error
-# pylint: disable=relative-beyond-top-level
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 from typing import Callable, Iterator, Optional, TypeVar
 
 from _typeshed import Incomplete
@@ -31,8 +36,8 @@ class BatcherIterDataPipe(IterDataPipe[DataChunk]):
     wrapper_class: Incomplete
 
     def __init__(
-        self, datapipe: IterDataPipe, batch_size: int,
-        drop_last: bool = ..., wrapper_class=...) -> None: ...
+        self, datapipe: IterDataPipe, batch_size: int, drop_last: bool = ...,
+        wrapper_class=...) -> None: ...
 
     def __iter__(self) -> Iterator[DataChunk]: ...
     def __len__(self) -> int: ...

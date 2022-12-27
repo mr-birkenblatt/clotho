@@ -1,23 +1,46 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
+from .conflict import AmbiguityWarning as AmbiguityWarning
+
+
+        ambiguities as ambiguities, ordering as ordering,
+        super_signature as super_signature
 from collections.abc import Generator
 
 from _typeshed import Incomplete
 
-from .conflict import ambiguities as ambiguities
-from .conflict import AmbiguityWarning as AmbiguityWarning
-from .conflict import ordering as ordering
-from .conflict import super_signature as super_signature
 from .utils import expand_tuples as expand_tuples
 from .variadic import isvariadic as isvariadic
 from .variadic import Variadic as Variadic
 
 
-class MDNotImplementedError(NotImplementedError): ...
+class MDNotImplementedError(NotImplementedError):
+    ...
+
 
 def ambiguity_warn(dispatcher, ambiguities) -> None: ...
+
+
 def halt_ordering() -> None: ...
+
+
 def restart_ordering(on_ambiguity=...) -> None: ...
-def variadic_signature_matches_iter(types, full_signature) -> Generator[Incomplete, None, None]: ...
+
+
+def variadic_signature_matches_iter(
+    types, full_signature) -> Generator[Incomplete, None, None]: ...
+
+
 def variadic_signature_matches(types, full_signature): ...
+
 
 class Dispatcher:
     name: Incomplete
@@ -42,7 +65,9 @@ class Dispatcher:
     def help(self, *args, **kwargs) -> None: ...
     def source(self, *args, **kwargs) -> None: ...
 
+
 def source(func): ...
+
 
 class MethodDispatcher(Dispatcher):
     @classmethod
@@ -52,5 +77,8 @@ class MethodDispatcher(Dispatcher):
     def __get__(self, instance, owner): ...
     def __call__(self, *args, **kwargs): ...
 
+
 def str_signature(sig): ...
+
+
 def warning_text(name, amb): ...

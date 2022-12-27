@@ -1,3 +1,13 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 from typing import Any
 
 import torch
@@ -19,14 +29,19 @@ class FunctionCtx:
     materialize_grads: Incomplete
     def set_materialize_grads(self, value: bool): ...
 
-class _HookMixin: ...
+
+class _HookMixin:
+    ...
+
 
 class BackwardCFunction(_C._FunctionBase, FunctionCtx, _HookMixin):
     def apply(self, *args): ...
     def apply_jvp(self, *args): ...
 
+
 class FunctionMeta(type):
     def __init__(cls, name, bases, attrs) -> None: ...
+
 
 class Function:
     def __init__(self, *args, **kwargs) -> None: ...
@@ -40,12 +55,17 @@ class Function:
     @staticmethod
     def jvp(ctx: Any, *grad_inputs: Any) -> Any: ...
 
+
 def once_differentiable(fn): ...
+
+
 def traceable(fn_cls): ...
+
 
 class InplaceFunction(Function):
     inplace: Incomplete
     def __init__(self, inplace: bool = ...) -> None: ...
+
 
 class NestedIOFunction(Function):
     def backward(self, *gradients: Any) -> Any: ...

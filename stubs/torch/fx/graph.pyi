@@ -2,17 +2,26 @@
 # pylint: disable=too-few-public-methods,useless-import-alias,unused-import
 # pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
 # pylint: disable=abstract-method,too-many-ancestors,import-error
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
 
 import torch.utils._pytree as pytree
+
+from ._compatibility import compatibility as compatibility
+from ._symbolic_trace import Tracer as Tracer
+from .graph_module import GraphModule as GraphModule
+from .node import Argument as Argument
+from .node import Node as Node
+from .node import Target as Target
+
+
+        map_arg as map_arg
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type
+
 from _typeshed import Incomplete
-from torch.fx._compatibility import compatibility as compatibility
-from torch.fx._symbolic_trace import Tracer as Tracer
-from torch.fx.graph_module import GraphModule as GraphModule
-from torch.fx.node import Argument as Argument
-from torch.fx.node import map_arg as map_arg
-from torch.fx.node import Node as Node
-from torch.fx.node import Target as Target
 
 
 TransformCodeFunc = Callable[[List[str]], List[str]]
@@ -45,7 +54,7 @@ class _InsertPoint:
 class _node_list:
     graph: Incomplete
     direction: Incomplete
-    def __init__(self, graph: 'Graph', direction: str = ...) -> None: ...
+    def __init__(self, graph: Graph, direction: str = ...) -> None: ...
     def __len__(self): ...
     def __iter__(self): ...
     def __reversed__(self): ...
@@ -79,9 +88,9 @@ class _PyTreeCodeGen(CodeGen):
 
 
 class Graph:
+
     def __init__(
-        self,
-        owning_module: Optional['GraphModule'] = ...,
+        self, owning_module: Optional['GraphModule'] = ...,
         tracer_cls: Optional[Type['Tracer']] = ...,
         tracer_extras: Optional[Dict[str, Any]] = ...) -> None: ...
 
@@ -93,21 +102,15 @@ class Graph:
     def nodes(self) -> _node_list: ...
 
     def graph_copy(
-        self,
-        g: 'Graph',
-        val_map: Dict[Node, Node],
+        self, g: Graph, val_map: Dict[Node, Node],
         return_output_node: bool = ...) -> Optional[Argument]: ...
 
-    def __deepcopy__(self, memo: Incomplete | None = ...) -> 'Graph': ...
+    def __deepcopy__(self, memo: Incomplete | None = ...) -> Graph: ...
 
     def create_node(
-        self,
-        op: str,
-        target: Target,
-        args: Optional[Tuple['Argument', ...]] = ...,
-        kwargs: Optional[Dict[str, 'Argument']] = ...,
-        name: Optional[str] = ...,
-        type_expr: Optional[Any] = ...) -> Node: ...
+        self, op: str, target: Target, args: Optional[Tuple['Argument',
+        ...]] = ..., kwargs: Optional[Dict[str, 'Argument']] = ...,
+        name: Optional[str] = ..., type_expr: Optional[Any] = ...) -> Node: ...
 
     def process_inputs(self, *args): ...
     def process_outputs(self, out): ...
@@ -116,38 +119,31 @@ class Graph:
     def inserting_after(self, n: Optional[Node] = ...): ...
 
     def placeholder(
-        self,
-        name: str,
-        type_expr: Optional[Any] = ...,
+        self, name: str, type_expr: Optional[Any] = ...,
         default_value: Any = ...) -> Node: ...
 
     def get_attr(
         self, qualified_name: str, type_expr: Optional[Any] = ...) -> Node: ...
 
     def call_module(
-        self,
-        module_name: str, args: Optional[Tuple['Argument', ...]] = ...,
+        self, module_name: str, args: Optional[Tuple['Argument', ...]] = ...,
         kwargs: Optional[Dict[str, 'Argument']] = ...,
         type_expr: Optional[Any] = ...) -> Node: ...
 
     def call_method(
-        self,
-        method_name: str,
-        args: Optional[Tuple['Argument', ...]] = ...,
+        self, method_name: str, args: Optional[Tuple['Argument', ...]] = ...,
         kwargs: Optional[Dict[str, 'Argument']] = ...,
         type_expr: Optional[Any] = ...) -> Node: ...
 
     def call_function(
-        self,
-        the_function: Callable[..., Any],
+        self, the_function: Callable[..., Any],
         args: Optional[Tuple['Argument', ...]] = ...,
         kwargs: Optional[Dict[str, 'Argument']] = ...,
         type_expr: Optional[Any] = ...) -> Node: ...
 
     def node_copy(
-        self,
-        node: Node,
-        arg_transform: Callable[[Node], 'Argument'] = ...) -> Node: ...
+        self, node: Node, arg_transform: Callable[[Node],
+        'Argument'] = ...) -> Node: ...
 
     def output(self, result: Argument, type_expr: Optional[Any] = ...): ...
     def python_code(self, root_module: str) -> PythonCode: ...
@@ -157,9 +153,8 @@ class Graph:
     def set_codegen(self, codegen: CodeGen): ...
 
     def on_generate_code(
-        self,
-        make_transformer: Callable[
-            [Optional[TransformCodeFunc]], TransformCodeFunc]): ...
+        self, make_transformer: Callable[[Optional[TransformCodeFunc]],
+        TransformCodeFunc]): ...
 
 
 reflectable_magic_methods: Incomplete

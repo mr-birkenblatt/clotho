@@ -1,31 +1,44 @@
-from enum import Enum
-from pathlib import Path
-from typing import Any, BinaryIO, List, Sequence, Union
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
 
-from _typeshed import Incomplete
-from torch.serialization import location_tag as location_tag
-from torch.serialization import (
-    normalize_storage_type as normalize_storage_type,
-)
-from torch.types import Storage as Storage
-from torch.utils.hooks import RemovableHandle as RemovableHandle
 
 from ._digraph import DiGraph as DiGraph
 from ._mangling import demangle as demangle
 from ._mangling import is_mangled as is_mangled
 from ._package_pickler import create_pickler as create_pickler
 from ._stdlib import is_stdlib_module as is_stdlib_module
-from .find_file_dependencies import (
-    find_files_source_depends_on as find_files_source_depends_on,
-)
+from .find_file_dependencies import as, find_files_source_depends_on
+
+
+        find_files_source_depends_on
 from .glob_group import GlobGroup as GlobGroup
 from .glob_group import GlobPattern as GlobPattern
 from .importer import Importer as Importer
-from .importer import OrderedImporter as OrderedImporter
-from .importer import sys_importer as sys_importer
+
+
+        OrderedImporter as OrderedImporter, sys_importer as sys_importer
+from enum import Enum
+from pathlib import Path
+
+from _typeshed import Incomplete
+from torch.serialization import location_tag as location_tag
+
+
+        normalize_storage_type as normalize_storage_type
+from typing import Any, BinaryIO, List, Sequence, Union
+
+from torch.types import Storage as Storage
+from torch.utils.hooks import RemovableHandle as RemovableHandle
 
 
 ActionHook: Incomplete
+
 
 class _ModuleProviderAction(Enum):
     INTERN: int
@@ -34,6 +47,7 @@ class _ModuleProviderAction(Enum):
     DENY: int
     REPACKAGED_MOCK_MODULE: int
     SKIP: int
+
 
 class PackagingErrorReason(Enum):
     IS_EXTENSION_MODULE: str
@@ -44,17 +58,22 @@ class PackagingErrorReason(Enum):
     DENIED: str
     MOCKED_BUT_STILL_USED: str
 
+
 class _PatternInfo:
     action: _ModuleProviderAction
     allow_empty: bool
     was_matched: bool
     def __init__(self, action, allow_empty) -> None: ...
 
-class EmptyMatchError(Exception): ...
+
+class EmptyMatchError(Exception):
+    ...
+
 
 class PackagingError(Exception):
     dependency_graph: Incomplete
     def __init__(self, dependency_graph: DiGraph) -> None: ...
+
 
 class PackageExporter:
     importer: Importer
@@ -65,21 +84,46 @@ class PackageExporter:
     script_module_serializer: Incomplete
     storage_context: Incomplete
     patterns: Incomplete
-    def __init__(self, f: Union[str, Path, BinaryIO], importer: Union[Importer, Sequence[Importer]] = ...) -> None: ...
-    def save_source_file(self, module_name: str, file_or_directory: str, dependencies: bool = ...): ...
+
+    def __init__(
+        self, f: Union[str, Path, BinaryIO], importer: Union[Importer,
+        Sequence[Importer]] = ...) -> None: ...
+
+    def save_source_file(
+        self, module_name: str, file_or_directory: str,
+        dependencies: bool = ...): ...
+
     def get_unique_id(self) -> str: ...
-    def save_source_string(self, module_name: str, src: str, is_package: bool = ..., dependencies: bool = ...): ...
+
+    def save_source_string(
+        self, module_name: str, src: str, is_package: bool = ...,
+        dependencies: bool = ...): ...
+
     def add_dependency(self, module_name: str, dependencies: bool = ...): ...
     def save_module(self, module_name: str, dependencies: bool = ...): ...
-    def save_pickle(self, package: str, resource: str, obj: Any, dependencies: bool = ..., pickle_protocol: int = ...): ...
+
+    def save_pickle(
+        self, package: str, resource: str, obj: Any,
+        dependencies: bool = ..., pickle_protocol: int = ...): ...
+
     def save_text(self, package: str, resource: str, text: str): ...
     def save_binary(self, package, resource, binary: bytes): ...
     def register_extern_hook(self, hook: ActionHook) -> RemovableHandle: ...
     def register_mock_hook(self, hook: ActionHook) -> RemovableHandle: ...
     def register_intern_hook(self, hook: ActionHook) -> RemovableHandle: ...
-    def intern(self, include: GlobPattern, *, exclude: GlobPattern = ..., allow_empty: bool = ...): ...
-    def mock(self, include: GlobPattern, *, exclude: GlobPattern = ..., allow_empty: bool = ...): ...
-    def extern(self, include: GlobPattern, *, exclude: GlobPattern = ..., allow_empty: bool = ...): ...
+
+    def intern(
+        self, include: GlobPattern, *, exclude: GlobPattern = ...,
+        allow_empty: bool = ...): ...
+
+    def mock(
+        self, include: GlobPattern, *, exclude: GlobPattern = ...,
+        allow_empty: bool = ...): ...
+
+    def extern(
+        self, include: GlobPattern, *, exclude: GlobPattern = ...,
+        allow_empty: bool = ...): ...
+
     def deny(self, include: GlobPattern, *, exclude: GlobPattern = ...): ...
     def __enter__(self): ...
     def __exit__(self, exc_type, exc_value, traceback) -> None: ...

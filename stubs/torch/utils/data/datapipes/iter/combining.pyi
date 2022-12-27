@@ -2,7 +2,12 @@
 # pylint: disable=too-few-public-methods,useless-import-alias,unused-import
 # pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
 # pylint: disable=abstract-method,too-many-ancestors,import-error
-# pylint: disable=relative-beyond-top-level
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 from typing import Callable, Iterator, Optional, Tuple, TypeVar
 
 from _typeshed import Incomplete
@@ -21,9 +26,10 @@ class ConcaterIterDataPipe(IterDataPipe):
 
 
 class ForkerIterDataPipe(IterDataPipe):
+
     def __new__(
-        cls, datapipe: IterDataPipe,
-        num_instances: int, buffer_size: int = ...): ...
+        cls, datapipe: IterDataPipe, num_instances: int,
+        buffer_size: int = ...): ...
 
 
 class _ForkerIterDataPipe(IterDataPipe):
@@ -59,6 +65,7 @@ class _ChildDataPipe(IterDataPipe):
 
 
 class DemultiplexerIterDataPipe(IterDataPipe):
+
     def __new__(
         cls, datapipe: IterDataPipe, num_instances: int,
         classifier_fn: Callable[[T_co], Optional[int]],

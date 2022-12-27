@@ -1,9 +1,23 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 import torch
 from _typeshed import Incomplete
 
 
 class Stream(torch._C._CudaStreamBase):
-    def __new__(cls, device: Incomplete | None = ..., priority: int = ..., **kwargs): ...
+
+    def __new__(
+        cls, device: Incomplete | None = ..., priority: int = ...,
+        **kwargs): ...
+
     def wait_event(self, event) -> None: ...
     def wait_stream(self, stream) -> None: ...
     def record_event(self, event: Incomplete | None = ...): ...
@@ -12,11 +26,19 @@ class Stream(torch._C._CudaStreamBase):
     def __eq__(self, o): ...
     def __hash__(self): ...
 
+
 class ExternalStream(Stream):
-    def __new__(cls, stream_ptr, device: Incomplete | None = ..., **kwargs): ...
+
+    def __new__(
+        cls, stream_ptr, device: Incomplete | None = ..., **kwargs): ...
+
 
 class Event(torch._C._CudaEventBase):
-    def __new__(cls, enable_timing: bool = ..., blocking: bool = ..., interprocess: bool = ...): ...
+
+    def __new__(
+        cls, enable_timing: bool = ..., blocking: bool = ...,
+        interprocess: bool = ...): ...
+
     @classmethod
     def from_ipc_handle(cls, device, handle): ...
     def record(self, stream: Incomplete | None = ...) -> None: ...

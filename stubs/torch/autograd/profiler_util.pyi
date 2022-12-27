@@ -1,3 +1,13 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 from collections import defaultdict
 from collections.abc import Generator
 from typing import NamedTuple
@@ -10,12 +20,22 @@ class EventList(list):
     def __init__(self, *args, **kwargs) -> None: ...
     @property
     def self_cpu_time_total(self): ...
-    def table(self, sort_by: Incomplete | None = ..., row_limit: int = ..., max_src_column_width: int = ..., header: Incomplete | None = ..., top_level_events_only: bool = ...): ...
+
+    def table(
+        self, sort_by: Incomplete | None = ..., row_limit: int = ...,
+        max_src_column_width: int = ..., header: Incomplete | None = ...,
+        top_level_events_only: bool = ...): ...
+
     def export_chrome_trace(self, path) -> None: ...
     def supported_export_stacks_metrics(self): ...
     def export_stacks(self, path: str, metric: str): ...
-    def key_averages(self, group_by_input_shapes: bool = ..., group_by_stack_n: int = ...): ...
+
+    def key_averages(
+        self, group_by_input_shapes: bool = ...,
+        group_by_stack_n: int = ...): ...
+
     def total_average(self): ...
+
 
 class FormattedTimesMixin:
     cpu_time_str: Incomplete
@@ -29,16 +49,19 @@ class FormattedTimesMixin:
     @property
     def cuda_time(self): ...
 
+
 class Interval:
     start: Incomplete
     end: Incomplete
     def __init__(self, start, end) -> None: ...
     def elapsed_us(self): ...
 
+
 class Kernel(NamedTuple):
     name: Incomplete
     device: Incomplete
     duration: Incomplete
+
 
 class FunctionEvent(FormattedTimesMixin):
     id: Incomplete
@@ -64,7 +87,18 @@ class FunctionEvent(FormattedTimesMixin):
     device_index: Incomplete
     is_legacy: Incomplete
     flops: Incomplete
-    def __init__(self, id, name, thread, start_us, end_us, fwd_thread: Incomplete | None = ..., input_shapes: Incomplete | None = ..., stack: Incomplete | None = ..., scope: int = ..., cpu_memory_usage: int = ..., cuda_memory_usage: int = ..., is_async: bool = ..., is_remote: bool = ..., sequence_nr: int = ..., node_id: int = ..., device_type=..., device_index: int = ..., is_legacy: bool = ..., flops: Incomplete | None = ..., trace_name: Incomplete | None = ...) -> None: ...
+
+    def __init__(
+        self, id, name, thread, start_us, end_us,
+        fwd_thread: Incomplete | None = ...,
+        input_shapes: Incomplete | None = ...,
+        stack: Incomplete | None = ..., scope: int = ...,
+        cpu_memory_usage: int = ..., cuda_memory_usage: int = ...,
+        is_async: bool = ..., is_remote: bool = ..., sequence_nr: int = ...,
+        node_id: int = ..., device_type=..., device_index: int = ...,
+        is_legacy: bool = ..., flops: Incomplete | None = ...,
+        trace_name: Incomplete | None = ...) -> None: ...
+
     def append_kernel(self, name, device, duration) -> None: ...
     def append_cpu_child(self, child) -> None: ...
     def set_cpu_parent(self, parent) -> None: ...
@@ -82,6 +116,7 @@ class FunctionEvent(FormattedTimesMixin):
     def cpu_time_total(self): ...
     @property
     def key(self): ...
+
 
 class FunctionEventAvg(FormattedTimesMixin):
     key: Incomplete
@@ -109,11 +144,16 @@ class FunctionEventAvg(FormattedTimesMixin):
     def add(self, other): ...
     def __iadd__(self, other): ...
 
+
 class StringTable(defaultdict):
     def __missing__(self, key): ...
 
+
 class MemRecordsAcc:
     def __init__(self, mem_records) -> None: ...
-    def in_interval(self, start_us, end_us) -> Generator[Incomplete, None, None]: ...
+
+    def in_interval(
+        self, start_us, end_us) -> Generator[Incomplete, None, None]: ...
+
 
 MEMORY_EVENT_NAME: str

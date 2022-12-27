@@ -2,7 +2,12 @@
 # pylint: disable=too-few-public-methods,useless-import-alias,unused-import
 # pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
 # pylint: disable=abstract-method,too-many-ancestors,import-error
-# pylint: disable=relative-beyond-top-level
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 import abc
 import numbers
 from abc import ABCMeta
@@ -47,7 +52,7 @@ T_co = TypeVar('T_co', covariant=True)
 class _DataPipeMeta(GenericMeta):
     type: _DataPipeType
     def __new__(cls, name, bases, namespace, **kwargs): ...
-    def __init__(cls, name, bases, namespace, **kwargs) -> None: ...
+    def __init__(self, name, bases, namespace, **kwargs) -> None: ...
 
 
 class _IterDataPipeMeta(_DataPipeMeta):

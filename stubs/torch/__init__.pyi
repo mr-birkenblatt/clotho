@@ -1,97 +1,154 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 import builtins
-from collections.abc import Generator as Generator
-from math import e as e
-from math import inf as inf
-from math import nan as nan
-from math import pi as pi
-from typing import Type as Type
-from typing import Union
 
 from torch._C import *
 from torch._C._VariableFunctions import *
-from torch.autograd import enable_grad as enable_grad
-from torch.autograd import inference_mode as inference_mode
-from torch.autograd import no_grad as no_grad
 
 from ._lobpcg import lobpcg as lobpcg
 from ._tensor import Tensor as Tensor
 from ._tensor_str import set_printoptions as set_printoptions
 from .functional import *
 from .random import get_rng_state as get_rng_state
-from .random import initial_seed as initial_seed
-from .random import manual_seed as manual_seed
-from .random import seed as seed
-from .random import set_rng_state as set_rng_state
+
+
+        initial_seed as initial_seed, manual_seed as manual_seed,
+        seed as seed, set_rng_state as set_rng_state
+from collections.abc import Generator as Generator
+from math import e as e
+from math import inf as inf
+from math import nan as nan
+from math import pi as pi
+
+from torch.autograd import enable_grad as enable_grad
+
 from .serialization import load as load
 from .serialization import save as save
 from .storage import _LegacyStorage
 from .storage import _TypedStorage as _TypedStorage
 
 
+        inference_mode as inference_mode, no_grad as no_grad
+from typing import Type as Type
+from typing import Union
+
+
 def typename(o): ...
+
+
 def is_tensor(obj): ...
+
+
 def is_storage(obj): ...
+
+
 def set_default_tensor_type(t) -> None: ...
+
+
 def use_deterministic_algorithms(mode, *, warn_only: bool = ...) -> None: ...
+
+
 def are_deterministic_algorithms_enabled(): ...
+
+
 def is_deterministic_algorithms_warn_only_enabled(): ...
-def set_deterministic_debug_mode(debug_mode: Union[builtins.int, str]) -> None: ...
+
+
+def set_deterministic_debug_mode(
+    debug_mode: Union[builtins.int, str]) -> None: ...
+
+
 def get_deterministic_debug_mode() -> builtins.int: ...
+
+
 def get_float32_matmul_precision() -> builtins.str: ...
+
+
 def set_float32_matmul_precision(precision) -> None: ...
+
+
 def set_warn_always(b) -> None: ...
+
+
 def is_warn_always_enabled(): ...
+
 
 class ByteStorage(_LegacyStorage):
     def dtype(self): ...
 
+
 class DoubleStorage(_LegacyStorage):
     def dtype(self): ...
+
 
 class FloatStorage(_LegacyStorage):
     def dtype(self): ...
 
+
 class HalfStorage(_LegacyStorage):
     def dtype(self): ...
+
 
 class LongStorage(_LegacyStorage):
     def dtype(self): ...
 
+
 class IntStorage(_LegacyStorage):
     def dtype(self): ...
+
 
 class ShortStorage(_LegacyStorage):
     def dtype(self): ...
 
+
 class CharStorage(_LegacyStorage):
     def dtype(self): ...
+
 
 class BoolStorage(_LegacyStorage):
     def dtype(self): ...
 
+
 class BFloat16Storage(_LegacyStorage):
     def dtype(self): ...
+
 
 class ComplexDoubleStorage(_LegacyStorage):
     def dtype(self): ...
 
+
 class ComplexFloatStorage(_LegacyStorage):
     def dtype(self): ...
+
 
 class QUInt8Storage(_LegacyStorage):
     def dtype(self): ...
 
+
 class QInt8Storage(_LegacyStorage):
     def dtype(self): ...
+
 
 class QInt32Storage(_LegacyStorage):
     def dtype(self): ...
 
+
 class QUInt4x2Storage(_LegacyStorage):
     def dtype(self): ...
 
+
 class QUInt2x4Storage(_LegacyStorage):
     def dtype(self): ...
+
+
 legacy_contiguous_format = contiguous_format
 
 # Names in __all__ with no definition:

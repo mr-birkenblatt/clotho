@@ -1,3 +1,13 @@
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 import types
 from collections.abc import Generator
 from pathlib import Path
@@ -26,32 +36,58 @@ class PackageImporter(Importer):
     storage_context: Incomplete
     last_map_location: Incomplete
     Unpickler: Incomplete
-    def __init__(self, file_or_buffer: Union[str, torch._C.PyTorchFileReader, Path, BinaryIO], module_allowed: Callable[[str], bool] = ...): ...
+
+    def __init__(
+        self, file_or_buffer: Union[str, torch._C.PyTorchFileReader, Path,
+        BinaryIO], module_allowed: Callable[[str], bool] = ...): ...
+
     def import_module(self, name: str, package: Incomplete | None = ...): ...
     def load_binary(self, package: str, resource: str) -> bytes: ...
-    def load_text(self, package: str, resource: str, encoding: str = ..., errors: str = ...) -> str: ...
-    def load_pickle(self, package: str, resource: str, map_location: Incomplete | None = ...) -> Any: ...
+
+    def load_text(
+        self, package: str, resource: str, encoding: str = ...,
+        errors: str = ...) -> str: ...
+
+    def load_pickle(
+        self, package: str, resource: str,
+        map_location: Incomplete | None = ...) -> Any: ...
+
     def id(self): ...
-    def file_structure(self, *, include: GlobPattern = ..., exclude: GlobPattern = ...) -> Directory: ...
+
+    def file_structure(
+        self, *, include: GlobPattern = ...,
+        exclude: GlobPattern = ...) -> Directory: ...
+
     def python_version(self): ...
     def get_source(self, module_name) -> str: ...
     def get_resource_reader(self, fullname): ...
-    def __import__(self, name, globals: Incomplete | None = ..., locals: Incomplete | None = ..., fromlist=..., level: int = ...): ...
 
-class _PathNode: ...
+    def __import__(
+        self, name, globals: Incomplete | None = ...,
+        locals: Incomplete | None = ..., fromlist=..., level: int = ...): ...
+
+
+class _PathNode:
+    ...
+
 
 class _PackageNode(_PathNode):
     source_file: Incomplete
     children: Incomplete
     def __init__(self, source_file: Optional[str]) -> None: ...
 
+
 class _ModuleNode(_PathNode):
     source_file: Incomplete
     def __init__(self, source_file: str) -> None: ...
 
-class _ExternNode(_PathNode): ...
+
+class _ExternNode(_PathNode):
+    ...
+
 
 def patched_getfile(object): ...
+
 
 class _PackageResourceReader:
     importer: Incomplete

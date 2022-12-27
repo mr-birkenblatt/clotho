@@ -34,6 +34,7 @@ help:
 	@echo "run-web	start web server"
 	@echo "coverage-report	show the coverage report for python"
 	@echo "coverage-report-ts	show the coverage report for typescript"
+	@echo "stubgen	create stubs for a package"
 
 export LC_ALL=C
 export LANG=C
@@ -166,3 +167,6 @@ coverage-report:
 
 coverage-report-ts:
 	cd ui/coverage/lcov-report && open index.html
+
+stubgen:
+	PYTHON=$(PYTHON) ./stubgen.sh $(PKG)

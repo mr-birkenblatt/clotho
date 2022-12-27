@@ -1,45 +1,59 @@
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
 
 import torch
 from _typeshed import Incomplete
 from torch._classes import classes as classes
 from torch._six import with_metaclass as with_metaclass
-from torch.jit._monkeytype_config import (
-    JitTypeTraceConfig as JitTypeTraceConfig,
-)
-from torch.jit._monkeytype_config import JitTypeTraceStore as JitTypeTraceStore
-from torch.jit._monkeytype_config import monkeytype_trace as monkeytype_trace
-from torch.jit._recursive import (
-    infer_methods_to_compile as infer_methods_to_compile,
-)
-from torch.jit._recursive import ScriptMethodStub as ScriptMethodStub
-from torch.jit._recursive import wrap_cpp_module as wrap_cpp_module
-from torch.jit.frontend import get_default_args as get_default_args
-from torch.jit.frontend import get_jit_class_def as get_jit_class_def
-from torch.jit.frontend import get_jit_def as get_jit_def
-from torch.nn import Module as Module
-from torch.overrides import has_torch_function as has_torch_function
-from torch.overrides import (
-    has_torch_function_unary as has_torch_function_unary,
-)
-from torch.overrides import (
-    has_torch_function_variadic as has_torch_function_variadic,
-)
-from torch.package import PackageExporter as PackageExporter
-from torch.package import PackageImporter as PackageImporter
-from torch.utils import set_module as set_module
+from torch.jit._monkeytype_config import as, JitTypeTraceConfig
 
 from ._serialization import validate_map_location as validate_map_location
+
+
+        JitTypeTraceConfig, JitTypeTraceStore as JitTypeTraceStore,
+        monkeytype_trace as monkeytype_trace
+from torch.jit._recursive import ScriptMethodStub as ScriptMethodStub
+
+
+        infer_methods_to_compile as infer_methods_to_compile,
+        wrap_cpp_module as wrap_cpp_module
+from torch.jit.frontend import get_default_args as get_default_args
+
+
+        get_jit_class_def as get_jit_class_def, get_jit_def as get_jit_def
+from torch.nn import Module as Module
+from torch.overrides import has_torch_function as has_torch_function
+
+
+        has_torch_function_unary as has_torch_function_unary,
+        has_torch_function_variadic as has_torch_function_variadic
+from torch.package import PackageExporter as PackageExporter
+
+
+        PackageImporter as PackageImporter
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
+
+from torch.utils import set_module as set_module
 
 
 type_trace_db: Incomplete
 ScriptFunction: Incomplete
 
+
 class Attribute(NamedTuple):
     value: Incomplete
     type: Incomplete
 
+
 def Attribute(value, type): ...
+
 
 class OrderedDictWrapper:
     def __init__(self, _c) -> None: ...
@@ -52,6 +66,7 @@ class OrderedDictWrapper:
     def __contains__(self, k): ...
     def __getitem__(self, k): ...
 
+
 class OrderedModuleDict(OrderedDictWrapper):
     def __init__(self, module, python_dict) -> None: ...
     def items(self): ...
@@ -59,22 +74,31 @@ class OrderedModuleDict(OrderedDictWrapper):
     def __setitem__(self, k, v) -> None: ...
     def __getitem__(self, k): ...
 
+
 class ScriptMeta(type):
     def __init__(cls, name, bases, attrs): ...
+
 
 class _CachedForward:
     def __get__(self, obj, cls): ...
 
-class ScriptWarning(Warning): ...
+
+class ScriptWarning(Warning):
+    ...
+
 
 def script_method(fn): ...
+
 
 class ConstMap:
     const_mapping: Incomplete
     def __init__(self, const_mapping) -> None: ...
     def __getattr__(self, attr): ...
 
-def unpackage_script_module(importer: PackageImporter, script_module_id: str) -> torch.nn.Module: ...
+
+def unpackage_script_module(
+    importer: PackageImporter, script_module_id: str) -> torch.nn.Module: ...
+
 
 class RecursiveScriptClass:
     def __init__(self, cpp_class) -> None: ...
@@ -83,7 +107,9 @@ class RecursiveScriptClass:
     def forward_magic_method(self, method_name, *args, **kwargs): ...
     def __iadd__(self, other): ...
 
+
 def method_template(self, *args, **kwargs): ...
+
 
 class ScriptModule:
     __jit_unused_properties__: Incomplete
@@ -93,6 +119,7 @@ class ScriptModule:
     def __setattr__(self, attr, value): ...
     def define(self, src): ...
     def __reduce_package__(self, exporter: PackageExporter): ...
+
 
 class RecursiveScriptModule(ScriptModule):
     def __init__(self, cpp_module) -> None: ...
@@ -124,40 +151,70 @@ class RecursiveScriptModule(ScriptModule):
     def __dir__(self): ...
     def __bool__(self): ...
 
+
 class RecursiveScriptClass:
     def __init__(self) -> None: ...
+
 
 class ScriptModule(torch.nn.Module):
     def __init__(self, arg: Incomplete | None = ...) -> None: ...
 
+
 class RecursiveScriptModule(ScriptModule):
     def __init__(self, arg: Incomplete | None = ...) -> None: ...
 
+
 def call_prepare_scriptable_func_impl(obj, memo): ...
+
+
 def call_prepare_scriptable_func(obj): ...
+
+
 def create_script_dict(obj): ...
+
+
 def create_script_list(obj, type_hint: Incomplete | None = ...): ...
-def script(obj, optimize: Incomplete | None = ..., _frames_up: int = ..., _rcb: Incomplete | None = ..., example_inputs: Union[List[Tuple], Dict[Callable, List[Tuple]], None] = ...): ...
+
+
+def script(
+    obj, optimize: Incomplete | None = ..., _frames_up: int = ...,
+    _rcb: Incomplete | None = ..., example_inputs: Union[List[Tuple],
+    Dict[Callable, List[Tuple]], None] = ...): ...
+
+
 def interface(obj): ...
+
 
 CompilationUnit: Incomplete
 
+
 def pad(s: str, padding: int, offset: int = ..., char: str = ...): ...
+
 
 class _ScriptProfileColumn:
     header: Incomplete
     alignment: Incomplete
     offset: Incomplete
     rows: Incomplete
-    def __init__(self, header: str, alignment: int = ..., offset: int = ...) -> None: ...
+
+    def __init__(
+        self, header: str, alignment: int = ...,
+        offset: int = ...) -> None: ...
+
     def add_row(self, lineno: int, value: Any): ...
     def materialize(self): ...
+
 
 class _ScriptProfileTable:
     cols: Incomplete
     source_range: Incomplete
-    def __init__(self, cols: List[_ScriptProfileColumn], source_range: List[int]) -> None: ...
+
+    def __init__(
+        self, cols: List[_ScriptProfileColumn],
+        source_range: List[int]) -> None: ...
+
     def dump_string(self): ...
+
 
 class _ScriptProfile:
     profile: Incomplete

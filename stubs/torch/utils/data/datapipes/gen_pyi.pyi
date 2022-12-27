@@ -1,7 +1,13 @@
 # pylint: disable=multiple-statements,unused-argument,invalid-name
 # pylint: disable=too-few-public-methods,useless-import-alias,unused-import
 # pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
-# pylint: disable=abstract-method,too-many-ancestors
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
+
 from typing import Any, Dict, List, Set, Tuple, Union
 
 
@@ -28,12 +34,11 @@ def parse_datapipe_file(
 
 
 def parse_datapipe_files(
-    file_paths: Set[str],
-    ) -> Tuple[Dict[str, str], Dict[str, str], Set[str]]: ...
+    file_paths: Set[str]) -> Tuple[Dict[str, str], Dict[str, str],
+        Set[str]]: ...
 
 
-def split_outside_bracket(
-    line: str, delimiter: str = ...) -> List[str]: ...
+def split_outside_bracket(line: str, delimiter: str = ...) -> List[str]: ...
 
 
 def process_signature(line: str) -> str: ...

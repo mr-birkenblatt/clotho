@@ -1,50 +1,40 @@
-from _typeshed import Incomplete
+# pylint: disable=multiple-statements,unused-argument,invalid-name
+# pylint: disable=too-few-public-methods,useless-import-alias,unused-import
+# pylint: disable=redefined-builtin,super-init-not-called,arguments-renamed
+# pylint: disable=abstract-method,too-many-ancestors,import-error
+# pylint: disable=relative-beyond-top-level,redefined-outer-name
+# pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
+# pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
+# pylint: disable=protected-access
+
 
 from .constants import API_BLAS as API_BLAS
 from .constants import API_C10 as API_C10
-from .constants import API_CAFFE2 as API_CAFFE2
-from .constants import API_DRIVER as API_DRIVER
-from .constants import API_FFT as API_FFT
-from .constants import API_PYTORCH as API_PYTORCH
-from .constants import API_RAND as API_RAND
-from .constants import API_ROCTX as API_ROCTX
-from .constants import API_RTC as API_RTC
-from .constants import API_RUNTIME as API_RUNTIME
-from .constants import API_SPARSE as API_SPARSE
-from .constants import CONV_CACHE as CONV_CACHE
-from .constants import CONV_CONTEXT as CONV_CONTEXT
-from .constants import CONV_D3D9 as CONV_D3D9
-from .constants import CONV_D3D10 as CONV_D3D10
-from .constants import CONV_D3D11 as CONV_D3D11
-from .constants import CONV_DEF as CONV_DEF
-from .constants import CONV_DEVICE as CONV_DEVICE
-from .constants import CONV_DEVICE_FUNC as CONV_DEVICE_FUNC
-from .constants import CONV_EGL as CONV_EGL
-from .constants import CONV_ERROR as CONV_ERROR
-from .constants import CONV_EVENT as CONV_EVENT
-from .constants import CONV_EXEC as CONV_EXEC
-from .constants import CONV_GL as CONV_GL
-from .constants import CONV_GRAPHICS as CONV_GRAPHICS
-from .constants import CONV_INCLUDE as CONV_INCLUDE
-from .constants import CONV_INCLUDE_CUDA_MAIN_H as CONV_INCLUDE_CUDA_MAIN_H
-from .constants import CONV_INIT as CONV_INIT
-from .constants import CONV_JIT as CONV_JIT
-from .constants import CONV_MATH_FUNC as CONV_MATH_FUNC
-from .constants import CONV_MEM as CONV_MEM
-from .constants import CONV_MODULE as CONV_MODULE
-from .constants import CONV_NUMERIC_LITERAL as CONV_NUMERIC_LITERAL
-from .constants import CONV_OCCUPANCY as CONV_OCCUPANCY
-from .constants import CONV_OTHER as CONV_OTHER
-from .constants import CONV_PEER as CONV_PEER
-from .constants import CONV_SPECIAL_FUNC as CONV_SPECIAL_FUNC
-from .constants import CONV_STREAM as CONV_STREAM
-from .constants import CONV_SURFACE as CONV_SURFACE
-from .constants import CONV_TEX as CONV_TEX
-from .constants import CONV_THREAD as CONV_THREAD
-from .constants import CONV_TYPE as CONV_TYPE
-from .constants import CONV_VDPAU as CONV_VDPAU
-from .constants import CONV_VERSION as CONV_VERSION
-from .constants import HIP_UNSUPPORTED as HIP_UNSUPPORTED
+
+
+        API_CAFFE2 as API_CAFFE2, API_DRIVER as API_DRIVER,
+        API_FFT as API_FFT, API_PYTORCH as API_PYTORCH, API_RAND as API_RAND,
+        API_ROCTX as API_ROCTX, API_RTC as API_RTC,
+        API_RUNTIME as API_RUNTIME, API_SPARSE as API_SPARSE,
+        CONV_CACHE as CONV_CACHE, CONV_CONTEXT as CONV_CONTEXT,
+        CONV_D3D10 as CONV_D3D10, CONV_D3D11 as CONV_D3D11,
+        CONV_D3D9 as CONV_D3D9, CONV_DEF as CONV_DEF,
+        CONV_DEVICE as CONV_DEVICE, CONV_DEVICE_FUNC as CONV_DEVICE_FUNC,
+        CONV_EGL as CONV_EGL, CONV_ERROR as CONV_ERROR,
+        CONV_EVENT as CONV_EVENT, CONV_EXEC as CONV_EXEC, CONV_GL as CONV_GL,
+        CONV_GRAPHICS as CONV_GRAPHICS, CONV_INCLUDE as CONV_INCLUDE,
+        CONV_INCLUDE_CUDA_MAIN_H as CONV_INCLUDE_CUDA_MAIN_H,
+        CONV_INIT as CONV_INIT, CONV_JIT as CONV_JIT,
+        CONV_MATH_FUNC as CONV_MATH_FUNC, CONV_MEM as CONV_MEM,
+        CONV_MODULE as CONV_MODULE,
+        CONV_NUMERIC_LITERAL as CONV_NUMERIC_LITERAL,
+        CONV_OCCUPANCY as CONV_OCCUPANCY, CONV_OTHER as CONV_OTHER,
+        CONV_PEER as CONV_PEER, CONV_SPECIAL_FUNC as CONV_SPECIAL_FUNC,
+        CONV_STREAM as CONV_STREAM, CONV_SURFACE as CONV_SURFACE,
+        CONV_TEX as CONV_TEX, CONV_THREAD as CONV_THREAD,
+        CONV_TYPE as CONV_TYPE, CONV_VDPAU as CONV_VDPAU,
+        CONV_VERSION as CONV_VERSION, HIP_UNSUPPORTED as HIP_UNSUPPORTED
+from _typeshed import Incomplete
 
 
 MATH_TRANSPILATIONS: Incomplete
