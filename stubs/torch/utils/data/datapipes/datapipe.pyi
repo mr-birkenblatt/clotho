@@ -70,12 +70,12 @@ class _DataPipeSerializationWrapper:
 
 
 class _IterDataPipeSerializationWrapper(
-    _DataPipeSerializationWrapper, IterDataPipe):
+        _DataPipeSerializationWrapper, IterDataPipe):
     def __iter__(self): ...
 
 
 class _MapDataPipeSerializationWrapper(
-    _DataPipeSerializationWrapper, MapDataPipe):
+        _DataPipeSerializationWrapper, MapDataPipe):
     def __getitem__(self, idx): ...
 
 

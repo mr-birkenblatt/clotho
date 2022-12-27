@@ -19,5 +19,6 @@ class Warning:
     def get_enabled(self): ...
     enabled: Incomplete
 
+
 broadcast_warning: Incomplete
 keepdim_warning: Incomplete

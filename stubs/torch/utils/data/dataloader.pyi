@@ -15,6 +15,8 @@ from _typeshed import Incomplete
 from . import Dataset, Sampler
 
 
+_collate_fn_t = ...
+_worker_init_fn_t = ...
 T_co = TypeVar('T_co', covariant=True)
 T = TypeVar('T')
 default_collate: _collate_fn_t
@@ -54,9 +56,11 @@ class DataLoader:
 
     def __init__(
         self, dataset: Dataset[T_co], batch_size: Optional[int] = ...,
-        shuffle: Optional[bool] = ..., sampler: Union[Sampler, Iterable,
-                None] = ..., batch_sampler: Union[Sampler[Sequence],
-                Iterable[Sequence], None] = ..., num_workers: int = ...,
+        shuffle: Optional[bool] = ...,
+        sampler: Union[Sampler, Iterable, None] = ...,
+        batch_sampler: Union[
+            Sampler[Sequence], Iterable[Sequence], None] = ...,
+        num_workers: int = ...,
         collate_fn: Optional[_collate_fn_t] = ..., pin_memory: bool = ...,
         drop_last: bool = ..., timeout: float = ...,
         worker_init_fn: Optional[_worker_init_fn_t] = ...,
@@ -70,7 +74,7 @@ class DataLoader:
     @multiprocessing_context.setter
     def multiprocessing_context(self, multiprocessing_context) -> None: ...
     def __setattr__(self, attr, val) -> None: ...
-    def __iter__(self) -> _BaseDataLoaderIter: ...
+    def __iter__(self) -> '_BaseDataLoaderIter': ...
     def __len__(self) -> int: ...
     def check_worker_number_rationality(self): ...
 

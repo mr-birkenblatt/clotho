@@ -27,6 +27,8 @@ class Benchmark(NamedTuple):
     name: Incomplete
     function: Incomplete
     dtype: Incomplete
+
+
 BENCHMARKS: Incomplete
 BENCHMARK_MAP: Incomplete
 BENCHMARK_NAMES: Incomplete

@@ -23,6 +23,7 @@ class NodeDef(NamedTuple):
     flatten_fn: FlattenFunc
     unflatten_fn: UnflattenFunc
 
+
 SUPPORTED_NODES: Dict[Type[Any], NodeDef]
 
 

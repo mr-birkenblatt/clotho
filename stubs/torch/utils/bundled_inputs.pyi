@@ -6,8 +6,6 @@
 # pylint: disable=arguments-differ,no-member,keyword-arg-before-vararg
 # pylint: disable=signature-differs,blacklisted-name,c-extension-no-member
 # pylint: disable=protected-access,no-name-in-module,undefined-variable
-
-
 from typing import (
     Any,
     Callable,
