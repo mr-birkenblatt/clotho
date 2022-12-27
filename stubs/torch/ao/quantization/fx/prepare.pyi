@@ -117,8 +117,8 @@ def is_input_arg_dtype_supported_by_backend(
 
 
 def is_output_dtype_supported_by_backend(
-    node: Node, node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    node: Node,
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     dtype_config: Dict[str, torch.dtype]) -> bool: ...
 
 
@@ -127,8 +127,7 @@ def is_observer_in_same_graph(node, modules, node_name_to_target_dtype): ...
 
 def is_pattern_dtype_config_supported_by_backend(
     pattern: Optional[Pattern], matched_node_pattern: Optional[NodePattern],
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     backend_config_dict: Optional[Dict[str, Any]]) -> bool: ...
 
 
@@ -158,35 +157,33 @@ def get_target_activation_dtype_for_node(
     outputs_seen_counter: int, input_quantized_idxs: List[int],
     output_quantized_idxs: List[int], qhandler: Optional[QuantizeHandler],
     modules: Dict[str, torch.nn.Module],
-    cache_for_no_tensor_check: Dict[Node, bool]) -> Dict[str, Optional[Union[
-                        torch.dtype, type]]]: ...
+    cache_for_no_tensor_check: Dict[Node, bool],
+    ) -> Dict[str, torch.dtype | type | None]: ...
 
 
 def get_arg_target_dtype_as_output(
     arg: Node, modules: Dict[str, torch.nn.Module],
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]]) -> Optional[Union[
-                torch.dtype, type]]: ...
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
+    ) -> torch.dtype | type | None: ...
 
 
 def get_arg_target_dtype_as_input_to_node(
     arg: Node, node: Node, modules: Dict[str, torch.nn.Module],
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]]) -> Optional[Union[
-                torch.dtype, type]]: ...
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
+    ) -> torch.dtype | type | None: ...
 
 
 def get_arg_target_compute_dtype_as_input_to_node(
     arg: Node, node: Node, modules: Dict[str, torch.nn.Module],
-    node_name_to_target_dtype: Dict[str, Dict[str, Union[torch.dtype, type,
-                            None]]]) -> Union[torch.dtype, type, None]: ...
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
+    ) -> Union[torch.dtype, type, None]: ...
 
 
 def maybe_insert_input_observer_for_arg_or_kwarg(
     node: Union[Node, Any], arg: Argument, qconfig: QConfigAny,
     model: torch.nn.Module, modules: Dict[str, torch.nn.Module],
-    graph: Graph, node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    graph: Graph,
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     qhandler: Optional[QuantizeHandler],
     prepare_custom_config_dict: Dict[str, Any],
     backend_config_dict: Optional[Dict[str, Any]]) -> Argument: ...
@@ -195,8 +192,7 @@ def maybe_insert_input_observer_for_arg_or_kwarg(
 def maybe_insert_input_observers_for_node(
     node: Node, qconfig: QConfigAny, model: torch.nn.Module,
     modules: Dict[str, torch.nn.Module], graph: Graph,
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     qhandler: Optional[QuantizeHandler],
     prepare_custom_config_dict: Dict[str, Any],
     backend_config_dict: Optional[Dict[str, Any]]) -> None: ...
@@ -205,50 +201,46 @@ def maybe_insert_input_observers_for_node(
 def maybe_insert_input_equalization_observers_for_node(
     node: Node, equalization_qconfig: Any, model: torch.nn.Module,
     modules: Dict[str, torch.nn.Module], graph: Graph,
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[
-                                    torch.dtype, type]]]],
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     is_branch: bool) -> None: ...
 
 
 def maybe_insert_output_observer_for_node(
     node: Node, model: torch.nn.Module, modules: Dict[str, torch.nn.Module],
     graph: Graph, matches: Dict[str, MatchResult],
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     matched_pattern: Any, qhandler: Optional[QuantizeHandler],
     is_qat: bool) -> Optional[Node]: ...
 
 
 def maybe_insert_observers_before_graph_output(
     graph_output_node: Node, output_quantized_idxs: List[int],
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]],
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
     qconfig_map: Dict[str, QConfigAny], model: torch.nn.Module,
     modules: Dict[str, torch.nn.Module], graph: Graph) -> None: ...
 
 
 def maybe_propagate_dtype_for_node(
     node: Node, target_dtype: Union[torch.dtype, type],
-    node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]], matches: Dict[str,
-            MatchResult]) -> None: ...
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
+    matches: Dict[str, MatchResult]) -> None: ...
 
 
 def propagate_dtypes_for_known_nodes(
-    graph: Graph, node_name_to_target_dtype: Dict[str, Dict[str,
-                    Optional[Union[torch.dtype, type]]]], matches: Dict[str,
-            MatchResult]) -> None: ...
+    graph: Graph,
+    node_name_to_target_dtype: Dict[str, Dict[str, torch.dtype | type | None]],
+    matches: Dict[str, MatchResult]) -> None: ...
 
 
 def maybe_make_input_output_share_observers(
-    node: Node, model: torch.nn.Module, modules: Dict[str,
-            torch.nn.Module]) -> bool: ...
+    node: Node,
+    model: torch.nn.Module, modules: Dict[str, torch.nn.Module]) -> bool: ...
 
 
 def remove_output_observer(
-    node: Node, model: torch.nn.Module, modules: Dict[str,
-            torch.nn.Module]): ...
+    node: Node,
+    model: torch.nn.Module,
+    modules: Dict[str, torch.nn.Module]): ...
 
 
 def swap_custom_module_to_observed(
@@ -261,14 +253,14 @@ def insert_observers_for_model(
     matches: Dict[str, MatchResult], qconfig_map: Dict[str, QConfigAny],
     graph: Graph, prepare_custom_config_dict: Dict[str, Any],
     equalization_config_map: Dict[str, Any], input_quantized_idxs: List[int],
-    output_quantized_idxs: List[int], backend_config_dict: Optional[Dict[str,
-                    Any]], observed_node_names: Set[
-            str], is_qat: bool) -> Optional[Node]: ...
+    output_quantized_idxs: List[int],
+    backend_config_dict: Optional[Dict[str, Any]],
+    observed_node_names: Set[str], is_qat: bool) -> Optional[Node]: ...
 
 
 def run_prepare_fx_on_standalone_modules(
-    model: torch.nn.Module, is_qat: bool, modules: Dict[str,
-            torch.nn.Module], matches: Any,
+    model: torch.nn.Module, is_qat: bool,
+    modules: Dict[str, torch.nn.Module], matches: Any,
     prepare_custom_config_dict: Dict[str, Any],
     backend_config_dict: Optional[Dict[str, Any]]) -> None: ...
 
@@ -277,9 +269,9 @@ def save_state(
     observed: GraphModule, qconfig_map: Dict[str, QConfigAny],
     node_name_to_scope: Dict[str, Tuple[str, type]],
     prepare_custom_config_dict: Dict[str, Any],
-    equalization_qconfig_map: Dict[str, Any], qconfig_dict: Dict[str,
-            Dict[Any, Any]], is_qat: bool, observed_node_names: Set[
-            str]) -> None: ...
+    equalization_qconfig_map: Dict[str, Any],
+    qconfig_dict: Dict[str, Dict[Any, Any]], is_qat: bool,
+    observed_node_names: Set[str]) -> None: ...
 
 
 def prepare(
