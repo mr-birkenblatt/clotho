@@ -12,16 +12,14 @@ from torch.ao.quantization.fake_quantize import (
     default_fake_quant as default_fake_quant,
 )
 from torch.ao.quantization.fake_quantize import (
-    default_fixed_qparams_range_0to1_fake_quant as default_fixed_qparams_range_0to1_fake_quant,
-)
-from torch.ao.quantization.fake_quantize import (
-    default_fixed_qparams_range_neg1to1_fake_quant as default_fixed_qparams_range_neg1to1_fake_quant,
+    default_fixed_qparams_range_0to1_fake_quant,
+    default_fixed_qparams_range_neg1to1_fake_quant,
 )
 from torch.ao.quantization.fake_quantize import (
     default_fused_act_fake_quant as default_fused_act_fake_quant,
 )
 from torch.ao.quantization.fake_quantize import (
-    default_fused_per_channel_wt_fake_quant as default_fused_per_channel_wt_fake_quant,
+    default_fused_per_channel_wt_fake_quant,
 )
 from torch.ao.quantization.fake_quantize import (
     default_fused_wt_fake_quant as default_fused_wt_fake_quant,
@@ -30,7 +28,7 @@ from torch.ao.quantization.fake_quantize import (
     default_histogram_fake_quant as default_histogram_fake_quant,
 )
 from torch.ao.quantization.fake_quantize import (
-    default_per_channel_weight_fake_quant as default_per_channel_weight_fake_quant,
+    default_per_channel_weight_fake_quant,
 )
 from torch.ao.quantization.fake_quantize import (
     default_weight_fake_quant as default_weight_fake_quant,

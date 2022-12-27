@@ -19,7 +19,7 @@ from torch.ao.ns._numeric_suite import (
 )
 from torch.ao.ns._numeric_suite import Logger as Logger
 from torch.ao.ns._numeric_suite import (
-    NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST as NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST,
+    NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST,
 )
 from torch.ao.ns._numeric_suite import OutputLogger as OutputLogger
 from torch.ao.ns._numeric_suite import (

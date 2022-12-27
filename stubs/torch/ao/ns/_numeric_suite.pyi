@@ -15,7 +15,7 @@ from _typeshed import Incomplete
 from torch import nn
 from torch.ao.quantization import prepare as prepare
 from torch.ao.quantization.quantization_mappings import (
-    get_default_compare_output_module_list as get_default_compare_output_module_list,
+    get_default_compare_output_module_list,
 )
 
 

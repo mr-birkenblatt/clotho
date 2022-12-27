@@ -45,7 +45,7 @@ from torch.ao.quantization.observer import (
     MovingAverageMinMaxObserver as MovingAverageMinMaxObserver,
 )
 from torch.ao.quantization.observer import (
-    MovingAveragePerChannelMinMaxObserver as MovingAveragePerChannelMinMaxObserver,
+    MovingAveragePerChannelMinMaxObserver,
 )
 from torch.ao.quantization.observer import NoopObserver as NoopObserver
 from torch.ao.quantization.observer import ObserverBase as ObserverBase

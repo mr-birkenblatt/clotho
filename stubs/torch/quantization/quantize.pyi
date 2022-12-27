@@ -31,6 +31,6 @@ from torch.ao.quantization.quantize import quantize as quantize
 from torch.ao.quantization.quantize import quantize_dynamic as quantize_dynamic
 from torch.ao.quantization.quantize import quantize_qat as quantize_qat
 from torch.ao.quantization.quantize import (
-    register_activation_post_process_hook as register_activation_post_process_hook,
+    register_activation_post_process_hook,
 )
 from torch.ao.quantization.quantize import swap_module as swap_module
