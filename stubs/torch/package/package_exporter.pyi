@@ -84,8 +84,8 @@ class PackageExporter:
     patterns: Incomplete
 
     def __init__(
-        self, f: Union[str, Path, BinaryIO], importer: Union[Importer,
-                Sequence[Importer]] = ...) -> None: ...
+        self, f: Union[str, Path, BinaryIO],
+        importer: Union[Importer, Sequence[Importer]] = ...) -> None: ...
 
     def save_source_file(
         self, module_name: str, file_or_directory: str,

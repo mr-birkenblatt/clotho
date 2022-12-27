@@ -71,6 +71,7 @@ class ScalarType(enum.IntEnum):
     QINT32: Incomplete
     BFLOAT16: Incomplete
 
+
 scalar_type_to_pytorch_type: Incomplete
 pytorch_name_to_type: Incomplete
 scalar_type_to_onnx: Incomplete

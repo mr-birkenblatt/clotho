@@ -100,15 +100,16 @@ class LSTM(RNNBase):
 
     @overload
     def forward(
-        self, input: Tensor, hx: Optional[Tuple[
-                        Tensor, Tensor]] = ...) -> Tuple[Tensor, Tuple[
-                    Tensor, Tensor]]: ...
+        self, input: Tensor,
+        hx: Optional[Tuple[Tensor, Tensor]] = ...,
+        ) -> Tuple[Tensor, Tuple[Tensor, Tensor]]: ...
 
     @overload
     def forward(
-        self, input: PackedSequence, hx: Optional[Tuple[Tensor,
-                        Tensor]] = ...) -> Tuple[PackedSequence, Tuple[
-                    Tensor, Tensor]]: ...
+        self,
+        input: PackedSequence,
+        hx: Optional[Tuple[Tensor, Tensor]] = ...,
+        ) -> Tuple[PackedSequence, Tuple[Tensor, Tensor]]: ...
 
 
 class GRU(RNNBase):

@@ -29,8 +29,8 @@ class _FakeGlobalNamespace:
 
 
 def check_for_mutable_operation(
-    target: Callable, args: Tuple['Argument', ...], kwargs: Dict[str,
-            'Argument']): ...
+    target: Callable, args: Tuple['Argument', ...],
+    kwargs: Dict[str, 'Argument']): ...
 
 
 def get_signature_for_torch_op(op: Callable, return_schemas: bool = ...): ...
@@ -43,8 +43,9 @@ def type_matches(signature_type: Any, argument_type: Any): ...
 
 
 def normalize_function(
-    target: Callable, args: Tuple[Any], kwargs: Optional[Dict[str,
-                    Any]] = ..., arg_types: Optional[Tuple[Any]] = ...,
+    target: Callable, args: Tuple[Any],
+    kwargs: Optional[Dict[str, Any]] = ...,
+    arg_types: Optional[Tuple[Any]] = ...,
     kwarg_types: Optional[Dict[str, Any]] = ...,
     normalize_to_only_use_kwargs: bool = ...) -> Optional[ArgsKwargsPair]: ...
 

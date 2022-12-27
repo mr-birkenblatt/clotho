@@ -11,8 +11,8 @@
 from typing import Any, Callable, Dict, List, Set
 
 import torch
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch.ao.quantization import prepare as prepare
 from torch.ao.quantization.quantization_mappings import (
     get_default_compare_output_module_list as get_default_compare_output_module_list,

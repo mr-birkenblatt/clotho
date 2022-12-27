@@ -11,9 +11,8 @@
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
 import torch
-import torch.ao.quantization.quantize_fx as quantize_fx
-import torch.nn as nn
 from _typeshed import Incomplete
+from torch import nn
 from torch.ao.ns.fx.graph_matcher import (
     get_matching_subgraph_pairs as get_matching_subgraph_pairs,
 )
@@ -23,6 +22,7 @@ from torch.ao.ns.fx.graph_matcher import (
 from torch.ao.ns.fx.mappings import (
     get_base_name_to_sets_of_related_ops as get_base_name_to_sets_of_related_ops,
 )
+from torch.ao.quantization import quantize_fx
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node
 
@@ -75,20 +75,21 @@ class NSTracer(quantize_fx.QuantizationTracer):
 
 def extract_weights(
     model_name_a: str, model_a: nn.Module, model_name_b: str,
-    model_b: nn.Module, base_name_to_sets_of_related_ops: Optional[Dict[str,
-                    Set[NSNodeTargetType]]] = ...,
+    model_b: nn.Module,
+    base_name_to_sets_of_related_ops: Optional[
+        Dict[str, Set[NSNodeTargetType]]] = ...,
     unmatchable_types_map: Optional[Dict[str, Set[NSNodeTargetType]]] = ...,
-    op_to_type_to_weight_extraction_fn: Optional[Dict[str, Dict[Callable,
-                            Callable]]] = ...) -> NSResultsType: ...
+    op_to_type_to_weight_extraction_fn: Optional[
+        Dict[str, Dict[Callable, Callable]]] = ...) -> NSResultsType: ...
 
 
 def add_loggers(
     name_a: str, model_a: nn.Module, name_b: str, model_b: nn.Module,
     logger_cls: Callable, should_log_inputs: bool = ...,
-    base_name_to_sets_of_related_ops: Optional[Dict[str,
-                    Set[NSNodeTargetType]]] = ...,
-    unmatchable_types_map: Optional[Dict[str,
-                    Set[NSNodeTargetType]]] = ...) -> Tuple[
+    base_name_to_sets_of_related_ops: Optional[
+        Dict[str, Set[NSNodeTargetType]]] = ...,
+    unmatchable_types_map: Optional[
+        Dict[str, Set[NSNodeTargetType]]] = ...) -> Tuple[
         nn.Module, nn.Module]: ...
 
 
@@ -100,12 +101,12 @@ def extract_logger_info(
 def add_shadow_loggers(
     name_a: str, model_a: nn.Module, name_b: str, model_b: nn.Module,
     logger_cls: Callable, should_log_inputs: bool = ...,
-    base_name_to_sets_of_related_ops: Optional[Dict[str,
-                    Set[NSNodeTargetType]]] = ...,
-    node_type_to_io_type_map: Optional[Dict[str,
-                    Set[NSNodeTargetType]]] = ...,
-    unmatchable_types_map: Optional[Dict[str,
-                    Set[NSNodeTargetType]]] = ...) -> nn.Module: ...
+    base_name_to_sets_of_related_ops: Optional[
+        Dict[str, Set[NSNodeTargetType]]] = ...,
+    node_type_to_io_type_map: Optional[
+        Dict[str, Set[NSNodeTargetType]]] = ...,
+    unmatchable_types_map: Optional[
+        Dict[str, Set[NSNodeTargetType]]] = ...) -> nn.Module: ...
 
 
 def extract_shadow_logger_info(

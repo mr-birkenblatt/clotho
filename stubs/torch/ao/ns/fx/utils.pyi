@@ -44,9 +44,10 @@ def get_node_first_input_and_output_type(
 
 
 def get_node_input_qparams(
-    node: Node, gm: GraphModule, node_type_to_io_type_map: Dict[str,
-            Set[NSNodeTargetType]]) -> Optional[Tuple[Union[
-                        torch.Tensor, float], Union[torch.Tensor, int]]]: ...
+    node: Node, gm: GraphModule,
+    node_type_to_io_type_map: Dict[str, Set[NSNodeTargetType]],
+    ) -> Optional[Tuple[Union[
+        torch.Tensor, float], Union[torch.Tensor, int]]]: ...
 
 
 def return_first_non_observer_node(node: Node, gm: GraphModule) -> Node: ...
