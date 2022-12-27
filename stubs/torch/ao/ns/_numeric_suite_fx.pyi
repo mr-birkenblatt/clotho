@@ -19,9 +19,7 @@ from torch.ao.ns.fx.graph_matcher import (
 from torch.ao.ns.fx.graph_matcher import (
     get_type_a_related_to_b as get_type_a_related_to_b,
 )
-from torch.ao.ns.fx.mappings import (
-    get_base_name_to_sets_of_related_ops as get_base_name_to_sets_of_related_ops,
-)
+from torch.ao.ns.fx.mappings import get_base_name_to_sets_of_related_ops
 from torch.ao.quantization import quantize_fx
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node
@@ -33,9 +31,7 @@ from .fx.ns_types import NSResultsType as NSResultsType
 from .fx.ns_types import NSSingleResultValuesType as NSSingleResultValuesType
 from .fx.utils import get_target_type_str as get_target_type_str
 from .fx.utils import maybe_add_missing_fqns as maybe_add_missing_fqns
-from .fx.utils import (
-    rekey_logger_info_on_node_name_of_model as rekey_logger_info_on_node_name_of_model,
-)
+from .fx.utils import rekey_logger_info_on_node_name_of_model
 from .fx.weight_utils import (
     extract_weight_from_node as extract_weight_from_node,
 )
