@@ -26,6 +26,13 @@ def get_module(namespace: Namespace, module: str) -> Module:
             "port": lmodule["port"],
             "path": lmodule["path"],
         }
+    if module == "embed":
+        emodule = namespace.get_embed_module()
+        return {
+            "name": emodule["name"],
+            "port": emodule["port"],
+            "path": emodule["path"],
+        }
     raise ValueError(f"invalid module: {module}")
 
 

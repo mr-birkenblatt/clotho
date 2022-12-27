@@ -13,7 +13,7 @@ class EmbeddingProvider:
     def get_name(self) -> str:
         return self._name
 
-    def get_embedding(self, msg: Message, for_retrieval: bool) -> torch.Tensor:
+    def get_embedding(self, msg: Message) -> torch.Tensor:
         raise NotImplementedError()
 
     @staticmethod
@@ -22,7 +22,7 @@ class EmbeddingProvider:
 
 
 class NoEmbeddingProvider(EmbeddingProvider):
-    def get_embedding(self, msg: Message, for_retrieval: bool) -> torch.Tensor:
+    def get_embedding(self, msg: Message) -> torch.Tensor:
         return torch.Tensor([0])
 
     @staticmethod

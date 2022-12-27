@@ -68,7 +68,8 @@ class EmbeddingStore:
             names = self.get_names()
         for name in names:
             with self.bulk_add(name):
-                for mhash in msg_store.enumerate_messages():
+                # FIXME: remove stop early
+                for mhash in list(msg_store.enumerate_messages())[:20]:
                     self.get_embedding(msg_store, name, mhash)
 
     def do_get_closest(

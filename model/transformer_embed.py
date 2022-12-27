@@ -4,7 +4,9 @@ from typing import Callable, Literal, TypedDict
 
 import torch
 from torch import nn
-from transformers import DistilBertModel, DistilBertTokenizer
+
+# FIXME: add transformer stubs
+from transformers import DistilBertModel, DistilBertTokenizer  # type: ignore
 
 from misc.env import envload_path
 from misc.io import ensure_folder
@@ -145,11 +147,10 @@ class TransformerEmbedding(EmbeddingProvider):
         self._tokenizer = get_tokenizer()
         self._is_parent = role == "parent"
 
-    def get_embedding(self, msg: Message, for_retrieval: bool) -> torch.Tensor:
+    def get_embedding(self, msg: Message) -> torch.Tensor:
         text = msg.get_text()
         input_obj = self._tokenizer([text])
-        is_parent = not self._is_parent if for_retrieval else self._is_parent
-        if is_parent:
+        if self._is_parent:
             return self._model.get_parent_embed(
                 input_ids=input_obj["input_ids"],
                 attention_mask=input_obj["attention_mask"])
