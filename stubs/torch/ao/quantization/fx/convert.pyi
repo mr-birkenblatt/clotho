@@ -14,15 +14,17 @@ from ..qconfig import QConfigAny as QConfigAny
 
 
         qconfig_equals as qconfig_equals
-from ..qconfig_dict_utils import as, convert_dict_to_ordered_dict
+from ..qconfig_dict_utils import (
+    convert_dict_to_ordered_dict as convert_dict_to_ordered_dict,
+)
 
 
-        convert_dict_to_ordered_dict,
         update_qconfig_for_qat as update_qconfig_for_qat
-from ..utils import activation_is_statically_quantized, as
+from ..utils import (
+    activation_is_statically_quantized as activation_is_statically_quantized,
+)
 
 
-        activation_is_statically_quantized,
         get_qparam_dict as get_qparam_dict,
         get_swapped_custom_module_class as get_swapped_custom_module_class,
         weight_is_quantized as weight_is_quantized
@@ -36,12 +38,13 @@ from .graph_module import QuantizedGraphModule as QuantizedGraphModule
         is_observed_module as is_observed_module,
         is_observed_standalone_module as is_observed_standalone_module
 from .lower_to_fbgemm import lower_to_fbgemm as lower_to_fbgemm
-from .qconfig_utils import as, compare_prepare_convert_qconfig_dict
+from .qconfig_utils import (
+    compare_prepare_convert_qconfig_dict as compare_prepare_convert_qconfig_dict,
+)
 
 
-        compare_prepare_convert_qconfig_dict,
         generate_qconfig_map as generate_qconfig_map,
-        is_qconfig_supported_by_dtype_configs as
+        is_qconfig_supported_by_dtype_configs as \
         is_qconfig_supported_by_dtype_configs,
         update_qconfig_for_fusion as update_qconfig_for_fusion
 from .utils import WEIGHT_INDEX_DICT as WEIGHT_INDEX_DICT
@@ -52,20 +55,23 @@ from .utils import WEIGHT_INDEX_DICT as WEIGHT_INDEX_DICT
         get_custom_module_class_keys as get_custom_module_class_keys,
         get_quantize_node_info as get_quantize_node_info,
         graph_module_from_producer_nodes as graph_module_from_producer_nodes
-from torch.ao.quantization.backend_config import
-        get_native_backend_config_dict as get_native_backend_config_dict
-from torch.ao.quantization.backend_config.utils import
-        get_fused_module_classes as get_fused_module_classes,
+from torch.ao.quantization.backend_config import (
+    get_native_backend_config_dict as get_native_backend_config_dict,
+)
+from torch.ao.quantization.backend_config.utils import (
+    get_fused_module_classes as get_fused_module_classes,
+)
+
+
         get_pattern_to_dtype_configs as get_pattern_to_dtype_configs,
         get_qat_module_classes as get_qat_module_classes,
-        get_root_module_to_quantized_reference_module as
+        get_root_module_to_quantized_reference_module as \
         get_root_module_to_quantized_reference_module
-from torch.ao.quantization.quantize import as, is_activation_post_process
-
-
-        is_activation_post_process
 from typing import Any, Callable, Dict, Optional, Set, Tuple
 
+from torch.ao.quantization.quantize import (
+    is_activation_post_process as is_activation_post_process,
+)
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Argument as Argument
 from torch.fx.graph import Graph as Graph

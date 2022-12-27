@@ -10,11 +10,12 @@
 
 import torch
 
-from .function_fusion import as, get_seen_q_op_info_of_end_of_fusion
+from .function_fusion import (
+    get_seen_q_op_info_of_end_of_fusion as get_seen_q_op_info_of_end_of_fusion,
+)
 
 
-        get_seen_q_op_info_of_end_of_fusion,
-        get_seen_q_op_info_of_start_of_fusion as
+        get_seen_q_op_info_of_start_of_fusion as \
         get_seen_q_op_info_of_start_of_fusion,
         match_fusion_patterns as match_fusion_patterns
 from .mappings import conv_ops as conv_ops
@@ -26,16 +27,16 @@ from .utils import FuncOutputDTypeType as FuncOutputDTypeType
         OpQuantizeabilityType as OpQuantizeabilityType,
         QTensorInfo as QTensorInfo, SeenNonQOpInfo as SeenNonQOpInfo,
         SeenQOpInfo as SeenQOpInfo,
-        clone_detach_tensor_without_dispatch as
+        clone_detach_tensor_without_dispatch as \
         clone_detach_tensor_without_dispatch,
         converted_func_needs_scale_zp as converted_func_needs_scale_zp,
         get_cur_qconfig as get_cur_qconfig,
         get_func_output_dtype_type as get_func_output_dtype_type,
         get_func_output_obs_type as get_func_output_obs_type,
-        get_input_args_quant_dequant_info as
+        get_input_args_quant_dequant_info as \
         get_input_args_quant_dequant_info,
         get_input_observed_arg_idxs as get_input_observed_arg_idxs,
-        get_op_packing_only_uses_module_attributes as
+        get_op_packing_only_uses_module_attributes as \
         get_op_packing_only_uses_module_attributes,
         get_packable_arg_idxs as get_packable_arg_idxs,
         get_packable_nontensor_arg_idxs as get_packable_nontensor_arg_idxs,
@@ -46,12 +47,12 @@ from .utils import FuncOutputDTypeType as FuncOutputDTypeType
         get_weight_arg_idx as get_weight_arg_idx,
         iterate_and_apply as iterate_and_apply,
         op_needs_quantization as op_needs_quantization
-from _typeshed import Incomplete
-from torch.ao.quantization.utils import activation_is_int32_quantized, as
-
-
-        activation_is_int32_quantized
 from typing import Any, Callable, Dict, List, Optional, Tuple
+
+from _typeshed import Incomplete
+from torch.ao.quantization.utils import (
+    activation_is_int32_quantized as activation_is_int32_quantized,
+)
 
 
 OpConvertInfo: Incomplete

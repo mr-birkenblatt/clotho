@@ -24,7 +24,7 @@ from torch.ao.quantization.qconfig import QConfig as QConfig
         default_weight_only_qconfig as default_weight_only_qconfig,
         float16_dynamic_qconfig as float16_dynamic_qconfig,
         float16_static_qconfig as float16_static_qconfig,
-        float_qparams_weight_only_qconfig as
+        float_qparams_weight_only_qconfig as \
         float_qparams_weight_only_qconfig,
         get_default_qat_qconfig as get_default_qat_qconfig,
         get_default_qconfig as get_default_qconfig,

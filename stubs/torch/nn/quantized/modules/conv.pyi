@@ -8,17 +8,16 @@
 # pylint: disable=protected-access
 
 
+from typing import Optional, TypeVar
+
 import torch
 import torch.nn as nn
 from _typeshed import Incomplete
 from torch._ops import ops as ops
 from torch.nn.common_types import _size_1_t
-from torch.nn.quantized.modules.utils import as, WeightedQuantizedModule
-
-
-        WeightedQuantizedModule
-from typing import Optional, TypeVar
-
+from torch.nn.quantized.modules.utils import (
+    WeightedQuantizedModule as WeightedQuantizedModule,
+)
 from torch.nn.utils import fuse_conv_bn_weights as fuse_conv_bn_weights
 
 

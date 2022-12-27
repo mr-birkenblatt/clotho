@@ -10,10 +10,10 @@
 
 import torch
 from _typeshed import Incomplete
-from torch._jit_internal import as, get_callable_argument_names
-
-
-        get_callable_argument_names, is_scripting as is_scripting
+from torch._jit_internal import (
+    get_callable_argument_names as get_callable_argument_names,
+)
+from torch._jit_internal import is_scripting as is_scripting
 from torch.autograd import function as function
 from torch.jit._script import script as script
 from torch.jit._script import ScriptModule as ScriptModule

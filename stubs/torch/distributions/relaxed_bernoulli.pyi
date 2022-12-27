@@ -11,10 +11,9 @@
 from _typeshed import Incomplete
 from torch.distributions import constraints as constraints
 from torch.distributions.distribution import Distribution as Distribution
-
-
-from torch.distributions.transformed_distribution import
-        TransformedDistribution as TransformedDistribution
+from torch.distributions.transformed_distribution import (
+    TransformedDistribution as TransformedDistribution,
+)
 from torch.distributions.transforms import SigmoidTransform as SigmoidTransform
 from torch.distributions.utils import broadcast_all as broadcast_all
 

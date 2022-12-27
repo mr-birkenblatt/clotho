@@ -9,10 +9,10 @@
 
 
 from .flatten_params_wrapper import FlatParameter as FlatParameter
-from .fully_sharded_data_parallel import as, BackwardPrefetch
+from .fully_sharded_data_parallel import BackwardPrefetch as BackwardPrefetch
+from .fully_sharded_data_parallel import CPUOffload as CPUOffload
 
 
-        BackwardPrefetch, CPUOffload as CPUOffload,
         FullStateDictConfig as FullStateDictConfig,
         FullyShardedDataParallel as FullyShardedDataParallel,
         LocalStateDictConfig as LocalStateDictConfig,

@@ -8,16 +8,15 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Dict, List, Set
+
 import torch
 import torch.nn as nn
 from _typeshed import Incomplete
 from torch.ao.quantization import prepare as prepare
-
-
-from torch.ao.quantization.quantization_mappings import
-        get_default_compare_output_module_list as
-        get_default_compare_output_module_list
-from typing import Any, Callable, Dict, List, Set
+from torch.ao.quantization.quantization_mappings import (
+    get_default_compare_output_module_list as get_default_compare_output_module_list,
+)
 
 
 NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST: Incomplete

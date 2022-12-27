@@ -10,10 +10,9 @@
 
 import torch
 from _typeshed import Incomplete
-from torch.distributed._shard.replicated_tensor import as, ReplicatedTensor
-
-
-        ReplicatedTensor
+from torch.distributed._shard.replicated_tensor import (
+    ReplicatedTensor as ReplicatedTensor,
+)
 
 
 class ReplicatedTensorFunction(torch.autograd.Function):

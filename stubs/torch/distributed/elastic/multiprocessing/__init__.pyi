@@ -9,10 +9,12 @@
 
 
 from _typeshed import Incomplete
+from torch.distributed.elastic.multiprocessing.api import (
+    MultiprocessContext as MultiprocessContext,
+)
+from torch.distributed.elastic.multiprocessing.api import PContext as PContext
 
 
-from torch.distributed.elastic.multiprocessing.api import
-        MultiprocessContext as MultiprocessContext, PContext as PContext,
         ProcessFailure as ProcessFailure, RunProcsResult as RunProcsResult,
         SignalException as SignalException, Std as Std,
         SubprocessContext as SubprocessContext, to_map as to_map

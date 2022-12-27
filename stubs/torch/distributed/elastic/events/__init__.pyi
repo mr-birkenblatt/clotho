@@ -15,12 +15,11 @@ from .api import EventMetadataValue as EventMetadataValue
         EventSource as EventSource, NodeState as NodeState,
         RdzvEvent as RdzvEvent
 from enum import Enum as Enum
-
-from torch.distributed.elastic.events.handlers import as, get_logging_handler
-
-
-        get_logging_handler
 from typing import Optional
+
+from torch.distributed.elastic.events.handlers import (
+    get_logging_handler as get_logging_handler,
+)
 
 
 def record(event: Event, destination: str = ...) -> None: ...

@@ -10,12 +10,14 @@
 
 from enum import Enum as Enum
 
-from torch._C._distributed_c10d import as, BuiltinCommHookType
+from torch._C._distributed_c10d import (
+    BuiltinCommHookType as BuiltinCommHookType,
+)
+from torch._C._distributed_c10d import DebugLevel as DebugLevel
 
 from .distributed_c10d import *
 
 
-        BuiltinCommHookType, DebugLevel as DebugLevel,
         FileStore as FileStore, GradBucket as GradBucket,
         HashStore as HashStore, Logger as Logger, PrefixStore as PrefixStore,
         ProcessGroup as ProcessGroup, Reducer as Reducer, Store as Store,

@@ -8,7 +8,7 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fx.fusion_patterns import as, DefaultFuseHandler
-
-
-        DefaultFuseHandler, FuseHandler as FuseHandler
+from torch.ao.quantization.fx.fusion_patterns import (
+    DefaultFuseHandler as DefaultFuseHandler,
+)
+from torch.ao.quantization.fx.fusion_patterns import FuseHandler as FuseHandler

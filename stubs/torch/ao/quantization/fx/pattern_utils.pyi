@@ -8,16 +8,15 @@
 # pylint: disable=protected-access
 
 
-from ..fake_quantize import as, FixedQParamsFakeQuantize
-
-
-        FixedQParamsFakeQuantize
 from typing import Any, Dict, List, Optional, Tuple
 
 from _typeshed import Incomplete
 from torch.ao.quantization.quantization_types import Pattern as Pattern
 from torch.fx.graph import Node as Node
 
+from ..fake_quantize import (
+    FixedQParamsFakeQuantize as FixedQParamsFakeQuantize,
+)
 from ..observer import ObserverBase as ObserverBase
 from ..qconfig import QConfigAny as QConfigAny
 

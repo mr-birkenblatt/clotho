@@ -10,10 +10,12 @@
 
 import abc
 
-from .parametrization import ActivationReconstruction, as
+from .parametrization import (
+    ActivationReconstruction as ActivationReconstruction,
+)
+from .parametrization import BiasHook as BiasHook
 
 
-        ActivationReconstruction, BiasHook as BiasHook,
         PruningParametrization as PruningParametrization,
         ZeroesParametrization as ZeroesParametrization
 from _typeshed import Incomplete

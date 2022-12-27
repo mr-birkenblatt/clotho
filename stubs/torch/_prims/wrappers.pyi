@@ -9,10 +9,12 @@
 
 
 from _typeshed import Incomplete
-from torch._prims.utils import as, ELEMENTWISE_TYPE_PROMOTION_KIND
+from torch._prims.utils import (
+    ELEMENTWISE_TYPE_PROMOTION_KIND as ELEMENTWISE_TYPE_PROMOTION_KIND,
+)
+from torch._prims.utils import Number as Number
 
 
-        ELEMENTWISE_TYPE_PROMOTION_KIND, Number as Number,
         NumberType as NumberType, TensorLike as TensorLike,
         TensorLikeType as TensorLikeType
 from typing import Callable, Sequence

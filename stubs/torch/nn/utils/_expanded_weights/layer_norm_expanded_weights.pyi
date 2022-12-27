@@ -19,7 +19,7 @@ from .expanded_weights_utils import forward_helper as forward_helper
 
         set_grad_sample_if_exists as set_grad_sample_if_exists,
         standard_kwargs as standard_kwargs,
-        sum_over_all_but_batch_and_last_n as
+        sum_over_all_but_batch_and_last_n as \
         sum_over_all_but_batch_and_last_n,
         unpack_expanded_weight_or_tensor as unpack_expanded_weight_or_tensor
 

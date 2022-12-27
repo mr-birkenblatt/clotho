@@ -9,10 +9,9 @@
 
 
 from _typeshed import Incomplete
-from torch._namedtensor_internals import as, check_serializing_named_tensor
-
-
-        check_serializing_named_tensor
+from torch._namedtensor_internals import (
+    check_serializing_named_tensor as check_serializing_named_tensor,
+)
 
 
 class StorageWeakRef:

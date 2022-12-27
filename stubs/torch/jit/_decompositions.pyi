@@ -8,14 +8,14 @@
 # pylint: disable=protected-access
 
 
+from typing import Dict, List, Optional, Set
+
 import torch
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
-from torch.fx.operator_schemas import as, get_signature_for_torch_op
-
-
-        get_signature_for_torch_op
-from typing import Dict, List, Optional, Set
+from torch.fx.operator_schemas import (
+    get_signature_for_torch_op as get_signature_for_torch_op,
+)
 
 
 aten: Incomplete

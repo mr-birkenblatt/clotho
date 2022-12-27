@@ -8,12 +8,12 @@
 # pylint: disable=protected-access
 
 
-import torch
-
-
-from torch.ao.quantization._dbr.quantization_state import
-        AutoQuantizationState as AutoQuantizationState
 from typing import Any, Tuple
+
+import torch
+from torch.ao.quantization._dbr.quantization_state import (
+    AutoQuantizationState as AutoQuantizationState,
+)
 
 
 def add_loggers(

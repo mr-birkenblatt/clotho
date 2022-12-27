@@ -9,25 +9,19 @@
 
 
 import abc
-
-import torch
-
-from ..fuser_method_mappings import as, get_fuser_method_new
-
-
-        get_fuser_method_new
 from abc import ABC, abstractmethod
-
-from torch.ao.quantization.quantization_types import as, NodePattern
-
-from .match_utils import MatchAllNode as MatchAllNode
-
-
-        NodePattern, Pattern as Pattern
 from typing import Any, Callable, Dict, List, Optional, Union
 
+import torch
+from torch.ao.quantization.quantization_types import NodePattern as NodePattern
+from torch.ao.quantization.quantization_types import Pattern as Pattern
 from torch.fx.graph import Graph as Graph
 from torch.fx.graph import Node as Node
+
+from ..fuser_method_mappings import (
+    get_fuser_method_new as get_fuser_method_new,
+)
+from .match_utils import MatchAllNode as MatchAllNode
 
 
 class FuseHandler(ABC, metaclass=abc.ABCMeta):

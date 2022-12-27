@@ -8,13 +8,13 @@
 # pylint: disable=protected-access
 
 
+from typing import Optional
+
 import torch
 from _typeshed import Incomplete
-from torch.nn.quantized.modules.utils import as, hide_packed_params_repr
-
-
-        hide_packed_params_repr
-from typing import Optional
+from torch.nn.quantized.modules.utils import (
+    hide_packed_params_repr as hide_packed_params_repr,
+)
 
 
 class LinearPackedParams(torch.nn.Module):

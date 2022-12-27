@@ -8,15 +8,14 @@
 # pylint: disable=protected-access
 
 
-from . import constants as constants
-from .cuda_to_hip_mappings import as, CUDA_TO_HIP_MAPPINGS
-
-
-        CUDA_TO_HIP_MAPPINGS, MATH_TRANSPILATIONS as MATH_TRANSPILATIONS
 from collections.abc import Iterable
 from typing import Dict, Iterator, List, Optional
 
 from _typeshed import Incomplete
+
+from . import constants as constants
+from .cuda_to_hip_mappings import CUDA_TO_HIP_MAPPINGS as CUDA_TO_HIP_MAPPINGS
+from .cuda_to_hip_mappings import MATH_TRANSPILATIONS as MATH_TRANSPILATIONS
 
 
 HipifyResult = Dict[str, Optional[str]]

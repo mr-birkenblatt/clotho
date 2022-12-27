@@ -13,10 +13,9 @@ from ._mangling import demangle as demangle
 from ._mangling import is_mangled as is_mangled
 from ._package_pickler import create_pickler as create_pickler
 from ._stdlib import is_stdlib_module as is_stdlib_module
-from .find_file_dependencies import as, find_files_source_depends_on
-
-
-        find_files_source_depends_on
+from .find_file_dependencies import (
+    find_files_source_depends_on as find_files_source_depends_on,
+)
 from .glob_group import GlobGroup as GlobGroup
 from .glob_group import GlobPattern as GlobPattern
 from .importer import Importer as Importer

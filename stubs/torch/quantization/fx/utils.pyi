@@ -8,17 +8,18 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fx.utils import all_node_args_have_no_tensors, as
+from torch.ao.quantization.fx.utils import (
+    all_node_args_have_no_tensors as all_node_args_have_no_tensors,
+)
 
 
-        all_node_args_have_no_tensors,
         assert_and_get_unique_device as assert_and_get_unique_device,
         create_getattr_from_value as create_getattr_from_value,
         create_qparam_nodes as create_qparam_nodes,
         get_custom_module_class_keys as get_custom_module_class_keys,
         get_linear_prepack_op_for_dtype as get_linear_prepack_op_for_dtype,
         get_new_attr_name_with_prefix as get_new_attr_name_with_prefix,
-        get_non_observable_arg_indexes_and_types as
+        get_non_observable_arg_indexes_and_types as \
         get_non_observable_arg_indexes_and_types,
         get_per_tensor_qparams as get_per_tensor_qparams,
         get_qconv_op as get_qconv_op,

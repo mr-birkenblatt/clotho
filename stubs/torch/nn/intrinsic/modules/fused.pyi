@@ -15,10 +15,9 @@ from torch.nn import BatchNorm2d as BatchNorm2d
 
         BatchNorm3d as BatchNorm3d, Conv1d as Conv1d, Conv2d as Conv2d,
         Conv3d as Conv3d, Linear as Linear, ReLU as ReLU
-from torch.nn.utils.parametrize import as, type_before_parametrizations
-
-
-        type_before_parametrizations
+from torch.nn.utils.parametrize import (
+    type_before_parametrizations as type_before_parametrizations,
+)
 
 
 class _FusedModule(torch.nn.Sequential):

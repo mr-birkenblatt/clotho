@@ -16,10 +16,9 @@ from torch.distributions.utils import broadcast_all as broadcast_all
 
         lazy_property as lazy_property, logits_to_probs as logits_to_probs,
         probs_to_logits as probs_to_logits
-from torch.nn.functional import as, binary_cross_entropy_with_logits
-
-
-        binary_cross_entropy_with_logits
+from torch.nn.functional import (
+    binary_cross_entropy_with_logits as binary_cross_entropy_with_logits,
+)
 
 
 class Geometric(Distribution):

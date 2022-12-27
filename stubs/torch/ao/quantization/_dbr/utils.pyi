@@ -13,23 +13,21 @@ import enum
 import torch
 
 from ..qconfig import QConfigAny as QConfigAny
-
-
-from ..qconfig_dict_utils import
-        maybe_adjust_qconfig_for_module_type_or_name as
-        maybe_adjust_qconfig_for_module_type_or_name
+from ..qconfig_dict_utils import (
+    maybe_adjust_qconfig_for_module_type_or_name as maybe_adjust_qconfig_for_module_type_or_name,
+)
 from .mappings import add_and_mul_ops as add_and_mul_ops
 
 
         conv_ops as conv_ops,
         fp32_to_int8_fun_mapping as fp32_to_int8_fun_mapping,
-        functions_supported_by_quantization as
+        functions_supported_by_quantization as \
         functions_supported_by_quantization,
-        functions_supported_by_quantization_preserves_dtype as
+        functions_supported_by_quantization_preserves_dtype as \
         functions_supported_by_quantization_preserves_dtype,
-        module_types_supported_by_quantization as
+        module_types_supported_by_quantization as \
         module_types_supported_by_quantization,
-        module_types_supported_by_quantization_preserves_dtype as
+        module_types_supported_by_quantization_preserves_dtype as \
         module_types_supported_by_quantization_preserves_dtype
 from _typeshed import Incomplete
 from torch.quantization import FakeQuantizeBase as FakeQuantizeBase

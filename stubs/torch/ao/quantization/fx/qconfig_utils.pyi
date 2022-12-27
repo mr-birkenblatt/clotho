@@ -10,11 +10,12 @@
 
 import torch
 
-from ..qconfig_dict_utils import as, get_object_type_qconfig
+from ..qconfig_dict_utils import (
+    get_object_type_qconfig as get_object_type_qconfig,
+)
 
 
-        get_object_type_qconfig,
-        maybe_adjust_qconfig_for_module_type_or_name as
+        maybe_adjust_qconfig_for_module_type_or_name as \
         maybe_adjust_qconfig_for_module_type_or_name
 from torch.ao.quantization import QConfig as QConfig
 from torch.ao.quantization.qconfig import QConfigAny as QConfigAny
@@ -24,12 +25,11 @@ from ..utils import get_qconfig_dtypes as get_qconfig_dtypes
 
         add_module_to_qconfig_obs_ctr as add_module_to_qconfig_obs_ctr,
         qconfig_equals as qconfig_equals
-from torch.ao.quantization.quantize import as, is_activation_post_process
-
-
-        is_activation_post_process
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
+from torch.ao.quantization.quantize import (
+    is_activation_post_process as is_activation_post_process,
+)
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Graph as Graph
 

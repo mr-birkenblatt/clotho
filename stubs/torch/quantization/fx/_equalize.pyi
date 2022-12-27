@@ -8,22 +8,23 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fx._equalize import as, EqualizationQConfig
+from torch.ao.quantization.fx._equalize import (
+    EqualizationQConfig as EqualizationQConfig,
+)
 
 
-        EqualizationQConfig,
         calculate_equalization_scale as calculate_equalization_scale,
         clear_weight_quant_obs_node as clear_weight_quant_obs_node,
         convert_eq_obs as convert_eq_obs,
         default_equalization_qconfig as default_equalization_qconfig,
-        fused_module_supports_equalization as
+        fused_module_supports_equalization as \
         fused_module_supports_equalization,
         get_equalization_qconfig_dict as get_equalization_qconfig_dict,
         get_layer_sqnr_dict as get_layer_sqnr_dict,
         get_op_node_and_weight_eq_obs as get_op_node_and_weight_eq_obs,
         input_equalization_observer as input_equalization_observer,
         is_equalization_observer as is_equalization_observer,
-        maybe_get_next_equalization_scale as
+        maybe_get_next_equalization_scale as \
         maybe_get_next_equalization_scale,
         maybe_get_next_input_eq_obs as maybe_get_next_input_eq_obs,
         maybe_get_weight_eq_obs_node as maybe_get_weight_eq_obs_node,

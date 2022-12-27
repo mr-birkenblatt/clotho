@@ -8,18 +8,17 @@
 # pylint: disable=protected-access
 
 
+from typing import Optional
+
 import torch
 from _typeshed import Incomplete
 from torch.ao.nn.sparse.quantized import linear as linear
-from torch.ao.nn.sparse.quantized.utils import as, LinearBlockSparsePattern
-
-
-        LinearBlockSparsePattern
-from torch.nn.quantized.modules.utils import as, hide_packed_params_repr
-
-
-        hide_packed_params_repr
-from typing import Optional
+from torch.ao.nn.sparse.quantized.utils import (
+    LinearBlockSparsePattern as LinearBlockSparsePattern,
+)
+from torch.nn.quantized.modules.utils import (
+    hide_packed_params_repr as hide_packed_params_repr,
+)
 
 
 class Linear(torch.nn.Module):

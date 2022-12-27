@@ -10,35 +10,37 @@
 
 import torch
 
-from ..backend_config import as, get_native_backend_config_dict
+from ..backend_config import (
+    get_native_backend_config_dict as get_native_backend_config_dict,
+)
+from ..backend_config.utils import (
+    get_fusion_pattern_to_root_node_getter as get_fusion_pattern_to_root_node_getter,
+)
 
 
-        get_native_backend_config_dict
-from ..backend_config.utils import as, get_fusion_pattern_to_root_node_getter
-
-
-        get_fusion_pattern_to_root_node_getter,
         get_module_to_qat_module as get_module_to_qat_module,
         get_pattern_to_dtype_configs as get_pattern_to_dtype_configs,
-        get_pattern_to_input_type_to_index as
+        get_pattern_to_input_type_to_index as \
         get_pattern_to_input_type_to_index
 from ..observer import ObserverBase as ObserverBase
 from ..qconfig import QConfigAny as QConfigAny
 
 
         is_reuse_input_qconfig as is_reuse_input_qconfig
-from ..qconfig_dict_utils import as, convert_dict_to_ordered_dict
+from ..qconfig_dict_utils import (
+    convert_dict_to_ordered_dict as convert_dict_to_ordered_dict,
+)
 
 
-        convert_dict_to_ordered_dict,
         get_flattened_qconfig_dict as get_flattened_qconfig_dict,
         update_qconfig_for_qat as update_qconfig_for_qat
 from ..quantize import propagate_qconfig_ as propagate_qconfig_
-from ..utils import activation_is_int8_quantized, as
+from ..utils import (
+    activation_is_int8_quantized as activation_is_int8_quantized,
+)
 
 
-        activation_is_int8_quantized,
-        activation_is_statically_quantized as
+        activation_is_statically_quantized as \
         activation_is_statically_quantized,
         get_qconfig_dtypes as get_qconfig_dtypes,
         get_swapped_custom_module_class as get_swapped_custom_module_class
@@ -46,10 +48,9 @@ from ._equalize import is_equalization_observer as is_equalization_observer
 
 
         node_supports_equalization as node_supports_equalization
-from .backend_config_utils import as, get_pattern_to_quantize_handlers
-
-
-        get_pattern_to_quantize_handlers
+from .backend_config_utils import (
+    get_pattern_to_quantize_handlers as get_pattern_to_quantize_handlers,
+)
 from .graph_module import ObservedGraphModule as ObservedGraphModule
 
 
@@ -74,13 +75,11 @@ from .utils import BIAS_INDEX_DICT as BIAS_INDEX_DICT
         assert_and_get_unique_device as assert_and_get_unique_device,
         get_custom_module_class_keys as get_custom_module_class_keys,
         get_new_attr_name_with_prefix as get_new_attr_name_with_prefix,
-        get_non_observable_arg_indexes_and_types as
+        get_non_observable_arg_indexes_and_types as \
         get_non_observable_arg_indexes_and_types
 from _typeshed import Incomplete
-from torch.ao.quantization.quantization_types import as, NodePattern
-
-
-        NodePattern, Pattern as Pattern
+from torch.ao.quantization.quantization_types import NodePattern as NodePattern
+from torch.ao.quantization.quantization_types import Pattern as Pattern
 from torch.ao.quantization.quantize import convert as convert
 
 

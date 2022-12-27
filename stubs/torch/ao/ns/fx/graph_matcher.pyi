@@ -10,19 +10,21 @@
 
 import enum
 
-from .mappings import as, get_base_name_to_sets_of_related_ops
+from .mappings import (
+    get_base_name_to_sets_of_related_ops as get_base_name_to_sets_of_related_ops,
+)
 
 
-        get_base_name_to_sets_of_related_ops,
         get_unmatchable_types_map as get_unmatchable_types_map
 from .ns_types import NSNodeTargetType as NSNodeTargetType
 
 
         NSSubgraph as NSSubgraph
-from .pattern_utils import as, end_node_matches_reversed_fusion
+from .pattern_utils import (
+    end_node_matches_reversed_fusion as end_node_matches_reversed_fusion,
+)
 
 
-        end_node_matches_reversed_fusion,
         get_reversed_fusions as get_reversed_fusions,
         get_type_a_related_to_b as get_type_a_related_to_b
 from _typeshed import Incomplete

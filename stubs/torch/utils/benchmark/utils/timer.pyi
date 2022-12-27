@@ -9,14 +9,13 @@
 
 
 import enum
+from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, Union
 
 from _typeshed import Incomplete
 from torch.utils.benchmark.utils import common
-from torch.utils.benchmark.utils.valgrind_wrapper import as, timer_interface
-
-
-        valgrind_timer_interface
-from typing import Any, Callable, Dict, NoReturn, Optional, Tuple, Union
+from torch.utils.benchmark.utils.valgrind_wrapper import (
+    timer_interface as valgrind_timer_interface,
+)
 
 
         overload

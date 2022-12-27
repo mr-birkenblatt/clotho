@@ -20,13 +20,13 @@ from .node import Target as Target
 
 
         base_types as base_types, map_aggregate as map_aggregate
-from .operator_schemas import as, check_for_mutable_operation
-
-
-        check_for_mutable_operation
 from typing import Any, Callable, Dict, Iterable, Iterator, Optional, Tuple
 
 from _typeshed import Incomplete
+
+from .operator_schemas import (
+    check_for_mutable_operation as check_for_mutable_operation,
+)
 
 
 class TracerBase:

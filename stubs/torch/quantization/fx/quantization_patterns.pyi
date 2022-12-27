@@ -8,8 +8,11 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fx.quantization_patterns import
-        BatchNormQuantizeHandler as BatchNormQuantizeHandler,
+from torch.ao.quantization.fx.quantization_patterns import (
+    BatchNormQuantizeHandler as BatchNormQuantizeHandler,
+)
+
+
         BinaryOpQuantizeHandler as BinaryOpQuantizeHandler,
         CatQuantizeHandler as CatQuantizeHandler,
         ConvReluQuantizeHandler as ConvReluQuantizeHandler,
@@ -18,7 +21,7 @@ from torch.ao.quantization.fx.quantization_patterns import
         DefaultNodeQuantizeHandler as DefaultNodeQuantizeHandler,
         EmbeddingQuantizeHandler as EmbeddingQuantizeHandler,
         FixedQParamsOpQuantizeHandler as FixedQParamsOpQuantizeHandler,
-        GeneralTensorShapeOpQuantizeHandler as
+        GeneralTensorShapeOpQuantizeHandler as \
         GeneralTensorShapeOpQuantizeHandler,
         LinearReLUQuantizeHandler as LinearReLUQuantizeHandler,
         QuantizeHandler as QuantizeHandler,

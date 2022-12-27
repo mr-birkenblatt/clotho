@@ -9,16 +9,15 @@
 
 
 import torch.fx
-
-from .schema_type_annotation import AnnotateTypesWithSchema, as
-
-
-        AnnotateTypesWithSchema
 from _typeshed import Incomplete
 from torch.fx import Proxy as Proxy
 from torch.fx import Transformer as Transformer
 from torch.fx.node import Argument as Argument
 from torch.fx.node import Node as Node
+
+from .schema_type_annotation import (
+    AnnotateTypesWithSchema as AnnotateTypesWithSchema,
+)
 
 
         Target as Target, map_aggregate as map_aggregate

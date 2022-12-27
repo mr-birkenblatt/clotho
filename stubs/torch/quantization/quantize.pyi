@@ -18,5 +18,5 @@ from torch.ao.quantization.quantize import add_observer_ as add_observer_
         prepare as prepare, prepare_qat as prepare_qat,
         propagate_qconfig_ as propagate_qconfig_, quantize as quantize,
         quantize_dynamic as quantize_dynamic, quantize_qat as quantize_qat,
-        register_activation_post_process_hook as
+        register_activation_post_process_hook as \
         register_activation_post_process_hook, swap_module as swap_module

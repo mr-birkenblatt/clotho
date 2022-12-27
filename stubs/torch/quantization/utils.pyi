@@ -12,7 +12,7 @@ from torch.ao.quantization.utils import activation_dtype as activation_dtype
 
 
         activation_is_int8_quantized as activation_is_int8_quantized,
-        activation_is_statically_quantized as
+        activation_is_statically_quantized as \
         activation_is_statically_quantized,
         calculate_qmin_qmax as calculate_qmin_qmax,
         check_min_max_valid as check_min_max_valid,

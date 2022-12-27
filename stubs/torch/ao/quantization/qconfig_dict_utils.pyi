@@ -8,14 +8,13 @@
 # pylint: disable=protected-access
 
 
-from .quantization_mappings import as, get_default_qat_module_mappings
-
-
-        get_default_qat_module_mappings
 from typing import Any, Callable, Dict, Union
 
 from torch.ao.quantization.qconfig import QConfigAny as QConfigAny
 
+from .quantization_mappings import (
+    get_default_qat_module_mappings as get_default_qat_module_mappings,
+)
 from .utils import get_combined_dict as get_combined_dict
 
 

@@ -10,20 +10,20 @@
 
 import torch
 from _typeshed import Incomplete
-from torch.nn.quantized.modules.utils import as, WeightedQuantizedModule
+from torch.nn.quantized.modules.utils import (
+    WeightedQuantizedModule as WeightedQuantizedModule,
+)
 
 
-        WeightedQuantizedModule,
         hide_packed_params_repr as hide_packed_params_repr
-from torch.nn.utils.fusion import as, fuse_linear_bn_weights
-
-
-        fuse_linear_bn_weights
-from torch.nn.utils.parametrize import as, type_before_parametrizations
-
-
-        type_before_parametrizations
 from typing import Optional
+
+from torch.nn.utils.fusion import (
+    fuse_linear_bn_weights as fuse_linear_bn_weights,
+)
+from torch.nn.utils.parametrize import (
+    type_before_parametrizations as type_before_parametrizations,
+)
 
 
 class LinearPackedParams(torch.nn.Module):

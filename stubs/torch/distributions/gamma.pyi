@@ -10,10 +10,9 @@
 
 from _typeshed import Incomplete
 from torch.distributions import constraints as constraints
-from torch.distributions.exp_family import as, ExponentialFamily
-
-
-        ExponentialFamily
+from torch.distributions.exp_family import (
+    ExponentialFamily as ExponentialFamily,
+)
 from torch.distributions.utils import broadcast_all as broadcast_all
 
 

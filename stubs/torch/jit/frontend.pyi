@@ -31,15 +31,16 @@ from torch._jit_internal import FunctionModifiers as FunctionModifiers
 
 
         is_static_fn as is_static_fn, should_drop as should_drop
-from torch._sources import as, get_source_lines_and_file
+from torch._sources import (
+    get_source_lines_and_file as get_source_lines_and_file,
+)
 
 
-        get_source_lines_and_file,
         make_source_context as make_source_context, parse_def as parse_def
-from torch.jit._monkeytype_config import as, get_qualified_name
-
-
-        get_qualified_name, monkeytype_trace as monkeytype_trace
+from torch.jit._monkeytype_config import (
+    get_qualified_name as get_qualified_name,
+)
+from torch.jit._monkeytype_config import monkeytype_trace as monkeytype_trace
 
 
 def is_reserved_name(name): ...

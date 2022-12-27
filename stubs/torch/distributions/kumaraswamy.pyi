@@ -11,14 +11,11 @@
 from _typeshed import Incomplete
 from torch._six import nan as nan
 from torch.distributions import constraints as constraints
-
-
-from torch.distributions.transformed_distribution import
-        TransformedDistribution as TransformedDistribution
-from torch.distributions.transforms import AffineTransform, as
-
-
-        AffineTransform, PowerTransform as PowerTransform
+from torch.distributions.transformed_distribution import (
+    TransformedDistribution as TransformedDistribution,
+)
+from torch.distributions.transforms import AffineTransform as AffineTransform
+from torch.distributions.transforms import PowerTransform as PowerTransform
 from torch.distributions.uniform import Uniform as Uniform
 from torch.distributions.utils import broadcast_all as broadcast_all
 

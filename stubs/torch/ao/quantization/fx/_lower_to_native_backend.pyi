@@ -12,29 +12,28 @@ import torch
 import torch.nn as nn
 
 from ..qconfig import QConfigAny as QConfigAny
-from ..quantization_mappings import as, get_quantized_operator
-
-
-        get_quantized_operator
+from ..quantization_mappings import (
+    get_quantized_operator as get_quantized_operator,
+)
 from .graph_module import QuantizedGraphModule as QuantizedGraphModule
 from .utils import collect_producer_nodes as collect_producer_nodes
 
 
-        create_node_from_old_node_preserve_meta as
+        create_node_from_old_node_preserve_meta as \
         create_node_from_old_node_preserve_meta,
         get_linear_prepack_op_for_dtype as get_linear_prepack_op_for_dtype,
         get_new_attr_name_with_prefix as get_new_attr_name_with_prefix,
         get_qconv_prepack_op as get_qconv_prepack_op,
         graph_module_from_producer_nodes as graph_module_from_producer_nodes
+from typing import Callable, Dict, Optional, Set, Tuple, Type, Union
+
 from _typeshed import Incomplete
 from torch.fx import map_arg as map_arg
 from torch.fx import Node as Node
 from torch.fx.graph import Graph as Graph
-from torch.nn.quantized.modules.utils import as, WeightedQuantizedModule
-
-
-        WeightedQuantizedModule
-from typing import Callable, Dict, Optional, Set, Tuple, Type, Union
+from torch.nn.quantized.modules.utils import (
+    WeightedQuantizedModule as WeightedQuantizedModule,
+)
 
 
 QOP_TO_ARG_NAMES_TO_SKIP: Incomplete

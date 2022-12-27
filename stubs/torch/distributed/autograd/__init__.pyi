@@ -9,10 +9,12 @@
 
 
 from _typeshed import Incomplete
-from torch._C._distributed_autograd import as, DistAutogradContext
+from torch._C._distributed_autograd import backward as backward
+from torch._C._distributed_autograd import (
+    DistAutogradContext as DistAutogradContext,
+)
 
 
-        DistAutogradContext, backward as backward,
         get_gradients as get_gradients
 
 

@@ -15,10 +15,11 @@ from .ns_types import NSNodeTargetType as NSNodeTargetType
 
 
         ObserverBase as ObserverBase
-from torch.ao.quantization.fx.backend_config_utils import
-        get_native_quant_patterns as get_native_quant_patterns
 from typing import Any, Callable, Dict, List, Set, Tuple, Union
 
+from torch.ao.quantization.fx.backend_config_utils import (
+    get_native_quant_patterns as get_native_quant_patterns,
+)
 from torch.ao.quantization.utils import getattr_from_fqn as getattr_from_fqn
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node

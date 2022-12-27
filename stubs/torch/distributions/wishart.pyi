@@ -9,17 +9,15 @@
 
 
 from numbers import Number
+from typing import Union
 
 import torch
 from _typeshed import Incomplete
 from torch._six import nan as nan
 from torch.distributions import constraints as constraints
-from torch.distributions.exp_family import as, ExponentialFamily
-
-
-        ExponentialFamily
-from typing import Union
-
+from torch.distributions.exp_family import (
+    ExponentialFamily as ExponentialFamily,
+)
 from torch.distributions.utils import lazy_property as lazy_property
 
 

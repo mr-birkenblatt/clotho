@@ -11,32 +11,34 @@
 import torch
 
 from . import auto_trace_rewriter as auto_trace_rewriter
-from .model_utils import as, attach_op_convert_info_to_model
+from .model_utils import (
+    attach_op_convert_info_to_model as attach_op_convert_info_to_model,
+)
 
 
-        attach_op_convert_info_to_model,
-        attach_output_convert_info_to_model as
+        attach_output_convert_info_to_model as \
         attach_output_convert_info_to_model,
         attach_scale_zp_values_to_model as attach_scale_zp_values_to_model,
         pack_weights_for_functionals as pack_weights_for_functionals
 from .quantization_state import AutoQuantizationState as AutoQuantizationState
-from .utils import as, AutoQuantizationStateModuleDict
+from .utils import (
+    AutoQuantizationStateModuleDict as AutoQuantizationStateModuleDict,
+)
+from .utils import HookType as HookType
 
 
-        AutoQuantizationStateModuleDict, HookType as HookType,
         OpQuantizeabilityType as OpQuantizeabilityType,
-        get_fqn_valid_for_module_dict_key as
+        get_fqn_valid_for_module_dict_key as \
         get_fqn_valid_for_module_dict_key,
         get_module_hook_type as get_module_hook_type,
         get_torch_function_hook_type as get_torch_function_hook_type,
         is_leaf as is_leaf, trace_with_inputs as trace_with_inputs
-from _typeshed import Incomplete
-from torch.ao.quantization import as, is_activation_post_process
-
-
-        is_activation_post_process
 from typing import Any, Dict, Tuple
 
+from _typeshed import Incomplete
+from torch.ao.quantization import (
+    is_activation_post_process as is_activation_post_process,
+)
 from torch.fx.node import map_aggregate as map_aggregate
 
 

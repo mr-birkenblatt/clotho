@@ -17,12 +17,11 @@ from torch.fx.node import Node as Node
 
 
         Target as Target, map_aggregate as map_aggregate, map_arg as map_arg
-from torch.fx.passes.param_fetch import as, lift_lowering_attrs_to_nodes
-
-
-        lift_lowering_attrs_to_nodes
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
+from torch.fx.passes.param_fetch import (
+    lift_lowering_attrs_to_nodes as lift_lowering_attrs_to_nodes,
+)
 from torch.fx.passes.shape_prop import ShapeProp as ShapeProp
 
 

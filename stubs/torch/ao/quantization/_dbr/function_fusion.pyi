@@ -8,10 +8,9 @@
 # pylint: disable=protected-access
 
 
-from .mappings import as, known_function_fusion_patterns_and_replacements
-
-
-        known_function_fusion_patterns_and_replacements
+from .mappings import (
+    known_function_fusion_patterns_and_replacements as known_function_fusion_patterns_and_replacements,
+)
 from .utils import FusionInfo as FusionInfo
 from .utils import SeenQOpInfo as SeenQOpInfo
 

@@ -37,10 +37,13 @@ from torch.jit._script import Attribute as Attribute
         ScriptFunction as ScriptFunction, ScriptModule as ScriptModule,
         ScriptWarning as ScriptWarning, interface as interface,
         script as script, script_method as script_method
-from torch.jit._serialization import as, jit_module_from_flatbuffer
+from torch.jit._serialization import (
+    jit_module_from_flatbuffer as jit_module_from_flatbuffer,
+)
+from torch.jit._serialization import load as load
+from torch.jit._serialization import save as save
 
 
-        jit_module_from_flatbuffer, load as load, save as save,
         save_jit_module_to_flatbuffer as save_jit_module_to_flatbuffer
 from torch.jit._trace import ONNXTracedModule as ONNXTracedModule
 

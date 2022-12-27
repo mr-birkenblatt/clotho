@@ -8,15 +8,14 @@
 # pylint: disable=protected-access
 
 
+from typing import Dict
+
 from _typeshed import Incomplete
 from torch.distributions import constraints as constraints
 from torch.distributions.distribution import Distribution as Distribution
 from torch.distributions.independent import Independent as Independent
-from torch.distributions.transforms import as, ComposeTransform
-
-
-        ComposeTransform, Transform as Transform
-from typing import Dict
+from torch.distributions.transforms import ComposeTransform as ComposeTransform
+from torch.distributions.transforms import Transform as Transform
 
 
 class TransformedDistribution(Distribution):

@@ -14,7 +14,7 @@ from torch.nn.intrinsic import LinearReLU as LinearReLU
 from torch.nn.utils.parametrize import is_parametrized as is_parametrized
 
 
-        transfer_parametrizations_and_params as
+        transfer_parametrizations_and_params as \
         transfer_parametrizations_and_params,
         type_before_parametrizations as type_before_parametrizations
 

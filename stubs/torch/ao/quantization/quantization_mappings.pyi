@@ -9,23 +9,23 @@
 
 
 from torch import nn as nn
+from torch.ao.quantization.fake_quantize import (
+    default_fixed_qparams_range_0to1_fake_quant as default_fixed_qparams_range_0to1_fake_quant,
+)
 
 
-from torch.ao.quantization.fake_quantize import
-        default_fixed_qparams_range_0to1_fake_quant as
-        default_fixed_qparams_range_0to1_fake_quant,
-        default_fixed_qparams_range_neg1to1_fake_quant as
+        default_fixed_qparams_range_neg1to1_fake_quant as \
         default_fixed_qparams_range_neg1to1_fake_quant
 from torch.ao.quantization.stubs import DeQuantStub as DeQuantStub
 
 
         QuantStub as QuantStub
-from torch.ao.quantization.utils import get_combined_dict as get_combined_dict
-from torch.nn.utils.parametrize import as, type_before_parametrizations
-
-
-        type_before_parametrizations
 from typing import Any, Callable, Dict, Optional, Set, Union
+
+from torch.ao.quantization.utils import get_combined_dict as get_combined_dict
+from torch.nn.utils.parametrize import (
+    type_before_parametrizations as type_before_parametrizations,
+)
 
 
 DEFAULT_REFERENCE_STATIC_QUANT_MODULE_MAPPINGS: Dict[Callable, Any]

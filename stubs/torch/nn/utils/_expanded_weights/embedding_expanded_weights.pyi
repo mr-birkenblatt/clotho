@@ -10,10 +10,9 @@
 
 import torch
 
-from .expanded_weights_impl import as, implements_per_sample_grads
-
-
-        implements_per_sample_grads
+from .expanded_weights_impl import (
+    implements_per_sample_grads as implements_per_sample_grads,
+)
 from .expanded_weights_utils import forward_helper as forward_helper
 
 

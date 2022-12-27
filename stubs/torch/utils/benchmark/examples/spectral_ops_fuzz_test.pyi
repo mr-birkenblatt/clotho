@@ -8,14 +8,14 @@
 # pylint: disable=protected-access
 
 
+from typing import NamedTuple
+
 import torch.fft
 from _typeshed import Incomplete
 from torch.utils import benchmark as benchmark
-from torch.utils.benchmark.op_fuzzers.spectral import as, SpectralOpFuzzer
-
-
-        SpectralOpFuzzer
-from typing import NamedTuple
+from torch.utils.benchmark.op_fuzzers.spectral import (
+    SpectralOpFuzzer as SpectralOpFuzzer,
+)
 
 
 def run_benchmark(

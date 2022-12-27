@@ -87,6 +87,7 @@ def process(fin: IO[str], fout: IO[str]) -> None:
             outline = f"{cur_indent}{add_indent}{outline[first_paren:]}"
             in_paren = True
         while len(outline) > max_len or not outline.strip():
+            bslash = ""
             end_ix = max_len - 2
             right_cutoff = outline.rfind(",", 0, end_ix) + 1
             if right_cutoff <= 0:
@@ -97,13 +98,12 @@ def process(fin: IO[str], fout: IO[str]) -> None:
                         raise ValueError(
                             "could not find any way to shorten line: "
                             f"{outline}")
+                    bslash = " \\"
             if outline.find(")", 0, right_cutoff) >= 0:
                 in_paren = False
             if in_paren:
-                bslash = ""
                 extra_indent = add_indent
             else:
-                bslash = ""  # " \\"
                 extra_indent = f"{add_indent}{add_indent}"
             write_line(f"{outline[:right_cutoff].rstrip()}{bslash}\n")
             outline = \

@@ -12,10 +12,9 @@ from _typeshed import Incomplete
 from torch._six import inf as inf
 from torch.distributions import constraints as constraints
 from torch.distributions.cauchy import Cauchy as Cauchy
-
-
-from torch.distributions.transformed_distribution import
-        TransformedDistribution as TransformedDistribution
+from torch.distributions.transformed_distribution import (
+    TransformedDistribution as TransformedDistribution,
+)
 from torch.distributions.transforms import AbsTransform as AbsTransform
 
 

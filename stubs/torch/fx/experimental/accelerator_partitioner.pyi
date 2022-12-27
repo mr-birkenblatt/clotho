@@ -19,15 +19,14 @@ from torch.fx.experimental.partitioner_utils import Device as Device
         get_extra_size_of as get_extra_size_of,
         get_latency_of_partitioned_graph as get_latency_of_partitioned_graph,
         get_partition_to_latency_mapping as get_partition_to_latency_mapping
+from typing import Dict, List, NamedTuple, Tuple
+
 from torch.fx.graph_module import GraphModule as GraphModule
 from torch.fx.node import map_arg as map_arg
 from torch.fx.node import Node as Node
-from torch.fx.passes.graph_manipulation import as, get_size_of_all_nodes
-
-
-        get_size_of_all_nodes
-from typing import Dict, List, NamedTuple, Tuple
-
+from torch.fx.passes.graph_manipulation import (
+    get_size_of_all_nodes as get_size_of_all_nodes,
+)
 from torch.fx.passes.split_module import split_module as split_module
 
 

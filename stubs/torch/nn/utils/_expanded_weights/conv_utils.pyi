@@ -8,10 +8,11 @@
 # pylint: disable=protected-access
 
 
-from .expanded_weights_utils import as, set_grad_sample_if_exists
+from .expanded_weights_utils import (
+    set_grad_sample_if_exists as set_grad_sample_if_exists,
+)
 
 
-        set_grad_sample_if_exists,
         unpack_expanded_weight_or_tensor as unpack_expanded_weight_or_tensor
 from _typeshed import Incomplete
 

@@ -11,10 +11,9 @@
 import torch
 import torch.nn as nn
 from _typeshed import Incomplete
-from torch.ao.quantization.quantize import as, is_activation_post_process
-
-
-        is_activation_post_process
+from torch.ao.quantization.quantize import (
+    is_activation_post_process as is_activation_post_process,
+)
 from torch.ao.quantization.utils import is_per_channel as is_per_channel
 
 

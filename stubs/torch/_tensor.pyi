@@ -12,17 +12,20 @@ import enum
 
 import torch
 from _typeshed import Incomplete
-from torch._namedtensor_internals import as, check_serializing_named_tensor
+from torch._namedtensor_internals import (
+    check_serializing_named_tensor as check_serializing_named_tensor,
+)
+from torch._namedtensor_internals import is_ellipsis as is_ellipsis
 
 
-        check_serializing_named_tensor, is_ellipsis as is_ellipsis,
         resolve_ellipsis as resolve_ellipsis,
         single_ellipsis_index as single_ellipsis_index,
         unzip_namedshape as unzip_namedshape, update_names as update_names
-from torch.overrides import as, get_default_nowrap_functions
+from torch.overrides import (
+    get_default_nowrap_functions as get_default_nowrap_functions,
+)
 
 
-        get_default_nowrap_functions,
         handle_torch_function as handle_torch_function,
         has_torch_function as has_torch_function,
         has_torch_function_unary as has_torch_function_unary,

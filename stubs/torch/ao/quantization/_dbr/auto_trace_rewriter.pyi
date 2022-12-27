@@ -12,10 +12,11 @@ import torch.fx
 
 from .mappings import conv_ops as conv_ops
 from .quantization_state import AutoQuantizationState as AutoQuantizationState
-from .utils import as, AutoQuantizationStateModuleDict
+from .utils import (
+    AutoQuantizationStateModuleDict as AutoQuantizationStateModuleDict,
+)
 
 
-        AutoQuantizationStateModuleDict,
         get_packable_arg_idxs as get_packable_arg_idxs
 from types import ModuleType
 from typing import Any, Callable, Dict, Tuple

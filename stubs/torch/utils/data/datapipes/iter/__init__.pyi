@@ -8,36 +8,56 @@
 # pylint: disable=protected-access
 
 
-from torch.utils.data.datapipes.iter.callable import as, CollatorIterDataPipe
+from torch.utils.data.datapipes.iter.callable import (
+    CollatorIterDataPipe as Collator,
+)
+from torch.utils.data.datapipes.iter.callable import (
+    MapperIterDataPipe as Mapper,
+)
+from torch.utils.data.datapipes.iter.combinatorics import (
+    SamplerIterDataPipe as Sampler,
+)
+from torch.utils.data.datapipes.iter.combinatorics import (
+    ShufflerIterDataPipe as Shuffler,
+)
+from torch.utils.data.datapipes.iter.combining import (
+    ConcaterIterDataPipe as Concater,
+)
+from torch.utils.data.datapipes.iter.combining import (
+    DemultiplexerIterDataPipe as Demultiplexer,
+)
 
 
-        Collator, MapperIterDataPipe as Mapper
-from torch.utils.data.datapipes.iter.combinatorics import
-        SamplerIterDataPipe as Sampler, ShufflerIterDataPipe as Shuffler
-from torch.utils.data.datapipes.iter.combining import ConcaterIterDataPipe
-
-
-        as Concater, DemultiplexerIterDataPipe as Demultiplexer,
         ForkerIterDataPipe as Forker, MultiplexerIterDataPipe as Multiplexer,
         ZipperIterDataPipe as Zipper
-from torch.utils.data.datapipes.iter.filelister import
-        FileListerIterDataPipe as FileLister
-from torch.utils.data.datapipes.iter.fileopener import
-        FileLoaderIterDataPipe as FileLoader,
+from torch.utils.data.datapipes.iter.filelister import (
+    FileListerIterDataPipe as FileLister,
+)
+from torch.utils.data.datapipes.iter.fileopener import (
+    FileLoaderIterDataPipe as FileLoader,
+)
+
+
         FileOpenerIterDataPipe as FileOpener
-from torch.utils.data.datapipes.iter.grouping import as, BatcherIterDataPipe
+from torch.utils.data.datapipes.iter.grouping import (
+    BatcherIterDataPipe as Batcher,
+)
+from torch.utils.data.datapipes.iter.grouping import (
+    GrouperIterDataPipe as Grouper,
+)
 
 
-        Batcher, GrouperIterDataPipe as Grouper,
         ShardingFilterIterDataPipe as ShardingFilter,
         UnBatcherIterDataPipe as UnBatcher
-from torch.utils.data.datapipes.iter.routeddecoder import
-        RoutedDecoderIterDataPipe as RoutedDecoder
-from torch.utils.data.datapipes.iter.selecting import as, FilterIterDataPipe
-
-
-        Filter
-from torch.utils.data.datapipes.iter.streamreader import
-        StreamReaderIterDataPipe as StreamReader
-from torch.utils.data.datapipes.iter.utils import
-        IterableWrapperIterDataPipe as IterableWrapper
+from torch.utils.data.datapipes.iter.routeddecoder import (
+    RoutedDecoderIterDataPipe as RoutedDecoder,
+)
+from torch.utils.data.datapipes.iter.selecting import (
+    FilterIterDataPipe as Filter,
+)
+from torch.utils.data.datapipes.iter.streamreader import (
+    StreamReaderIterDataPipe as StreamReader,
+)
+from torch.utils.data.datapipes.iter.utils import (
+    IterableWrapperIterDataPipe as IterableWrapper,
+)

@@ -8,14 +8,14 @@
 # pylint: disable=protected-access
 
 
+from typing import Any, Callable, Dict, List
+
 from _typeshed import Incomplete
 from torch import fx as fx
 from torch._lazy import computation as computation
-from torch._lazy.tensor_factory_functions import as, tensor_factory_functions
-
-
-        tensor_factory_functions
-from typing import Any, Callable, Dict, List
+from torch._lazy.tensor_factory_functions import (
+    tensor_factory_functions as tensor_factory_functions,
+)
 
 
 debug: Incomplete

@@ -8,10 +8,12 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.quantize_jit import as, convert_dynamic_jit
+from torch.ao.quantization.quantize_jit import (
+    convert_dynamic_jit as convert_dynamic_jit,
+)
+from torch.ao.quantization.quantize_jit import convert_jit as convert_jit
 
 
-        convert_dynamic_jit, convert_jit as convert_jit,
         fuse_conv_bn_jit as fuse_conv_bn_jit,
         prepare_dynamic_jit as prepare_dynamic_jit,
         prepare_jit as prepare_jit,

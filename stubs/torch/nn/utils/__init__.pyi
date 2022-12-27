@@ -27,10 +27,9 @@ from .fusion import fuse_conv_bn_eval as fuse_conv_bn_eval
 
         fuse_conv_bn_weights as fuse_conv_bn_weights
 from .init import skip_init as skip_init
-from .memory_format import as, convert_conv2d_weight_memory_format
-
-
-        convert_conv2d_weight_memory_format
+from .memory_format import (
+    convert_conv2d_weight_memory_format as convert_conv2d_weight_memory_format,
+)
 from .spectral_norm import remove_spectral_norm as remove_spectral_norm
 
 

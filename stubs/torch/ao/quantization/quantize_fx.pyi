@@ -10,27 +10,23 @@
 
 import torch
 
-from .backend_config import as, get_tensorrt_backend_config_dict
-
-
-        get_tensorrt_backend_config_dict
+from .backend_config import (
+    get_tensorrt_backend_config_dict as get_tensorrt_backend_config_dict,
+)
 from .fx import fuse as fuse
 from .fx import prepare as prepare
 from .fx.convert import convert as convert
 from .fx.graph_module import ObservedGraphModule as ObservedGraphModule
-from .fx.qconfig_utils import as, check_is_valid_convert_custom_config_dict
+from .fx.qconfig_utils import (
+    check_is_valid_convert_custom_config_dict as check_is_valid_convert_custom_config_dict,
+)
 
 
-        check_is_valid_convert_custom_config_dict,
-        check_is_valid_fuse_custom_config_dict as
+        check_is_valid_fuse_custom_config_dict as \
         check_is_valid_fuse_custom_config_dict,
-        check_is_valid_prepare_custom_config_dict as
+        check_is_valid_prepare_custom_config_dict as \
         check_is_valid_prepare_custom_config_dict,
         check_is_valid_qconfig_dict as check_is_valid_qconfig_dict
-from .fx.utils import as, get_custom_module_class_keys
-
-
-        get_custom_module_class_keys, graph_pretty_str as graph_pretty_str
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from _typeshed import Incomplete
@@ -39,6 +35,11 @@ from torch.fx._symbolic_trace import Tracer as Tracer
 from torch.fx.node import Argument as Argument
 from torch.fx.node import Node as Node
 from torch.fx.node import Target as Target
+
+from .fx.utils import (
+    get_custom_module_class_keys as get_custom_module_class_keys,
+)
+from .fx.utils import graph_pretty_str as graph_pretty_str
 
 
 class Scope:

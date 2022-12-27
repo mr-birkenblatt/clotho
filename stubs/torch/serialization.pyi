@@ -10,15 +10,13 @@
 
 import os
 from collections.abc import Generator
+from typing import BinaryIO, IO, Union
 
 import torch
 from _typeshed import Incomplete
-from torch._sources import as, get_source_lines_and_file
-
-
-        get_source_lines_and_file
-from typing import BinaryIO, IO, Union
-
+from torch._sources import (
+    get_source_lines_and_file as get_source_lines_and_file,
+)
 from torch.types import Storage as Storage
 
 

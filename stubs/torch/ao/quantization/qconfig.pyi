@@ -21,17 +21,17 @@ from .observer import HistogramObserver as HistogramObserver
         default_debug_observer as default_debug_observer,
         default_dynamic_quant_observer as default_dynamic_quant_observer,
         default_float_qparams_observer as default_float_qparams_observer,
-        default_float_qparams_observer_4bit as
+        default_float_qparams_observer_4bit as \
         default_float_qparams_observer_4bit,
         default_observer as default_observer,
-        default_per_channel_weight_observer as
+        default_per_channel_weight_observer as \
         default_per_channel_weight_observer,
         default_placeholder_observer as default_placeholder_observer,
         default_reuse_input_observer as default_reuse_input_observer,
         default_weight_observer as default_weight_observer,
-        per_channel_weight_observer_range_neg_127_to_127 as
+        per_channel_weight_observer_range_neg_127_to_127 as \
         per_channel_weight_observer_range_neg_127_to_127,
-        weight_observer_range_neg_127_to_127 as
+        weight_observer_range_neg_127_to_127 as \
         weight_observer_range_neg_127_to_127
 from _typeshed import Incomplete
 from torch.ao.quantization.fake_quantize import FakeQuantize as FakeQuantize
@@ -41,19 +41,19 @@ from torch.ao.quantization.fake_quantize import FakeQuantize as FakeQuantize
         FusedMovingAvgObsFakeQuantize as FusedMovingAvgObsFakeQuantize,
         default_dynamic_fake_quant as default_dynamic_fake_quant,
         default_embedding_fake_quant as default_embedding_fake_quant,
-        default_embedding_fake_quant_4bit as
+        default_embedding_fake_quant_4bit as \
         default_embedding_fake_quant_4bit,
         default_fake_quant as default_fake_quant,
         default_fused_act_fake_quant as default_fused_act_fake_quant,
-        default_fused_per_channel_wt_fake_quant as
+        default_fused_per_channel_wt_fake_quant as \
         default_fused_per_channel_wt_fake_quant,
         default_fused_wt_fake_quant as default_fused_wt_fake_quant,
-        default_per_channel_weight_fake_quant as
+        default_per_channel_weight_fake_quant as \
         default_per_channel_weight_fake_quant,
         default_weight_fake_quant as default_weight_fake_quant,
-        fused_per_channel_wt_fake_quant_range_neg_127_to_127 as
+        fused_per_channel_wt_fake_quant_range_neg_127_to_127 as \
         fused_per_channel_wt_fake_quant_range_neg_127_to_127,
-        fused_wt_fake_quant_range_neg_127_to_127 as
+        fused_wt_fake_quant_range_neg_127_to_127 as \
         fused_wt_fake_quant_range_neg_127_to_127
 from typing import Any, Optional
 

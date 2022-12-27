@@ -14,7 +14,7 @@ from torch.ao.quantization.observer import ABC as ABC
         HistogramObserver as HistogramObserver,
         MinMaxObserver as MinMaxObserver,
         MovingAverageMinMaxObserver as MovingAverageMinMaxObserver,
-        MovingAveragePerChannelMinMaxObserver as
+        MovingAveragePerChannelMinMaxObserver as \
         MovingAveragePerChannelMinMaxObserver, NoopObserver as NoopObserver,
         ObserverBase as ObserverBase,
         PerChannelMinMaxObserver as PerChannelMinMaxObserver,
@@ -25,7 +25,7 @@ from torch.ao.quantization.observer import ABC as ABC
         default_float_qparams_observer as default_float_qparams_observer,
         default_histogram_observer as default_histogram_observer,
         default_observer as default_observer,
-        default_per_channel_weight_observer as
+        default_per_channel_weight_observer as \
         default_per_channel_weight_observer,
         default_placeholder_observer as default_placeholder_observer,
         default_weight_observer as default_weight_observer,

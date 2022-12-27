@@ -8,10 +8,9 @@
 # pylint: disable=protected-access
 
 
-from torch.jit._serialization import as, validate_map_location
-
-
-        validate_map_location
+from torch.jit._serialization import (
+    validate_map_location as validate_map_location,
+)
 
 
 class LiteScriptModule:

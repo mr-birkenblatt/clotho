@@ -11,7 +11,7 @@
 from torch.ao.ns._numeric_suite import Logger as Logger
 
 
-        NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST as
+        NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST as \
         NON_LEAF_MODULE_TO_ADD_OBSERVER_ALLOW_LIST,
         OutputLogger as OutputLogger, Shadow as Shadow,
         ShadowLogger as ShadowLogger,

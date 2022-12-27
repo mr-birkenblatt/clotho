@@ -11,10 +11,9 @@
 import torch
 from _typeshed import Incomplete
 from torch._sources import fake_range as fake_range
-from torch.jit._check import as, AttributeTypeIsSupportedChecker
-
-
-        AttributeTypeIsSupportedChecker
+from torch.jit._check import (
+    AttributeTypeIsSupportedChecker as AttributeTypeIsSupportedChecker,
+)
 from torch.jit.frontend import get_class_properties as get_class_properties
 
 

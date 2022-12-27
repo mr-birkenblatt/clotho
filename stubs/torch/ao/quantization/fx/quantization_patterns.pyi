@@ -8,22 +8,18 @@
 # pylint: disable=protected-access
 
 
-import torch
-
-from .utils import all_node_args_have_no_tensors, as
-
-
-        all_node_args_have_no_tensors
 from abc import ABC
-
-from _typeshed import Incomplete
-from torch.ao.quantization.quantization_types import as, NodePattern
-
-
-        NodePattern, Pattern as Pattern
 from typing import Any, Callable, Dict, Optional
 
+import torch
+from _typeshed import Incomplete
+from torch.ao.quantization.quantization_types import NodePattern as NodePattern
+from torch.ao.quantization.quantization_types import Pattern as Pattern
 from torch.fx.graph import Node as Node
+
+from .utils import (
+    all_node_args_have_no_tensors as all_node_args_have_no_tensors,
+)
 
 
 class QuantizeHandler(ABC):

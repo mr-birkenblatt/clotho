@@ -10,15 +10,17 @@
 
 import abc
 from abc import abstractmethod
+from typing import Any
 
 import torch
 import torch.nn as nn
 from _typeshed import Incomplete
-from torch.ao.quantization.utils import as, calculate_qmin_qmax
-
-
-        calculate_qmin_qmax, check_min_max_valid as check_min_max_valid
-from typing import Any
+from torch.ao.quantization.utils import (
+    calculate_qmin_qmax as calculate_qmin_qmax,
+)
+from torch.ao.quantization.utils import (
+    check_min_max_valid as check_min_max_valid,
+)
 
 
 class _PartialWrapper:
@@ -205,8 +207,8 @@ default_float_qparams_observer: Incomplete
 default_float_qparams_observer_4bit: Incomplete
 default_fixed_qparams_range_neg1to1_observer: Incomplete
 default_fixed_qparams_range_0to1_observer: Incomplete
-default_symmetric_fixed_qparams_observer =
+default_symmetric_fixed_qparams_observer = \
         default_fixed_qparams_range_neg1to1_observer
-default_affine_fixed_qparams_observer =
+default_affine_fixed_qparams_observer = \
         default_fixed_qparams_range_0to1_observer
 default_reuse_input_observer = ReuseInputObserver

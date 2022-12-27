@@ -12,12 +12,14 @@ import torch
 from _typeshed import Incomplete
 from torch._classes import classes as classes
 from torch._six import with_metaclass as with_metaclass
-from torch.jit._monkeytype_config import as, JitTypeTraceConfig
+from torch.jit._monkeytype_config import (
+    JitTypeTraceConfig as JitTypeTraceConfig,
+)
+from torch.jit._monkeytype_config import JitTypeTraceStore as JitTypeTraceStore
 
 from ._serialization import validate_map_location as validate_map_location
 
 
-        JitTypeTraceConfig, JitTypeTraceStore as JitTypeTraceStore,
         monkeytype_trace as monkeytype_trace
 from torch.jit._recursive import ScriptMethodStub as ScriptMethodStub
 

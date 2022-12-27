@@ -11,14 +11,12 @@
 from _typeshed import Incomplete
 from torch.distributions import constraints as constraints
 from torch.distributions.normal import Normal as Normal
-
-
-from torch.distributions.transformed_distribution import
-        TransformedDistribution as TransformedDistribution
-from torch.distributions.transforms import as, StickBreakingTransform
-
-
-        StickBreakingTransform
+from torch.distributions.transformed_distribution import (
+    TransformedDistribution as TransformedDistribution,
+)
+from torch.distributions.transforms import (
+    StickBreakingTransform as StickBreakingTransform,
+)
 
 
 class LogisticNormal(TransformedDistribution):

@@ -38,10 +38,9 @@ from .laplace import Laplace as Laplace
 from .lkj_cholesky import LKJCholesky as LKJCholesky
 from .log_normal import LogNormal as LogNormal
 from .logistic_normal import LogisticNormal as LogisticNormal
-from .lowrank_multivariate_normal import as, LowRankMultivariateNormal
-
-
-        LowRankMultivariateNormal
+from .lowrank_multivariate_normal import (
+    LowRankMultivariateNormal as LowRankMultivariateNormal,
+)
 from .mixture_same_family import MixtureSameFamily as MixtureSameFamily
 from .multinomial import Multinomial as Multinomial
 from .multivariate_normal import MultivariateNormal as MultivariateNormal
@@ -54,15 +53,13 @@ from .one_hot_categorical import OneHotCategorical as OneHotCategorical
 from .pareto import Pareto as Pareto
 from .poisson import Poisson as Poisson
 from .relaxed_bernoulli import RelaxedBernoulli as RelaxedBernoulli
-from .relaxed_categorical import as, RelaxedOneHotCategorical
-
-
-        RelaxedOneHotCategorical
+from .relaxed_categorical import (
+    RelaxedOneHotCategorical as RelaxedOneHotCategorical,
+)
 from .studentT import StudentT as StudentT
-from .transformed_distribution import as, TransformedDistribution
-
-
-        TransformedDistribution
+from .transformed_distribution import (
+    TransformedDistribution as TransformedDistribution,
+)
 from .uniform import Uniform as Uniform
 from .von_mises import VonMises as VonMises
 from .weibull import Weibull as Weibull

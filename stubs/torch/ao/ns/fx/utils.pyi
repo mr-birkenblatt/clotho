@@ -21,12 +21,11 @@ from torch.ao.quantization import FakeQuantizeBase as FakeQuantizeBase
 
 
         ObserverBase as ObserverBase
-from torch.ao.quantization.quantize import as, is_activation_post_process
-
-
-        is_activation_post_process
 from typing import Callable, Dict, List, Optional, Set, Tuple, Union
 
+from torch.ao.quantization.quantize import (
+    is_activation_post_process as is_activation_post_process,
+)
 from torch.ao.quantization.utils import getattr_from_fqn as getattr_from_fqn
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node

@@ -13,10 +13,9 @@ from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch._jit_internal import List as List
 from torch._jit_internal import Optional as Optional
-from torch.nn.quantized.modules.utils import as, hide_packed_params_repr
-
-
-        hide_packed_params_repr
+from torch.nn.quantized.modules.utils import (
+    hide_packed_params_repr as hide_packed_params_repr,
+)
 
 
 class EmbeddingPackedParams(torch.nn.Module):

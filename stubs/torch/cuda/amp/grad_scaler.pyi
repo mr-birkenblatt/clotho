@@ -8,15 +8,14 @@
 # pylint: disable=protected-access
 
 
-import torch
-
-from .common import amp_definitely_not_available, as
-
-
-        amp_definitely_not_available
 from enum import Enum
 
+import torch
 from _typeshed import Incomplete
+
+from .common import (
+    amp_definitely_not_available as amp_definitely_not_available,
+)
 
 
 class _MultiDeviceReplicator:

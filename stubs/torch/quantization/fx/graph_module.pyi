@@ -8,10 +8,12 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fx.graph_module import as, FusedGraphModule
+from torch.ao.quantization.fx.graph_module import (
+    FusedGraphModule as FusedGraphModule,
+)
+from torch.ao.quantization.fx.graph_module import GraphModule as GraphModule
 
 
-        FusedGraphModule, GraphModule as GraphModule,
         ObservedGraphModule as ObservedGraphModule,
         ObservedStandaloneGraphModule as ObservedStandaloneGraphModule,
         QuantizedGraphModule as QuantizedGraphModule,

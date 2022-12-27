@@ -8,14 +8,14 @@
 # pylint: disable=protected-access
 
 
+from typing import Dict, Optional, Set
+
 from _typeshed import Incomplete
+from torch.ao.quantization.backend_config import (
+    get_native_backend_config_dict as get_native_backend_config_dict,
+)
 
 from .ns_types import NSNodeTargetType as NSNodeTargetType
-
-
-from torch.ao.quantization.backend_config import
-        get_native_backend_config_dict as get_native_backend_config_dict
-from typing import Dict, Optional, Set
 
 
 toq: Incomplete

@@ -8,13 +8,14 @@
 # pylint: disable=protected-access
 
 
-from .constants import default_pg_timeout as default_pg_timeout
-from .rendezvous import as, register_rendezvous_handler
-
-
-        register_rendezvous_handler, rendezvous as rendezvous
 from _typeshed import Incomplete
 from torch._C._distributed_c10d import AllToAllOptions as AllToAllOptions
+
+from .constants import default_pg_timeout as default_pg_timeout
+from .rendezvous import (
+    register_rendezvous_handler as register_rendezvous_handler,
+)
+from .rendezvous import rendezvous as rendezvous
 
 
         AllreduceCoalescedOptions as AllreduceCoalescedOptions,

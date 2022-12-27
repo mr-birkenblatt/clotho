@@ -23,14 +23,14 @@ from .tools_common import CALLABLE_NODE_OPS as CALLABLE_NODE_OPS
         FxNetAccFusionsFinder as FxNetAccFusionsFinder, NodeList as NodeList,
         NodeSet as NodeSet, Tensors as Tensors,
         is_node_output_tensor as is_node_output_tensor
+from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence
+
 from _typeshed import Incomplete
 from torch.fx._compatibility import compatibility as compatibility
 from torch.fx.node import map_arg as map_arg
-from torch.fx.passes.graph_manipulation import as, get_size_of_node
-
-
-        get_size_of_node
-from typing import Any, Dict, Iterable, List, NamedTuple, Optional, Sequence
+from torch.fx.passes.graph_manipulation import (
+    get_size_of_node as get_size_of_node,
+)
 
 
         Tuple

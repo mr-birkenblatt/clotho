@@ -11,39 +11,41 @@
 from .utils import get_qparam_dict as get_qparam_dict
 
 
-        has_no_children_ignoring_parametrizations as
+        has_no_children_ignoring_parametrizations as \
         has_no_children_ignoring_parametrizations
 from _typeshed import Incomplete
-from torch.ao.quantization.qconfig import activation_is_memoryless, as
+from torch.ao.quantization.qconfig import (
+    activation_is_memoryless as activation_is_memoryless,
+)
 
 
-        activation_is_memoryless,
         add_module_to_qconfig_obs_ctr as add_module_to_qconfig_obs_ctr,
         default_dynamic_qconfig as default_dynamic_qconfig,
         float16_dynamic_qconfig as float16_dynamic_qconfig,
-        float_qparams_weight_only_qconfig as
+        float_qparams_weight_only_qconfig as \
         float_qparams_weight_only_qconfig,
-        float_qparams_weight_only_qconfig_4bit as
+        float_qparams_weight_only_qconfig_4bit as \
         float_qparams_weight_only_qconfig_4bit
-from torch.ao.quantization.quantization_mappings import
-        get_default_dynamic_quant_module_mappings as
-        get_default_dynamic_quant_module_mappings,
+from torch.ao.quantization.quantization_mappings import (
+    get_default_dynamic_quant_module_mappings as get_default_dynamic_quant_module_mappings,
+)
+
+
         get_default_qat_module_mappings as get_default_qat_module_mappings,
-        get_default_qconfig_propagation_list as
+        get_default_qconfig_propagation_list as \
         get_default_qconfig_propagation_list,
-        get_default_static_quant_module_mappings as
+        get_default_static_quant_module_mappings as \
         get_default_static_quant_module_mappings,
-        get_default_static_quant_reference_module_mappings as
+        get_default_static_quant_reference_module_mappings as \
         get_default_static_quant_reference_module_mappings,
         no_observer_set as no_observer_set
 from torch.ao.quantization.stubs import DeQuantStub as DeQuantStub
 
 
         QuantWrapper as QuantWrapper
-from torch.nn.utils.parametrize import as, type_before_parametrizations
-
-
-        type_before_parametrizations
+from torch.nn.utils.parametrize import (
+    type_before_parametrizations as type_before_parametrizations,
+)
 
 
 def is_activation_post_process(module): ...

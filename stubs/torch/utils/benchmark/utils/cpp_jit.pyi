@@ -8,13 +8,16 @@
 # pylint: disable=protected-access
 
 
+from typing import List, Optional
+
 from _typeshed import Incomplete
 from torch.utils import cpp_extension as cpp_extension
-from torch.utils.benchmark.utils._stubs import as, CallgrindModuleType
-
-
-        CallgrindModuleType, TimeitModuleType as TimeitModuleType
-from typing import List, Optional
+from torch.utils.benchmark.utils._stubs import (
+    CallgrindModuleType as CallgrindModuleType,
+)
+from torch.utils.benchmark.utils._stubs import (
+    TimeitModuleType as TimeitModuleType,
+)
 
 
 LOCK: Incomplete

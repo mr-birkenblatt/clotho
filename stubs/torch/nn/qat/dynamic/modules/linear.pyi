@@ -10,10 +10,9 @@
 
 import torch
 from _typeshed import Incomplete
-from torch.ao.quantization import activation_is_memoryless, as
-
-
-        activation_is_memoryless
+from torch.ao.quantization import (
+    activation_is_memoryless as activation_is_memoryless,
+)
 
 
 class Linear(torch.nn.qat.Linear):

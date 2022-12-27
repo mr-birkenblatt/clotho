@@ -8,8 +8,8 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fx.match_utils import as, MatchAllNode
+from torch.ao.quantization.fx.match_utils import MatchAllNode as MatchAllNode
+from torch.ao.quantization.fx.match_utils import MatchResult as MatchResult
 
 
-        MatchAllNode, MatchResult as MatchResult,
         find_matches as find_matches, is_match as is_match

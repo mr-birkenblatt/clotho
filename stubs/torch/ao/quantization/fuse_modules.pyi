@@ -9,15 +9,18 @@
 
 
 from _typeshed import Incomplete
-from torch.ao.quantization.fuser_method_mappings import as, fuse_conv_bn
+from torch.ao.quantization.fuser_method_mappings import (
+    fuse_conv_bn as fuse_conv_bn,
+)
+from torch.ao.quantization.fuser_method_mappings import (
+    fuse_conv_bn_relu as fuse_conv_bn_relu,
+)
 
 
-        fuse_conv_bn, fuse_conv_bn_relu as fuse_conv_bn_relu,
         get_fuser_method as get_fuser_method
-from torch.nn.utils.parametrize import as, type_before_parametrizations
-
-
-        type_before_parametrizations
+from torch.nn.utils.parametrize import (
+    type_before_parametrizations as type_before_parametrizations,
+)
 
 
 def fuse_known_modules(

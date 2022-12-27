@@ -12,19 +12,22 @@ import abc
 import signal
 from enum import IntFlag
 from multiprocessing import synchronize as synchronize
+from typing import Any, Callable, Dict, Optional, Tuple, Union
 
 from _typeshed import Incomplete
-from torch.distributed.elastic.multiprocessing.errors import ProcessFailure
-
-
-        as ProcessFailure, record as record
-from torch.distributed.elastic.multiprocessing.redirects import
-        redirect_stderr as redirect_stderr, redirect_stdout as redirect_stdout
-from torch.distributed.elastic.multiprocessing.tail_log import as, TailLog
-
-
-        TailLog
-from typing import Any, Callable, Dict, Optional, Tuple, Union
+from torch.distributed.elastic.multiprocessing.errors import (
+    ProcessFailure as ProcessFailure,
+)
+from torch.distributed.elastic.multiprocessing.errors import record as record
+from torch.distributed.elastic.multiprocessing.redirects import (
+    redirect_stderr as redirect_stderr,
+)
+from torch.distributed.elastic.multiprocessing.redirects import (
+    redirect_stdout as redirect_stdout,
+)
+from torch.distributed.elastic.multiprocessing.tail_log import (
+    TailLog as TailLog,
+)
 
 
 IS_WINDOWS: Incomplete

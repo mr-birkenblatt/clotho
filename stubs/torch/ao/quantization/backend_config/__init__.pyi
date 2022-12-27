@@ -8,11 +8,9 @@
 # pylint: disable=protected-access
 
 
-from .native import as, get_native_backend_config_dict
-
-
-        get_native_backend_config_dict
-from .tensorrt import as, get_tensorrt_backend_config_dict
-
-
-        get_tensorrt_backend_config_dict
+from .native import (
+    get_native_backend_config_dict as get_native_backend_config_dict,
+)
+from .tensorrt import (
+    get_tensorrt_backend_config_dict as get_tensorrt_backend_config_dict,
+)

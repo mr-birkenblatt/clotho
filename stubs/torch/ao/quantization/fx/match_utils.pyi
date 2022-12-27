@@ -8,20 +8,18 @@
 # pylint: disable=protected-access
 
 
-import torch
-
-from ..qconfig import QConfigAny as QConfigAny
-from ..utils import MatchAllNode as MatchAllNode
-from .graph_module import as, is_observed_standalone_module
-
-
-        is_observed_standalone_module
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+import torch
 from torch.ao.quantization.quantization_types import Pattern as Pattern
 from torch.fx.graph import Graph as Graph
 from torch.fx.graph import Node as Node
 
+from ..qconfig import QConfigAny as QConfigAny
+from ..utils import MatchAllNode as MatchAllNode
+from .graph_module import (
+    is_observed_standalone_module as is_observed_standalone_module,
+)
 from .quantization_patterns import QuantizeHandler as QuantizeHandler
 
 

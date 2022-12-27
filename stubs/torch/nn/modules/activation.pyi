@@ -9,15 +9,13 @@
 
 
 import torch
-
-from .linear import as, NonDynamicallyQuantizableLinear
-
-
-        NonDynamicallyQuantizableLinear
 from _typeshed import Incomplete
 from torch import Tensor as Tensor
 from torch.nn.init import constant_ as constant_
 
+from .linear import (
+    NonDynamicallyQuantizableLinear as NonDynamicallyQuantizableLinear,
+)
 from .module import Module as Module
 
 

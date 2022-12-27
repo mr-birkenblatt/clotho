@@ -15,22 +15,22 @@ from ._dbr.auto_trace import add_auto_convert as add_auto_convert
 
         add_auto_observation as add_auto_observation
 from ._dbr.fusion import get_module_fusion_fqns as get_module_fusion_fqns
-from ._dbr.qconfig_dict_utils import as, normalize_object_types
+from ._dbr.qconfig_dict_utils import (
+    normalize_object_types as normalize_object_types,
+)
+from .qconfig_dict_utils import (
+    convert_dict_to_ordered_dict as convert_dict_to_ordered_dict,
+)
 
 
-        normalize_object_types
-from .qconfig_dict_utils import as, convert_dict_to_ordered_dict
-
-
-        convert_dict_to_ordered_dict,
         get_flattened_qconfig_dict as get_flattened_qconfig_dict
 from _typeshed import Incomplete
+from torch.ao.quantization.quantization_mappings import (
+    get_default_dynamic_quant_module_mappings as get_default_dynamic_quant_module_mappings,
+)
 
 
-from torch.ao.quantization.quantization_mappings import
-        get_default_dynamic_quant_module_mappings as
-        get_default_dynamic_quant_module_mappings,
-        get_default_static_quant_module_mappings as
+        get_default_static_quant_module_mappings as \
         get_default_static_quant_module_mappings
 
 

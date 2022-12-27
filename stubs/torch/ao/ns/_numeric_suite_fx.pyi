@@ -25,24 +25,24 @@ from .fx.utils import get_target_type_str as get_target_type_str
 
 
         maybe_add_missing_fqns as maybe_add_missing_fqns,
-        rekey_logger_info_on_node_name_of_model as
+        rekey_logger_info_on_node_name_of_model as \
         rekey_logger_info_on_node_name_of_model
-from .fx.weight_utils import as, extract_weight_from_node
-
-
-        extract_weight_from_node
 from _typeshed import Incomplete
-from torch.ao.ns.fx.graph_matcher import as, get_matching_subgraph_pairs
+from torch.ao.ns.fx.graph_matcher import (
+    get_matching_subgraph_pairs as get_matching_subgraph_pairs,
+)
+
+from .fx.weight_utils import (
+    extract_weight_from_node as extract_weight_from_node,
+)
 
 
-        get_matching_subgraph_pairs,
         get_type_a_related_to_b as get_type_a_related_to_b
-from torch.ao.ns.fx.mappings import as, get_base_name_to_sets_of_related_ops
-
-
-        get_base_name_to_sets_of_related_ops
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
+from torch.ao.ns.fx.mappings import (
+    get_base_name_to_sets_of_related_ops as get_base_name_to_sets_of_related_ops,
+)
 from torch.fx import GraphModule as GraphModule
 from torch.fx.graph import Node as Node
 

@@ -8,7 +8,10 @@
 # pylint: disable=protected-access
 
 
-from torch.ao.quantization.fuser_method_mappings import
-        DEFAULT_OP_LIST_TO_FUSER_METHOD as DEFAULT_OP_LIST_TO_FUSER_METHOD,
+from torch.ao.quantization.fuser_method_mappings import (
+    DEFAULT_OP_LIST_TO_FUSER_METHOD as DEFAULT_OP_LIST_TO_FUSER_METHOD,
+)
+
+
         fuse_conv_bn as fuse_conv_bn, fuse_conv_bn_relu as fuse_conv_bn_relu,
         fuse_linear_bn as fuse_linear_bn, get_fuser_method as get_fuser_method

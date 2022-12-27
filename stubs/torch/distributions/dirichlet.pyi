@@ -12,10 +12,9 @@ from _typeshed import Incomplete
 from torch.autograd import Function as Function
 from torch.autograd.function import once_differentiable as once_differentiable
 from torch.distributions import constraints as constraints
-from torch.distributions.exp_family import as, ExponentialFamily
-
-
-        ExponentialFamily
+from torch.distributions.exp_family import (
+    ExponentialFamily as ExponentialFamily,
+)
 
 
 class _Dirichlet(Function):

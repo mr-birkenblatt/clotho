@@ -9,10 +9,9 @@
 
 
 from _typeshed import Incomplete
-from torch.utils.data.distributed import as, DistributedSampler
-
-
-        DistributedSampler
+from torch.utils.data.distributed import (
+    DistributedSampler as DistributedSampler,
+)
 
 
 class ElasticDistributedSampler(DistributedSampler):

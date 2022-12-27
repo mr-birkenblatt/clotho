@@ -11,10 +11,9 @@
 from enum import Enum
 
 from _typeshed import Incomplete
-from torch.nn.parallel import as, DistributedDataParallel
-
-
-        DistributedDataParallel
+from torch.nn.parallel import (
+    DistributedDataParallel as DistributedDataParallel,
+)
 
 
 class DDPCommHookType(Enum):

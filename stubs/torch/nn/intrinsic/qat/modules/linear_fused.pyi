@@ -13,10 +13,9 @@ import torch.nn.intrinsic as nni
 from _typeshed import Incomplete
 from torch.nn import init as init
 from torch.nn.parameter import Parameter as Parameter
-from torch.nn.utils.fusion import as, fuse_linear_bn_weights
-
-
-        fuse_linear_bn_weights
+from torch.nn.utils.fusion import (
+    fuse_linear_bn_weights as fuse_linear_bn_weights,
+)
 
 
 class LinearBn1d(nn.modules.linear.Linear, nni._FusedModule):
