@@ -6,6 +6,7 @@ import torch
 from model.embedding import EmbeddingProvider
 from system.embedding.store import EmbeddingStore
 from system.msgs.message import MHash
+from system.msgs.store import MessageStore
 
 
 REBUILD_THRESHOLD = 1000
@@ -122,6 +123,34 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 self.do_index_add(name, index, embed)
             self.do_index_finish(name)
             cache.clear_staging(name)
+
+    def ensure_all(
+            self,
+            msg_store: MessageStore,
+            names: list[str] | None = None) -> None:
+        if names is None:
+            names = self.get_names()
+        cache = self._cache
+
+        def process_name(name: str) -> None:
+            self.do_index_init(name)
+            for index, mhash in enumerate(
+                    msg_store.enumerate_messages(progress_bar=True)):
+                embed = self.get_embedding(msg_store, name, mhash)
+                self.do_index_add(name, index, embed)
+            for _, mhash, embed in cache.staging_embeddings(name):
+                index = cache.add_embedding(name, mhash)
+                self.do_index_add(name, index, embed)
+            self.do_index_finish(name)
+            cache.clear_staging(name)
+
+        try:
+            self._bulk = True
+            for name in names:
+                with self._cache.get_lock(name):
+                    process_name(name)
+        finally:
+            self._bulk = False
 
     @contextmanager
     def bulk_add(self, name: str) -> Iterator[None]:

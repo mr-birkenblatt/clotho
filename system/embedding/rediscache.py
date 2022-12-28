@@ -1,7 +1,9 @@
-import pickle
+import gzip
+import io
 from contextlib import contextmanager
 from typing import Iterable, Iterator
 
+import numpy as np
 import torch
 
 from misc.redis import ConfigKey, RedisConnection
@@ -29,10 +31,15 @@ class RedisEmbeddingCache(EmbeddingCache):
         return f"{self._redis.get_prefix()}:order:{name}"
 
     def _serialize(self, embed: torch.Tensor) -> bytes:
-        return pickle.dumps(embed, protocol=pickle.HIGHEST_PROTOCOL)
+        bout = io.BytesIO()
+        with gzip.GzipFile(fileobj=bout, mode="w") as fout:
+            np.save(fout, embed.numpy())
+        return bout.getvalue()
 
     def _deserialize(self, content: bytes) -> torch.Tensor:
-        return pickle.loads(content)
+        binp = io.BytesIO(content)
+        with gzip.GzipFile(fileobj=binp, mode="r") as finp:
+            return torch.Tensor(np.load(finp))
 
     def set_map_embedding(
             self, name: str, mhash: MHash, embed: torch.Tensor) -> None:
