@@ -1,8 +1,7 @@
 from contextlib import contextmanager
-from typing import Iterable, Iterator, Literal, TypedDict
+from typing import cast, Iterable, Iterator, Literal, TypedDict
 
-# FIXME add stubs
-import torch  # type: ignore
+import torch
 
 from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
 from model.embedding import (
@@ -21,7 +20,7 @@ class EmbeddingStore:
         self._providers = providers
 
     def get_roles(self) -> list[ProviderRole]:
-        return list(self._providers.keys())
+        return cast(list[ProviderRole], list(self._providers.keys()))
 
     def get_provider(self, role: ProviderRole) -> EmbeddingProvider:
         return self._providers[role]
@@ -66,7 +65,7 @@ class EmbeddingStore:
     def ensure_all(
             self,
             msg_store: MessageStore,
-            roles: list[str] | None = None) -> None:
+            roles: list[ProviderRole] | None = None) -> None:
         if roles is None:
             roles = self.get_roles()
         for role in roles:
@@ -75,20 +74,27 @@ class EmbeddingStore:
                     self.get_embedding(msg_store, role, mhash)
 
     def do_get_closest(
-            self, role: ProviderRole, embed: torch.Tensor) -> Iterable[MHash]:
+            self,
+            role: ProviderRole,
+            embed: torch.Tensor,
+            count: int) -> Iterable[MHash]:
         raise NotImplementedError()
 
     def get_closest(
-            self, role: ProviderRole, embed: torch.Tensor) -> Iterable[MHash]:
-        yield from self.do_get_closest(role, embed)
+            self,
+            role: ProviderRole,
+            embed: torch.Tensor,
+            count: int) -> Iterable[MHash]:
+        yield from self.do_get_closest(role, embed, count)
 
     def get_closest_for_hash(
             self,
             msg_store: MessageStore,
             role: ProviderRole,
-            mhash: MHash) -> Iterable[MHash]:
+            mhash: MHash,
+            count: int) -> Iterable[MHash]:
         yield from self.do_get_closest(
-            role, self.get_embedding(msg_store, role, mhash))
+            role, self.get_embedding(msg_store, role, mhash), count)
 
 
 EMBED_STORE: dict[Namespace, EmbeddingStore] = {}

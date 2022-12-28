@@ -1,8 +1,7 @@
 from contextlib import contextmanager
 from typing import Iterable, Iterator
 
-# FIXME add stubs
-import torch  # type: ignore
+import torch
 
 from model.embedding import (
     EmbeddingProvider,
@@ -15,7 +14,6 @@ from system.msgs.store import MessageStore
 
 
 REBUILD_THRESHOLD = 1000
-CLOSEST_COUNT = 10
 
 
 class EmbeddingCache:
@@ -24,14 +22,20 @@ class EmbeddingCache:
         raise NotImplementedError()
 
     def set_map_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash, embed: torch.Tensor) -> None:
+            self,
+            provider: EmbeddingProvider,
+            mhash: MHash,
+            embed: torch.Tensor) -> None:
         raise NotImplementedError()
 
     def get_map_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> torch.Tensor | None:
+            self,
+            provider: EmbeddingProvider,
+            mhash: MHash) -> torch.Tensor | None:
         raise NotImplementedError()
 
-    def get_entry_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
+    def get_entry_by_index(
+            self, provider: EmbeddingProvider, index: int) -> MHash:
         raise NotImplementedError()
 
     def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> int:
@@ -41,24 +45,30 @@ class EmbeddingCache:
         raise NotImplementedError()
 
     def embeddings(
-            self, provider: EmbeddingProvider) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+            self,
+            provider: EmbeddingProvider,
+            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
     def clear_embeddings(self, provider: EmbeddingProvider) -> None:
         raise NotImplementedError()
 
-    def add_staging_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> None:
+    def add_staging_embedding(
+            self, provider: EmbeddingProvider, mhash: MHash) -> int:
         raise NotImplementedError()
 
     def staging_embeddings(
-            self, provider: EmbeddingProvider) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+            self,
+            provider: EmbeddingProvider,
+            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
-    def get_staging_entry_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
+    def get_staging_entry_by_index(
+            self, provider: EmbeddingProvider, index: int) -> MHash:
         raise NotImplementedError()
 
     def staging_offset(self, provider: EmbeddingProvider) -> int:
-        return self.embedding_count(name)
+        return self.embedding_count(provider)
 
     def staging_count(self, provider: EmbeddingProvider) -> int:
         raise NotImplementedError()
@@ -67,10 +77,10 @@ class EmbeddingCache:
         raise NotImplementedError()
 
     def get_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
-        offset = self.staging_offset(name)
+        offset = self.staging_offset(provider)
         if index < offset:
-            return self.get_entry_by_index(name, index)
-        return self.get_staging_entry_by_index(name, index - offset)
+            return self.get_entry_by_index(provider, index)
+        return self.get_staging_entry_by_index(provider, index - offset)
 
 
 class CachedIndexEmbeddingStore(EmbeddingStore):
@@ -118,15 +128,16 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
 
     def build_index(self, role: ProviderRole) -> None:
         cache = self._cache
-        with cache.get_lock(role):
+        provider = self.get_provider(role)
+        with cache.get_lock(provider):
             self.do_index_init(role)
-            for index, _, embed in cache.embeddings(role):
+            for index, _, embed in cache.embeddings(provider):
                 self.do_index_add(role, index, embed)
-            for _, mhash, embed in cache.staging_embeddings(role):
-                index = cache.add_embedding(role, mhash)
+            for _, mhash, embed in cache.staging_embeddings(provider):
+                index = cache.add_embedding(provider, mhash)
                 self.do_index_add(role, index, embed)
             self.do_index_finish(role)
-            cache.clear_staging(role)
+            cache.clear_staging(provider)
 
     def ensure_all(
             self,
@@ -136,23 +147,25 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             roles = self.get_roles()
         cache = self._cache
 
-        def process_name(role: ProviderRole) -> None:
+        def process_name(
+                role: ProviderRole, provider: EmbeddingProvider) -> None:
             self.do_index_init(role)
             for index, mhash in enumerate(
                     msg_store.enumerate_messages(progress_bar=True)):
                 embed = self.get_embedding(msg_store, role, mhash)
                 self.do_index_add(role, index, embed)
-            for _, mhash, embed in cache.staging_embeddings(role):
-                index = cache.add_embedding(role, mhash)
+            for _, mhash, embed in cache.staging_embeddings(provider):
+                index = cache.add_embedding(provider, mhash)
                 self.do_index_add(role, index, embed)
             self.do_index_finish(role)
-            cache.clear_staging(role)
+            cache.clear_staging(provider)
 
         try:
             self._bulk = True
             for role in roles:
-                with self._cache.get_lock(role):
-                    process_name(role)
+                provider = self.get_provider(role)
+                with self._cache.get_lock(provider):
+                    process_name(role, provider)
         finally:
             self._bulk = False
 
@@ -160,7 +173,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def bulk_add(self, role: ProviderRole) -> Iterator[None]:
         try:
             self._bulk = True
-            with self._cache.get_lock(role):
+            provider = self.get_provider(role)
+            with self._cache.get_lock(provider):
                 yield
                 self.build_index(role)
         finally:
@@ -172,30 +186,35 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             mhash: MHash,
             embed: torch.Tensor) -> None:
         cache = self._cache
-        with cache.get_lock(name):
-            cache.set_map_embedding(name, mhash, embed)
-            cache.add_staging_embedding(name, mhash)
+        provider = self.get_provider(role)
+        with cache.get_lock(provider):
+            cache.set_map_embedding(provider, mhash, embed)
+            cache.add_staging_embedding(provider, mhash)
             if (not self._bulk
-                    and cache.staging_count(name) > REBUILD_THRESHOLD):
-                self.build_index(name)
+                    and cache.staging_count(provider) > REBUILD_THRESHOLD):
+                self.build_index(role)
 
     def do_get_embedding(
             self,
             role: ProviderRole,
             mhash: MHash) -> torch.Tensor | None:
-        return self._cache.get_map_embedding(name, mhash)
+        provider = self.get_provider(role)
+        return self._cache.get_map_embedding(provider, mhash)
 
     def do_get_closest(
-            self, role: ProviderRole, embed: torch.Tensor) -> Iterable[MHash]:
-        count = CLOSEST_COUNT
+            self,
+            role: ProviderRole,
+            embed: torch.Tensor,
+            count: int) -> Iterable[MHash]:
         cache = self._cache
-        candidates = list(self.get_index_closest(name, embed, count))
-        offset = cache.staging_offset(name)
-        for other_ix, _, other_embed in cache.staging_embeddings(name):
+        provider = self.get_provider(role)
+        candidates = list(self.get_index_closest(role, embed, count))
+        offset = cache.staging_offset(provider)
+        for other_ix, _, other_embed in cache.staging_embeddings(provider):
             candidates.append(
                 (other_ix + offset, self.get_distance(embed, other_embed)))
         yield from (
-            cache.get_by_index(name, ix)
+            cache.get_by_index(provider, ix)
             for ix, _ in sorted(
                 candidates,
                 key=lambda entry: entry[1],

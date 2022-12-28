@@ -1,5 +1,5 @@
 import os
-from typing import Callable, TypedDict
+from typing import Callable, cast, TypedDict
 
 import torch
 from torch import nn
@@ -42,7 +42,7 @@ def get_tokenizer() -> Callable[[list[str]], TokenizedInput]:
     def tokens(texts: list[str]) -> TokenizedInput:
         res = tokenizer(
             texts, return_tensors="pt", padding=True, truncation=True)
-        return {k: v.to(device) for k, v in res.items()}
+        return cast(TokenizedInput, {k: v.to(device) for k, v in res.items()})
 
     return tokens
 
@@ -55,12 +55,12 @@ class Model(nn.Module):
         self._bert_child = DistilBertModel.from_pretrained(
             "distilbert-base-uncased")
         if version > 0:
-            self._pdense = nn.Sequential(
+            self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
                 nn.ReLU(),
                 nn.Linear(EMBED_SIZE, EMBED_SIZE))
-            self._cdense = nn.Sequential(
+            self._cdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
                 nn.ReLU(),
@@ -95,7 +95,7 @@ class Model(nn.Module):
             out = self._cdense(out)
         return out
 
-    def forward(self, x: TokenizedInput) -> torch.Tensor:
+    def forward(self, x: dict[ProviderRole, TokenizedInput]) -> torch.Tensor:
         parent_cls = self.get_parent_embed(
             input_ids=x["parent"]["input_ids"],
             attention_mask=x["parent"]["attention_mask"])

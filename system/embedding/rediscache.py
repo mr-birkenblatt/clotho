@@ -4,9 +4,7 @@ from contextlib import contextmanager
 from typing import Iterable, Iterator
 
 import numpy as np
-
-# FIXME add stubs
-import torch  # type: ignore
+import torch
 
 from misc.redis import ConfigKey, RedisConnection
 from model.embedding import EmbeddingProvider
@@ -21,10 +19,12 @@ class RedisEmbeddingCache(EmbeddingCache):
 
     @contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
+        name = provider.get_redis_name()
         with self._redis.get_lock(f"lock:{name}"):
             yield
 
-    def _get_embedding_key(self, provider: EmbeddingProvider, mhash: MHash) -> str:
+    def _get_embedding_key(
+            self, provider: EmbeddingProvider, mhash: MHash) -> str:
         name = provider.get_redis_name()
         return f"{self._redis.get_prefix()}:map:{name}:{mhash.to_parseable()}"
 
@@ -48,13 +48,18 @@ class RedisEmbeddingCache(EmbeddingCache):
             return torch.Tensor(np.load(finp))
 
     def set_map_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash, embed: torch.Tensor) -> None:
+            self,
+            provider: EmbeddingProvider,
+            mhash: MHash,
+            embed: torch.Tensor) -> None:
         key = self._get_embedding_key(provider, mhash)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(key, self._serialize(embed))  # FIXME: maybe ttl=1h?
 
     def get_map_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> torch.Tensor | None:
+            self,
+            provider: EmbeddingProvider,
+            mhash: MHash) -> torch.Tensor | None:
         key = self._get_embedding_key(provider, mhash)
         with self._redis.get_connection(depth=1) as conn:
             res = conn.get(key)
@@ -62,7 +67,8 @@ class RedisEmbeddingCache(EmbeddingCache):
             return None
         return self._deserialize(res)
 
-    def get_entry_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
+    def get_entry_by_index(
+            self, provider: EmbeddingProvider, index: int) -> MHash:
         key = self._get_order_key(provider)
         return self._get_index(key, index)
 
@@ -75,7 +81,9 @@ class RedisEmbeddingCache(EmbeddingCache):
         return self._embeddings_size(key)
 
     def embeddings(
-            self, provider: EmbeddingProvider) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+            self,
+            provider: EmbeddingProvider,
+            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_order_key(provider)
         return self._get_embeddigs(key, provider)
 
@@ -83,16 +91,20 @@ class RedisEmbeddingCache(EmbeddingCache):
         key = self._get_order_key(provider)
         self._clear_embeddings(key)
 
-    def add_staging_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> int:
+    def add_staging_embedding(
+            self, provider: EmbeddingProvider, mhash: MHash) -> int:
         key = self._get_staging_key(provider)
         return self._add_embedding(key, mhash)
 
     def staging_embeddings(
-            self, provider: EmbeddingProvider) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+            self,
+            provider: EmbeddingProvider,
+            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_staging_key(provider)
         return self._get_embeddigs(key, provider)
 
-    def get_staging_entry_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
+    def get_staging_entry_by_index(
+            self, provider: EmbeddingProvider, index: int) -> MHash:
         key = self._get_staging_key(provider)
         return self._get_index(key, index)
 
@@ -119,7 +131,8 @@ class RedisEmbeddingCache(EmbeddingCache):
     def _get_embeddigs(
             self,
             key: str,
-            provider: EmbeddingProvider) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+            provider: EmbeddingProvider,
+            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         offset = 0
         batch_size = 100
 

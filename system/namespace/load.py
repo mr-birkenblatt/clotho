@@ -12,7 +12,7 @@ from system.users.store import UsersModule
 NamespaceObj = TypedDict('NamespaceObj', {
     "msgs": MsgsModule,
     "links": LinkModule,
-    "suggest": SuggestModule,
+    "suggest": list[SuggestModule],
     "users": UsersModule,
     "embed": EmbedModule,
     "model": EmbeddingProviderModule,
@@ -59,6 +59,11 @@ def suggest_from_obj(obj: dict[str, Any]) -> SuggestModule:
     if name == "random":
         res = {
             "name": "random",
+        }
+    elif name == "model":
+        res = {
+            "name": "model",
+            "count": 10,
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -132,7 +137,10 @@ def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
     return {
         "msgs": msgs_from_obj(ns_name, obj.get("msgs", {})),
         "links": links_from_obj(ns_name, obj.get("links", {})),
-        "suggest": suggest_from_obj(obj.get("suggest", {})),
+        "suggest": [
+            suggest_from_obj(cur)
+            for cur in obj.get("suggest", [])
+        ],
         "users": users_from_obj(ns_name, obj.get("users", {})),
         "embed": embed_from_obj(ns_name, obj.get("embed", {})),
         "model": model_from_obj(obj.get("model", {})),

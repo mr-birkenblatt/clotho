@@ -1,8 +1,7 @@
 from contextlib import contextmanager
 from typing import Iterable, Iterator
 
-# FIXME add stubs
-import torch  # type: ignore
+import torch
 
 from model.embedding import ProviderRole
 from system.embedding.store import EmbeddingStore

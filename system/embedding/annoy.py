@@ -1,17 +1,12 @@
 import os
 from typing import Iterable
 
-# FIXME add stubs
-import torch  # type: ignore
+import torch
 from annoy import AnnoyIndex
 
 from misc.env import envload_path
 from misc.io import ensure_folder
-from model.embedding import (
-    EmbeddingProvider,
-    EmbeddingProviderMap,
-    ProviderRole,
-)
+from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
     EmbeddingCache,

@@ -25,7 +25,7 @@ class Namespace:
     def get_link_module(self) -> 'LinkModule':
         return self._obj["links"]
 
-    def get_suggest_module(self) -> 'SuggestModule':
+    def get_suggest_module(self) -> list['SuggestModule']:
         return self._obj["suggest"]
 
     def get_users_module(self) -> 'UsersModule':
