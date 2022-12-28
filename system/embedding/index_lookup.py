@@ -28,24 +28,24 @@ class EmbeddingCache:
     def get_entry_by_index(self, name: str, index: int) -> MHash:
         raise NotImplementedError()
 
-    def add_embedding(self, name: str, embed: torch.Tensor) -> int:
+    def add_embedding(self, name: str, mhash: MHash) -> int:
         raise NotImplementedError()
 
     def embedding_count(self, name: str) -> int:
         raise NotImplementedError()
 
-    def embeddings(self, name: str) -> Iterable[tuple[int, torch.Tensor]]:
+    def embeddings(
+            self, name: str) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
     def clear_embeddings(self, name: str) -> None:
         raise NotImplementedError()
 
-    def add_staging_embedding(
-            self, name: str, embed: torch.Tensor) -> None:
+    def add_staging_embedding(self, name: str, mhash: MHash) -> None:
         raise NotImplementedError()
 
     def staging_embeddings(
-            self, name: str) -> Iterable[tuple[int, torch.Tensor]]:
+            self, name: str) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
     def get_staging_entry_by_index(self, name: str, index: int) -> MHash:
@@ -115,10 +115,10 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         cache = self._cache
         with cache.get_lock(name):
             self.do_index_init(name)
-            for index, embed in cache.embeddings(name):
+            for index, _, embed in cache.embeddings(name):
                 self.do_index_add(name, index, embed)
-            for _, embed in cache.staging_embeddings(name):
-                index = cache.add_embedding(name, embed)
+            for _, mhash, embed in cache.staging_embeddings(name):
+                index = cache.add_embedding(name, mhash)
                 self.do_index_add(name, index, embed)
             self.do_index_finish(name)
             cache.clear_staging(name)
@@ -141,7 +141,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         cache = self._cache
         with cache.get_lock(name):
             cache.set_map_embedding(name, mhash, embed)
-            cache.add_staging_embedding(name, embed)
+            cache.add_staging_embedding(name, mhash)
             if (not self._bulk
                     and cache.staging_count(name) > REBUILD_THRESHOLD):
                 self.build_index(name)
@@ -158,7 +158,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         cache = self._cache
         candidates = list(self.get_index_closest(name, embed, count))
         offset = cache.staging_offset(name)
-        for other_ix, other_embed in cache.staging_embeddings(name):
+        for other_ix, _, other_embed in cache.staging_embeddings(name):
             candidates.append(
                 (other_ix + offset, self.get_distance(embed, other_embed)))
         yield from (

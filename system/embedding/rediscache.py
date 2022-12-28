@@ -53,31 +53,31 @@ class RedisEmbeddingCache(EmbeddingCache):
         key = self._get_order_key(name)
         return self._get_index(key, index)
 
-    def add_embedding(self, name: str, embed: torch.Tensor) -> int:
+    def add_embedding(self, name: str, mhash: MHash) -> int:
         key = self._get_order_key(name)
-        return self._add_embedding(key, embed)
+        return self._add_embedding(key, mhash)
 
     def embedding_count(self, name: str) -> int:
         key = self._get_order_key(name)
         return self._embeddings_size(key)
 
-    def embeddings(self, name: str) -> Iterable[tuple[int, torch.Tensor]]:
+    def embeddings(
+            self, name: str) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_order_key(name)
-        return self._get_embeddigs(key)
+        return self._get_embeddigs(key, name)
 
     def clear_embeddings(self, name: str) -> None:
         key = self._get_order_key(name)
         self._clear_embeddings(key)
 
-    def add_staging_embedding(
-            self, name: str, embed: torch.Tensor) -> None:
+    def add_staging_embedding(self, name: str, mhash: MHash) -> None:
         key = self._get_staging_key(name)
-        return self._add_embedding(key, embed)
+        return self._add_embedding(key, mhash)
 
     def staging_embeddings(
-            self, name: str) -> Iterable[tuple[int, torch.Tensor]]:
+            self, name: str) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_staging_key(name)
-        return self._get_embeddigs(key)
+        return self._get_embeddigs(key, name)
 
     def get_staging_entry_by_index(self, name: str, index: int) -> MHash:
         key = self._get_staging_key(name)
@@ -91,28 +91,48 @@ class RedisEmbeddingCache(EmbeddingCache):
         key = self._get_staging_key(name)
         self._clear_embeddings(key)
 
-    def _add_embedding(self, key: str, embed: torch.Tensor) -> int:
+    def _add_embedding(self, key: str, mhash: MHash) -> int:
         with self._redis.get_connection(depth=1) as conn:
-            res = int(conn.rpush(key, self._serialize(embed)))
+            res = int(conn.rpush(key, mhash.to_parseable().encode("utf-8")))
             return res - 1
 
-    def _get_index(self, key: str, index: int) -> torch.Tensor:
+    def _get_index(self, key: str, index: int) -> MHash:
         with self._redis.get_connection(depth=2) as conn:
             res = conn.lindex(key, index)
             if res is None:
                 raise KeyError(f"index not in list: {key} {index}")
-            return self._deserialize(res)
+            return MHash.parse(res.decode("utf-8"))
 
-    def _get_embeddigs(self, key: str) -> Iterable[tuple[int, torch.Tensor]]:
+    def _get_embeddigs(
+            self,
+            key: str,
+            name: str) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         offset = 0
         batch_size = 100
+
+        def as_mhash(elem: bytes) -> MHash:
+            return MHash.parse(elem.decode("utf-8"))
+
+        def as_tensor(mhash: MHash) -> torch.Tensor:
+            tres = self.get_map_embedding(name, mhash)
+            if tres is None:
+                raise ValueError(f"missing key: {mhash}")
+            return tres
+
+        def as_tuple(
+                offset: int,
+                ix: int,
+                elem: bytes) -> tuple[int, MHash, torch.Tensor]:
+            mhash = as_mhash(elem)
+            return (offset + ix, mhash, as_tensor(mhash))
+
         with self._redis.get_connection(depth=2) as conn:
             while True:
                 res = conn.lrange(key, offset, offset + batch_size)
                 if not res:
                     break
                 yield from (
-                    (offset + ix, self._deserialize(elem))
+                    as_tuple(offset, ix, elem)
                     for ix, elem in enumerate(res)
                 )
                 offset += batch_size

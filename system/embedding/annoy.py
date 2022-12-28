@@ -55,10 +55,10 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             name: str,
             index: int,
             embed: torch.Tensor) -> None:
-        self._tmpindex[name].add_item(index, embed.tolist())
+        self._tmpindex[name].add_item(index, embed.ravel().tolist())
 
     def do_index_finish(self, name: str) -> None:
-        aindex: AnnoyIndex | None = self._tmpindex.pop(name, default=None)
+        aindex: AnnoyIndex | None = self._tmpindex.pop(name, None)
         if aindex is None:
             raise RuntimeError("tmp index does not exist")
         aindex.build(100)
@@ -71,7 +71,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             count: int) -> Iterable[tuple[int, float]]:
         aindex = self._get_index(name)
         elems, dists = aindex.get_nns_by_vector(
-            embed.tolist(), count, include_distances=True)
+            embed.ravel().tolist(), count, include_distances=True)
         yield from zip(elems, dists)
 
     @staticmethod

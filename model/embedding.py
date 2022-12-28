@@ -9,7 +9,7 @@ from system.namespace.namespace import Namespace
 
 class EmbeddingProvider:
     def __init__(self, method: str, role: Literal["parent", "child"]) -> None:
-        self._name = f"{method}:{role}"
+        self._name = f"{method}.{role}"
 
     def get_name(self) -> str:
         return self._name

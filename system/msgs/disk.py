@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 
@@ -131,16 +131,29 @@ class DiskStore(MessageStore):
             remain -= 1
             cur_path = self._path
 
-    def enumerate_messages(self) -> Iterable[MHash]:
+    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
 
-        def get_level(cur_path: str) -> Iterable[MHash]:
+        def get_level(
+                cur_path: str,
+                *,
+                pbar: Callable[[], None] | None) -> Iterable[MHash]:
             for seg, recurse in get_folder(cur_path, MSG_EXT):
                 full = os.path.join(cur_path, seg)
                 if recurse:
-                    yield from get_level(full)
+                    yield from get_level(full, pbar=None)
                 else:
                     yield from set(
                         msg.get_hash()
                         for msg in self._load_file(full))
+                if pbar is not None:
+                    pbar()
 
-        yield from get_level(self._path)
+        if not progress_bar:
+            yield from get_level(self._path, pbar=None)
+        else:
+            # FIXME: add stubs
+            from tqdm.auto import tqdm  # type: ignore
+
+            first_level_size = len(list(get_folder(self._path, MSG_EXT)))
+            with tqdm(total=first_level_size) as pbar:
+                yield from get_level(self._path, pbar=lambda: pbar.update(1))
