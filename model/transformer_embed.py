@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Literal, TypedDict
+from typing import Callable, TypedDict
 
 import torch
 from torch import nn
@@ -13,7 +13,11 @@ from transformers import (  # type: ignore
 
 from misc.env import envload_path
 from misc.io import ensure_folder
-from model.embedding import EmbeddingProvider
+from model.embedding import (
+    EmbeddingProvider,
+    EmbeddingProviderMap,
+    ProviderRole,
+)
 from system.msgs.message import Message
 
 
@@ -147,7 +151,7 @@ class TransformerEmbedding(EmbeddingProvider):
             self,
             model: Model,
             method: str,
-            role: Literal["parent", "child"]) -> None:
+            role: ProviderRole) -> None:
         super().__init__(method, role)
         self._model = model
         self._tokenizer = get_tokenizer()
@@ -173,11 +177,11 @@ def load_providers(
         module: str,
         fname: str,
         version: int,
-        is_harness: bool) -> list[EmbeddingProvider]:
+        is_harness: bool) -> EmbeddingProviderMap:
     base_path = envload_path("USER_PATH", default="userdata")
     path = ensure_folder(os.path.join(base_path, module))
     model = load_model(os.path.join(path, fname), version, is_harness)
-    return [
-        TransformerEmbedding(model, "transformer", "parent"),
-        TransformerEmbedding(model, "transformer", "child"),
-    ]
+    return {
+        "parent": TransformerEmbedding(model, "transformer", "parent"),
+        "child": TransformerEmbedding(model, "transformer", "child"),
+    }
