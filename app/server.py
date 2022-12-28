@@ -25,7 +25,7 @@ from system.links.store import get_link_store
 from system.msgs.message import Message, MHash
 from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
-from system.suggest.suggest import get_link_suggester
+from system.suggest.suggest import get_link_suggesters
 from system.users.store import get_user_store
 from system.users.user import User
 
@@ -82,7 +82,7 @@ def setup(
     message_store = get_message_store(namespace)
     link_store = get_link_store(namespace)
     user_store = get_user_store(namespace)
-    link_suggester = get_link_suggester(namespace)
+    link_suggesters = get_link_suggesters(namespace)
 
     def get_user(args: WorkerArgs) -> User:
         with server.get_token_obj(args["token"]) as obj:
@@ -265,7 +265,10 @@ def setup(
         offset = link_query["offset"]
         cur_offset = offset + len(links)
         cur_limit = limit - len(links)
-        return links + list(link_suggester.suggest_links(
+        if cur_limit == 0:
+            return links
+        # FIXME: TODO
+        return links + list(link_suggesters[0].suggest_links(
             other, is_parent=is_parent, offset=cur_offset, limit=cur_limit))
 
     @server.json_post(f"{prefix}/children")

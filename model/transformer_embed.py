@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Literal, TypedDict
+from typing import Callable, cast, TypedDict
 
 import torch
 from torch import nn
@@ -13,7 +13,11 @@ from transformers import (  # type: ignore
 
 from misc.env import envload_path
 from misc.io import ensure_folder
-from model.embedding import EmbeddingProvider
+from model.embedding import (
+    EmbeddingProvider,
+    EmbeddingProviderMap,
+    ProviderRole,
+)
 from system.msgs.message import Message
 
 
@@ -38,7 +42,7 @@ def get_tokenizer() -> Callable[[list[str]], TokenizedInput]:
     def tokens(texts: list[str]) -> TokenizedInput:
         res = tokenizer(
             texts, return_tensors="pt", padding=True, truncation=True)
-        return {k: v.to(device) for k, v in res.items()}
+        return cast(TokenizedInput, {k: v.to(device) for k, v in res.items()})
 
     return tokens
 
@@ -51,12 +55,12 @@ class Model(nn.Module):
         self._bert_child = DistilBertModel.from_pretrained(
             "distilbert-base-uncased")
         if version > 0:
-            self._pdense = nn.Sequential(
+            self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
                 nn.ReLU(),
                 nn.Linear(EMBED_SIZE, EMBED_SIZE))
-            self._cdense = nn.Sequential(
+            self._cdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
                 nn.ReLU(),
@@ -91,7 +95,7 @@ class Model(nn.Module):
             out = self._cdense(out)
         return out
 
-    def forward(self, x: TokenizedInput) -> torch.Tensor:
+    def forward(self, x: dict[ProviderRole, TokenizedInput]) -> torch.Tensor:
         parent_cls = self.get_parent_embed(
             input_ids=x["parent"]["input_ids"],
             attention_mask=x["parent"]["attention_mask"])
@@ -147,7 +151,7 @@ class TransformerEmbedding(EmbeddingProvider):
             self,
             model: Model,
             method: str,
-            role: Literal["parent", "child"]) -> None:
+            role: ProviderRole) -> None:
         super().__init__(method, role)
         self._model = model
         self._tokenizer = get_tokenizer()
@@ -173,11 +177,11 @@ def load_providers(
         module: str,
         fname: str,
         version: int,
-        is_harness: bool) -> list[EmbeddingProvider]:
+        is_harness: bool) -> EmbeddingProviderMap:
     base_path = envload_path("USER_PATH", default="userdata")
     path = ensure_folder(os.path.join(base_path, module))
     model = load_model(os.path.join(path, fname), version, is_harness)
-    return [
-        TransformerEmbedding(model, "transformer", "parent"),
-        TransformerEmbedding(model, "transformer", "child"),
-    ]
+    return {
+        "parent": TransformerEmbedding(model, "transformer", "parent"),
+        "child": TransformerEmbedding(model, "transformer", "child"),
+    }

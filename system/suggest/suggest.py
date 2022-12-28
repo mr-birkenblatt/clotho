@@ -41,14 +41,17 @@ class LinkSuggester:
                 other, is_parent=is_parent, offset=offset, limit=limit)
         ]
 
+    def max_suggestions(self) -> int | None:
+        raise NotImplementedError()
 
-SUGGESTER_STORE: dict[Namespace, LinkSuggester] = {}
+
+SUGGESTER_STORE: dict[Namespace, list[LinkSuggester]] = {}
 
 
-def get_link_suggester(namespace: Namespace) -> LinkSuggester:
+def get_link_suggesters(namespace: Namespace) -> list[LinkSuggester]:
     res = SUGGESTER_STORE.get(namespace)
     if res is None:
-        res = create_link_suggester(namespace)
+        res = list(create_link_suggesters(namespace))
         SUGGESTER_STORE[namespace] = res
     return res
 
@@ -56,12 +59,19 @@ def get_link_suggester(namespace: Namespace) -> LinkSuggester:
 RandomSuggestModule = TypedDict('RandomSuggestModule', {
     "name": Literal["random"],
 })
-SuggestModule = RandomSuggestModule
+ModelSuggestModule = TypedDict('ModelSuggestModule', {
+    "name": Literal["model"],
+    "count": int,
+})
+SuggestModule = RandomSuggestModule | ModelSuggestModule
 
 
-def create_link_suggester(namespace: Namespace) -> LinkSuggester:
-    sobj = namespace.get_suggest_module()
-    if sobj["name"] == "random":
-        from system.suggest.random import RandomLinkSuggester
-        return RandomLinkSuggester(namespace)
-    raise ValueError(f"unknown link suggester: {sobj}")
+def create_link_suggesters(namespace: Namespace) -> Iterable[LinkSuggester]:
+    for sobj in namespace.get_suggest_module():
+        if sobj["name"] == "random":
+            from system.suggest.random import RandomLinkSuggester
+            yield RandomLinkSuggester(namespace)
+        if sobj["name"] == "model":
+            from system.suggest.model import ModelLinkSuggester
+            yield ModelLinkSuggester(namespace, sobj["count"])
+        raise ValueError(f"unknown link suggester: {sobj}")

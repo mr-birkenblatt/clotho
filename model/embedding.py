@@ -7,12 +7,19 @@ from system.msgs.message import Message
 from system.namespace.namespace import Namespace
 
 
-class EmbeddingProvider:
-    def __init__(self, method: str, role: Literal["parent", "child"]) -> None:
-        self._name = f"{method}.{role}"
+ProviderRole = Literal["parent", "child"]
 
-    def get_name(self) -> str:
-        return self._name
+
+class EmbeddingProvider:
+    def __init__(self, method: str, role: ProviderRole) -> None:
+        self._redis_name = f"{method}:{role}"
+        self._file_name = f"{method}.{role}"
+
+    def get_redis_name(self) -> str:
+        return self._redis_name
+
+    def get_file_name(self) -> str:
+        return self._file_name
 
     def get_embedding(self, msg: Message) -> torch.Tensor:
         raise NotImplementedError()
@@ -31,10 +38,16 @@ class NoEmbeddingProvider(EmbeddingProvider):
         return 1
 
 
-PROVIDER_CACHE: dict[Namespace, list[EmbeddingProvider]] = {}
+EmbeddingProviderMap = TypedDict('EmbeddingProviderMap', {
+    "parent": EmbeddingProvider,
+    "child": EmbeddingProvider,
+})
 
 
-def get_embed_providers(namespace: Namespace) -> list[EmbeddingProvider]:
+PROVIDER_CACHE: dict[Namespace, EmbeddingProviderMap] = {}
+
+
+def get_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
     res = PROVIDER_CACHE.get(namespace)
     if res is None:
         res = create_embed_providers(namespace)
@@ -54,7 +67,7 @@ NoEmbeddingModule = TypedDict('NoEmbeddingModule', {
 EmbeddingProviderModule = TransformerEmbeddingModule | NoEmbeddingModule
 
 
-def create_embed_providers(namespace: Namespace) -> list[EmbeddingProvider]:
+def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
     pobj = namespace.get_embedding_providers()
     if pobj["name"] == "transformer":
         from model.transformer_embed import load_providers
@@ -65,8 +78,8 @@ def create_embed_providers(namespace: Namespace) -> list[EmbeddingProvider]:
             pobj["version"],
             pobj["is_harness"])
     if pobj["name"] == "none":
-        return [
-            NoEmbeddingProvider("none", "parent"),
-            NoEmbeddingProvider("none", "child"),
-        ]
+        return {
+            "parent": NoEmbeddingProvider("none", "parent"),
+            "child": NoEmbeddingProvider("none", "child"),
+        }
     raise ValueError(f"unknown embed provider: {pobj}")
