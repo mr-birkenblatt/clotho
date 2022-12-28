@@ -33,7 +33,7 @@ class RedisEmbeddingCache(EmbeddingCache):
     def _serialize(self, embed: torch.Tensor) -> bytes:
         bout = io.BytesIO()
         with gzip.GzipFile(fileobj=bout, mode="w") as fout:
-            np.save(fout, embed.numpy())
+            np.save(fout, embed.detach().numpy())
         return bout.getvalue()
 
     def _deserialize(self, content: bytes) -> torch.Tensor:
