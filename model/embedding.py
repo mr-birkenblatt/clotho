@@ -1,3 +1,4 @@
+import os
 from typing import Literal, TypedDict
 
 import torch
@@ -59,7 +60,10 @@ def create_embed_providers(namespace: Namespace) -> list[EmbeddingProvider]:
         from model.transformer_embed import load_providers
 
         return load_providers(
-            "model", pobj["fname"], pobj["version"], pobj["is_harness"])
+            os.path.join(namespace.get_name(), "model"),
+            pobj["fname"],
+            pobj["version"],
+            pobj["is_harness"])
     if pobj["name"] == "none":
         return [
             NoEmbeddingProvider("none", "parent"),

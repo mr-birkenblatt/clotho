@@ -24,11 +24,15 @@ from torch._prims.utils import (
 )
 
 
+Tensor = torch.Tensor
+
+
 class REDUCTION_OUTPUT_TYPE_KIND(Enum):
     SAME: Incomplete
     SAME_OR_REAL: Incomplete
     OP_MATH: Incomplete
     ALWAYS_BOOL: Incomplete
+
 
 abs: Incomplete
 acos: Incomplete
@@ -66,8 +70,9 @@ tanh: Incomplete
 
 
 def add(
-    a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType,
-            NumberType], *, alpha: Optional[NumberType] = ...): ...
+    a: Union[TensorLikeType, NumberType],
+    b: Union[TensorLikeType, NumberType],
+    *, alpha: Optional[NumberType] = ...): ...
 
 
 atan2: Incomplete
@@ -80,8 +85,8 @@ eq: Incomplete
 
 
 def float_power(
-    a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType,
-            NumberType]) -> Tensor: ...
+    a: Union[TensorLikeType, NumberType],
+    b: Union[TensorLikeType, NumberType]) -> Tensor: ...
 
 
 ge: Incomplete
@@ -108,8 +113,9 @@ pow: Incomplete
 
 
 def sub(
-    a: Union[TensorLikeType, NumberType], b: Union[TensorLikeType,
-            NumberType], *, alpha: Optional[NumberType] = ...): ...
+    a: Union[TensorLikeType, NumberType],
+    b: Union[TensorLikeType, NumberType],
+    *, alpha: Optional[NumberType] = ...): ...
 
 
 true_divide: Incomplete

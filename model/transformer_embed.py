@@ -1,12 +1,15 @@
 import os
-import warnings
 from typing import Callable, Literal, TypedDict
 
 import torch
 from torch import nn
 
 # FIXME: add transformer stubs
-from transformers import DistilBertModel, DistilBertTokenizer  # type: ignore
+from transformers import (  # type: ignore
+    DistilBertModel,
+    DistilBertTokenizer,
+    logging,
+)
 
 from misc.env import envload_path
 from misc.io import ensure_folder
@@ -123,8 +126,9 @@ class TrainingHarness(nn.Module):
 
 
 def load_model(fname: str, version: int, is_harness: bool) -> Model:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    verbosity = logging.get_verbosity()
+    try:
+        logging.set_verbosity_error()
 
         device = get_device()
         model = Model(version=version)
@@ -134,6 +138,8 @@ def load_model(fname: str, version: int, is_harness: bool) -> Model:
         else:
             model.load_state_dict(torch.load(fname, map_location=device))
         return model
+    finally:
+        logging.set_verbosity(verbosity)
 
 
 class TransformerEmbedding(EmbeddingProvider):

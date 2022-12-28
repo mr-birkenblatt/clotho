@@ -122,9 +122,6 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
         from system.embedding.rediscache import RedisEmbeddingCache
 
         ns_key = get_redis_ns_key(namespace.get_name(), "embedding")
-        cache = RedisEmbeddingCache(ns_key)
-        if eobj["index"] != "annoy":
-            raise ValueError(f"unsupported embedding index: {eobj['index']}")
         if not ns_key[0].startswith("_"):
             register_redis_ns(ns_key, create_redis_config(
                 eobj["host"],
@@ -132,6 +129,9 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
                 eobj["passwd"],
                 eobj["prefix"],
                 eobj["path"]))
+        cache = RedisEmbeddingCache(ns_key)
+        if eobj["index"] != "annoy":
+            raise ValueError(f"unsupported embedding index: {eobj['index']}")
         return AnnoyEmbeddingStore(providers, cache, eobj["path"])
     if eobj["name"] == "none":
         from system.embedding.noembed import NoEmbedding

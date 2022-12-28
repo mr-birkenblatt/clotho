@@ -140,7 +140,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             embed: torch.Tensor) -> None:
         cache = self._cache
         with cache.get_lock(name):
-            cache.set_embedding(name, mhash, embed)
+            cache.set_map_embedding(name, mhash, embed)
             cache.add_staging_embedding(name, embed)
             if (not self._bulk
                     and cache.staging_count(name) > REBUILD_THRESHOLD):
@@ -150,7 +150,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             self,
             name: str,
             mhash: MHash) -> torch.Tensor | None:
-        return self._cache.get_embedding(name, mhash)
+        return self._cache.get_map_embedding(name, mhash)
 
     def do_get_closest(
             self, name: str, embed: torch.Tensor) -> Iterable[MHash]:
