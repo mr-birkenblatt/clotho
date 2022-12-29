@@ -44,6 +44,10 @@ class LinkSuggester:
     def max_suggestions(self) -> int | None:
         raise NotImplementedError()
 
+    @staticmethod
+    def get_name() -> str:
+        raise NotImplementedError()
+
 
 SUGGESTER_STORE: dict[Namespace, list[LinkSuggester]] = {}
 

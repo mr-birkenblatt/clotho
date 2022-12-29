@@ -23,3 +23,7 @@ class RandomLinkSuggester(LinkSuggester):
 
     def max_suggestions(self) -> int | None:
         return None
+
+    @staticmethod
+    def get_name() -> str:
+        return "random"
