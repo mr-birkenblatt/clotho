@@ -18,7 +18,7 @@ fi
 
 ${PYTHON} -m pip install --progress-bar off --upgrade -r requirements.txt
 
-if [ ! $CI = true ] && command -v conda &>/dev/null 2>&1; then
+if [ ! $CI = "true" ] && command -v conda &>/dev/null 2>&1; then
     conda install -y pytorch==1.12.1
 else
     ${PYTHON} -m pip install --progress-bar off torch==1.12.1
