@@ -78,7 +78,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
 
     @staticmethod
     def get_distance(embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
-        return torch.dot(embed_a, embed_b).item()
+        return torch.dot(embed_a.ravel(), embed_b.ravel()).item()
 
     @staticmethod
     def is_bigger_better() -> bool:

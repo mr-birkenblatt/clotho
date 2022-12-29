@@ -165,10 +165,10 @@ class TransformerEmbedding(EmbeddingProvider):
             if self._is_parent:
                 return self._model.get_parent_embed(
                     input_ids=input_obj["input_ids"],
-                    attention_mask=input_obj["attention_mask"])
+                    attention_mask=input_obj["attention_mask"]).ravel()
             return self._model.get_child_embed(
                 input_ids=input_obj["input_ids"],
-                attention_mask=input_obj["attention_mask"])
+                attention_mask=input_obj["attention_mask"]).ravel()
 
     @staticmethod
     def num_dimensions() -> int:

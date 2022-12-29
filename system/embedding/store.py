@@ -36,6 +36,8 @@ class EmbeddingStore:
             self, role: ProviderRole, msg: Message) -> torch.Tensor:
         provider = self._providers[role]
         embed = provider.get_embedding(msg)
+        if len(embed.shape) != 1:
+            raise ValueError(f"bad embedding shape: {embed.shape}")
         self.do_add_embedding(role, msg.get_hash(), embed)
         return embed
 
