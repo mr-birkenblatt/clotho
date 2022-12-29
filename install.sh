@@ -16,10 +16,8 @@ if [ ${MAJOR} -eq 3 ] && [ ${MINOR} -lt 10 ] || [ ${MAJOR} -lt 3 ]; then
     exit 1
 fi
 
-${PYTHON} -m pip install --progress-bar off --upgrade -r requirements.txt
-
 if command -v conda &>/dev/null 2>&1; then
     conda install pytorch==1.12.1
-else
-    pip install pytorch==1.12.1
 fi
+
+${PYTHON} -m pip install --progress-bar off --upgrade -r requirements.txt
