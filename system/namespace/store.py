@@ -42,7 +42,7 @@ def get_test_namespace() -> Namespace:
             },
             "model": {
                 "name": "none",
-            }
+            },
         })
     return TEST_NAMESPACE
 

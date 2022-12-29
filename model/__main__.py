@@ -83,7 +83,7 @@ def run() -> None:
                 "first_epoch": None,
                 "last_epoch": None,
                 "weight": 40,
-            }
+            },
         ]
         eval_plan: list[LearningPlan] = [
             {
@@ -99,7 +99,7 @@ def run() -> None:
                 "min_text_length": 20,
                 "flip_lr": 0.5,
                 "weight": 40,
-            }
+            },
         ]
         ttgen = create_train_test(
             train_ns=ns_train,
