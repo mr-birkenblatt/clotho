@@ -14,7 +14,6 @@ pylint
 pytest
 pytest-cov
 python-redis-lock
-pytorch
 quick-server
 redis
 scikit-learn
