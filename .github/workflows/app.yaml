@@ -72,21 +72,6 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
 
-    - name: Cache conda
-      uses: actions/cache@v2
-      with:
-        path: ~/conda_pkgs_dir
-        key:
-          v1-${{ env.pythonLocation }}-${{ hashFiles('install/sh') }}
-
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-        activate-environment: clotho
-        channel-priority: strict
-        python-version: ${{ matrix.python }}
-        auto-activate-base: false
-        use-only-tar-bz2: true
-
     - name: Cache python modules
       uses: actions/cache@v2
       with:
