@@ -281,6 +281,7 @@ def setup(
                     six += 1
                     continue
                 local_limit = min(local_limit, maxs - cur_offset)
+            prev_size = len(suggestions)
             suggestions.extend((
                 (link, cur_suggester.get_name())
                 for link in cur_suggester.suggest_links(
@@ -289,6 +290,9 @@ def setup(
                     offset=cur_offset,
                     limit=local_limit)
             ))
+            if len(suggestions) <= prev_size:
+                six += 1
+                continue
             cur_offset += local_limit
             cur_limit -= local_limit
         return links + suggestions
