@@ -20,4 +20,6 @@ ${PYTHON} -m pip install --progress-bar off --upgrade -r requirements.txt
 
 if command -v conda &>/dev/null 2>&1; then
     conda install pytorch==1.12.1
+else
+    pip install pytorch==1.12.1
 fi
