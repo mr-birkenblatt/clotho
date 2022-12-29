@@ -1,5 +1,6 @@
 import argparse
 import os
+from typing import Literal
 
 from system.embedding.store import get_embed_store
 from system.msgs.message import Message
@@ -13,14 +14,15 @@ def run() -> None:
     msg_store = get_message_store(namespace)
     embed_store = get_embed_store(namespace)
     if args.text is not None:
-        names = embed_store.get_names()
-        print(f"from: {names[0]} to: {names[1]}")
+        name_from: Literal["parent"] = "parent"
+        name_to: Literal["child"] = "child"
+        print(f"from: {name_from} to: {name_to}")
         msg = Message(msg=args.text)
         mhash = msg_store.write_message(msg)
-        embed = embed_store.get_embedding(msg_store, names[0], mhash)
+        embed = embed_store.get_embedding(msg_store, name_from, mhash)
         divide = "=" * 42
         print(f"query: {msg.get_text()}")
-        for out in embed_store.get_closest(names[1], embed):
+        for out in embed_store.get_closest(name_to, embed, 20):
             print(divide)
             print(msg_store.read_message(out).get_text())
     else:

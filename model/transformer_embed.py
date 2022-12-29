@@ -160,13 +160,15 @@ class TransformerEmbedding(EmbeddingProvider):
     def get_embedding(self, msg: Message) -> torch.Tensor:
         text = msg.get_text()
         input_obj = self._tokenizer([text])
-        if self._is_parent:
-            return self._model.get_parent_embed(
+        self._model.eval()
+        with torch.no_grad():
+            if self._is_parent:
+                return self._model.get_parent_embed(
+                    input_ids=input_obj["input_ids"],
+                    attention_mask=input_obj["attention_mask"])
+            return self._model.get_child_embed(
                 input_ids=input_obj["input_ids"],
                 attention_mask=input_obj["attention_mask"])
-        return self._model.get_child_embed(
-            input_ids=input_obj["input_ids"],
-            attention_mask=input_obj["attention_mask"])
 
     @staticmethod
     def num_dimensions() -> int:

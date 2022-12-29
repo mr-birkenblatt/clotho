@@ -21,6 +21,8 @@ Module = TypedDict('Module', {
 def get_module(namespace: Namespace, module: str) -> Module:
     if module == "link":
         lmodule = namespace.get_link_module()
+        if lmodule["name"] != "redis":
+            raise ValueError(f"incompatible module {lmodule}")
         return {
             "name": lmodule["name"],
             "port": lmodule["port"],
@@ -28,6 +30,8 @@ def get_module(namespace: Namespace, module: str) -> Module:
         }
     if module == "embed":
         emodule = namespace.get_embed_module()
+        if emodule["name"] != "redis":
+            raise ValueError(f"incompatible module {emodule}")
         return {
             "name": emodule["name"],
             "port": emodule["port"],

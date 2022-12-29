@@ -27,5 +27,8 @@ class NoEmbedding(EmbeddingStore):
         yield
 
     def do_get_closest(
-            self, role: ProviderRole, embed: torch.Tensor) -> Iterable[MHash]:
+            self,
+            role: ProviderRole,
+            embed: torch.Tensor,
+            count: int) -> Iterable[MHash]:
         yield from []

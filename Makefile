@@ -71,23 +71,23 @@ lint-requirements:
 
 lint-pycodestyle:
 	./findpy.sh | sort
-	./findpy.sh | sort | xargs pycodestyle --exclude=venv --show-source
+	./findpy.sh | sort | xargs pycodestyle --show-source
 
 lint-pycodestyle-debug:
 	./findpy.sh | sort
 	./findpy.sh \
-	| sort | xargs pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source
+	| sort | xargs pycodestyle -v --show-source
 
 lint-pylint:
 	./findpy.sh | sort
 	./findpy.sh | sort | xargs pylint -j 6
 
 lint-type-check:
-	mypy . --config-file mypy.ini
+	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ . --config-file mypy.ini
 
 lint-flake8:
 	flake8 --verbose --select C812,C815,I001,I002,I003,I004,I005 --exclude \
-	venv --show-source ./
+	venv,.git,.mypy_cache,userdata,stubs_pre,ui --show-source ./
 
 lint-ts:
 	cd ui && yarn lint
