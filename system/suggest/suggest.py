@@ -75,7 +75,8 @@ def create_link_suggesters(namespace: Namespace) -> Iterable[LinkSuggester]:
         if sobj["name"] == "random":
             from system.suggest.random import RandomLinkSuggester
             yield RandomLinkSuggester(namespace)
-        if sobj["name"] == "model":
+        elif sobj["name"] == "model":
             from system.suggest.model import ModelLinkSuggester
             yield ModelLinkSuggester(namespace, sobj["count"])
-        raise ValueError(f"unknown link suggester: {sobj}")
+        else:
+            raise ValueError(f"unknown link suggester: {sobj}")
