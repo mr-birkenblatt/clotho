@@ -20,7 +20,7 @@ from typing import (
 
 MAIN_LOCK = threading.RLock()
 STALE_FILE_RETRIES: list[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]
-TMP_POSTFIX = ".tmp~"
+TMP_POSTFIX = ".~tmp"
 
 
 def when_ready(fun: Callable[[], None]) -> None:
