@@ -5,7 +5,7 @@ import torch
 from annoy import AnnoyIndex
 
 from misc.env import envload_path
-from misc.io import ensure_folder
+from misc.io import ensure_folder, fastrename
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
@@ -27,14 +27,15 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         self._tmpindex: dict[ProviderRole, AnnoyIndex] = {}
         self._trees = trees
 
-    def _get_file(self, role: ProviderRole) -> str:
+    def _get_file(self, role: ProviderRole, *, is_tmp: bool) -> str:
         provider = self.get_provider(role)
+        tmp = ".~tmp" if is_tmp else ""
         return os.path.join(
-            self._path, f"index.{provider.get_file_name()}.ann")
+            self._path, f"index.{provider.get_file_name()}.ann{tmp}")
 
     def _create_index(self, role: ProviderRole, *, load: bool) -> AnnoyIndex:
         aindex = AnnoyIndex(self.num_dimensions(role), "dot")
-        fname = self._get_file(role)
+        fname = self._get_file(role, is_tmp=False)
         if load and os.path.exists(fname):
             aindex.load(fname)
         return aindex
@@ -50,7 +51,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             self,
             role: ProviderRole) -> None:
         aindex = self._create_index(role, load=False)
-        fname = self._get_file(role)
+        fname = self._get_file(role, is_tmp=True)
         aindex.on_disk_build(fname)
         self._tmpindex[role] = aindex
 
@@ -66,7 +67,11 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         if aindex is None:
             raise RuntimeError("tmp index does not exist")
         aindex.build(self._trees)
-        self._indexes[role] = aindex
+        aindex.unload()
+        tname = self._get_file(role, is_tmp=True)
+        fname = self._get_file(role, is_tmp=False)
+        fastrename(tname, fname)
+        self._indexes[role] = self._create_index(role, load=True)
 
     def get_index_closest(
             self,
