@@ -160,6 +160,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
 
         def process_name(
                 role: ProviderRole, provider: EmbeddingProvider) -> None:
+            cache.clear_embeddings(provider)
+            cache.clear_staging(provider)
             self.do_index_init(role)
             for index, mhash in enumerate(
                     msg_store.enumerate_messages(progress_bar=True)):
@@ -251,17 +253,22 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 return dist_new > dist_old
             return dist_new < dist_old
 
+        def is_already(mhash: MHash) -> bool:
+            return mhash in (elem[0] for elem in candidates)
+
         total = 0
         candidates: list[tuple[MHash, float]] = []
         for _, mhash, other_embed in cache.all_embeddings(provider):
             dist = self.get_distance(embed, other_embed)
             mod = False
             if len(candidates) < count:
-                candidates.append((mhash, dist))
-                mod = True
+                if not is_already(mhash):
+                    candidates.append((mhash, dist))
+                    mod = True
             elif is_better(dist, candidates[-1][1]):
-                candidates[-1] = (mhash, dist)
-                mod = True
+                if not is_already(mhash):
+                    candidates[-1] = (mhash, dist)
+                    mod = True
             if mod:
                 candidates.sort(
                     key=lambda entry: entry[1], reverse=is_bigger_better)

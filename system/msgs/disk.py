@@ -131,7 +131,7 @@ class DiskStore(MessageStore):
             remain -= 1
             cur_path = self._path
 
-    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
+    def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
         def get_level(
                 cur_path: str,

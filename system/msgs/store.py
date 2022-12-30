@@ -64,7 +64,7 @@ class MessageStore:
         rel_start = offset - start
         return res[rel_start:rel_start + limit]
 
-    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
+    def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
         raise NotImplementedError()
 
 
