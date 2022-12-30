@@ -2,6 +2,7 @@ import hashlib
 import inspect
 import json
 import os
+import re
 import string
 import threading
 import uuid
@@ -246,3 +247,38 @@ def identity(obj: RT) -> RT:
 
 def sigmoid(x: Any) -> Any:
     return np.exp(-np.logaddexp(0, -x))
+
+
+NUMBER_PATTERN = re.compile(r"\d+")
+
+
+def highest_number(
+        arr: list[str],
+        prefix: str | None = None,
+        postfix: str | None = None) -> tuple[str, int] | None:
+    if not arr:
+        return None
+
+    def get_num(text: str) -> int | None:
+        match = re.search(NUMBER_PATTERN, text)
+        if match is None:
+            return None
+        try:
+            return int(match.group())
+        except ValueError:
+            return None
+
+    res = None
+    res_num = 0
+    for elem in arr:
+        if prefix is not None and not elem.startswith(prefix):
+            continue
+        if postfix is not None and not elem.endswith(postfix):
+            continue
+        num = get_num(elem)
+        if num is None:
+            continue
+        if res is None or num > res_num:
+            res = elem
+            res_num = num
+    return None if res is None else (res, res_num)

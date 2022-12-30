@@ -34,6 +34,7 @@ help:
 	@echo "run-web	start web server"
 	@echo "coverage-report	show the coverage report for python"
 	@echo "coverage-report-ts	show the coverage report for typescript"
+	@echo "stubgen	create stubs for a package"
 
 export LC_ALL=C
 export LANG=C
@@ -70,23 +71,23 @@ lint-requirements:
 
 lint-pycodestyle:
 	./findpy.sh | sort
-	./findpy.sh | sort | xargs pycodestyle --exclude=venv --show-source
+	./findpy.sh | sort | xargs pycodestyle --show-source
 
 lint-pycodestyle-debug:
 	./findpy.sh | sort
 	./findpy.sh \
-	| sort | xargs pycodestyle --exclude=venv,.git,.mypy_cache -v --show-source
+	| sort | xargs pycodestyle -v --show-source
 
 lint-pylint:
 	./findpy.sh | sort
 	./findpy.sh | sort | xargs pylint -j 6
 
 lint-type-check:
-	mypy . --config-file mypy.ini
+	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ . --config-file mypy.ini
 
 lint-flake8:
 	flake8 --verbose --select C812,C815,I001,I002,I003,I004,I005 --exclude \
-	venv --show-source ./
+	venv,.git,.mypy_cache,userdata,stubs_pre,ui --show-source ./
 
 lint-ts:
 	cd ui && yarn lint
@@ -147,13 +148,13 @@ ts-build:
 	cd ui && yarn build
 
 run-redis-test:
-	PYTHON=$(PYTHON) NS=_test ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_test M=link ./run_redis.sh
 
 run-redis-api:
-	PYTHON=$(PYTHON) NS=_api ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_api M=link ./run_redis.sh
 
 run-redis:
-	PYTHON=$(PYTHON) NS=$(NS) ./run_redis.sh
+	PYTHON=$(PYTHON) NS=$(NS) M=$(M) ./run_redis.sh
 
 run-api:
 	API_SERVER_NAMESPACE=$(NS) $(PYTHON) -m app
@@ -166,3 +167,6 @@ coverage-report:
 
 coverage-report-ts:
 	cd ui/coverage/lcov-report && open index.html
+
+stubgen:
+	PYTHON=$(PYTHON) FORCE=$(FORCE) ./stubgen.sh $(PKG)

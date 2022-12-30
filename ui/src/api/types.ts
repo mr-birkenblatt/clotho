@@ -56,6 +56,7 @@ export type ApiLinkResponse = {
   userid: Readonly<UserId> | undefined;
   first: Readonly<number>;
   votes: ApiVotes;
+  meta: Readonly<string>;
 };
 
 type ApiVote = {
@@ -85,6 +86,7 @@ export type ValidLink = {
   userId: Readonly<UserId> | undefined;
   first: Readonly<number>;
   votes: Votes;
+  meta: Readonly<string>;
 };
 type InvalidLink = {
   invalid: Readonly<true>;

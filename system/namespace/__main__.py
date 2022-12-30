@@ -2,45 +2,76 @@
 import argparse
 import os
 import sys
+from typing import TypedDict
 
 from misc.env import envload_path
 from misc.io import ensure_folder
 from misc.redis import get_redis_config
+from system.namespace.namespace import Namespace
 from system.namespace.store import get_namespace
 
 
-def get_port(ns_name: str) -> int:
+Module = TypedDict('Module', {
+    "name": str,
+    "port": int,
+    "path": str,
+})
+
+
+def get_module(namespace: Namespace, module: str) -> Module:
+    if module == "link":
+        lmodule = namespace.get_link_module()
+        if lmodule["name"] != "redis":
+            raise ValueError(f"incompatible module {lmodule}")
+        return {
+            "name": lmodule["name"],
+            "port": lmodule["port"],
+            "path": lmodule["path"],
+        }
+    if module == "embed":
+        emodule = namespace.get_embed_module()
+        if emodule["name"] != "redis":
+            raise ValueError(f"incompatible module {emodule}")
+        return {
+            "name": emodule["name"],
+            "port": emodule["port"],
+            "path": emodule["path"],
+        }
+    raise ValueError(f"invalid module: {module}")
+
+
+def get_port(ns_name: str, module: str) -> int:
     # FIXME: eventually load up the full redis config and maybe start it
     if ns_name.startswith("_"):
         cfg = get_redis_config((ns_name, ""))
         return cfg["port"]
     namespace = get_namespace(ns_name)
-    link_module = namespace.get_link_module()
-    if link_module["name"] != "redis":
-        raise ValueError(f"no redis needed for link module: {link_module}")
-    return link_module["port"]
+    module_obj = get_module(namespace, module)
+    if module_obj["name"] != "redis":
+        raise ValueError(f"no redis needed for module: {module_obj}")
+    return module_obj["port"]
 
 
-def get_path(ns_name: str) -> str:
+def get_path(ns_name: str, module: str) -> str:
     if ns_name.startswith("_"):
         cfg = get_redis_config((ns_name, ""))
         return cfg["path"]
     namespace = get_namespace(ns_name)
-    link_module = namespace.get_link_module()
-    if link_module["name"] != "redis":
-        raise ValueError(f"no redis needed for link module: {link_module}")
+    module_obj = get_module(namespace, module)
+    if module_obj["name"] != "redis":
+        raise ValueError(f"no redis needed for module: {module_obj}")
     base_path = envload_path("USER_PATH", default="userdata")
-    return os.path.join(base_path, link_module["path"])
+    return os.path.join(base_path, module_obj["path"])
 
 
 def run() -> None:
     stdout = sys.stdout
     args = parse_args()
     if args.info == "port":
-        stdout.write(f"{get_port(args.namespace)}")
+        stdout.write(f"{get_port(args.namespace, args.module)}")
         stdout.flush()
     elif args.info == "path":
-        path = ensure_folder(get_path(args.namespace))
+        path = ensure_folder(get_path(args.namespace, args.module))
         stdout.write(f"{path}")
         stdout.flush()
     else:
@@ -56,6 +87,7 @@ def parse_args() -> argparse.Namespace:
         choices=["port", "path"],
         help="what information to extract")
     parser.add_argument("--namespace", default="default", help="the namespace")
+    parser.add_argument("--module", default="link", help="the module")
     return parser.parse_args()
 
 

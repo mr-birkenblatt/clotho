@@ -127,6 +127,7 @@ class TestGraph {
           userid: 'abc' as UserId,
           first: 123,
           votes: { up: { count: 1, uservoted: false } },
+          meta: 'link',
         }));
         return { links, next };
       },
@@ -146,6 +147,7 @@ class TestGraph {
           userid: userId,
           first: 123,
           votes: { up: { count: 1, uservoted: false } },
+          meta: 'user',
         }));
         return { links, next };
       },
@@ -162,6 +164,7 @@ class TestGraph {
           userid: exists ? ('abc' as UserId) : undefined,
           first: exists ? 123 : 999,
           votes,
+          meta: 'single',
         };
       },
     };
@@ -211,6 +214,7 @@ export class InfGraph {
           userid: 'abc' as UserId,
           first: 123,
           votes: { up: { count: 1, uservoted: false } },
+          meta: 'link',
         }));
         return { links, next };
       },
@@ -233,6 +237,7 @@ export class InfGraph {
           userid: userId,
           first: 123,
           votes: { up: { count: 1, uservoted: false } },
+          meta: 'user',
         }));
         return { links, next };
       },
@@ -250,6 +255,7 @@ export class InfGraph {
           userid: exists ? ('abc' as UserId) : undefined,
           first: exists ? 123 : 999,
           votes,
+          meta: 'single',
         };
       },
     };

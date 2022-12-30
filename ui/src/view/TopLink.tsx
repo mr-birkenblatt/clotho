@@ -4,6 +4,8 @@ import { Cell, TopLinkKey } from '../graph/GraphView';
 import { RichVote, VoteType, VOTE_TYPES } from '../api/types';
 import { toReadableNumber } from '../misc/util';
 
+const DEBUG_LINKS = true;
+
 const VOTE_SYMBOL = {
   up: '👍',
   down: '👎',
@@ -139,6 +141,7 @@ export default class TopLink extends PureComponent<TopLinkProps> {
           onClick={userCB}
           isChecked={false}>
           {link.username}
+          {DEBUG_LINKS ? `${link.username ? ' ' : ''}(${link.meta})` : null}
         </ItemMidName>
       </ItemMid>
     );

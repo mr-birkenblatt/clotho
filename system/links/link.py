@@ -49,6 +49,7 @@ LinkResponse = TypedDict('LinkResponse', {
     "userid": str | None,
     "first": float,
     "votes": dict[VoteType, VoteInfo],
+    "meta": str,
 })
 
 
@@ -90,22 +91,34 @@ def serialize_link(link: RLink | PLink | CLink) -> bytes:
 
 def deserialize_rlink(obj: bytes) -> RLink:
     link = json_read(obj)
-    return RLink(
-        parse_vote_type(link["vote_type"]),
-        MHash.parse(link["parent"]),
-        MHash.parse(link["child"]))
+    try:
+        return RLink(
+            parse_vote_type(link["vote_type"]),
+            MHash.parse(link["parent"]),
+            MHash.parse(link["child"]))
+    except KeyError as e:
+        print(link)
+        raise e
 
 
 def deserialize_plink(obj: bytes) -> PLink:
     link = json_read(obj)
-    return PLink(
-        parse_vote_type(link["vote_type"]), MHash.parse(link["parent"]))
+    try:
+        return PLink(
+            parse_vote_type(link["vote_type"]), MHash.parse(link["parent"]))
+    except KeyError as e:
+        print(link)
+        raise e
 
 
 def deserialize_clink(obj: bytes) -> CLink:
     link = json_read(obj)
-    return CLink(
-        parse_vote_type(link["vote_type"]), MHash.parse(link["child"]))
+    try:
+        return CLink(
+            parse_vote_type(link["vote_type"]), MHash.parse(link["child"]))
+    except KeyError as e:
+        print(link)
+        raise e
 
 
 class Votes:
@@ -250,7 +263,8 @@ class Link:
             user_store: UserStore,
             *,
             who: User | None,
-            now: pd.Timestamp) -> LinkResponse:
+            now: pd.Timestamp,
+            meta: str) -> LinkResponse:
         user = self.get_user(user_store)
         user_str = None if user is None else user.get_name()
         userid_str = None if user is None else user.get_id()
@@ -275,6 +289,7 @@ class Link:
             "userid": userid_str,
             "first": to_timestamp(first),
             "votes": votes,
+            "meta": meta,
         }
 
     def __hash__(self) -> int:

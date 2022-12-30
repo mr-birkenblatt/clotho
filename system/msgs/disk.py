@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 
@@ -21,7 +21,7 @@ class DiskStore(MessageStore):
         path = os.path.join(base_path, msgs_root)
         self._path = os.path.join(path, "msg")
         self._topics = os.path.join(path, "topics.list")
-        self._cache: LRU[MHash, Message] = LRU(10000)
+        self._cache: LRU[MHash, Message] = LRU(50000)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
 
@@ -130,3 +130,30 @@ class DiskStore(MessageStore):
                     yield cur[rng.integers(0, len(cur))]
             remain -= 1
             cur_path = self._path
+
+    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
+
+        def get_level(
+                cur_path: str,
+                *,
+                pbar: Callable[[], None] | None) -> Iterable[MHash]:
+            for seg, recurse in get_folder(cur_path, MSG_EXT):
+                full = os.path.join(cur_path, seg)
+                if recurse:
+                    yield from get_level(full, pbar=None)
+                else:
+                    yield from set(
+                        msg.get_hash()
+                        for msg in self._load_file(full))
+                if pbar is not None:
+                    pbar()
+
+        if not progress_bar:
+            yield from get_level(self._path, pbar=None)
+        else:
+            # FIXME: add stubs
+            from tqdm.auto import tqdm  # type: ignore
+
+            first_level_size = len(list(get_folder(self._path, MSG_EXT)))
+            with tqdm(total=first_level_size) as pbar:
+                yield from get_level(self._path, pbar=lambda: pbar.update(1))

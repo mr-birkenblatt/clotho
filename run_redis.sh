@@ -4,9 +4,10 @@ set -ex
 
 PYTHON="${PYTHON:-python3}"
 NS="${NS:-default}"
+M="${M:-link}"
 
-REDIS_PORT=$(${PYTHON} -m "system.namespace" port --namespace "${NS}")
-REDIS_PATH=$(${PYTHON} -m "system.namespace" path --namespace "${NS}")
+REDIS_PORT=$(${PYTHON} -m "system.namespace" port --namespace "${NS}" --module "${M}")
+REDIS_PATH=$(${PYTHON} -m "system.namespace" path --namespace "${NS}" --module "${M}")
 
 if [ "${NS}" = "_test" ]; then
     CFG=

@@ -1,6 +1,9 @@
+annoy
+evaluate
 flake8
 flake8-commas
 flake8-isort
+jupyter
 mypy
 numpy
 pandas
@@ -13,3 +16,5 @@ pytest-cov
 python-redis-lock
 quick-server
 redis
+scikit-learn
+transformers
