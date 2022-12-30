@@ -79,24 +79,33 @@ class EmbeddingStore:
             self,
             role: ProviderRole,
             embed: torch.Tensor,
-            count: int) -> Iterable[MHash]:
+            count: int,
+            *,
+            precise: bool) -> Iterable[MHash]:
         raise NotImplementedError()
 
     def get_closest(
             self,
             role: ProviderRole,
             embed: torch.Tensor,
-            count: int) -> Iterable[MHash]:
-        yield from self.do_get_closest(role, embed, count)
+            count: int,
+            *,
+            precise: bool) -> Iterable[MHash]:
+        yield from self.do_get_closest(role, embed, count, precise=precise)
 
     def get_closest_for_hash(
             self,
             msg_store: MessageStore,
             role: ProviderRole,
             mhash: MHash,
-            count: int) -> Iterable[MHash]:
+            count: int,
+            *,
+            precise: bool) -> Iterable[MHash]:
         yield from self.do_get_closest(
-            role, self.get_embedding(msg_store, role, mhash), count)
+            role,
+            self.get_embedding(msg_store, role, mhash),
+            count,
+            precise=precise)
 
 
 EMBED_STORE: dict[Namespace, EmbeddingStore] = {}
@@ -118,6 +127,7 @@ RedisEmbedModule = TypedDict('RedisEmbedModule', {
     "prefix": str,
     "path": str,
     "index": Literal["annoy"],
+    "trees": int,
 })
 NoEmbedModule = TypedDict('NoEmbedModule', {
     "name": Literal["none"],
@@ -143,7 +153,8 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
         cache = RedisEmbeddingCache(ns_key)
         if eobj["index"] != "annoy":
             raise ValueError(f"unsupported embedding index: {eobj['index']}")
-        return AnnoyEmbeddingStore(providers, cache, eobj["path"])
+        return AnnoyEmbeddingStore(
+            providers, cache, eobj["path"], eobj["trees"])
     if eobj["name"] == "none":
         from system.embedding.noembed import NoEmbedding
 

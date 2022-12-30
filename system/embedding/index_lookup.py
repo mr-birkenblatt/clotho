@@ -82,6 +82,17 @@ class EmbeddingCache:
             return self.get_entry_by_index(provider, index)
         return self.get_staging_entry_by_index(provider, index - offset)
 
+    def all_embeddings(
+            self,
+            provider: EmbeddingProvider,
+            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+        yield from self.embeddings(provider)
+        offset = self.staging_offset(provider)
+        yield from (
+            (index + offset, mhash, embed)
+            for index, mhash, embed in self.staging_embeddings(provider)
+        )
+
 
 class CachedIndexEmbeddingStore(EmbeddingStore):
     def __init__(
@@ -205,7 +216,12 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             self,
             role: ProviderRole,
             embed: torch.Tensor,
-            count: int) -> Iterable[MHash]:
+            count: int,
+            *,
+            precise: bool) -> Iterable[MHash]:
+        if precise:
+            yield from self.precise_closest(role, embed, count)
+            return
         cache = self._cache
         provider = self.get_provider(role)
         candidates = list(self.get_index_closest(role, embed, count))
@@ -220,3 +236,32 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 key=lambda entry: entry[1],
                 reverse=self.is_bigger_better())[:count]
         )
+
+    def precise_closest(
+            self,
+            role: ProviderRole,
+            embed: torch.Tensor,
+            count: int) -> Iterable[MHash]:
+        cache = self._cache
+        provider = self.get_provider(role)
+        is_bigger_better = self.is_bigger_better()
+
+        def is_better(dist_new: float, dist_old: float) -> bool:
+            if is_bigger_better:
+                return dist_new > dist_old
+            return dist_new < dist_old
+
+        candidates: list[tuple[MHash, float]] = []
+        for _, mhash, other_embed in cache.all_embeddings(provider):
+            dist = self.get_distance(embed, other_embed)
+            mod = False
+            if len(candidates) < count:
+                candidates.append((mhash, dist))
+                mod = True
+            elif is_better(dist, candidates[-1][1]):
+                candidates[-1] = (mhash, dist)
+                mod = True
+            if mod:
+                candidates.sort(
+                    key=lambda entry: entry[1], reverse=is_bigger_better)
+        yield from (mhash for mhash, _ in candidates)

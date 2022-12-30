@@ -27,7 +27,8 @@ class ModelLinkSuggester(LinkSuggester):
         res = list(embed.get_closest(
             "child" if is_parent else "parent",
             other_embed,
-            min(self._count, offset + limit)))
+            min(self._count, offset + limit),
+            precise=False))
         return res[offset:]
 
     def max_suggestions(self) -> int | None:

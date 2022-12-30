@@ -22,7 +22,8 @@ def run() -> None:
         embed = embed_store.get_embedding(msg_store, name_from, mhash)
         divide = "=" * 42
         print(f"query: {msg.get_text()}")
-        for out in embed_store.get_closest(name_to, embed, 20):
+        for out in embed_store.get_closest(
+                name_to, embed, 20, precise=args.precise):
             print(divide)
             print(msg_store.read_message(out).get_text())
     else:
@@ -38,6 +39,11 @@ def parse_args() -> argparse.Namespace:
         "--text",
         default=None,
         help="optional text for retrieval. this prevents the full indexing")
+    parser.add_argument(
+        "--precise",
+        default=False,
+        action="store_true",
+        help="whether index lookup should be precise (only used with --text)")
     return parser.parse_args()
 
 

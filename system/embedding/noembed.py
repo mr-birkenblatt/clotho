@@ -30,5 +30,7 @@ class NoEmbedding(EmbeddingStore):
             self,
             role: ProviderRole,
             embed: torch.Tensor,
-            count: int) -> Iterable[MHash]:
+            count: int,
+            *,
+            precise: bool) -> Iterable[MHash]:
         yield from []

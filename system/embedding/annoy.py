@@ -18,12 +18,14 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             self,
             providers: EmbeddingProviderMap,
             cache: EmbeddingCache,
-            embed_root: str) -> None:
+            embed_root: str,
+            trees: int) -> None:
         super().__init__(providers, cache)
         base_path = envload_path("USER_PATH", default="userdata")
         self._path = ensure_folder(os.path.join(base_path, embed_root))
         self._indexes: dict[ProviderRole, AnnoyIndex] = {}
         self._tmpindex: dict[ProviderRole, AnnoyIndex] = {}
+        self._trees = trees
 
     def _get_file(self, role: ProviderRole) -> str:
         provider = self.get_provider(role)
@@ -63,7 +65,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         aindex: AnnoyIndex | None = self._tmpindex.pop(role, None)
         if aindex is None:
             raise RuntimeError("tmp index does not exist")
-        aindex.build(100)
+        aindex.build(self._trees)
         self._indexes[role] = aindex
 
     def get_index_closest(
