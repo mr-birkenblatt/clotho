@@ -53,7 +53,7 @@ class RedisEmbeddingCache(EmbeddingCache):
             mhash: MHash,
             embed: torch.Tensor) -> None:
         key = self._get_embedding_key(provider, mhash)
-        with self._redis.get_connection(depth=1) as conn:
+        with self._redis.get_connection(depth=0) as conn:
             conn.set(key, self._serialize(embed))  # FIXME: maybe ttl=1h?
 
     def get_map_embedding(
@@ -61,7 +61,7 @@ class RedisEmbeddingCache(EmbeddingCache):
             provider: EmbeddingProvider,
             mhash: MHash) -> torch.Tensor | None:
         key = self._get_embedding_key(provider, mhash)
-        with self._redis.get_connection(depth=1) as conn:
+        with self._redis.get_connection(depth=0) as conn:
             res = conn.get(key)
         if res is None:
             return None
@@ -117,12 +117,12 @@ class RedisEmbeddingCache(EmbeddingCache):
         self._clear_embeddings(key)
 
     def _add_embedding(self, key: str, mhash: MHash) -> int:
-        with self._redis.get_connection(depth=1) as conn:
+        with self._redis.get_connection(depth=0) as conn:
             res = int(conn.rpush(key, mhash.to_parseable().encode("utf-8")))
             return res - 1
 
     def _get_index(self, key: str, index: int) -> MHash:
-        with self._redis.get_connection(depth=2) as conn:
+        with self._redis.get_connection(depth=1) as conn:
             res = conn.lindex(key, index)
             if res is None:
                 raise KeyError(f"index not in list: {key} {index}")
@@ -152,7 +152,7 @@ class RedisEmbeddingCache(EmbeddingCache):
             mhash = as_mhash(elem)
             return (offset + ix, mhash, as_tensor(mhash))
 
-        with self._redis.get_connection(depth=2) as conn:
+        with self._redis.get_connection(depth=1) as conn:
             while True:
                 res = conn.lrange(key, offset, offset + batch_size)
                 if not res:
@@ -164,9 +164,9 @@ class RedisEmbeddingCache(EmbeddingCache):
                 offset += batch_size
 
     def _embeddings_size(self, key: str) -> int:
-        with self._redis.get_connection(depth=2) as conn:
+        with self._redis.get_connection(depth=1) as conn:
             return int(conn.llen(key))
 
     def _clear_embeddings(self, key: str) -> None:
-        with self._redis.get_connection(depth=2) as conn:
+        with self._redis.get_connection(depth=1) as conn:
             conn.delete(key)
