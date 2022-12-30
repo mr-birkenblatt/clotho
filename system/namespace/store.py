@@ -29,11 +29,19 @@ def get_test_namespace() -> Namespace:
                 "prefix": cfg["prefix"],
                 "path": cfg["path"],
             },
-            "suggest": {
-                "name": "random",
-            },
+            "suggest": [
+                {
+                    "name": "random",
+                },
+            ],
             "users": {
                 "name": "ram",
+            },
+            "embed": {
+                "name": "none",
+            },
+            "model": {
+                "name": "none",
             },
         })
     return TEST_NAMESPACE

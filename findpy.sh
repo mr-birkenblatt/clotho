@@ -1,13 +1,15 @@
 find . -type d \( \
         -path './venv' -o \
         -path './.*' -o \
-        -path './node_modules' -o \
-        -path './userdata' \
+        -path './userdata' -o \
+        -path './stubs_pre' -o \
+        -path './ui' \
         \) -prune -o \( \
         -name '*.py' -o \
         -name '*.pyi' \
         \) \
     | grep -vF './venv' \
     | grep -vF './.' \
-    | grep -vF './node_modules' \
-    | grep -vF './userdata'
+    | grep -vF './userdata' \
+    | grep -vF './stubs_pre' \
+    | grep -vF './ui'

@@ -38,3 +38,15 @@ class RamMessageStore(MessageStore):
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
         keys = list(self._msgs.keys())
         yield from (keys[ix] for ix in rng.choice(len(keys), size=count))
+
+    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
+        if not progress_bar:
+            yield from list(self._msgs.keys())
+            return
+        # FIXME: add stubs
+        from tqdm.auto import tqdm  # type: ignore
+
+        with tqdm(total=len(self._msgs)) as pbar:
+            for mhash in list(self._msgs.keys()):
+                yield mhash
+                pbar.update(1)

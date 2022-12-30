@@ -126,7 +126,6 @@ def open_read(filename: str, *, text: bool) -> IO[Any]:
 
 
 def open_read(filename: str, *, text: bool) -> IO[Any]:
-    # FIXME: for now we are lock-free
 
     def actual_read() -> IO[Any]:
         return cast(IO[Any], open(  # pylint: disable=consider-using-with
@@ -190,7 +189,6 @@ def open_append(
         *,
         text: bool,
         **kwargs: Any) -> IO[Any]:
-    # FIXME: for now we are lock-free
     return cast(IO[Any], open(  # pylint: disable=consider-using-with
         filename,
         get_mode("a", text),

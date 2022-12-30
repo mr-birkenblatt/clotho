@@ -40,7 +40,7 @@ class LRU(Generic[KT, VT]):
         if len(self._values) <= self._max_items:
             return
         to_remove = sorted(
-            self._times.items(),
+            list(self._times.items()),
             key=lambda item: item[1])[:-self._soft_limit]
         for rm_item in to_remove:
             key = rm_item[0]

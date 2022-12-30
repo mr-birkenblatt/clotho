@@ -20,3 +20,10 @@ class RandomLinkSuggester(LinkSuggester):
             limit: int) -> Iterable[MHash]:
         return self._message_store.get_random_messages(
             other, is_parent, offset, limit)
+
+    def max_suggestions(self) -> int | None:
+        return None
+
+    @staticmethod
+    def get_name() -> str:
+        return "random"

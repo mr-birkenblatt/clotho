@@ -86,6 +86,7 @@ def key_constructor(prefix: str) -> Callable[[RLink], str]:
 
 class RedisLinkStore(LinkStore):
     def __init__(self, ns_key: ConfigKey) -> None:
+        super().__init__()
         cfg = get_redis_config(ns_key)
         val = "val" if cfg["prefix"] else ""
         obs = "obs"

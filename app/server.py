@@ -25,7 +25,7 @@ from system.links.store import get_link_store
 from system.msgs.message import Message, MHash
 from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
-from system.suggest.suggest import get_link_suggester
+from system.suggest.suggest import get_link_suggesters
 from system.users.store import get_user_store
 from system.users.user import User
 
@@ -82,7 +82,7 @@ def setup(
     message_store = get_message_store(namespace)
     link_store = get_link_store(namespace)
     user_store = get_user_store(namespace)
-    link_suggester = get_link_suggester(namespace)
+    link_suggesters = get_link_suggesters(namespace)
 
     def get_user(args: WorkerArgs) -> User:
         with server.get_token_obj(args["token"]) as obj:
@@ -186,7 +186,7 @@ def setup(
         link = link_store.get_link(parent, child)
         now = now_ts()
         link.add_vote(user_store, VT_UP, user, now)
-        return link.get_response(user_store, who=user, now=now)
+        return link.get_response(user_store, who=user, now=now, meta="new")
 
     @server.json_post(f"{prefix}/vote")
     def _post_vote(_req: QSRH, rargs: ReqArgs) -> LinkResponse:
@@ -204,7 +204,7 @@ def setup(
                 link.add_vote(user_store, vote_type, user, now)
             else:
                 link.remove_vote(user_store, vote_type, user, now)
-        return link.get_response(user_store, who=user, now=now)
+        return link.get_response(user_store, who=user, now=now, meta="vote")
 
     # *** read only ***
 
@@ -258,15 +258,44 @@ def setup(
             link_query: LinkQuery,
             *,
             is_parent: bool,
-            links: list[Link]) -> list[Link]:
+            links: list[tuple[Link, str]],
+            total: int) -> list[tuple[Link, str]]:
         limit = link_query["limit"]
         if len(links) >= limit:
             return links
         offset = link_query["offset"]
         cur_offset = offset + len(links)
         cur_limit = limit - len(links)
-        return links + list(link_suggester.suggest_links(
-            other, is_parent=is_parent, offset=cur_offset, limit=cur_limit))
+        if cur_limit == 0:
+            return links
+        six = 0
+        cur_offset -= total
+        suggestions: list[tuple[Link, str]] = []
+        while cur_limit > 0 and six < len(link_suggesters):
+            cur_suggester = link_suggesters[six]
+            local_limit = cur_limit
+            maxs = cur_suggester.max_suggestions()
+            if maxs is not None:
+                if cur_offset > maxs:
+                    cur_offset -= maxs
+                    six += 1
+                    continue
+                local_limit = min(local_limit, maxs - cur_offset)
+            prev_size = len(suggestions)
+            suggestions.extend((
+                (link, cur_suggester.get_name())
+                for link in cur_suggester.suggest_links(
+                    other,
+                    is_parent=is_parent,
+                    offset=cur_offset,
+                    limit=local_limit)
+            ))
+            if len(suggestions) <= prev_size:
+                six += 1
+                continue
+            cur_offset += local_limit
+            cur_limit -= local_limit
+        return links + suggestions
 
     @server.json_post(f"{prefix}/children")
     def _post_children(_req: QSRH, rargs: ReqArgs) -> LinkListResponse:
@@ -274,12 +303,18 @@ def setup(
         muser = get_maybe_user(args)
         parent = MHash.parse(args["parent"])
         link_query = get_link_query_params(args)
-        links = list(link_store.get_children(parent, **link_query))
-        links = enrich_links(parent, link_query, is_parent=True, links=links)
+        links = [
+            (link, "child")
+            for link in link_store.get_children(parent, **link_query)
+        ]
+        total = link_store.get_all_children_count(parent, link_query["now"])
+        links = enrich_links(
+            parent, link_query, is_parent=True, links=links, total=total)
         return {
             "links": [
-                link.get_response(user_store, who=muser, now=link_query["now"])
-                for link in links
+                link.get_response(
+                    user_store, who=muser, now=link_query["now"], meta=meta)
+                for link, meta in links
             ],
             "next": link_query["offset"] + len(links),
         }
@@ -290,12 +325,18 @@ def setup(
         muser = get_maybe_user(args)
         child = MHash.parse(args["child"])
         link_query = get_link_query_params(args)
-        links = list(link_store.get_parents(child, **link_query))
-        links = enrich_links(child, link_query, is_parent=False, links=links)
+        links = [
+            (link, "parent")
+            for link in link_store.get_parents(child, **link_query)
+        ]
+        total = link_store.get_all_parents_count(child, link_query["now"])
+        links = enrich_links(
+            child, link_query, is_parent=False, links=links, total=total)
         return {
             "links": [
-                link.get_response(user_store, who=muser, now=link_query["now"])
-                for link in links
+                link.get_response(
+                    user_store, who=muser, now=link_query["now"], meta=meta)
+                for link, meta in links
             ],
             "next": link_query["offset"] + len(links),
         }
@@ -306,11 +347,15 @@ def setup(
         muser = get_maybe_user(args)
         user = user_store.get_user_by_id(args["userid"])
         link_query = get_link_query_params(args)
-        links = list(link_store.get_user_links(user, **link_query))
+        links = [
+            (link, "user")
+            for link in link_store.get_user_links(user, **link_query)
+        ]
         return {
             "links": [
-                link.get_response(user_store, who=muser, now=link_query["now"])
-                for link in links
+                link.get_response(
+                    user_store, who=muser, now=link_query["now"], meta=meta)
+                for link, meta in links
             ],
             "next": link_query["offset"] + len(links),
         }
@@ -323,7 +368,7 @@ def setup(
         child = MHash.parse(args["child"])
         now = now_ts()
         link = link_store.get_link(parent, child)
-        return link.get_response(user_store, who=muser, now=now)
+        return link.get_response(user_store, who=muser, now=now, meta="link")
 
     return server, prefix, ns_name
 
