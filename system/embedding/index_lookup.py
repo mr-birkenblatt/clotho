@@ -251,6 +251,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 return dist_new > dist_old
             return dist_new < dist_old
 
+        total = 0
         candidates: list[tuple[MHash, float]] = []
         for _, mhash, other_embed in cache.all_embeddings(provider):
             dist = self.get_distance(embed, other_embed)
@@ -264,4 +265,6 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             if mod:
                 candidates.sort(
                     key=lambda entry: entry[1], reverse=is_bigger_better)
+            total += 1
+        print(f"checked {total} embeddings")
         yield from (mhash for mhash, _ in candidates)
