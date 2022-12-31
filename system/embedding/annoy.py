@@ -5,7 +5,7 @@ import torch
 from annoy import AnnoyIndex
 
 from misc.env import envload_path
-from misc.io import ensure_folder, fastrename
+from misc.io import ensure_folder, fastrename, remove_file
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
@@ -35,9 +35,14 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
 
     def _create_index(self, role: ProviderRole, *, load: bool) -> AnnoyIndex:
         aindex = AnnoyIndex(self.num_dimensions(role), "dot")
-        fname = self._get_file(role, is_tmp=False)
-        if load and os.path.exists(fname):
-            aindex.load(fname)
+        if load:
+            fname = self._get_file(role, is_tmp=False)
+            tname = self._get_file(role, is_tmp=True)
+            if os.path.exists(fname):
+                aindex.load(fname)
+            elif os.path.exists(tname):
+                fastrename(tname, fname)
+                aindex.load(fname)
         return aindex
 
     def _get_index(self, role: ProviderRole) -> AnnoyIndex:
@@ -52,6 +57,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             role: ProviderRole) -> None:
         aindex = self._create_index(role, load=False)
         fname = self._get_file(role, is_tmp=True)
+        remove_file(fname)
         aindex.on_disk_build(fname)
         self._tmpindex[role] = aindex
 
@@ -67,11 +73,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         if aindex is None:
             raise RuntimeError("tmp index does not exist")
         aindex.build(self._trees)
-        aindex.unload()
-        tname = self._get_file(role, is_tmp=True)
-        fname = self._get_file(role, is_tmp=False)
-        fastrename(tname, fname)
-        self._indexes[role] = self._create_index(role, load=True)
+        self._indexes[role] = aindex
 
     def get_index_closest(
             self,

@@ -63,6 +63,10 @@ def fastrename(src: str, dst: str) -> None:
                 shutil.move(os.path.join(src, file_name), dst)
 
 
+def copy_file(from_file: str, to_file: str) -> None:
+    shutil.copy(from_file, to_file)
+
+
 def normalize_folder(folder: str) -> str:
     res = os.path.abspath(folder)
     when_ready(lambda: os.makedirs(res, mode=0o777, exist_ok=True))
@@ -226,10 +230,14 @@ def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
             if writeback:
                 fastrename(tname, filename)
             else:
-                try:
-                    os.remove(tname)
-                except FileNotFoundError:
-                    pass
+                remove_file(tname)
+
+
+def remove_file(fname: str) -> None:
+    try:
+        os.remove(fname)
+    except FileNotFoundError:
+        pass
 
 
 def get_subfolders(path: str) -> list[str]:
