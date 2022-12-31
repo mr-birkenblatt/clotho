@@ -226,7 +226,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             return
         cache = self._cache
         provider = self.get_provider(role)
-        candidates = list(self.get_index_closest(role, embed, count))
+        candidates = list(self.get_index_closest(role, embed, count * 3))
         offset = cache.staging_offset(provider)
         for other_ix, _, other_embed in cache.staging_embeddings(provider):
             candidates.append(
