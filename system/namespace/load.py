@@ -104,6 +104,7 @@ def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
             "path": obj.get("path", f"{ns_name}"),
             "index": obj["index"],
             "trees": obj.get("trees", 1000),
+            "metric": obj.get("metric", "dot"),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")

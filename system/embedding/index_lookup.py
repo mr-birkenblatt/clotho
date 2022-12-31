@@ -126,12 +126,11 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         raise NotImplementedError()
 
     # FIXME: could be bulk operation
-    @staticmethod
-    def get_distance(embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
+    def get_distance(
+            self, embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
         raise NotImplementedError()
 
-    @staticmethod
-    def is_bigger_better() -> bool:
+    def is_bigger_better(self) -> bool:
         raise NotImplementedError()
 
     def num_dimensions(self, role: ProviderRole) -> int:
@@ -163,8 +162,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             cache.clear_embeddings(provider)
             cache.clear_staging(provider)
             self.do_index_init(role)
-            for index, mhash in enumerate(
-                    msg_store.enumerate_messages(progress_bar=True)):
+            for mhash in msg_store.enumerate_messages(progress_bar=True):
+                index = cache.add_embedding(provider, mhash)
                 embed = self.get_embedding(msg_store, role, mhash)
                 self.do_index_add(role, index, embed)
             for _, mhash, embed in cache.staging_embeddings(provider):

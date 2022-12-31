@@ -128,6 +128,7 @@ RedisEmbedModule = TypedDict('RedisEmbedModule', {
     "path": str,
     "index": Literal["annoy"],
     "trees": int,
+    "metric": Literal["dot", "angular"],
 })
 NoEmbedModule = TypedDict('NoEmbedModule', {
     "name": Literal["none"],
@@ -154,7 +155,11 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
         if eobj["index"] != "annoy":
             raise ValueError(f"unsupported embedding index: {eobj['index']}")
         return AnnoyEmbeddingStore(
-            providers, cache, eobj["path"], eobj["trees"])
+            providers,
+            cache,
+            eobj["path"],
+            eobj["trees"],
+            eobj["metric"] == "dot")
     if eobj["name"] == "none":
         from system.embedding.noembed import NoEmbedding
 

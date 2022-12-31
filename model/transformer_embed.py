@@ -51,10 +51,10 @@ class Model(nn.Module):
     def __init__(self, version: int) -> None:
         super().__init__()
         self._bert_parent = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased")
+            "distilbert-base-uncased", ignore_mismatched_sizes=True)
         self._bert_child = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased")
-        if version > 0:
+            "distilbert-base-uncased", ignore_mismatched_sizes=True)
+        if version == 1:
             self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
@@ -68,6 +68,10 @@ class Model(nn.Module):
         else:
             self._pdense = None
             self._cdense = None
+        if version != 2:
+            self._cos = None
+        else:
+            self._cos = torch.nn.CosineSimilarity()
         self._version = version
 
     def get_version(self) -> int:
@@ -102,6 +106,8 @@ class Model(nn.Module):
         child_cls = self.get_child_embed(
             input_ids=x["child"]["input_ids"],
             attention_mask=x["child"]["attention_mask"])
+        if self._cos is not None:
+            return self._cos(parent_cls, child_cls)
         batch_size = parent_cls.shape[0]
         return torch.bmm(
             parent_cls.reshape([batch_size, 1, -1]),
