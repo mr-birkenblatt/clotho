@@ -1,6 +1,7 @@
 import os
 from typing import Iterable
 
+import numpy as np
 import torch
 from annoy import AnnoyIndex
 
@@ -78,6 +79,11 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         aindex.build(self._trees)
         self._indexes[role] = aindex
 
+    def do_get_internal_distance(
+            self, role: ProviderRole, index_a: int, index_b: int) -> float:
+        aindex = self._get_index(role)
+        return aindex.get_distance(index_a, index_b)
+
     def get_index_closest(
             self,
             role: ProviderRole,
@@ -92,8 +98,9 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             self, embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
         if self._is_dot:
             return torch.dot(embed_a.ravel(), embed_b.ravel()).item()
-        return 2.0 - 2.0 * torch.nn.functional.cosine_similarity(
-            embed_a.ravel(), embed_b.ravel(), dim=0)
+        cos = torch.nn.functional.cosine_similarity(
+            embed_a.ravel(), embed_b.ravel(), dim=0).item()
+        return np.sqrt(max(0.0, 2.0 - 2.0 * cos))
 
     def is_bigger_better(self) -> bool:
-        return True
+        return self._is_dot

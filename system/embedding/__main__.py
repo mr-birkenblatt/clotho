@@ -11,8 +11,11 @@ from system.namespace.store import get_namespace
 def run() -> None:
     args = parse_args()
     namespace = get_namespace(args.namespace)
-    msg_store = get_message_store(namespace)
     embed_store = get_embed_store(namespace)
+    if args.self_test:
+        embed_store.self_test("child", None)
+        return
+    msg_store = get_message_store(namespace)
     if args.text is not None:
         name_from: Literal["parent"] = "parent"
         name_to: Literal["child"] = "child"
@@ -56,6 +59,11 @@ def parse_args() -> argparse.Namespace:
         default=False,
         action="store_true",
         help="just count and don't do anything else")
+    parser.add_argument(
+        "--self-test",
+        default=False,
+        action="store_true",
+        help="check whether distance definitions are compatible")
     return parser.parse_args()
 
 

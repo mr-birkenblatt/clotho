@@ -54,7 +54,7 @@ class RedisEmbeddingCache(EmbeddingCache):
             embed: torch.Tensor) -> None:
         key = self._get_embedding_key(provider, mhash)
         with self._redis.get_connection(depth=0) as conn:
-            conn.set(key, self._serialize(embed))  # FIXME: maybe ttl=1h?
+            conn.set(key, self._serialize(embed))
 
     def get_map_embedding(
             self,

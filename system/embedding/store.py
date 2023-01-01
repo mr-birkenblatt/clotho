@@ -75,6 +75,9 @@ class EmbeddingStore:
                 for mhash in msg_store.enumerate_messages(progress_bar=True):
                     self.get_embedding(msg_store, role, mhash)
 
+    def self_test(self, role: ProviderRole, count: int | None) -> None:
+        raise NotImplementedError()
+
     def do_get_closest(
             self,
             role: ProviderRole,

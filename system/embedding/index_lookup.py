@@ -1,3 +1,4 @@
+import math
 from contextlib import contextmanager
 from typing import Iterable, Iterator
 
@@ -212,6 +213,69 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             mhash: MHash) -> torch.Tensor | None:
         provider = self.get_provider(role)
         return self._cache.get_map_embedding(provider, mhash)
+
+    def do_get_internal_distance(
+            self, role: ProviderRole, index_a: int, index_b: int) -> float:
+        raise NotImplementedError()
+
+    def self_test(self, role: ProviderRole, count: int | None) -> None:
+        cache = self._cache
+        provider = self.get_provider(role)
+        is_bigger_better = self.is_bigger_better()
+        any_compute = False
+        for ix_a, _, embed_a in cache.embeddings(provider):
+            min_val = None
+            max_val = None
+            same_val = None
+            line = 0
+            for ix_b, _, embed_b in cache.embeddings(provider):
+                internal = self.do_get_internal_distance(role, ix_a, ix_b)
+                external = self.get_distance(embed_a, embed_b)
+                # print(
+                #     ix_a,
+                #     ix_b,
+                #     external,
+                #     embed_a.ravel()[:3],
+                #     embed_b.ravel()[:3])
+                if ix_a == ix_b:
+                    same_val = external
+                else:
+                    if min_val is None or min_val > external:
+                        min_val = external
+                    if max_val is None or max_val < external:
+                        max_val = external
+                if not math.isclose(internal, external):
+                    raise ValueError(
+                        f"distances are not equal: {internal} != {external} "
+                        f"ix: {ix_a} {ix_b} embed: {embed_a} {embed_b}")
+                any_compute = True
+                line += 1
+                if count is not None and ix_b >= count:
+                    break
+            if (min_val is not None
+                    and max_val is not None
+                    and same_val is not None):
+                text = f"{min_val} {same_val} {max_val} ({line} values {ix_a})"
+                if is_bigger_better:
+                    if (math.isclose(min_val, same_val)
+                            or min_val > same_val):
+                        print(f"min is bigger than same for bb {text}")
+                    if (not math.isclose(max_val, same_val)
+                            and max_val > same_val):
+                        print(f"max is bigger than same for bb {text}")
+                else:
+                    if (not math.isclose(min_val, same_val)
+                            and min_val < same_val):
+                        print(f"min is smaller than same for not bb {text}")
+                    if (math.isclose(max_val, same_val)
+                            or max_val < same_val):
+                        print(f"max is smaller than same for not bb {text}")
+            else:
+                raise ValueError("not enough values")
+            if count is not None and ix_a >= count:
+                break
+        if not any_compute:
+            raise ValueError("no computation has happened")
 
     def do_get_closest(
             self,
