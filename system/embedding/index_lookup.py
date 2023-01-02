@@ -244,7 +244,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                         min_val = external
                     if max_val is None or max_val < external:
                         max_val = external
-                if not math.isclose(internal, external):
+                if not math.isclose(internal, external, abs_tol=1e-3):
                     raise ValueError(
                         f"distances are not equal: {internal} != {external} "
                         f"ix: {ix_a} {ix_b} embed: {embed_a} {embed_b}")

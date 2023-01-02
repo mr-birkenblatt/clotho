@@ -107,7 +107,7 @@ class Model(nn.Module):
             input_ids=x["child"]["input_ids"],
             attention_mask=x["child"]["attention_mask"])
         if self._cos is not None:
-            return self._cos(parent_cls, child_cls)
+            return self._cos(parent_cls, child_cls).reshape([-1, 1])
         batch_size = parent_cls.shape[0]
         return torch.bmm(
             parent_cls.reshape([batch_size, 1, -1]),
