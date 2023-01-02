@@ -271,11 +271,16 @@ def highest_number(
     res = None
     res_num = 0
     for elem in arr:
-        if prefix is not None and not elem.startswith(prefix):
-            continue
-        if postfix is not None and not elem.endswith(postfix):
-            continue
-        num = get_num(elem)
+        text = elem
+        if prefix is not None:
+            if not text.startswith(prefix):
+                continue
+            text = text[len(prefix):]
+        if postfix is not None:
+            if not text.endswith(postfix):
+                continue
+            text = text[:-len(postfix)]
+        num = get_num(text)
         if num is None:
             continue
         if res is None or num > res_num:
