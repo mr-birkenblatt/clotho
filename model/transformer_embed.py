@@ -47,14 +47,27 @@ def get_tokenizer() -> Callable[[list[str]], TokenizedInput]:
     return tokens
 
 
+class Noise(nn.Module):
+    def __init__(self, std: float = 1.0, p: float = 0.5) -> None:
+        super().__init__()
+        self._std = std
+        self._dropout = nn.Dropout(p)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        if not self.training:
+            return x
+        return x + self._dropout(
+            torch.normal(mean=0.0, std=self._std, size=x.shape))
+
+
 class Model(nn.Module):
     def __init__(self, version: int) -> None:
         super().__init__()
         self._bert_parent = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased", ignore_mismatched_sizes=True)
+            "distilbert-base-uncased")
         self._bert_child = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased", ignore_mismatched_sizes=True)
-        if version == 1:
+            "distilbert-base-uncased")
+        if version == 1 or version >= 3:
             self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
@@ -68,7 +81,11 @@ class Model(nn.Module):
         else:
             self._pdense = None
             self._cdense = None
-        if version != 2:
+        if version < 4:
+            self._noise = None
+        else:
+            self._noise = Noise(std=0.01, p=0.5)
+        if version < 2:
             self._cos = None
         else:
             self._cos = torch.nn.CosineSimilarity()
@@ -86,6 +103,8 @@ class Model(nn.Module):
         out = outputs_parent.last_hidden_state[:, 0]
         if self._pdense is not None:
             out = self._pdense(out)
+        if self._noise is not None:
+            out = self._noise(out)
         return out
 
     def get_child_embed(
@@ -97,6 +116,8 @@ class Model(nn.Module):
         out = outputs_child.last_hidden_state[:, 0]
         if self._cdense is not None:
             out = self._cdense(out)
+        if self._noise is not None:
+            out = self._noise(out)
         return out
 
     def forward(self, x: dict[ProviderRole, TokenizedInput]) -> torch.Tensor:
