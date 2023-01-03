@@ -54,6 +54,12 @@ class Noise(nn.Module):
         self._dropout = nn.Dropout(p)
         self._dhold = nn.Parameter(torch.Tensor([0.0]))
 
+    def set_std(self, std: float) -> None:
+        self._std = std
+
+    def get_std(self) -> float:
+        return self._std
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if not self.training:
             return x
@@ -85,12 +91,17 @@ class Model(nn.Module):
         if version < 4:
             self._noise = None
         else:
-            self._noise = Noise(std=0.01, p=0.5)
+            self._noise = Noise(std=1.0, p=0.5)
         if version < 2:
             self._cos = None
         else:
             self._cos = torch.nn.CosineSimilarity()
         self._version = version
+
+    def set_epoch(self, epoch: int) -> None:
+        noise = self._noise
+        if noise is not None:
+            noise.set_std(1 / (1.2 ** epoch))
 
     def get_version(self) -> int:
         return self._version
