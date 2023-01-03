@@ -42,8 +42,8 @@ def run() -> None:
             {
                 "left": {"mode": "valid", "flip_pc": 0.5},
                 "right": {"mode": "valid", "flip_pc": 0.0},
-                "min_text_length": 20,
-                "skip_weak": False,
+                "min_text_length": None,
+                "skip_weak": True,
                 "flip_lr": 0.5,
                 "first_epoch": 10,
                 "last_epoch": None,
@@ -52,8 +52,8 @@ def run() -> None:
             {
                 "left": {"mode": "random", "flip_pc": 0.0},
                 "right": {"mode": "path", "flip_pc": 0.0},
-                "min_text_length": 20,
-                "skip_weak": False,
+                "min_text_length": None,
+                "skip_weak": True,
                 "flip_lr": 0.5,
                 "first_epoch": None,
                 "last_epoch": 5,
