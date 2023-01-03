@@ -32,6 +32,7 @@ LearningPlan = TypedDict('LearningPlan', {
     "left": RowGen | None,
     "right": RowGen,
     "min_text_length": int | None,
+    "skip_weak": bool,
     "flip_lr": float,
     "weight": float,
 })
@@ -41,6 +42,7 @@ EpochLearningPlan = TypedDict('EpochLearningPlan', {
     "first_epoch": int | None,
     "last_epoch": int | None,
     "min_text_length": int | None,
+    "skip_weak": bool,
     "flip_lr": float,
     "weight": float,
 })
@@ -222,11 +224,21 @@ class DataGenerator:
         vdown = link.get_votes("down").get_total_votes()
         return abs(vup - HONOR_MUL * vhonor - DOWN_MUL * vdown)
 
+    def is_weak(self, link: Link) -> bool:
+        vup = link.get_votes("up").get_total_votes()
+        vdown = link.get_votes("down").get_total_votes()
+        if vup < 2 and vdown < 1:
+            return True
+        if vdown < 2 and vup < 2:
+            return True
+        return False
+
     def get_text(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).single_line_text()
 
 
 BatchRow = TypedDict('BatchRow', {
+    "gen_name": str,
     "parent_left": str,
     "child_left": str,
     "parent_right": str,
@@ -234,7 +246,6 @@ BatchRow = TypedDict('BatchRow', {
     "sway_left": float,
     "sway_right": float,
     "correct_is_right": bool,
-    "gen_name": str,
 })
 COLUMNS = [
     "gen_name",
@@ -431,6 +442,7 @@ class TrainTestGenerator:
                 "left": lplan["left"],
                 "right": lplan["right"],
                 "min_text_length": lplan["min_text_length"],
+                "skip_weak": lplan["skip_weak"],
                 "flip_lr": lplan["flip_lr"],
                 "weight": lplan["weight"],
             }
@@ -517,6 +529,13 @@ class TrainTestGenerator:
             score_right = data.vote_score(right_link)
             if score_left == score_right:
                 continue
+
+            if pentry["skip_weak"]:
+                if score_right > score_left and data.is_weak(right_link):
+                    continue
+                if score_right < score_left and data.is_weak(left_link):
+                    continue
+
             sway_right = float(sigmoid(score_right - score_left))
             yield {
                 "parent_left": text_pl,
