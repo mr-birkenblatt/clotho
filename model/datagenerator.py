@@ -516,6 +516,7 @@ class TrainTestGenerator:
             text_cr = data.get_text(right_link.get_child())
             mtl = pentry["min_text_length"]
             if mtl is not None:
+                name = f"{name};(mtl:{mtl})"
                 texts = [
                     text_pl,
                     text_cl,
@@ -531,6 +532,7 @@ class TrainTestGenerator:
                 continue
 
             if pentry["skip_weak"]:
+                name = f"{name};(sw)"
                 if score_right > score_left and data.is_weak(right_link):
                     continue
                 if score_right < score_left and data.is_weak(left_link):
