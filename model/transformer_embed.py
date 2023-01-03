@@ -1,5 +1,5 @@
 import os
-from typing import Callable, cast, TypedDict, TypeVar
+from typing import Callable, cast, TypedDict
 
 import torch
 from torch import nn
@@ -47,27 +47,18 @@ def get_tokenizer() -> Callable[[list[str]], TokenizedInput]:
     return tokens
 
 
-T = TypeVar('T')
-
-
 class Noise(nn.Module):
     def __init__(self, std: float = 1.0, p: float = 0.5) -> None:
         super().__init__()
         self._std = std
         self._dropout = nn.Dropout(p)
-        self._device = torch.device("cpu")
-
-    def _apply(self, fn: Callable[[T], T]) -> 'Noise':
-        super()._apply(fn)
-        # FIXME: tracking issue https://github.com/python/mypy/issues/5738
-        self._device = fn(self._device)  # type: ignore
-        return self
+        self._dhold = nn.Parameter(torch.Tensor([0.0]))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if not self.training:
             return x
         return x + self._dropout(torch.normal(
-            mean=0.0, std=self._std, size=x.shape, device=self._device))
+            mean=0.0, std=self._std, size=x.shape, device=self._dhold.device))
 
 
 class Model(nn.Module):
