@@ -34,3 +34,6 @@ class NoEmbedding(EmbeddingStore):
             *,
             precise: bool) -> Iterable[MHash]:
         yield from []
+
+    def self_test(self, role: ProviderRole, count: int | None) -> None:
+        raise ValueError("no computation has happened; nothing to test")
