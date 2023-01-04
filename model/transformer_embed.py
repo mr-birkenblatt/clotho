@@ -51,8 +51,8 @@ class Noise(nn.Module):
     def __init__(self, std: float = 1.0, p: float = 0.5) -> None:
         super().__init__()
         self._std = std
-        self._dropout = nn.Dropout(p)
-        self._dhold = nn.Parameter(torch.Tensor([0.0]))
+        self._p = p
+        self._dhold = nn.Parameter(torch.Tensor([0.0]), requires_grad=False)
 
     def set_std(self, std: float) -> None:
         self._std = std
@@ -63,8 +63,10 @@ class Noise(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if not self.training:
             return x
-        return x + self._dropout(torch.normal(
-            mean=0.0, std=self._std, size=x.shape, device=self._dhold.device))
+        prob = torch.rand(size=x.shape, device=self._dhold.device) < self._p
+        gauss = torch.normal(
+            mean=0.0, std=self._std, size=x.shape, device=self._dhold.device)
+        return x + prob * gauss
 
 
 class Model(nn.Module):
@@ -74,7 +76,7 @@ class Model(nn.Module):
             "distilbert-base-uncased")
         self._bert_child = DistilBertModel.from_pretrained(
             "distilbert-base-uncased")
-        if version == 1 or version >= 3:
+        if version in (1, 3, 4):
             self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
                 nn.Dropout(p=0.5),
@@ -92,7 +94,7 @@ class Model(nn.Module):
             self._noise = None
         else:
             self._noise = Noise(std=1.0, p=0.5)
-        if version < 2:
+        if version < 2 or version > 4:
             self._cos = None
         else:
             self._cos = torch.nn.CosineSimilarity()
