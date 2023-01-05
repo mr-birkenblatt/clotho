@@ -214,6 +214,7 @@ class RedisWrapper:
         res = REDIS_SERVICE_CONN.get(key)
         if res is None:
             with LOCK:
+                res = REDIS_SERVICE_CONN.get(key)
                 if res is None:
                     res = cls._create_connection(cfg)
                     REDIS_SERVICE_CONN[key] = res
@@ -293,10 +294,12 @@ class RedisWrapper:
 
     @staticmethod
     def _invalidate_connection(
-            ns_key: ConfigKey, redis_module: RedisModule) -> None:
+            _ns_key: ConfigKey, _redis_module: RedisModule) -> None:
         with LOCK:
-            key = get_connection_key(ns_key, redis_module)
-            REDIS_SERVICE_CONN[key] = None
+            # key = get_connection_key(ns_key, redis_module)
+            # REDIS_SERVICE_CONN[key] = None
+            # NOTE: prevents issues from coming up multiple times
+            REDIS_SERVICE_CONN.clear()
 
     @classmethod
     @contextlib.contextmanager
