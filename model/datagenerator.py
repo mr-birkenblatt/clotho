@@ -33,6 +33,7 @@ LearningPlan = TypedDict('LearningPlan', {
     "right": RowGen,
     "min_text_length": int | None,
     "skip_weak": bool,
+    "skip_topics": bool,
     "flip_lr": float,
     "weight": float,
 })
@@ -43,6 +44,7 @@ EpochLearningPlan = TypedDict('EpochLearningPlan', {
     "last_epoch": int | None,
     "min_text_length": int | None,
     "skip_weak": bool,
+    "skip_topics": bool,
     "flip_lr": float,
     "weight": float,
 })
@@ -232,6 +234,16 @@ class DataGenerator:
         if vdown < 2 and vup < 2:
             return True
         return False
+
+    def has_topic(self, link: Link) -> bool:
+        if self.is_topic_like(link.get_parent()):
+            return True
+        if self.is_topic_like(link.get_child()):
+            return True
+        return False
+
+    def is_topic_like(self, mhash: MHash) -> bool:
+        return not self._msgs.read_message(mhash).is_valid_message()
 
     def get_text(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).single_line_text()
@@ -443,6 +455,7 @@ class TrainTestGenerator:
                 "right": lplan["right"],
                 "min_text_length": lplan["min_text_length"],
                 "skip_weak": lplan["skip_weak"],
+                "skip_topics": lplan["skip_topics"],
                 "flip_lr": lplan["flip_lr"],
                 "weight": lplan["weight"],
             }
@@ -536,6 +549,13 @@ class TrainTestGenerator:
                 if score_right > score_left and data.is_weak(right_link):
                     continue
                 if score_right < score_left and data.is_weak(left_link):
+                    continue
+
+            if pentry["skip_topics"]:
+                name = f"{name};(st)"
+                if data.has_topic(right_link):
+                    continue
+                if data.has_topic(left_link):
                     continue
 
             sway_right = float(sigmoid(score_right - score_left))
