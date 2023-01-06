@@ -6,6 +6,10 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 
 
+MAX_RETRY = 10
+RETRY_WAIT = 0.1
+
+
 class LRU(Generic[KT, VT]):
     def __init__(
             self,
@@ -37,6 +41,7 @@ class LRU(Generic[KT, VT]):
                 self._times.pop(key, None)
 
     def gc(self) -> None:
+        retry = 0
         while len(self._values) > self._max_items:
             try:
                 to_remove = sorted(
@@ -48,4 +53,9 @@ class LRU(Generic[KT, VT]):
                     self._values.pop(key, None)  # type: ignore
                     self._times.pop(key, None)
             except RuntimeError:
-                pass  # dictionary changed size during iteration: try again
+                # dictionary changed size during iteration: try again
+                if retry >= MAX_RETRY:
+                    raise
+                retry += 1
+                if RETRY_WAIT > 0:
+                    time.sleep(RETRY_WAIT)
