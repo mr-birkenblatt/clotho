@@ -1,5 +1,5 @@
 import os
-from typing import Callable, cast, TypedDict
+from typing import Callable, cast, Literal, TypedDict
 
 import torch
 from torch import nn
@@ -33,6 +33,11 @@ TokenizedInput = TypedDict('TokenizedInput', {
     "input_ids": torch.Tensor,
     "attention_mask": torch.Tensor,
 })
+
+
+AggType = Literal["cls", "mean"]
+AGG_CLS: AggType = "cls"
+AGG_MEAN: AggType = "mean"
 
 
 def get_tokenizer() -> Callable[[list[str]], TokenizedInput]:
@@ -76,28 +81,32 @@ class Model(nn.Module):
             "distilbert-base-uncased")
         self._bert_child = DistilBertModel.from_pretrained(
             "distilbert-base-uncased")
-        if version in (1, 3, 4):
+        if version in (1, 3, 4, 6):
             self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
-                nn.Dropout(p=0.5),
+                nn.Dropout(p=0.2),
                 nn.ReLU(),
                 nn.Linear(EMBED_SIZE, EMBED_SIZE))
             self._cdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
-                nn.Dropout(p=0.5),
+                nn.Dropout(p=0.2),
                 nn.ReLU(),
                 nn.Linear(EMBED_SIZE, EMBED_SIZE))
         else:
             self._pdense = None
             self._cdense = None
-        if version < 4:
+        if version < 4 or version > 5:
             self._noise = None
         else:
-            self._noise = Noise(std=1.0, p=0.5)
+            self._noise = Noise(std=1.0, p=0.2)
         if version < 2 or version > 4:
             self._cos = None
         else:
             self._cos = torch.nn.CosineSimilarity()
+        if version < 6:
+            self._agg = AGG_CLS
+        else:
+            self._agg = AGG_MEAN
         self._version = version
 
     def set_epoch(self, epoch: int) -> None:
@@ -108,13 +117,20 @@ class Model(nn.Module):
     def get_version(self) -> int:
         return self._version
 
+    def get_agg(self, lhs: torch.Tensor) -> torch.Tensor:
+        if self._agg == AGG_CLS:
+            return lhs[:, 0]
+        if self._agg == AGG_MEAN:
+            return torch.mean(lhs, dim=1)
+        raise ValueError(f"unknown aggregation: {self._agg}")
+
     def get_parent_embed(
             self,
             input_ids: torch.Tensor,
             attention_mask: torch.Tensor) -> torch.Tensor:
         outputs_parent = self._bert_parent(
             input_ids=input_ids, attention_mask=attention_mask)
-        out = outputs_parent.last_hidden_state[:, 0]
+        out = self.get_agg(outputs_parent.last_hidden_state)
         if self._pdense is not None:
             out = self._pdense(out)
         if self._noise is not None:
@@ -127,7 +143,7 @@ class Model(nn.Module):
             attention_mask: torch.Tensor) -> torch.Tensor:
         outputs_child = self._bert_child(
             input_ids=input_ids, attention_mask=attention_mask)
-        out = outputs_child.last_hidden_state[:, 0]
+        out = self.get_agg(outputs_child.last_hidden_state)
         if self._cdense is not None:
             out = self._cdense(out)
         if self._noise is not None:
