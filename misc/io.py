@@ -59,7 +59,7 @@ def fastrename(src: str, dst: str) -> None:
                 if "destination path" in err_msg and \
                         "already exists" in err_msg:
                     raise err
-                os.remove(dest_file)
+                remove_file(dest_file)
                 shutil.move(os.path.join(src, file_name), dst)
 
 

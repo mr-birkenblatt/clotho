@@ -1,5 +1,5 @@
 import os
-from typing import Callable, cast, Literal, TypedDict
+from typing import Callable, cast, Iterable, Literal, TypedDict
 
 import torch
 from torch import nn
@@ -12,7 +12,8 @@ from transformers import (  # type: ignore
 )
 
 from misc.env import envload_path
-from misc.io import ensure_folder
+from misc.io import ensure_folder, open_read, remove_file
+from misc.util import highest_number, json_load, retain_some
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
@@ -32,6 +33,20 @@ def get_device() -> torch.device:
 TokenizedInput = TypedDict('TokenizedInput', {
     "input_ids": torch.Tensor,
     "attention_mask": torch.Tensor,
+})
+
+
+EpochStats = TypedDict('EpochStats', {
+    "epoch": int,
+    "train_acc": float,
+    "train_loss": float,
+    "train_val_acc": float,
+    "train_val_loss": float,
+    "test_acc": float,
+    "test_loss": float,
+    "time": float,
+    "version": int,
+    "fname": str,
 })
 
 
@@ -244,3 +259,84 @@ def load_providers(
         "parent": TransformerEmbedding(model, "transformer", "parent"),
         "child": TransformerEmbedding(model, "transformer", "child"),
     }
+
+
+def get_model_filename_tuple(
+        harness: TrainingHarness,
+        folder: str,
+        *,
+        is_cuda: bool,
+        ftype: str,
+        epoch: int | None,
+        ext: str = ".pkl") -> tuple[str, str, str]:
+    postfix = "_lg" if is_cuda else ""
+    version_tag = f"_v{harness.get_version()}"
+    out_pre = f"{ftype}{version_tag}{postfix}_"
+    out_post = ext
+    return (
+        os.path.join(
+            folder,
+            f"{out_pre}{'' if epoch is None else epoch}{out_post}"),
+        out_pre,
+        out_post,
+    )
+
+
+def get_model_filename(
+        harness: TrainingHarness,
+        folder: str,
+        *,
+        is_cuda: bool,
+        ftype: str,
+        epoch: int | None,
+        ext: str = ".pkl") -> str:
+    return get_model_filename_tuple(
+        harness, folder, is_cuda=is_cuda, ftype=ftype, epoch=epoch, ext=ext)[0]
+
+
+def get_epoch_and_load(
+        harness: TrainingHarness,
+        folder: str,
+        *,
+        ftype: str,
+        is_cuda: bool,
+        device: torch.device,
+        force_restart: bool) -> tuple[tuple[str, int] | None, int]:
+    _, spre, spost = get_model_filename_tuple(
+        harness, folder, ftype=ftype, is_cuda=is_cuda, epoch=None)
+    mprev = highest_number(os.listdir(folder), prefix=spre, postfix=spost)
+    if not force_restart and mprev is not None:
+        prev_fname, prev_epoch = mprev
+        harness.load_state_dict(torch.load(
+            os.path.join(folder, prev_fname), map_location=device))
+        epoch_offset = prev_epoch + 1
+    else:
+        epoch_offset = 0
+    return mprev, epoch_offset
+
+
+def limit_epoch_data(folder: str, count: int) -> None:
+
+    def load_stats(fname: str) -> EpochStats:
+        with open_read(fname, text=True) as fin:
+            return cast(EpochStats, json_load(fin))
+
+    def stats_key(
+            stats_tup: tuple[str, EpochStats]) -> tuple[float, float, float]:
+        _, stats = stats_tup
+        return (
+            stats["train_val_acc"],
+            stats["test_acc"],
+            stats["train_acc"],
+        )
+
+    def get_stats() -> Iterable[tuple[str, EpochStats]]:
+        for fname in os.listdir(folder):
+            filename = os.path.join(folder, fname)
+            stats = load_stats(filename)
+            yield filename, stats
+
+    _, to_delete = retain_some(get_stats(), count, key=stats_key)
+    for (stats_file, stats) in to_delete:
+        remove_file(stats_file)
+        remove_file(stats["fname"])

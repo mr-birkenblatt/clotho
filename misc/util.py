@@ -303,7 +303,7 @@ def retain_some(
         arr: Iterable[VT],
         count: int,
         *,
-        key: Callable[[VT], float | int],
+        key: Callable[[VT], Any],
         reverse: bool = False,
         keep_last: bool = True) -> tuple[list[VT], list[VT]]:
     res: list[VT] = []
