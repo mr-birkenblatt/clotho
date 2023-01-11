@@ -6,7 +6,7 @@ import re
 import string
 import threading
 import uuid
-from typing import Any, IO, Iterable, Type, TypeVar
+from typing import Any, Callable, IO, Iterable, Type, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -252,12 +252,31 @@ def sigmoid(x: Any) -> Any:
 NUMBER_PATTERN = re.compile(r"\d+")
 
 
+def extract_list(
+        arr: Iterable[str],
+        prefix: str | None = None,
+        postfix: str | None = None) -> Iterable[tuple[str, str]]:
+    if not arr:
+        yield from []
+        return
+
+    for elem in arr:
+        text = elem
+        if prefix is not None:
+            if not text.startswith(prefix):
+                continue
+            text = text[len(prefix):]
+        if postfix is not None:
+            if not text.endswith(postfix):
+                continue
+            text = text[:-len(postfix)]
+        yield (elem, text)
+
+
 def highest_number(
-        arr: list[str],
+        arr: Iterable[str],
         prefix: str | None = None,
         postfix: str | None = None) -> tuple[str, int] | None:
-    if not arr:
-        return None
 
     def get_num(text: str) -> int | None:
         match = re.search(NUMBER_PATTERN, text)
@@ -270,16 +289,7 @@ def highest_number(
 
     res = None
     res_num = 0
-    for elem in arr:
-        text = elem
-        if prefix is not None:
-            if not text.startswith(prefix):
-                continue
-            text = text[len(prefix):]
-        if postfix is not None:
-            if not text.endswith(postfix):
-                continue
-            text = text[:-len(postfix)]
+    for elem, text in extract_list(arr, prefix=prefix, postfix=postfix):
         num = get_num(text)
         if num is None:
             continue
@@ -287,3 +297,32 @@ def highest_number(
             res = elem
             res_num = num
     return None if res is None else (res, res_num)
+
+
+def retain_some(
+        arr: Iterable[VT],
+        count: int,
+        *,
+        key: Callable[[VT], float | int],
+        reverse: bool = False,
+        keep_last: bool = True) -> tuple[list[VT], list[VT]]:
+    res: list[VT] = []
+    to_delete: list[VT] = []
+    if keep_last:
+        for elem in arr:
+            if len(res) <= count:
+                res.append(elem)
+                continue
+            res.sort(key=key, reverse=reverse)
+            to_delete.extend(res[:-count])
+            res = res[-count:]
+            res.append(elem)
+    else:
+        for elem in arr:
+            res.append(elem)
+            if len(res) < count:
+                continue
+            res.sort(key=key, reverse=reverse)
+            to_delete.extend(res[:-count])
+            res = res[-count:]
+    return res, to_delete
