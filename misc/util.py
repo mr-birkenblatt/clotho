@@ -325,4 +325,5 @@ def retain_some(
             res.sort(key=key, reverse=reverse)
             to_delete.extend(res[:-count])
             res = res[-count:]
+    res.sort(key=key, reverse=reverse)
     return res, to_delete
