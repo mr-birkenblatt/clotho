@@ -120,9 +120,6 @@ class IntervalIndex(IntervalMixin, Index):
     def mid(self) -> Any:
         ...
 
-    def is_unique(self) -> Any:
-        ...
-
     def is_non_overlapping_monotonic(self) -> Any:
         ...
 

@@ -27,7 +27,7 @@ class DiskChunk(ChunkCoordinator):
         self._files = files
 
     def read_file(self, full: str) -> tuple[float, dict[str, VType]]:
-        pass
+        raise NotImplementedError()
 
     def write_values(
             self,
