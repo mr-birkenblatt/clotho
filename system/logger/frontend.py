@@ -1,6 +1,6 @@
 import contextlib
 import threading
-from typing import Callable, cast, Iterator, Literal
+from typing import Callable, Iterator, Literal
 
 from system.logger.backend import (
     DEFAULT_LOGGER_CONTEXT,
@@ -30,11 +30,10 @@ class LoggerFrontend:
         self._on_context_change(old_context)
 
     def _with_context(self, context: LoggerContextUpdate) -> None:
-        # FIXME: type should be inferable
-        new_context = cast(LoggerContext, {
+        new_context: LoggerContext = {
             key: context.get(key, value)
             for key, value in self._get_context().items()
-        })
+        }
         self._set_context(new_context)
 
     @contextlib.contextmanager
@@ -92,5 +91,5 @@ def register_logger_backend(backend_name: BackendName) -> None:
     if backend_name == BACKEND_STDOUT:
         from system.logger.stdout import StdoutLogger
         logger.register_backend(StdoutLogger())
-        return
-    raise ValueError(f"unknown logger backend: {backend_name}")
+    else:
+        raise ValueError(f"unknown logger backend: {backend_name}")

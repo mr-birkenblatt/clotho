@@ -120,6 +120,7 @@ class RedisLinkStore(LinkStore):
 
         self.r_call: ListDependentRedisType[PLink] = \
             ListDependentRedisType(
+                "all_children",
                 ns_key,
                 "link",
                 key_parent_constructor("vcall"),
@@ -146,6 +147,7 @@ class RedisLinkStore(LinkStore):
 
         self.r_pall: ListDependentRedisType[CLink] = \
             ListDependentRedisType(
+                "all_parents",
                 ns_key,
                 "link",
                 key_child_constructor("vpall"),
@@ -189,6 +191,7 @@ class RedisLinkStore(LinkStore):
                     now)
 
             cur_r_call_sorted = ListDependentRedisType(
+                f"sorted_children_{sname}",
                 ns_key,
                 "link",
                 key_parent_constructor(f"scall:{sname}"),
@@ -221,6 +224,7 @@ class RedisLinkStore(LinkStore):
                     now)
 
             cur_r_pall_sorted = ListDependentRedisType(
+                f"sorted_parents_{sname}",
                 ns_key,
                 "link",
                 key_child_constructor(f"spall:{sname}"),
@@ -260,6 +264,7 @@ class RedisLinkStore(LinkStore):
                     now)
 
             cur_r_user_sorted = ListDependentRedisType(
+                f"sorted_userlinks_{sname}",
                 ns_key,
                 "link",
                 lambda user: f"suserlinks:{sname}:{user}",

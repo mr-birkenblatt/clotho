@@ -19,6 +19,7 @@ from misc.util import (
     now_ts,
     to_timestamp,
 )
+from system.logger.frontend import logger_context
 
 
 KT = TypeVar('KT', bound=KeyType)
@@ -156,6 +157,7 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
 class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
     def __init__(
             self,
+            name: str,
             ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str],
@@ -171,6 +173,7 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         super().__init__(parents=parents, effect=effect, convert=convert)
         assert marker_prefix
         assert marker_prefix != value_prefix
+        self._name = name
         self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
         self._key_json = key_json
@@ -215,12 +218,24 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         key_queue = self.get_marker_queue_redis_key()
         with self._redis.get_connection(depth=1) as conn:
             conn.rpush(key_queue, self._key_json(key))
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "value",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("request_compute")
 
     def on_set_outdated(self, key: KT, now: pd.Timestamp) -> None:
         # FIXME optimize
         mkey = self.get_marker_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(mkey, to_timestamp(now))
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "value",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("set_outdated")
 
     def clear_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
         # FIXME optimize
@@ -251,6 +266,12 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(rkey, json_compact(value))
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "value",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("set_value")
 
     def do_update_value(
             self, key: KT, value: VT, now: pd.Timestamp | None) -> VT | None:
@@ -260,19 +281,32 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
                 pipe.get(rkey)
                 pipe.set(rkey, json_compact(value))
                 res = pipe.execute()[0]
-                return json_read(res) if res is not None else None
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "value",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("update_value")
+        return json_read(res) if res is not None else None
 
     def do_set_new_value(
             self, key: KT, value: VT, now: pd.Timestamp | None) -> bool:
         rkey = self.get_value_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             res = conn.setnx(rkey, json_compact(value))
-            return bool(res)
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "value",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("set_new_value")
+        return bool(res)
 
 
 class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
     def __init__(
             self,
+            name: str,
             ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str],
@@ -287,6 +321,7 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             effect: Callable[[KT, pd.Timestamp | None], None],
             empty: bytes | None) -> None:
         super().__init__(parents=parents, effect=effect, convert=convert)
+        self._name = name
         self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
         self._key_json = key_json
@@ -334,12 +369,24 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
         key_queue = self.get_marker_queue_redis_key()
         with self._redis.get_connection(depth=1) as conn:
             conn.rpush(key_queue, self._key_json(key))
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "list",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("request_compute")
 
     def on_set_outdated(self, key: KT, now: pd.Timestamp) -> None:
         # FIXME optimize
         mkey = self.get_marker_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             conn.set(mkey, to_timestamp(now))
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "list",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("set_outdated")
 
     def clear_outdated(self, key: KT, now: pd.Timestamp | None) -> None:
         # FIXME optimize
@@ -403,6 +450,12 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
                 if pval:
                     pipe.rpush(rkey, *pval)
                 pipe.execute()
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "list",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("set_value")
 
     def do_update_value(
             self,
@@ -421,6 +474,12 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
                 exec_res = pipe.execute()
         has = exec_res[0]
         res = exec_res[1]
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "list",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("update_value")
         if not int(has):
             return None
         return self._convert_list(res)
@@ -447,6 +506,12 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
             now=now_ts() if now is None else now,
             conn=self._redis,
             depth=1)
+        with logger_context({
+                    "module": "effects.redis",
+                    "type": "list",
+                    "name": self._name,
+                }) as logger:
+            logger.log_count("set_new_value")
         return int(res) != 0
 
     def do_get_value_range(

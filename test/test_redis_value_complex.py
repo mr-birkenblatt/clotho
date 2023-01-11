@@ -44,6 +44,7 @@ def test_complex() -> None:
 
     dests: ValueDependentRedisType[FLink, list[int]] = \
         ValueDependentRedisType(
+            "dests",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"dests:{key.l_from}",
@@ -57,6 +58,7 @@ def test_complex() -> None:
             effect=compute_destinations)
     srcs: ValueDependentRedisType[TLink, list[int]] = \
         ValueDependentRedisType(
+            "srcs",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"srcs:{key.l_to}",
@@ -118,6 +120,7 @@ def test_complex_list() -> None:
 
     dests: ListDependentRedisType[FLink] = \
         ListDependentRedisType(
+            "dests",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"dests:{key.l_from}",
@@ -132,6 +135,7 @@ def test_complex_list() -> None:
             empty=b"")
     srcs: ListDependentRedisType[TLink] = \
         ListDependentRedisType(
+            "srcs",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"srcs:{key.l_to}",

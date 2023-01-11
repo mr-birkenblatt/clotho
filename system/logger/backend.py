@@ -1,17 +1,8 @@
-from typing import TypedDict
+LoggerContext = dict[str, str]
+LoggerContextUpdate = dict[str, str]
 
 
-LoggerContext = TypedDict('LoggerContext', {
-    "module": str | None,
-})
-LoggerContextUpdate = TypedDict('LoggerContextUpdate', {
-    "module": str,
-}, total=False)
-
-
-DEFAULT_LOGGER_CONTEXT: LoggerContext = {
-    "module": None,
-}
+DEFAULT_LOGGER_CONTEXT: LoggerContext = {}
 
 
 class LoggerBackend:
