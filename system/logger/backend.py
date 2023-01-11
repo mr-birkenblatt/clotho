@@ -15,6 +15,9 @@ DEFAULT_LOGGER_CONTEXT: LoggerContext = {
 
 
 class LoggerBackend:
+    def log_note(self, context: LoggerContext, name: str, msg: str) -> None:
+        raise NotImplementedError()
+
     def log_count(self, context: LoggerContext, name: str) -> None:
         raise NotImplementedError()
 

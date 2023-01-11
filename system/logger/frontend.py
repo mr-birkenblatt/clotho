@@ -1,6 +1,6 @@
 import contextlib
 import threading
-from typing import Callable, cast, Iterator
+from typing import Callable, cast, Iterator, Literal
 
 from system.logger.backend import (
     DEFAULT_LOGGER_CONTEXT,
@@ -60,6 +60,9 @@ class LoggerFrontend:
         self._apply_call(
             lambda backend, ctx: backend.on_context_change(old_context, ctx))
 
+    def log_note(self, name: str, msg: str) -> None:
+        self._apply_call(lambda backend, ctx: backend.log_note(ctx, name, msg))
+
     def log_count(self, name: str) -> None:
         self._apply_call(lambda backend, ctx: backend.log_count(ctx, name))
 
@@ -78,3 +81,16 @@ def get_logger() -> LoggerFrontend:
 def logger_context(context: LoggerContextUpdate) -> Iterator[LoggerFrontend]:
     with get_logger().context(context) as logger:
         yield logger
+
+
+BackendName = Literal["stdout"]
+BACKEND_STDOUT: BackendName = "stdout"
+
+
+def register_logger_backend(backend_name: BackendName) -> None:
+    logger = get_logger()
+    if backend_name == BACKEND_STDOUT:
+        from system.logger.stdout import StdoutLogger
+        logger.register_backend(StdoutLogger())
+        return
+    raise ValueError(f"unknown logger backend: {backend_name}")
