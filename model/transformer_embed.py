@@ -321,9 +321,10 @@ def limit_epoch_data(
         *,
         ftype: str,
         is_cuda: bool,
+        ext: str,
         count: int) -> None:
     _, spre, spost = get_model_filename_tuple(
-        harness, folder, ftype=ftype, is_cuda=is_cuda, epoch=None)
+        harness, folder, ftype=ftype, is_cuda=is_cuda, epoch=None, ext=ext)
 
     def load_stats(fname: str) -> EpochStats:
         with open_read(fname, text=True) as fin:
@@ -347,5 +348,7 @@ def limit_epoch_data(
 
     _, to_delete = retain_some(get_stats(), count, key=stats_key)
     for (stats_file, stats) in to_delete:
+        print(f"removing {stats_file}")
         remove_file(stats_file)
+        print(f"removing {stats['fname']}")
         remove_file(stats["fname"])
