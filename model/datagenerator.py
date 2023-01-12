@@ -5,6 +5,7 @@ from typing import Callable, Iterable, Literal, Sequence, TypedDict, TypeVar
 import numpy as np
 import pandas as pd
 
+from misc.lru import LRU
 from misc.util import now_ts, sigmoid
 from system.links.link import Link
 from system.links.scorer import get_scorer, Scorer
@@ -289,7 +290,6 @@ class TrainTestGenerator:
             test_size: int,
             test_val_size: int,
             compute_batch_size: int | None = None,
-            reset_train: bool = False,
             scorer: Scorer | None = None,
             now: pd.Timestamp | None = None,
             ) -> None:
@@ -315,7 +315,6 @@ class TrainTestGenerator:
         self._compute_batch_size = \
             batch_size if compute_batch_size is None else compute_batch_size
         self._epoch_batches = epoch_batches
-        self._reset_train = reset_train
 
         self._scorer = get_scorer("best") if scorer is None else scorer
         self._now = now_ts() if now is None else now
@@ -326,13 +325,16 @@ class TrainTestGenerator:
         self._test_buff: collections.deque[BatchRow] = collections.deque()
         self._test_validation_buff: collections.deque[BatchRow] = \
             collections.deque()
-        self._cur_train_batch = 0
         self._cur_epoch = 0
+
+        self._train_epoch_cache: LRU[int, list[BatchRow]] = LRU(30)
+        self._cur_train_cache: list[BatchRow] = []
 
         self._cur_train_validation_cache: list[BatchRow] = []
         self._cur_test_cache: list[BatchRow] = []
         self._cur_test_validation_cache: list[BatchRow] = []
 
+        self._cur_train_ix = 0
         self._cur_train_validation_ix = 0
         self._cur_test_ix = 0
         self._cur_test_validation_ix = 0
@@ -382,23 +384,30 @@ class TrainTestGenerator:
         self._check_err()
         self._th_term = False
 
+    def _empty_train_cache(self) -> None:
+        train_cache = list(self._cur_train_cache)
+        if len(train_cache) == self.get_epoch_train_size():
+            self._train_epoch_cache.set(self._cur_epoch, train_cache)
+        self._cur_train_cache = []
+        self._cur_train_ix = 0
+
     def reset(self) -> None:
         self._th_terminate()
+        self._empty_train_cache()
         self._train.reset()
         self._train_buff.clear()
-        self._cur_train_batch = 0
         self._cur_train_validation_ix = 0
         self._cur_test_ix = 0
         self._cur_test_validation_ix = 0
         self._cur_epoch = 0
 
     def advance_epoch(self) -> None:
-        if (self._cur_train_batch != self._epoch_batches
+        if (self._cur_train_ix != self.get_epoch_train_size()
                 or self._cur_train_validation_ix != self._train_val_size
                 or self._cur_test_ix != self._test_size):
             raise ValueError(
                 "epoch not exhausted! "
-                f"train: {self._cur_train_batch} "
+                f"train: {self._cur_train_ix} "
                 f"train validation: {self._cur_train_validation_ix} "
                 f"test: {self._cur_test_ix} "
                 f"train validation: {self._cur_test_validation_ix} "
@@ -407,13 +416,10 @@ class TrainTestGenerator:
                 f"test size: {self._test_size} "
                 f"test val size: {self._test_val_size}")
         self._th_terminate()
-        self._cur_epoch += 1
-        if self._reset_train:
-            self._train.reset()
-        else:
-            self._train.set_seed_offset(self._cur_epoch)
+        self._empty_train_cache()
+        self._set_epoch(self._cur_epoch + 1)
+        self._train.set_seed_offset(self._cur_epoch)
         self._train_buff.clear()
-        self._cur_train_batch = 0
         self._cur_train_validation_ix = 0
         self._cur_test_ix = 0
         self._cur_test_validation_ix = 0
@@ -421,11 +427,18 @@ class TrainTestGenerator:
     def get_epoch(self) -> int:
         return self._cur_epoch
 
+    def _set_epoch(self, epoch: int) -> None:
+        self._cur_epoch = epoch
+        train_cache = self._train_epoch_cache.get(self._cur_epoch)
+        if train_cache is not None:
+            self._cur_train_cache = train_cache
+        else:
+            self._cur_train_cache = []
+
     def set_epoch(self, epoch: int) -> None:
         self.reset()
-        self._cur_epoch = epoch
-        if not self._reset_train:
-            self._train.set_seed_offset(self._cur_epoch)
+        self._set_epoch(epoch)
+        self._train.set_seed_offset(self._cur_epoch)
 
     @staticmethod
     def _epoch_learning_plan(
@@ -748,11 +761,16 @@ class TrainTestGenerator:
             th.start()
 
     def next_train_batch(self) -> list[BatchRow] | None:
-        if self._cur_train_batch >= self._epoch_batches:
+        train_size = self.get_epoch_train_size()
+        if self._cur_train_ix >= train_size:
             return None
-        res: list[BatchRow] = []
-        self._get_batch_for(self._th_run_train, self._train_buff, res)
-        self._cur_train_batch += 1
+        cache = self._cur_train_cache
+        while self._cur_train_ix >= len(cache):
+            self._get_batch_for(self._th_run_train, self._train_buff, cache)
+        end_ix = min(
+            self._cur_train_ix + self._batch_size, train_size)
+        res = cache[self._cur_train_ix:end_ix]
+        self._cur_train_ix += len(res)
         return res
 
     def next_train_validation_batch(self) -> list[BatchRow] | None:
@@ -797,7 +815,7 @@ class TrainTestGenerator:
         return res
 
     def train_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_train_batch >= self._epoch_batches:
+        if self._cur_train_ix >= self.get_epoch_train_size():
             raise ValueError("train batches already exhausted!")
         while True:
             res = self.next_train_batch()
@@ -877,7 +895,6 @@ def create_train_test(
         test_seed: int = 69,
         test_validation_seed: int = 23,
         compute_batch_size: int | None = None,
-        reset_train: bool = False,
         scorer: Scorer | None = None,
         now: pd.Timestamp | None = None) -> TrainTestGenerator:
     return TrainTestGenerator(
@@ -897,6 +914,5 @@ def create_train_test(
         test_size=test_size,
         test_val_size=test_val_size,
         compute_batch_size=compute_batch_size,
-        reset_train=reset_train,
         scorer=scorer,
         now=now)

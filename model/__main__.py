@@ -132,7 +132,9 @@ def run() -> None:
             compute_batch_size=10)
         ttgen.set_epoch(3)
         bar = "=" * 42
-        for _ in range(4):
+        for cur_iter in range(5):
+            if cur_iter == 4:
+                ttgen.set_epoch(3)
             epoch = ttgen.get_epoch()
             print(bar)
             print(f"train {epoch}")
