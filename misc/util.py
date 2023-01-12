@@ -273,10 +273,10 @@ def extract_list(
         yield (elem, text)
 
 
-def highest_number(
+def extract_number(
         arr: Iterable[str],
         prefix: str | None = None,
-        postfix: str | None = None) -> tuple[str, int] | None:
+        postfix: str | None = None) -> Iterable[tuple[str, int]]:
 
     def get_num(text: str) -> int | None:
         match = re.search(NUMBER_PATTERN, text)
@@ -287,12 +287,20 @@ def highest_number(
         except ValueError:
             return None
 
-    res = None
-    res_num = 0
     for elem, text in extract_list(arr, prefix=prefix, postfix=postfix):
         num = get_num(text)
         if num is None:
             continue
+        yield elem, num
+
+
+def highest_number(
+        arr: Iterable[str],
+        prefix: str | None = None,
+        postfix: str | None = None) -> tuple[str, int] | None:
+    res = None
+    res_num = 0
+    for elem, num in extract_number(arr, prefix=prefix, postfix=postfix):
         if res is None or num > res_num:
             res = elem
             res_num = num

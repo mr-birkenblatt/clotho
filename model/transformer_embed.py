@@ -13,7 +13,7 @@ from transformers import (  # type: ignore
 
 from misc.env import envload_path
 from misc.io import ensure_folder, open_read, remove_file
-from misc.util import highest_number, json_load, retain_some
+from misc.util import extract_number, highest_number, json_load, retain_some
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
@@ -315,7 +315,15 @@ def get_epoch_and_load(
     return mprev, epoch_offset
 
 
-def limit_epoch_data(folder: str, count: int) -> None:
+def limit_epoch_data(
+        harness: TrainingHarness,
+        folder: str,
+        *,
+        ftype: str,
+        is_cuda: bool,
+        count: int) -> None:
+    _, spre, spost = get_model_filename_tuple(
+        harness, folder, ftype=ftype, is_cuda=is_cuda, epoch=None)
 
     def load_stats(fname: str) -> EpochStats:
         with open_read(fname, text=True) as fin:
@@ -331,7 +339,8 @@ def limit_epoch_data(folder: str, count: int) -> None:
         )
 
     def get_stats() -> Iterable[tuple[str, EpochStats]]:
-        for fname in os.listdir(folder):
+        for fname, _ in sorted(extract_number(
+                os.listdir(folder), spre, spost), key=lambda elem: elem[1]):
             filename = os.path.join(folder, fname)
             stats = load_stats(filename)
             yield filename, stats
