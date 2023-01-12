@@ -395,8 +395,7 @@ class TrainTestGenerator:
     def advance_epoch(self) -> None:
         if (self._cur_train_batch != self._epoch_batches
                 or self._cur_train_validation_ix != self._train_val_size
-                or self._cur_test_ix != self._test_size
-                or self._cur_test_validation_ix != self._test_val_size):
+                or self._cur_test_ix != self._test_size):
             raise ValueError(
                 "epoch not exhausted! "
                 f"train: {self._cur_train_batch} "
@@ -405,8 +404,8 @@ class TrainTestGenerator:
                 f"train validation: {self._cur_test_validation_ix} "
                 f"batches per epoch: {self._epoch_batches} "
                 f"train val size: {self._train_val_size} "
-                f"test size: {self._test_size}"
-                f"test val size: {self._test_val_size} ")
+                f"test size: {self._test_size} "
+                f"test val size: {self._test_val_size}")
         self._th_terminate()
         self._cur_epoch += 1
         if self._reset_train:
@@ -605,12 +604,11 @@ class TrainTestGenerator:
             self,
             start_th: Callable[[], None],
             buff: collections.deque[BatchRow],
-            out: list[BatchRow]) -> bool:
+            out: list[BatchRow]) -> None:
 
         def has_rows() -> bool:
             return bool(buff)
 
-        any_new = False
         for _ in range(self._batch_size):
             while not has_rows():
                 self._check_err()
@@ -618,9 +616,7 @@ class TrainTestGenerator:
                 with self._cond:
                     self._cond.wait_for(has_rows, 1.0)
             out.append(buff.popleft())
-            any_new = True
         self._check_err()
-        return any_new
 
     def _check_err(self) -> None:
         if self._th_err is not None:
@@ -767,7 +763,9 @@ class TrainTestGenerator:
         while self._cur_train_validation_ix >= len(cache):
             self._get_batch_for(
                 self._th_run_train_val, self._train_validation_buff, cache)
-        res = cache[self._cur_train_validation_ix:train_val_size]
+        end_ix = min(
+            self._cur_train_validation_ix + self._batch_size, train_val_size)
+        res = cache[self._cur_train_validation_ix:end_ix]
         self._cur_train_validation_ix += len(res)
         return res
 
@@ -778,7 +776,9 @@ class TrainTestGenerator:
         cache = self._cur_test_cache
         while self._cur_test_ix >= len(cache):
             self._get_batch_for(self._th_run_test, self._test_buff, cache)
-        res = cache[self._cur_test_ix:test_size]
+        end_ix = min(
+            self._cur_test_ix + self._batch_size, test_size)
+        res = cache[self._cur_test_ix:end_ix]
         self._cur_test_ix += len(res)
         return res
 
@@ -790,7 +790,9 @@ class TrainTestGenerator:
         while self._cur_test_validation_ix >= len(cache):
             self._get_batch_for(
                 self._th_run_test_val, self._test_validation_buff, cache)
-        res = cache[self._cur_test_validation_ix:test_val_size]
+        end_ix = min(
+            self._cur_test_validation_ix + self._batch_size, test_val_size)
+        res = cache[self._cur_test_validation_ix:end_ix]
         self._cur_test_validation_ix += len(res)
         return res
 
