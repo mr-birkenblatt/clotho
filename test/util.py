@@ -1,8 +1,8 @@
 import collections
 import os
 import re
-import xml.etree.ElementTree as ET
 from typing import Iterable
+from xml.etree import ElementTree as ET
 
 import pandas as pd
 import pandas.testing as pd_test

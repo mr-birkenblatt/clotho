@@ -346,9 +346,15 @@ def limit_epoch_data(
             stats = load_stats(filename)
             yield filename, stats
 
-    _, to_delete = retain_some(get_stats(), count, key=stats_key)
+    best, to_delete = retain_some(get_stats(), count, key=stats_key)
     for (stats_file, stats) in to_delete:
         print(f"removing {stats_file}")
         remove_file(stats_file)
         print(f"removing {stats['fname']}")
         remove_file(stats["fname"])
+    if best:
+        best_stats = best[-1][1]
+        print(f"best model: {best_stats['fname']}")
+        print(f"best train: {best_stats['train_acc']}")
+        print(f"best train val: {best_stats['train_val_acc']}")
+        print(f"best test: {best_stats['test_acc']}")

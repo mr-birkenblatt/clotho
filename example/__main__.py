@@ -5,8 +5,9 @@ import time
 import pandas as pd
 
 from effects.effects import get_old_threshold, set_old_threshold
-from example.loader import process_action_file
+from example.loader import process_action_file, process_actions_full
 from example.reddit import RedditAccess
+from example.wiki import read_wiki
 from misc.io import open_append
 from misc.util import json_compact
 from system.links.store import get_link_store
@@ -69,6 +70,26 @@ def process_load(ns_name: str) -> None:
     set_old_threshold(old_th)
 
 
+def process_wiki(ns_name: str, filename: str, is_abstract: bool) -> None:
+    namespace = get_namespace(ns_name)
+    message_store = get_message_store(namespace)
+    link_store = get_link_store(namespace)
+    user_store = get_user_store(namespace)
+    now = pd.Timestamp("2023-01-18", tz="UTC")
+    reference_time = time.monotonic()
+    old_th = get_old_threshold()
+    set_old_threshold(24 * 60 * 60)
+    process_actions_full(
+        read_wiki(filename, is_abstract=is_abstract),
+        message_store=message_store,
+        link_store=link_store,
+        user_store=user_store,
+        now=now,
+        reference_time=reference_time,
+        roots={"wikipedia"})
+    set_old_threshold(old_th)
+
+
 def run() -> None:
     args = parse_args()
     ns_name = args.namespace
@@ -79,6 +100,11 @@ def run() -> None:
             get_roots(ns_name == "train"))
     elif args.cmd == "load":
         process_load(ns_name)
+    elif args.cmd == "wiki":
+        filename = args.filename
+        if filename is None:
+            raise ValueError("no filename specified")
+        process_wiki(ns_name, filename, args.abstract)
     else:
         raise RuntimeError(f"invalid cmd: {args.cmd}")
 
@@ -89,9 +115,16 @@ def parse_args() -> argparse.Namespace:
         description="Create or load example")
     parser.add_argument(
         "cmd",
-        choices=["reddit", "load"],
+        choices=["reddit", "load", "wiki"],
         help="the command to execute")
     parser.add_argument("namespace", help="the namespace (test, train, etc.)")
+    parser.add_argument(
+        "--filename", default=None, help="the filename for wiki")
+    parser.add_argument(
+        "--abstract",
+        default=False,
+        action="store_true",
+        help="whether the wiki file is abstracts only or full text")
     return parser.parse_args()
 
 

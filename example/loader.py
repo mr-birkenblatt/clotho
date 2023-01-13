@@ -139,7 +139,8 @@ def interpret_action(
         if not text:
             text = "[missing]"
         is_topic = False
-        if text.startswith("r/") and text[2:].lower() in roots:
+        if ((text.startswith("r/") or text.startswith("t/"))
+                and text[2:].lower() in roots):
             tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
@@ -250,6 +251,25 @@ def process_action_file(
         now: pd.Timestamp,
         reference_time: float,
         roots: set[str]) -> tuple[int, pd.Timestamp]:
+    return process_actions_full(
+        actions_from_file(fname),
+        message_store=message_store,
+        link_store=link_store,
+        user_store=user_store,
+        now=now,
+        reference_time=reference_time,
+        roots=roots)
+
+
+def process_actions_full(
+        actions: Iterable[Action],
+        *,
+        message_store: MessageStore,
+        link_store: LinkStore,
+        user_store: UserStore,
+        now: pd.Timestamp,
+        reference_time: float,
+        roots: set[str]) -> tuple[int, pd.Timestamp]:
     hash_lookup: dict[str, MHash] = {}
     lookup_buffer: collections.defaultdict[str, list[Action]] = \
         collections.defaultdict(list)
@@ -262,7 +282,7 @@ def process_action_file(
     synth_pool: list[User] = []
     counter = 0
     return process_actions(
-        actions_from_file(fname),
+        actions,
         message_store=message_store,
         link_store=link_store,
         user_store=user_store,

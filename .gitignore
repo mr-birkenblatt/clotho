@@ -14,6 +14,9 @@
 /.mypy_cache
 /example/creds.json
 /example/reddit*.jsonl
+/example/*.xml
+/example/*.xml.bz2
+/example/*.xml.gz
 /example/*.log.txt
 /userdata/*
 
