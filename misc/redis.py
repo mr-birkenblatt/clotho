@@ -62,7 +62,7 @@ def get_test_config() -> RedisConfig:
         "port": 6380,
         "passwd": "",
         "prefix": "",
-        "path": "test",
+        "path": os.path.abspath("test"),
     }
 
 
@@ -73,7 +73,7 @@ def get_api_config() -> RedisConfig:
         "port": envload_int("API_REDIS_PORT", default=6379),
         "passwd": envload_str("API_REDIS_PASSWD", default=""),
         "prefix": envload_str("API_REDIS_PREFIX", default=""),
-        "path": os.path.join(base_path, "_api"),
+        "path": os.path.abspath(os.path.join(base_path, "_api")),
     }
 
 

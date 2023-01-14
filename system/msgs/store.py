@@ -74,14 +74,14 @@ MSG_STORE: dict[Namespace, MessageStore] = {}
 def get_message_store(namespace: Namespace) -> MessageStore:
     res = MSG_STORE.get(namespace)
     if res is None:
-        res = create_message_store(namespace.get_message_module())
+        res = create_message_store(namespace)
         MSG_STORE[namespace] = res
     return res
 
 
 DiskMessageModule = TypedDict('DiskMessageModule', {
     "name": Literal["disk"],
-    "root": str,
+    "cache_size": int,
 })
 RamMessageModule = TypedDict('RamMessageModule', {
     "name": Literal["ram"],
@@ -89,10 +89,11 @@ RamMessageModule = TypedDict('RamMessageModule', {
 MsgsModule = DiskMessageModule | RamMessageModule
 
 
-def create_message_store(mobj: MsgsModule) -> MessageStore:
+def create_message_store(namespace: Namespace) -> MessageStore:
+    mobj = namespace.get_message_module()
     if mobj["name"] == "disk":
         from system.msgs.disk import DiskStore
-        return DiskStore(mobj["root"])
+        return DiskStore(namespace.get_root(), mobj["cache_size"])
     if mobj["name"] == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()

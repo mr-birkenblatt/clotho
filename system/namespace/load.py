@@ -16,10 +16,11 @@ NamespaceObj = TypedDict('NamespaceObj', {
     "users": UsersModule,
     "embed": EmbedModule,
     "model": EmbeddingProviderModule,
+    "writeback": bool,
 })
 
 
-def msgs_from_obj(ns_name: str, obj: dict[str, Any]) -> MsgsModule:
+def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
     res: MsgsModule
     name = obj.get("name", "disk")
     if name == "ram":
@@ -29,7 +30,7 @@ def msgs_from_obj(ns_name: str, obj: dict[str, Any]) -> MsgsModule:
     elif name == "disk":
         res = {
             "name": "disk",
-            "root": obj.get("root", f"{ns_name}"),
+            "cache_size": obj.get("cache_size", 50000),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -46,7 +47,7 @@ def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
             "port": int(obj.get("port", 6379)),
             "passwd": obj.get("passwd", ""),
             "prefix": obj.get("prefix", f"{ns_name}"),
-            "path": obj.get("path", f"{ns_name}"),
+            "path": obj.get("path", "links"),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -70,8 +71,8 @@ def suggest_from_obj(obj: dict[str, Any]) -> SuggestModule:
     return res
 
 
-def users_from_obj(ns_name: str, obj: dict[str, Any]) -> UsersModule:
-    res: MsgsModule
+def users_from_obj(obj: dict[str, Any]) -> UsersModule:
+    res: UsersModule
     name = obj.get("name", "disk")
     if name == "ram":
         res = {
@@ -80,7 +81,7 @@ def users_from_obj(ns_name: str, obj: dict[str, Any]) -> UsersModule:
     elif name == "disk":
         res = {
             "name": "disk",
-            "root": obj.get("root", f"{ns_name}"),
+            "cache_size": obj.get("cache_size", 50000),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -101,7 +102,7 @@ def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
             "port": int(obj.get("port", 6379)),
             "passwd": obj.get("passwd", ""),
             "prefix": obj.get("prefix", f"{ns_name}"),
-            "path": obj.get("path", f"{ns_name}"),
+            "path": obj.get("path", "embed"),
             "index": obj["index"],
             "trees": obj.get("trees", 1000),
             "metric": obj.get("metric", "dot"),
@@ -137,13 +138,14 @@ def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
     if VALID_NS_NAME.search(ns_name) is None:
         raise ValueError(f"invalid namespace name {ns_name}")
     return {
-        "msgs": msgs_from_obj(ns_name, obj.get("msgs", {})),
+        "msgs": msgs_from_obj(obj.get("msgs", {})),
         "links": links_from_obj(ns_name, obj.get("links", {})),
         "suggest": [
             suggest_from_obj(cur)
             for cur in obj.get("suggest", [])
         ],
-        "users": users_from_obj(ns_name, obj.get("users", {})),
+        "users": users_from_obj(obj.get("users", {})),
         "embed": embed_from_obj(ns_name, obj.get("embed", {})),
         "model": model_from_obj(obj.get("model", {})),
+        "writeback": obj.get("writeback", True),
     }

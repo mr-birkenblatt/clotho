@@ -5,7 +5,6 @@ import numpy as np
 import torch
 from annoy import AnnoyIndex
 
-from misc.env import envload_path
 from misc.io import ensure_folder, fastrename, remove_file
 from misc.util import safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
@@ -24,8 +23,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             trees: int,
             is_dot: bool) -> None:
         super().__init__(providers, cache)
-        base_path = envload_path("USER_PATH", default="userdata")
-        self._path = ensure_folder(os.path.join(base_path, embed_root))
+        self._path = ensure_folder(embed_root)
         self._indexes: dict[ProviderRole, AnnoyIndex] = {}
         self._tmpindex: dict[ProviderRole, AnnoyIndex] = {}
         self._trees = trees

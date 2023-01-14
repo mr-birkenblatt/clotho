@@ -1,4 +1,7 @@
+import os
 from typing import TYPE_CHECKING
+
+from misc.env import envload_path
 
 
 if TYPE_CHECKING:
@@ -18,6 +21,14 @@ class Namespace:
 
     def get_name(self) -> str:
         return self._name
+
+    @staticmethod
+    def get_root_for(ns_name: str) -> str:
+        base_path = envload_path("USER_PATH", default="userdata")
+        return os.path.abspath(os.path.join(base_path, ns_name))
+
+    def get_root(self) -> str:
+        return self.get_root_for(self._name)
 
     def get_message_module(self) -> 'MsgsModule':
         return self._obj["msgs"]

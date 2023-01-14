@@ -1,3 +1,4 @@
+import os
 from typing import Iterable, Literal, TypedDict
 
 import pandas as pd
@@ -156,6 +157,6 @@ def create_link_store(namespace: Namespace) -> LinkStore:
                 lobj["port"],
                 lobj["passwd"],
                 lobj["prefix"],
-                lobj["path"]))
+                os.path.join(namespace.get_root(), lobj["path"])))
         return RedisLinkStore(ns_key)
     raise ValueError(f"unknown link store: {lobj}")

@@ -4,7 +4,6 @@ from typing import Callable, Iterable
 
 import numpy as np
 
-from misc.env import envload_path
 from misc.io import ensure_folder, get_folder, open_append, open_read
 from misc.lru import LRU
 from system.msgs.message import Message, MHash
@@ -16,12 +15,10 @@ RELOAD_TOPICS_FREQ = 60 * 60  # 1h
 
 
 class DiskStore(MessageStore):
-    def __init__(self, msgs_root: str) -> None:
-        base_path = envload_path("USER_PATH", default="userdata")
-        path = os.path.join(base_path, msgs_root)
-        self._path = os.path.join(path, "msg")
-        self._topics = os.path.join(path, "topics.list")
-        self._cache: LRU[MHash, Message] = LRU(50000)
+    def __init__(self, msgs_root: str, cache_size: int) -> None:
+        self._path = os.path.join(msgs_root, "msg")
+        self._topics = os.path.join(msgs_root, "topics.list")
+        self._cache: LRU[MHash, Message] = LRU(cache_size)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
 

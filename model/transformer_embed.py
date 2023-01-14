@@ -11,8 +11,7 @@ from transformers import (  # type: ignore
     logging,
 )
 
-from misc.env import envload_path
-from misc.io import ensure_folder, open_read, remove_file
+from misc.io import open_read, remove_file
 from misc.util import (
     extract_number,
     highest_number,
@@ -254,13 +253,11 @@ class TransformerEmbedding(EmbeddingProvider):
 
 
 def load_providers(
-        module: str,
+        root: str,
         fname: str,
         version: int,
         is_harness: bool) -> EmbeddingProviderMap:
-    base_path = envload_path("USER_PATH", default="userdata")
-    path = ensure_folder(os.path.join(base_path, module))
-    model = load_model(os.path.join(path, fname), version, is_harness)
+    model = load_model(os.path.join(root, fname), version, is_harness)
     return {
         "parent": TransformerEmbedding(model, "transformer", "parent"),
         "child": TransformerEmbedding(model, "transformer", "child"),

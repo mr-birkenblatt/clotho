@@ -4,7 +4,6 @@ import os
 import sys
 from typing import TypedDict
 
-from misc.env import envload_path
 from misc.io import ensure_folder
 from misc.redis import get_redis_config
 from system.namespace.namespace import Namespace
@@ -26,7 +25,7 @@ def get_module(namespace: Namespace, module: str) -> Module:
         return {
             "name": lmodule["name"],
             "port": lmodule["port"],
-            "path": lmodule["path"],
+            "path": os.path.join(namespace.get_root(), lmodule["path"]),
         }
     if module == "embed":
         emodule = namespace.get_embed_module()
@@ -35,7 +34,7 @@ def get_module(namespace: Namespace, module: str) -> Module:
         return {
             "name": emodule["name"],
             "port": emodule["port"],
-            "path": emodule["path"],
+            "path": os.path.join(namespace.get_root(), emodule["path"]),
         }
     raise ValueError(f"invalid module: {module}")
 
@@ -60,8 +59,7 @@ def get_path(ns_name: str, module: str) -> str:
     module_obj = get_module(namespace, module)
     if module_obj["name"] != "redis":
         raise ValueError(f"no redis needed for module: {module_obj}")
-    base_path = envload_path("USER_PATH", default="userdata")
-    return os.path.join(base_path, module_obj["path"])
+    return module_obj["path"]
 
 
 def run() -> None:

@@ -26,14 +26,14 @@ USER_STORE: dict[Namespace, UserStore] = {}
 def get_user_store(namespace: Namespace) -> UserStore:
     res = USER_STORE.get(namespace)
     if res is None:
-        res = create_user_store(namespace.get_users_module())
+        res = create_user_store(namespace)
         USER_STORE[namespace] = res
     return res
 
 
 DiskUsersModule = TypedDict('DiskUsersModule', {
     "name": Literal["disk"],
-    "root": str,
+    "cache_size": int,
 })
 RamUsersModule = TypedDict('RamUsersModule', {
     "name": Literal["ram"],
@@ -41,10 +41,11 @@ RamUsersModule = TypedDict('RamUsersModule', {
 UsersModule = DiskUsersModule | RamUsersModule
 
 
-def create_user_store(uobj: UsersModule) -> UserStore:
+def create_user_store(namespace: Namespace) -> UserStore:
+    uobj = namespace.get_users_module()
     if uobj["name"] == "disk":
         from system.users.disk import DiskUserStore
-        return DiskUserStore(uobj["root"])
+        return DiskUserStore(namespace.get_root(), uobj["cache_size"])
     if uobj["name"] == "ram":
         from system.users.ram import RamUserStore
         return RamUserStore()

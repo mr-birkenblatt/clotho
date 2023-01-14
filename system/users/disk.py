@@ -1,7 +1,6 @@
 import os
 from typing import Any, Iterable, TypedDict
 
-from misc.env import envload_path
 from misc.io import ensure_folder, open_append, open_read
 from misc.lru import LRU
 from misc.util import json_compact, read_jsonl
@@ -26,10 +25,9 @@ def ensure_user_dict(obj: Any) -> UserDict:
 
 
 class DiskUserStore(UserStore):
-    def __init__(self, user_root: str) -> None:
-        base_path = envload_path("USER_PATH", default="userdata")
-        self._path = os.path.join(base_path, user_root, "user")
-        self._cache: LRU[str, User] = LRU(50000)
+    def __init__(self, user_root: str, cache_size: int) -> None:
+        self._path = os.path.join(user_root, "user")
+        self._cache: LRU[str, User] = LRU(cache_size)
 
     def _get_user_dict(self, user: User) -> UserDict:
         return {

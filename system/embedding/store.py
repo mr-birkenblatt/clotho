@@ -1,3 +1,4 @@
+import os
 from contextlib import contextmanager
 from typing import cast, Iterable, Iterator, Literal, TypedDict
 
@@ -146,6 +147,7 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
         from system.embedding.annoy import AnnoyEmbeddingStore
         from system.embedding.rediscache import RedisEmbeddingCache
 
+        root = os.path.join(namespace.get_root(), eobj["path"])
         ns_key = get_redis_ns_key(namespace.get_name(), "embedding")
         if not ns_key[0].startswith("_"):
             register_redis_ns(ns_key, create_redis_config(
@@ -153,14 +155,14 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
                 eobj["port"],
                 eobj["passwd"],
                 eobj["prefix"],
-                eobj["path"]))
+                root))
         cache = RedisEmbeddingCache(ns_key)
         if eobj["index"] != "annoy":
             raise ValueError(f"unsupported embedding index: {eobj['index']}")
         return AnnoyEmbeddingStore(
             providers,
             cache,
-            eobj["path"],
+            root,
             eobj["trees"],
             eobj["metric"] == "dot")
     if eobj["name"] == "none":

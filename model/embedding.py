@@ -73,7 +73,7 @@ def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
         from model.transformer_embed import load_providers
 
         return load_providers(
-            os.path.join(namespace.get_name(), "model"),
+            os.path.join(namespace.get_root(), "model"),
             pobj["fname"],
             pobj["version"],
             pobj["is_harness"])
