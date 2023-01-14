@@ -10,6 +10,7 @@ from typing import Any, Callable, IO, Iterable, Type, TypeVar
 
 import numpy as np
 import pandas as pd
+import torch
 
 
 CT = TypeVar('CT')
@@ -335,3 +336,10 @@ def retain_some(
             res = res[-count:]
     res.sort(key=key, reverse=reverse)
     return res, to_delete
+
+
+def safe_ravel(x: torch.Tensor) -> torch.Tensor:
+    shape = torch.Tensor(list(x.shape)).int()
+    if torch.max(shape).item() != torch.prod(shape).item():
+        raise ValueError(f"not safe to ravel shape {shape.tolist()}")
+    return x.ravel()

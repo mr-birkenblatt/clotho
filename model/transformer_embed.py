@@ -13,7 +13,13 @@ from transformers import (  # type: ignore
 
 from misc.env import envload_path
 from misc.io import ensure_folder, open_read, remove_file
-from misc.util import extract_number, highest_number, json_load, retain_some
+from misc.util import (
+    extract_number,
+    highest_number,
+    json_load,
+    retain_some,
+    safe_ravel,
+)
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
@@ -237,10 +243,10 @@ class TransformerEmbedding(EmbeddingProvider):
             if self._is_parent:
                 return self._model.get_parent_embed(
                     input_ids=input_obj["input_ids"],
-                    attention_mask=input_obj["attention_mask"]).ravel()
+                    attention_mask=safe_ravel(input_obj["attention_mask"]))
             return self._model.get_child_embed(
                 input_ids=input_obj["input_ids"],
-                attention_mask=input_obj["attention_mask"]).ravel()
+                attention_mask=safe_ravel(input_obj["attention_mask"]))
 
     @staticmethod
     def num_dimensions() -> int:

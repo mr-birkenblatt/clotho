@@ -7,6 +7,7 @@ from annoy import AnnoyIndex
 
 from misc.env import envload_path
 from misc.io import ensure_folder, fastrename, remove_file
+from misc.util import safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
@@ -70,7 +71,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             role: ProviderRole,
             index: int,
             embed: torch.Tensor) -> None:
-        self._tmpindex[role].add_item(index, embed.ravel().tolist())
+        self._tmpindex[role].add_item(index, safe_ravel(embed).tolist())
 
     def do_index_finish(self, role: ProviderRole) -> None:
         aindex: AnnoyIndex | None = self._tmpindex.pop(role, None)
@@ -91,15 +92,15 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             count: int) -> Iterable[tuple[int, float]]:
         aindex = self._get_index(role)
         elems, dists = aindex.get_nns_by_vector(
-            embed.ravel().tolist(), count, include_distances=True)
+            safe_ravel(embed).tolist(), count, include_distances=True)
         yield from zip(elems, dists)
 
     def get_distance(
             self, embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
         if self._is_dot:
-            return torch.dot(embed_a.ravel(), embed_b.ravel()).item()
+            return torch.dot(safe_ravel(embed_a), safe_ravel(embed_b)).item()
         cos = torch.nn.functional.cosine_similarity(
-            embed_a.ravel(), embed_b.ravel(), dim=0).item()
+            safe_ravel(embed_a), safe_ravel(embed_b), dim=0).item()
         return np.sqrt(max(0.0, 2.0 - 2.0 * cos))
 
     def is_bigger_better(self) -> bool:
