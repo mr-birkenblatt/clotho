@@ -71,7 +71,13 @@ def strip_tag(tag: str) -> str:
     return tag
 
 
-IGNORED_ABSTRACT_TAGS: Set[str] = {"link", "sublink", "anchor", "links"}
+IGNORED_ABSTRACT_TAGS: Set[str] = {
+    "anchor",
+    "feed",
+    "link",
+    "links",
+    "sublink",
+}
 
 
 def process_abstract_event(elem: ET.Element, state: WikiState) -> bool:
