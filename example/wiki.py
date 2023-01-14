@@ -42,7 +42,7 @@ def finalize_action(state: WikiState) -> Iterable[Action]:
         yield from []
         return
     if state["title"] is None or state["text"] is None:
-        print(f"WARNING: page has no content? {state}")
+        # print(f"WARNING: page has no content? {state}")
         yield from []
         return
     title = state["title"]
