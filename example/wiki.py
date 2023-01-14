@@ -1,6 +1,6 @@
 import bz2
 import gzip
-from typing import Iterable, Set, TypedDict
+from typing import Iterable, Literal, Set, TextIO, TypedDict
 from xml.etree import ElementTree as ET
 
 import pandas as pd
@@ -134,15 +134,29 @@ def process_full_event(elem: ET.Element, state: WikiState) -> bool:
     return False
 
 
+def iterparse(
+        fin: TextIO) -> Iterable[tuple[Literal["start", "end"], ET.Element]]:
+    return ET.iterparse(fin, events=("start", "end"))  # type: ignore
+
+
 def read_wiki(fname: str, *, is_abstract: bool) -> Iterable[Action]:
     process_event = \
         process_abstract_event if is_abstract else process_full_event
     compress = gzip if is_abstract else bz2
     state = init_wiki_state()
     yield create_message_action(REF_WIKI, TOPIC_WIKI)
-    with compress.open(fname, mode="rt", encoding="utf-8") as gin:
-        for _, elem in ET.iterparse(gin, events=("end",)):
-            if process_event(elem, state):
-                yield from finalize_action(state)
-                state = init_wiki_state()
-            elem.clear()
+    with compress.open(fname, mode="rt", encoding="utf-8") as fin:
+        stack: list[ET.Element] = []
+        for event, elem in iterparse(fin):
+            if event == "start":
+                stack.append(elem)
+            elif event == "end":
+                if process_event(elem, state):
+                    yield from finalize_action(state)
+                    state = init_wiki_state()
+                elem.clear()
+                stack.pop()
+                if stack:
+                    stack[-1].remove(elem)
+            else:
+                raise ValueError(f"unknown event: {event}")
