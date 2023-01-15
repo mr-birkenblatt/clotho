@@ -230,6 +230,7 @@ class TransformerEmbedding(EmbeddingProvider):
             method: str,
             role: ProviderRole) -> None:
         super().__init__(method, role)
+        model.to(get_device())
         self._model = model
         self._tokenizer = get_tokenizer()
         self._is_parent = role == "parent"
