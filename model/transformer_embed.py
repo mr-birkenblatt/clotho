@@ -240,12 +240,12 @@ class TransformerEmbedding(EmbeddingProvider):
         self._model.eval()
         with torch.no_grad():
             if self._is_parent:
-                return self._model.get_parent_embed(
+                return safe_ravel(self._model.get_parent_embed(
                     input_ids=input_obj["input_ids"],
-                    attention_mask=safe_ravel(input_obj["attention_mask"]))
-            return self._model.get_child_embed(
+                    attention_mask=input_obj["attention_mask"])).cpu()
+            return safe_ravel(self._model.get_child_embed(
                 input_ids=input_obj["input_ids"],
-                attention_mask=safe_ravel(input_obj["attention_mask"]))
+                attention_mask=input_obj["attention_mask"])).cpu()
 
     @staticmethod
     def num_dimensions() -> int:
