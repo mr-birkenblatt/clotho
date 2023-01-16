@@ -92,6 +92,10 @@ def get_message_store(namespace: Namespace) -> MessageStore:
     return res
 
 
+ColdMessageModule = TypedDict('ColdMessageModule', {
+    "name": Literal["cold"],
+    "keep_alive": float,
+})
 DiskMessageModule = TypedDict('DiskMessageModule', {
     "name": Literal["disk"],
     "cache_size": int,
@@ -99,7 +103,7 @@ DiskMessageModule = TypedDict('DiskMessageModule', {
 RamMessageModule = TypedDict('RamMessageModule', {
     "name": Literal["ram"],
 })
-MsgsModule = DiskMessageModule | RamMessageModule
+MsgsModule = ColdMessageModule | DiskMessageModule | RamMessageModule
 
 
 def create_message_store(namespace: Namespace) -> MessageStore:
@@ -112,7 +116,7 @@ def create_message_store(namespace: Namespace) -> MessageStore:
         return RamMessageStore()
     if mobj["name"] == "cold":
         from system.msgs.cold import ColdStore
-        return ColdStore(namespace.get_module_root("msgs"))
+        return ColdStore(namespace.get_module_root("msgs"), mobj["keep_alive"])
     raise ValueError(f"unknown message store: {mobj}")
 
 # FIXME create module base class with name, transfer, init

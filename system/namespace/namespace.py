@@ -2,6 +2,7 @@ import os
 from typing import cast, get_args, Literal, Set, TYPE_CHECKING
 
 from misc.env import envload_path
+from misc.io import ensure_folder
 
 
 if TYPE_CHECKING:
@@ -45,7 +46,7 @@ class Namespace:
         return self.get_root_for(self._name)
 
     def get_module_root(self, module: ModuleName) -> str:
-        return os.path.join(self.get_root(), module)
+        return ensure_folder(os.path.join(self.get_root(), module))
 
     def get_message_module(self) -> 'MsgsModule':
         return self._obj["msgs"]

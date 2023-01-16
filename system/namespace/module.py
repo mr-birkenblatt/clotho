@@ -1,4 +1,3 @@
-from system.namespace.__main__ import NAMESPACE_EXEC
 from system.namespace.namespace import ModuleName, Namespace
 
 
@@ -29,6 +28,8 @@ class ModuleBase:
     def ensure_module_init(self, ns_name: str) -> None:
         if self.is_module_init():
             return
+        from system.namespace import NAMESPACE_EXEC
+
         raise ModuleNotInitialized(
             "module is not initialized!\n"
             f"run: {NAMESPACE_EXEC} init "

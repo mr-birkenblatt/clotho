@@ -32,6 +32,11 @@ def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
             "name": "disk",
             "cache_size": obj.get("cache_size", 50000),
         }
+    elif name == "cold":
+        res = {
+            "name": "cold",
+            "keep_alive": obj.get("keep_alive", 1.0),
+        }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res

@@ -24,6 +24,7 @@ class ColdStore(MessageStore):
         self._lock = threading.RLock()
         self._keep_alive = keep_alive
         self._buff: LRU[MHash, Message] = LRU(100)
+        self._th_error: BaseException | None = None
 
     def _write_io(
             self,
@@ -36,6 +37,7 @@ class ColdStore(MessageStore):
 
         def writer(cond: threading.Condition) -> None:
             try:
+                out = None
                 with self._lock:
                     out = gzip.open(get_file(), mode="at", encoding="utf-8")
                     set_out(out)
@@ -46,13 +48,18 @@ class ColdStore(MessageStore):
                     if cur >= timeout:
                         break
                     time.sleep(timeout - cur)
+            except BaseException as e:  # pylint: disable=broad-except
+                self._th_error = e
             finally:
-                with self._lock:
-                    out.flush()
-                    out.close()
-                    if out is get_out():
-                        set_out(None)
+                if out is not None:
+                    with self._lock:
+                        out.flush()
+                        out.close()
+                        if out is get_out():
+                            set_out(None)
 
+        if self._th_error is not None:
+            raise self._th_error
         with self._lock:
             set_timeout(time.monotonic() + self._keep_alive)
             out = get_out()
@@ -65,6 +72,8 @@ class ColdStore(MessageStore):
             th.start()
         with self._lock:
             while get_out() is None:
+                if self._th_error is not None:
+                    raise self._th_error
                 cond.wait(1.0)
         self._write_io(
             get_out, set_out, get_file, get_timeout, set_timeout, text)
