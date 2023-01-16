@@ -17,6 +17,9 @@ class RedisEmbeddingCache(EmbeddingCache):
         super().__init__()
         self._redis = RedisConnection(ns_key, "embed")
 
+    def is_cache_init(self) -> bool:
+        return True
+
     @contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
         name = provider.get_redis_name()

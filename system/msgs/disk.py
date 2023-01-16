@@ -16,11 +16,15 @@ RELOAD_TOPICS_FREQ = 60 * 60  # 1h
 
 class DiskStore(MessageStore):
     def __init__(self, msgs_root: str, cache_size: int) -> None:
+        super().__init__()
         self._path = os.path.join(msgs_root, "msg")
         self._topics = os.path.join(msgs_root, "topics.list")
         self._cache: LRU[MHash, Message] = LRU(cache_size)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
+
+    def is_module_init(self) -> bool:
+        return True
 
     @staticmethod
     def _escape(text: str) -> str:

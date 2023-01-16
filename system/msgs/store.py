@@ -3,6 +3,7 @@ from typing import Callable, Iterable, Literal, TypedDict
 import numpy as np
 
 from system.msgs.message import Message, MHash
+from system.namespace.module import ModuleBase
 from system.namespace.namespace import Namespace
 
 
@@ -10,7 +11,19 @@ RNG_ALIGN = 10
 SEED_MUL = 17
 
 
-class MessageStore:
+class MessageStore(ModuleBase):
+    @staticmethod
+    def module_name() -> str:
+        return "msgs"
+
+    def from_namespace(
+            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+        omsgs = get_message_store(other_namespace)
+        for topic in omsgs.get_topics(offset=0, limit=None):
+            self.add_topic(topic)
+        for msg in omsgs.enumerate_messages(progress_bar=progress_bar):
+            self.write_message(omsgs.read_message(msg))
+
     def write_message(self, message: Message) -> MHash:
         raise NotImplementedError()
 

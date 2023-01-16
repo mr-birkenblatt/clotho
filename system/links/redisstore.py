@@ -287,6 +287,9 @@ class RedisLinkStore(LinkStore):
         self._add_vote = self.create_add_vote_script()
         self._remove_vote = self.create_remove_vote_script()
 
+    def is_module_init(self) -> bool:
+        return True
+
     def add_vote(
             self,
             link: RLink,

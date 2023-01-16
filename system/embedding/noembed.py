@@ -9,6 +9,9 @@ from system.msgs.message import MHash
 
 
 class NoEmbedding(EmbeddingStore):
+    def is_module_init(self) -> bool:
+        return True
+
     def do_add_embedding(
             self,
             role: ProviderRole,

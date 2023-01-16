@@ -1,5 +1,5 @@
 import os
-from typing import Literal, TypedDict
+from typing import get_args, Literal, TypedDict
 
 import torch
 
@@ -8,6 +8,7 @@ from system.namespace.namespace import Namespace
 
 
 ProviderRole = Literal["parent", "child"]
+PROVIDER_ROLES: list[ProviderRole] = list(get_args(ProviderRole))
 
 
 class EmbeddingProvider:

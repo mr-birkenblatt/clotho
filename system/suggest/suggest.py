@@ -4,12 +4,18 @@ from typing import Iterable, Literal, TypedDict
 from system.links.link import Link
 from system.links.store import get_link_store, LinkStore
 from system.msgs.message import MHash
+from system.namespace.module import ModuleBase
 from system.namespace.namespace import Namespace
 
 
-class LinkSuggester:
+class LinkSuggester(ModuleBase):
     def __init__(self, namespace: Namespace) -> None:
+        super().__init__()
         self._link_store = get_link_store(namespace)
+
+    @staticmethod
+    def module_name() -> str:
+        return "suggest"
 
     def get_link_store(self) -> LinkStore:
         return self._link_store

@@ -7,12 +7,17 @@ from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
 from system.links.link import Link, RLink, VoteType
 from system.links.scorer import Scorer
 from system.msgs.message import MHash
+from system.namespace.module import ModuleBase
 from system.namespace.namespace import Namespace
 from system.users.store import UserStore
 from system.users.user import User
 
 
-class LinkStore:
+class LinkStore(ModuleBase):
+    @staticmethod
+    def module_name() -> str:
+        return "links"
+
     @staticmethod
     def valid_scorers() -> list[Scorer]:
         raise NotImplementedError()

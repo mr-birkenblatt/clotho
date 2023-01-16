@@ -7,17 +7,22 @@ import torch
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
+    PROVIDER_ROLES,
     ProviderRole,
 )
-from system.embedding.store import EmbeddingStore
+from system.embedding.store import EmbeddingStore, get_embed_store
 from system.msgs.message import MHash
 from system.msgs.store import MessageStore
+from system.namespace.namespace import Namespace
 
 
 REBUILD_THRESHOLD = 1000
 
 
 class EmbeddingCache:
+    def is_cache_init(self) -> bool:
+        raise NotImplementedError()
+
     @contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
         raise NotImplementedError()
@@ -103,6 +108,31 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         super().__init__(providers)
         self._cache = cache
         self._bulk = False
+
+    def get_cache(self) -> EmbeddingCache:
+        return self._cache
+
+    def is_module_init(self) -> bool:
+        return self._cache.is_cache_init()
+
+    def from_namespace(
+            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+        oembed = get_embed_store(other_namespace)
+        if not isinstance(oembed, CachedIndexEmbeddingStore):
+            raise ValueError("nothing to transfer")
+        ocache = oembed.get_cache()
+        cache = self.get_cache()
+        try:
+            self._bulk = True
+            for role in PROVIDER_ROLES:
+                oprovider = oembed.get_provider(role)
+                provider = self.get_provider(role)
+                with ocache.get_lock(oprovider), cache.get_lock(provider):
+                    for _, mhash, embed in ocache.all_embeddings(oprovider):
+                        cache.set_map_embedding(provider, mhash, embed)
+                        cache.add_staging_embedding(provider, mhash)
+        finally:
+            self._bulk = False
 
     def do_index_init(
             self,

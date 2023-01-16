@@ -26,8 +26,12 @@ def ensure_user_dict(obj: Any) -> UserDict:
 
 class DiskUserStore(UserStore):
     def __init__(self, user_root: str, cache_size: int) -> None:
+        super().__init__()
         self._path = os.path.join(user_root, "user")
         self._cache: LRU[str, User] = LRU(cache_size)
+
+    def is_module_init(self) -> bool:
+        return True
 
     def _get_user_dict(self, user: User) -> UserDict:
         return {

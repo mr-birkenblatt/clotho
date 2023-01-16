@@ -13,12 +13,18 @@ from model.embedding import (
 )
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
+from system.namespace.module import ModuleBase
 from system.namespace.namespace import Namespace
 
 
-class EmbeddingStore:
+class EmbeddingStore(ModuleBase):
     def __init__(self, providers: EmbeddingProviderMap) -> None:
+        super().__init__()
         self._providers = providers
+
+    @staticmethod
+    def module_name() -> str:
+        return "embed"
 
     def get_roles(self) -> list[ProviderRole]:
         return cast(list[ProviderRole], list(self._providers.keys()))

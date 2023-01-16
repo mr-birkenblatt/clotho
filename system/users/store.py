@@ -1,11 +1,16 @@
 from typing import Iterable, Literal, TypedDict
 
 from misc.util import get_short_hash
+from system.namespace.module import ModuleBase
 from system.namespace.namespace import Namespace
 from system.users.user import User
 
 
-class UserStore:
+class UserStore(ModuleBase):
+    @staticmethod
+    def module_name() -> str:
+        return "users"
+
     def get_user_by_id(self, user_id: str) -> User:
         raise NotImplementedError()
 
@@ -14,6 +19,12 @@ class UserStore:
 
     def get_all_users(self) -> Iterable[User]:
         raise NotImplementedError()
+
+    def from_namespace(
+            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+        ousers = get_user_store(other_namespace)
+        for user in ousers.get_all_users():
+            self.store_user(user)
 
     @staticmethod
     def get_id_from_name(user_name: str) -> str:
