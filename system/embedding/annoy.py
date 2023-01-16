@@ -103,3 +103,5 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
 
     def is_bigger_better(self) -> bool:
         return self._is_dot
+
+    # FIXME shard annoy indexes

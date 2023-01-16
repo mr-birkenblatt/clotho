@@ -98,3 +98,5 @@ def create_message_store(namespace: Namespace) -> MessageStore:
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()
     raise ValueError(f"unknown message store: {mobj}")
+
+# FIXME create module base class with name, transfer, init

@@ -327,7 +327,7 @@ class TrainTestGenerator:
             collections.deque()
         self._cur_epoch = 0
 
-        self._train_epoch_cache: LRU[int, list[BatchRow]] = LRU(30)
+        self._train_epoch_cache: LRU[int, list[BatchRow]] = LRU(35)
         self._cur_train_cache: list[BatchRow] = []
 
         self._cur_train_validation_cache: list[BatchRow] = []
