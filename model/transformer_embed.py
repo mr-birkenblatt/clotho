@@ -11,7 +11,7 @@ from transformers import (  # type: ignore
     logging,
 )
 
-from misc.io import open_read, remove_file
+from misc.io import listdir, open_read, remove_file
 from misc.util import (
     extract_number,
     highest_number,
@@ -308,7 +308,7 @@ def get_epoch_and_load(
         force_restart: bool) -> tuple[tuple[str, int] | None, int]:
     _, spre, spost = get_model_filename_tuple(
         harness, folder, ftype=ftype, is_cuda=is_cuda, epoch=None)
-    mprev = highest_number(os.listdir(folder), prefix=spre, postfix=spost)
+    mprev = highest_number(listdir(folder), prefix=spre, postfix=spost)
     if not force_restart and mprev is not None:
         prev_fname, prev_epoch = mprev
         harness.load_state_dict(torch.load(
@@ -345,7 +345,7 @@ def limit_epoch_data(
 
     def get_stats() -> Iterable[tuple[str, EpochStats]]:
         for fname, _ in sorted(extract_number(
-                os.listdir(folder), spre, spost), key=lambda elem: elem[1]):
+                listdir(folder), spre, spost), key=lambda elem: elem[1]):
             filename = os.path.join(folder, fname)
             stats = load_stats(filename)
             yield filename, stats

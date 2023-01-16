@@ -2,6 +2,7 @@ import os
 from typing import Iterable
 
 from db.lsm import ChunkCoordinator, KeyRange, LSM, VType
+from misc.io import listdir
 
 
 FILE_EXT = ".lsm"
@@ -17,7 +18,7 @@ class DiskChunk(ChunkCoordinator):
     def load_dir(self) -> None:
         children: dict[str, DiskChunk] = {}
         files: list[str] = []
-        for fname in os.listdir(self._root):
+        for fname in listdir(self._root):
             full = os.path.join(self._root, fname)
             if os.path.isdir(full):
                 children[fname] = DiskChunk(f"{self._prefix}{fname}", full)

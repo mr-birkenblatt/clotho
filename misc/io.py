@@ -50,7 +50,7 @@ def fastrename(src: str, dst: str) -> None:
         if not src.endswith(TMP_POSTFIX):
             print(f"move {src} to {dst}")
     except OSError:
-        for file_name in os.listdir(src):
+        for file_name in listdir(src):
             try:
                 shutil.move(os.path.join(src, file_name), dst)
             except shutil.Error as err:
@@ -258,3 +258,7 @@ def get_folder(path: str, ext: str) -> Iterable[tuple[str, bool]]:
             yield fobj.name, True
         elif fobj.is_file() and fobj.name.endswith(ext):
             yield fobj.name, False
+
+
+def listdir(path: str) -> list[str]:
+    return sorted(os.listdir(path))
