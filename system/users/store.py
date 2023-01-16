@@ -2,13 +2,13 @@ from typing import Iterable, Literal, TypedDict
 
 from misc.util import get_short_hash
 from system.namespace.module import ModuleBase
-from system.namespace.namespace import Namespace
+from system.namespace.namespace import ModuleName, Namespace
 from system.users.user import User
 
 
 class UserStore(ModuleBase):
     @staticmethod
-    def module_name() -> str:
+    def module_name() -> ModuleName:
         return "users"
 
     def get_user_by_id(self, user_id: str) -> User:

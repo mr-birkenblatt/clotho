@@ -14,9 +14,6 @@ class ModelLinkSuggester(LinkSuggester):
         self._embed = get_embed_store(namespace)
         self._count = count
 
-    def is_module_init(self) -> bool:
-        return True
-
     def suggest_messages(
             self,
             other: MHash,

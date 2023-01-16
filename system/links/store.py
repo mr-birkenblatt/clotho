@@ -8,14 +8,14 @@ from system.links.link import Link, RLink, VoteType
 from system.links.scorer import Scorer
 from system.msgs.message import MHash
 from system.namespace.module import ModuleBase
-from system.namespace.namespace import Namespace
+from system.namespace.namespace import ModuleName, Namespace
 from system.users.store import UserStore
 from system.users.user import User
 
 
 class LinkStore(ModuleBase):
     @staticmethod
-    def module_name() -> str:
+    def module_name() -> ModuleName:
         return "links"
 
     @staticmethod

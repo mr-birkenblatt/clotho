@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING
+from typing import cast, get_args, Literal, Set, TYPE_CHECKING
 
 from misc.env import envload_path
 
@@ -12,6 +12,20 @@ if TYPE_CHECKING:
     from system.namespace.load import NamespaceObj
     from system.suggest.suggest import SuggestModule
     from system.users.store import UsersModule
+
+
+ModuleName = Literal["msgs", "links", "suggest", "users", "embed", "model"]
+
+
+MODULE_NAMES: Set[ModuleName] = set(get_args(ModuleName))
+MODULE_LINKS: ModuleName = "links"
+MODULE_EMBED: ModuleName = "embed"
+
+
+def get_module_name(module: str) -> ModuleName:
+    if module not in MODULE_NAMES:
+        raise ValueError(f"invalid module: {module}")
+    return cast(ModuleName, module)
 
 
 class Namespace:
@@ -29,6 +43,9 @@ class Namespace:
 
     def get_root(self) -> str:
         return self.get_root_for(self._name)
+
+    def get_module_root(self, module: ModuleName) -> str:
+        return os.path.join(self.get_root(), module)
 
     def get_message_module(self) -> 'MsgsModule':
         return self._obj["msgs"]

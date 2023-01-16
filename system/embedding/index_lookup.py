@@ -13,6 +13,7 @@ from model.embedding import (
 from system.embedding.store import EmbeddingStore, get_embed_store
 from system.msgs.message import MHash
 from system.msgs.store import MessageStore
+from system.namespace.module import UnsupportedInit, UnsupportedTransfer
 from system.namespace.namespace import Namespace
 
 
@@ -20,8 +21,16 @@ REBUILD_THRESHOLD = 1000
 
 
 class EmbeddingCache:
-    def is_cache_init(self) -> bool:
+    @staticmethod
+    def cache_name() -> str:
         raise NotImplementedError()
+
+    def is_cache_init(self) -> bool:
+        return True
+
+    def initialize_cache(self) -> None:
+        raise UnsupportedInit(
+            f"{self.cache_name()} cache does not support initialization!")
 
     @contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
@@ -115,11 +124,14 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def is_module_init(self) -> bool:
         return self._cache.is_cache_init()
 
+    def initialize_module(self) -> None:
+        return self._cache.initialize_cache()
+
     def from_namespace(
             self, other_namespace: Namespace, *, progress_bar: bool) -> None:
         oembed = get_embed_store(other_namespace)
         if not isinstance(oembed, CachedIndexEmbeddingStore):
-            raise ValueError("nothing to transfer")
+            raise UnsupportedTransfer("nothing to transfer")
         ocache = oembed.get_cache()
         cache = self.get_cache()
         try:

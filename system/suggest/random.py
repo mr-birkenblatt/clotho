@@ -11,9 +11,6 @@ class RandomLinkSuggester(LinkSuggester):
         super().__init__(namespace)
         self._message_store = get_message_store(namespace)
 
-    def is_module_init(self) -> bool:
-        return True
-
     def suggest_messages(
             self,
             other: MHash,

@@ -17,8 +17,9 @@ class RedisEmbeddingCache(EmbeddingCache):
         super().__init__()
         self._redis = RedisConnection(ns_key, "embed")
 
-    def is_cache_init(self) -> bool:
-        return True
+    @staticmethod
+    def cache_name() -> str:
+        return "redis"
 
     @contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
@@ -145,7 +146,7 @@ class RedisEmbeddingCache(EmbeddingCache):
         def as_tensor(mhash: MHash) -> torch.Tensor:
             tres = self.get_map_embedding(provider, mhash)
             if tres is None:
-                raise ValueError(f"missing key: {mhash}")
+                raise KeyError(f"missing key: {mhash}")
             return tres
 
         def as_tuple(

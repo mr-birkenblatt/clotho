@@ -23,9 +23,6 @@ class DiskStore(MessageStore):
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
 
-    def is_module_init(self) -> bool:
-        return True
-
     @staticmethod
     def _escape(text: str) -> str:
         return text.replace("\\", "\\\\").replace("\n", "\\n")

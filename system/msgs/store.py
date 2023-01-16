@@ -4,7 +4,7 @@ import numpy as np
 
 from system.msgs.message import Message, MHash
 from system.namespace.module import ModuleBase
-from system.namespace.namespace import Namespace
+from system.namespace.namespace import ModuleName, Namespace
 
 
 RNG_ALIGN = 10
@@ -13,7 +13,7 @@ SEED_MUL = 17
 
 class MessageStore(ModuleBase):
     @staticmethod
-    def module_name() -> str:
+    def module_name() -> ModuleName:
         return "msgs"
 
     def from_namespace(
@@ -110,6 +110,9 @@ def create_message_store(namespace: Namespace) -> MessageStore:
     if mobj["name"] == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()
+    if mobj["name"] == "cold":
+        from system.msgs.cold import ColdStore
+        return ColdStore(namespace.get_module_root("msgs"))
     raise ValueError(f"unknown message store: {mobj}")
 
 # FIXME create module base class with name, transfer, init

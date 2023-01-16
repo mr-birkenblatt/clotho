@@ -9,9 +9,6 @@ class RamUserStore(UserStore):
         super().__init__()
         self._users: dict[str, User] = {}
 
-    def is_module_init(self) -> bool:
-        return True
-
     def get_user_by_id(self, user_id: str) -> User:
         return self._users[user_id]
 

@@ -12,9 +12,6 @@ class RamMessageStore(MessageStore):
         self._msgs: dict[MHash, Message] = {}
         self._topics: list[Message] = []
 
-    def is_module_init(self) -> bool:
-        return True
-
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()
         self._msgs[mhash] = message

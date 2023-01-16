@@ -1,4 +1,3 @@
-import os
 from typing import get_args, Literal, TypedDict
 
 import torch
@@ -74,7 +73,7 @@ def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
         from model.transformer_embed import load_providers
 
         return load_providers(
-            os.path.join(namespace.get_root(), "model"),
+            namespace.get_module_root("model"),
             pobj["fname"],
             pobj["version"],
             pobj["is_harness"])

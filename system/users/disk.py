@@ -30,9 +30,6 @@ class DiskUserStore(UserStore):
         self._path = os.path.join(user_root, "user")
         self._cache: LRU[str, User] = LRU(cache_size)
 
-    def is_module_init(self) -> bool:
-        return True
-
     def _get_user_dict(self, user: User) -> UserDict:
         return {
             "name": user.get_name(),
