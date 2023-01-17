@@ -1,7 +1,7 @@
 import os
 from typing import Iterable
 
-from db.lsm import ChunkCoordinator, KeyRange, LSM, VType
+from lsm.lsm import ChunkCoordinator, KeyRange, LSM, VType
 from misc.io import get_folder
 
 

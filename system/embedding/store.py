@@ -4,7 +4,6 @@ from typing import cast, Iterable, Iterator, Literal, TypedDict
 
 import torch
 
-from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
@@ -131,10 +130,7 @@ def get_embed_store(namespace: Namespace) -> EmbeddingStore:
 
 RedisEmbedModule = TypedDict('RedisEmbedModule', {
     "name": Literal["redis"],
-    "host": str,
-    "port": int,
-    "passwd": str,
-    "prefix": str,
+    "conn": str,
     "path": str,
     "index": Literal["annoy"],
     "trees": int,
@@ -155,14 +151,7 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
         from system.embedding.rediscache import RedisEmbeddingCache
 
         root = os.path.join(namespace.get_root(), eobj["path"])
-        ns_key = get_redis_ns_key(namespace.get_name(), "embedding")
-        if not ns_key[0].startswith("_"):
-            register_redis_ns(ns_key, create_redis_config(
-                eobj["host"],
-                eobj["port"],
-                eobj["passwd"],
-                eobj["prefix"],
-                root))
+        ns_key = namespace.get_redis_key("embedding", eobj["conn"])
         cache = RedisEmbeddingCache(ns_key)
         if eobj["index"] != "annoy":
             raise ValueError(f"unsupported embedding index: {eobj['index']}")

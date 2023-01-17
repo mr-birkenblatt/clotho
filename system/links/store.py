@@ -1,9 +1,7 @@
-import os
 from typing import Iterable, Literal, TypedDict
 
 import pandas as pd
 
-from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
 from system.links.link import Link, RLink, VoteType
 from system.links.scorer import Scorer
 from system.msgs.message import MHash
@@ -141,11 +139,7 @@ def get_link_store(namespace: Namespace) -> LinkStore:
 
 RedisLinkModule = TypedDict('RedisLinkModule', {
     "name": Literal["redis"],
-    "host": str,
-    "port": int,
-    "passwd": str,
-    "prefix": str,
-    "path": str,
+    "conn": str,
 })
 LinkModule = RedisLinkModule
 
@@ -155,13 +149,6 @@ def create_link_store(namespace: Namespace) -> LinkStore:
     if lobj["name"] == "redis":
         from system.links.redisstore import RedisLinkStore
 
-        ns_key = get_redis_ns_key(namespace.get_name(), "linkstore")
-        if not ns_key[0].startswith("_"):
-            register_redis_ns(ns_key, create_redis_config(
-                lobj["host"],
-                lobj["port"],
-                lobj["passwd"],
-                lobj["prefix"],
-                os.path.join(namespace.get_root(), lobj["path"])))
-        return RedisLinkStore(ns_key)
+        return RedisLinkStore(
+            namespace.get_redis_key("linkstore", lobj["conn"]))
     raise ValueError(f"unknown link store: {lobj}")

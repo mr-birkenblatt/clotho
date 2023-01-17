@@ -7,6 +7,7 @@ jupyter==1.0.0
 mypy==0.991
 praw==7.6.1
 pre-commit
+psycopg2==2.9.5
 pycodestyle==2.9.1
 pylint==2.14.5
 pytest-cov==4.0.0
@@ -15,3 +16,4 @@ python-redis-lock==4.0.0
 quick-server==0.7.15
 redis==3.5.3
 scikit-learn==1.2.0
+SQLAlchemy==1.4.46

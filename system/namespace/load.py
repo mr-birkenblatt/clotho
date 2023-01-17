@@ -9,6 +9,16 @@ from system.suggest.suggest import SuggestModule
 from system.users.store import UsersModule
 
 
+RedisConfigObj = TypedDict('RedisConfigObj', {
+    "host": str,
+    "port": int,
+    "passwd": str,
+    "prefix": str,
+    "path": str,
+})
+ConnectionObj = TypedDict('ConnectionObj', {
+    "redis": dict[str, RedisConfigObj],
+})
 NamespaceObj = TypedDict('NamespaceObj', {
     "msgs": MsgsModule,
     "links": LinkModule,
@@ -16,8 +26,24 @@ NamespaceObj = TypedDict('NamespaceObj', {
     "users": UsersModule,
     "embed": EmbedModule,
     "model": EmbeddingProviderModule,
+    "connections": ConnectionObj,
     "writeback": bool,
 })
+
+
+def redis_from_obj(
+        ns_name: str,
+        redis_obj: dict[str, Any]) -> dict[str, RedisConfigObj]:
+    return {
+        name: {
+            "host": obj.get("host", "localhost"),
+            "port": int(obj.get("port", 6379)),
+            "passwd": obj.get("passwd", ""),
+            "prefix": obj.get("prefix", f"{ns_name}"),
+            "path": obj["path"],
+        }
+        for name, obj in redis_obj.items()
+    }
 
 
 def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
@@ -42,17 +68,13 @@ def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
     return res
 
 
-def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
+def links_from_obj(obj: dict[str, Any]) -> LinkModule:
     res: LinkModule
     name = obj.get("name", "redis")
     if name == "redis":
         res = {
             "name": "redis",
-            "host": obj.get("host", "localhost"),
-            "port": int(obj.get("port", 6379)),
-            "passwd": obj.get("passwd", ""),
-            "prefix": obj.get("prefix", f"{ns_name}"),
-            "path": obj.get("path", "links"),
+            "conn": obj["conn"],
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -93,7 +115,7 @@ def users_from_obj(obj: dict[str, Any]) -> UsersModule:
     return res
 
 
-def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
+def embed_from_obj(obj: dict[str, Any]) -> EmbedModule:
     res: EmbedModule
     name = obj.get("name", "none")
     if name == "none":
@@ -103,10 +125,7 @@ def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
     elif name == "redis":
         res = {
             "name": "redis",
-            "host": obj.get("host", "localhost"),
-            "port": int(obj.get("port", 6379)),
-            "passwd": obj.get("passwd", ""),
-            "prefix": obj.get("prefix", f"{ns_name}"),
+            "conn": obj["conn"],
             "path": obj.get("path", "embed"),
             "index": obj["index"],
             "trees": obj.get("trees", 100),
@@ -137,21 +156,26 @@ def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
     return res
 
 
+NS_NAME_MAX_LEN = 40
 VALID_NS_NAME = re.compile(r"^[a-z][a-z0-9_-]+$")
 
 
 def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
-    if VALID_NS_NAME.search(ns_name) is None:
+    if len(ns_name) > NS_NAME_MAX_LEN or VALID_NS_NAME.search(ns_name) is None:
         raise ValueError(f"invalid namespace name {ns_name}")
+    conns = obj.get("connections", {})
     return {
         "msgs": msgs_from_obj(obj.get("msgs", {})),
-        "links": links_from_obj(ns_name, obj.get("links", {})),
+        "links": links_from_obj(obj.get("links", {})),
         "suggest": [
             suggest_from_obj(cur)
             for cur in obj.get("suggest", [])
         ],
         "users": users_from_obj(obj.get("users", {})),
-        "embed": embed_from_obj(ns_name, obj.get("embed", {})),
+        "embed": embed_from_obj(obj.get("embed", {})),
         "model": model_from_obj(obj.get("model", {})),
+        "connections": {
+            "redis": redis_from_obj(ns_name, conns.get("redis", {}))
+        },
         "writeback": obj.get("writeback", True),
     }

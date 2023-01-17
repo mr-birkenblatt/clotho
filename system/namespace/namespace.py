@@ -3,6 +3,12 @@ from typing import cast, get_args, Literal, Set, TYPE_CHECKING
 
 from misc.env import envload_path
 from misc.io import ensure_folder
+from misc.redis import (
+    ConfigKey,
+    create_redis_config,
+    get_redis_ns_key,
+    register_redis_ns,
+)
 
 
 if TYPE_CHECKING:
@@ -10,7 +16,7 @@ if TYPE_CHECKING:
     from system.embedding.store import EmbedModule
     from system.links.store import LinkModule
     from system.msgs.store import MsgsModule
-    from system.namespace.load import NamespaceObj
+    from system.namespace.load import NamespaceObj, RedisConfigObj
     from system.suggest.suggest import SuggestModule
     from system.users.store import UsersModule
 
@@ -65,6 +71,21 @@ class Namespace:
 
     def get_embedding_providers(self) -> 'EmbeddingProviderModule':
         return self._obj["model"]
+
+    def get_redis_config(self, config_name: str) -> 'RedisConfigObj':
+        return self._obj["connections"]["redis"][config_name]
+
+    def get_redis_key(self, redis_module: str, config_name: str) -> ConfigKey:
+        config = self.get_redis_config(config_name)
+        ns_key = get_redis_ns_key(self.get_name(), redis_module)
+        if not ns_key[0].startswith("_"):
+            register_redis_ns(ns_key, create_redis_config(
+                config["host"],
+                config["port"],
+                config["passwd"],
+                config["prefix"],
+                os.path.join(self.get_root(), config["path"])))
+        return ns_key
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, self.__class__):

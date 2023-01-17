@@ -13,6 +13,9 @@ class ModuleNotInitialized(ValueError):
     pass
 
 
+MODULE_MAX_LEN = 20
+
+
 class ModuleBase:
     @staticmethod
     def module_name() -> ModuleName:

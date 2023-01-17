@@ -22,11 +22,7 @@ def get_test_namespace() -> Namespace:
             },
             "links": {
                 "name": "redis",
-                "host": cfg["host"],
-                "port": cfg["port"],
-                "passwd": cfg["passwd"],
-                "prefix": cfg["prefix"],
-                "path": cfg["path"],
+                "conn": "links",
             },
             "suggest": [
                 {
@@ -41,6 +37,17 @@ def get_test_namespace() -> Namespace:
             },
             "model": {
                 "name": "none",
+            },
+            "connections": {
+                "redis": {
+                    "links": {
+                        "host": cfg["host"],
+                        "port": cfg["port"],
+                        "passwd": cfg["passwd"],
+                        "prefix": cfg["prefix"],
+                        "path": cfg["path"],
+                    },
+                },
             },
             "writeback": False,
         })
