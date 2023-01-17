@@ -138,6 +138,7 @@ RedisEmbedModule = TypedDict('RedisEmbedModule', {
     "path": str,
     "index": Literal["annoy"],
     "trees": int,
+    "shard_size": int,
     "metric": Literal["dot", "angular"],
 })
 NoEmbedModule = TypedDict('NoEmbedModule', {
@@ -169,8 +170,9 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
             providers,
             cache,
             root,
-            eobj["trees"],
-            eobj["metric"] == "dot")
+            trees=eobj["trees"],
+            shard_size=eobj["shard_size"],
+            is_dot=eobj["metric"] == "dot")
     if eobj["name"] == "none":
         from system.embedding.noembed import NoEmbedding
 

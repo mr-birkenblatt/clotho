@@ -109,7 +109,8 @@ def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
             "prefix": obj.get("prefix", f"{ns_name}"),
             "path": obj.get("path", "embed"),
             "index": obj["index"],
-            "trees": obj.get("trees", 1000),
+            "trees": obj.get("trees", 100),
+            "shard_size": obj.get("shard_size", 500000),
             "metric": obj.get("metric", "dot"),
         }
     else:

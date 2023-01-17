@@ -76,9 +76,9 @@ class RedisEmbeddingCache(EmbeddingCache):
         key = self._get_order_key(provider)
         return self._get_index(key, index)
 
-    def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> int:
+    def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> None:
         key = self._get_order_key(provider)
-        return self._add_embedding(key, mhash)
+        self._add_embedding(key, mhash)
 
     def embedding_count(self, provider: EmbeddingProvider) -> int:
         key = self._get_order_key(provider)
@@ -87,25 +87,30 @@ class RedisEmbeddingCache(EmbeddingCache):
     def embeddings(
             self,
             provider: EmbeddingProvider,
+            *,
+            start_ix: int,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_order_key(provider)
-        return self._get_embeddigs(key, provider)
+        return self._get_embeddigs(
+            key, provider, start_ix=start_ix, remove=False)
 
     def clear_embeddings(self, provider: EmbeddingProvider) -> None:
         key = self._get_order_key(provider)
         self._clear_embeddings(key)
 
     def add_staging_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> int:
+            self, provider: EmbeddingProvider, mhash: MHash) -> None:
         key = self._get_staging_key(provider)
-        return self._add_embedding(key, mhash)
+        self._add_embedding(key, mhash)
 
     def staging_embeddings(
             self,
             provider: EmbeddingProvider,
+            *,
+            remove: bool
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_staging_key(provider)
-        return self._get_embeddigs(key, provider)
+        return self._get_embeddigs(key, provider, start_ix=0, remove=remove)
 
     def get_staging_entry_by_index(
             self, provider: EmbeddingProvider, index: int) -> MHash:
@@ -120,10 +125,9 @@ class RedisEmbeddingCache(EmbeddingCache):
         key = self._get_staging_key(provider)
         self._clear_embeddings(key)
 
-    def _add_embedding(self, key: str, mhash: MHash) -> int:
+    def _add_embedding(self, key: str, mhash: MHash) -> None:
         with self._redis.get_connection(depth=0) as conn:
-            res = int(conn.rpush(key, mhash.to_parseable().encode("utf-8")))
-            return res - 1
+            conn.rpush(key, mhash.to_parseable().encode("utf-8"))
 
     def _get_index(self, key: str, index: int) -> MHash:
         with self._redis.get_connection(depth=1) as conn:
@@ -136,8 +140,13 @@ class RedisEmbeddingCache(EmbeddingCache):
             self,
             key: str,
             provider: EmbeddingProvider,
+            *,
+            start_ix: int,
+            remove: bool,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        offset = 0
+        if remove and start_ix != 0:
+            raise ValueError("start must be 0 if remove")
+        offset = start_ix
         batch_size = 100
 
         def as_mhash(elem: bytes) -> MHash:
@@ -158,7 +167,10 @@ class RedisEmbeddingCache(EmbeddingCache):
 
         with self._redis.get_connection(depth=1) as conn:
             while True:
-                res = conn.lrange(key, offset, offset + batch_size)
+                if remove:
+                    res = conn.lpop(key, batch_size)
+                else:
+                    res = conn.lrange(key, offset, offset + batch_size)
                 if not res:
                     break
                 yield from (

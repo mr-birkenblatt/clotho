@@ -17,9 +17,6 @@ from system.namespace.module import UnsupportedInit, UnsupportedTransfer
 from system.namespace.namespace import Namespace
 
 
-REBUILD_THRESHOLD = 1000
-
-
 class EmbeddingCache:
     @staticmethod
     def cache_name() -> str:
@@ -53,7 +50,7 @@ class EmbeddingCache:
             self, provider: EmbeddingProvider, index: int) -> MHash:
         raise NotImplementedError()
 
-    def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> int:
+    def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> None:
         raise NotImplementedError()
 
     def embedding_count(self, provider: EmbeddingProvider) -> int:
@@ -62,6 +59,8 @@ class EmbeddingCache:
     def embeddings(
             self,
             provider: EmbeddingProvider,
+            *,
+            start_ix: int,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
@@ -69,12 +68,14 @@ class EmbeddingCache:
         raise NotImplementedError()
 
     def add_staging_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> int:
+            self, provider: EmbeddingProvider, mhash: MHash) -> None:
         raise NotImplementedError()
 
     def staging_embeddings(
             self,
             provider: EmbeddingProvider,
+            *,
+            remove: bool,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
@@ -101,11 +102,12 @@ class EmbeddingCache:
             self,
             provider: EmbeddingProvider,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        yield from self.embeddings(provider)
+        yield from self.embeddings(provider, start_ix=0)
         offset = self.staging_offset(provider)
         yield from (
             (index + offset, mhash, embed)
-            for index, mhash, embed in self.staging_embeddings(provider)
+            for index, mhash, embed in self.staging_embeddings(
+                provider, remove=False)
         )
 
 
@@ -113,10 +115,24 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def __init__(
             self,
             providers: EmbeddingProviderMap,
-            cache: EmbeddingCache) -> None:
+            cache: EmbeddingCache,
+            shard_size: int) -> None:
         super().__init__(providers)
         self._cache = cache
+        self._shard_size = shard_size
         self._bulk = False
+
+    def shard_size(self) -> int:
+        return self._shard_size
+
+    def shard_of_index(self, index: int) -> int:
+        return index // self._shard_size
+
+    def index_in_shard(self, index: int) -> int:
+        return index % self._shard_size
+
+    def get_shard_start_ix(self, shard: int) -> int:
+        return shard * self._shard_size
 
     def get_cache(self) -> EmbeddingCache:
         return self._cache
@@ -146,26 +162,22 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         finally:
             self._bulk = False
 
-    def do_index_init(
-            self,
-            role: ProviderRole) -> None:
-        raise NotImplementedError()
-
-    def do_index_add(
+    def do_build_index(
             self,
             role: ProviderRole,
-            index: int,
-            embed: torch.Tensor) -> None:
-        raise NotImplementedError()
-
-    def do_index_finish(self, role: ProviderRole) -> None:
+            shard: int,
+            embeds: list[torch.Tensor]) -> None:
         raise NotImplementedError()
 
     def get_index_closest(
             self,
             role: ProviderRole,
+            shard: int,
             embed: torch.Tensor,
             count: int) -> Iterable[tuple[int, float]]:
+        raise NotImplementedError()
+
+    def is_shard_available(self, role: ProviderRole, shard: int) -> bool:
         raise NotImplementedError()
 
     # FIXME: could be bulk operation
@@ -182,15 +194,34 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def build_index(self, role: ProviderRole) -> None:
         cache = self._cache
         provider = self.get_provider(role)
+        shard_size = self.shard_size()
         with cache.get_lock(provider):
-            self.do_index_init(role)
-            for index, _, embed in cache.embeddings(provider):
-                self.do_index_add(role, index, embed)
-            for _, mhash, embed in cache.staging_embeddings(provider):
-                index = cache.add_embedding(provider, mhash)
-                self.do_index_add(role, index, embed)
-            self.do_index_finish(role)
-            cache.clear_staging(provider)
+            shard = 0
+            while self.is_shard_available(role, shard):
+                shard += 1
+            start_ix = self.get_shard_start_ix(shard)
+            cur_embeds: list[tuple[MHash, torch.Tensor]] = []
+            for _, mhash, embed in cache.embeddings(
+                    provider, start_ix=start_ix):
+                cur_embeds.append((mhash, embed))
+                if len(cur_embeds) == shard_size:
+                    self.do_build_index(
+                        role, shard, [embed for _, embed in cur_embeds])
+                    shard += 1
+                    cur_embeds = []
+            try:
+                for _, mhash, embed in cache.staging_embeddings(
+                        provider, remove=True):
+                    cache.add_embedding(provider, mhash)
+                    cur_embeds.append((mhash, embed))
+                    if len(cur_embeds) == shard_size:
+                        self.do_build_index(
+                            role, shard, [embed for _, embed in cur_embeds])
+                        shard += 1
+                        cur_embeds = []
+            finally:
+                for mhash, _ in cur_embeds:
+                    cache.add_staging_embedding(provider, mhash)
 
     def ensure_all(
             self,
@@ -199,21 +230,34 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         if roles is None:
             roles = self.get_roles()
         cache = self._cache
+        shard_size = self.shard_size()
 
         def process_name(
                 role: ProviderRole, provider: EmbeddingProvider) -> None:
-            cache.clear_embeddings(provider)
-            cache.clear_staging(provider)
-            self.do_index_init(role)
+            shard = 0
+            cur_embeds: list[tuple[MHash, torch.Tensor]] = []
             for mhash in msg_store.enumerate_messages(progress_bar=True):
-                index = cache.add_embedding(provider, mhash)
+                cache.add_embedding(provider, mhash)
                 embed = self.get_embedding(msg_store, role, mhash)
-                self.do_index_add(role, index, embed)
-            for _, mhash, embed in cache.staging_embeddings(provider):
-                index = cache.add_embedding(provider, mhash)
-                self.do_index_add(role, index, embed)
-            self.do_index_finish(role)
-            cache.clear_staging(provider)
+                cur_embeds.append((mhash, embed))
+                if len(cur_embeds) == shard_size:
+                    self.do_build_index(
+                        role, shard, [embed for _, embed in cur_embeds])
+                    shard += 1
+                    cur_embeds = []
+            try:
+                for _, mhash, embed in cache.staging_embeddings(
+                        provider, remove=True):
+                    cache.add_embedding(provider, mhash)
+                    cur_embeds.append((mhash, embed))
+                    if len(cur_embeds) == shard_size:
+                        self.do_build_index(
+                            role, shard, [embed for _, embed in cur_embeds])
+                        shard += 1
+                        cur_embeds = []
+            finally:
+                for mhash, _ in cur_embeds:
+                    cache.add_staging_embedding(provider, mhash)
 
         try:
             self._bulk = True
@@ -246,7 +290,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             cache.set_map_embedding(provider, mhash, embed)
             cache.add_staging_embedding(provider, mhash)
             if (not self._bulk
-                    and cache.staging_count(provider) > REBUILD_THRESHOLD):
+                    and cache.staging_count(provider) >= self.shard_size()):
                 self.build_index(role)
 
     def do_get_embedding(
@@ -257,7 +301,11 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         return self._cache.get_map_embedding(provider, mhash)
 
     def do_get_internal_distance(
-            self, role: ProviderRole, index_a: int, index_b: int) -> float:
+            self,
+            role: ProviderRole,
+            shard: int,
+            index_a: int,
+            index_b: int) -> float:
         raise NotImplementedError()
 
     def self_test(self, role: ProviderRole, count: int | None) -> None:
@@ -265,13 +313,12 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         provider = self.get_provider(role)
         is_bigger_better = self.is_bigger_better()
         any_compute = False
-        for ix_a, _, embed_a in cache.embeddings(provider):
+        for ix_a, _, embed_a in cache.embeddings(provider, start_ix=0):
             min_val = None
             max_val = None
             same_val = None
             line = 0
-            for ix_b, _, embed_b in cache.embeddings(provider):
-                internal = self.do_get_internal_distance(role, ix_a, ix_b)
+            for ix_b, _, embed_b in cache.embeddings(provider, start_ix=0):
                 external = self.get_distance(embed_a, embed_b)
                 # print(
                 #     ix_a,
@@ -286,10 +333,16 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                         min_val = external
                     if max_val is None or max_val < external:
                         max_val = external
-                if not math.isclose(internal, external, abs_tol=1e-3):
-                    raise ValueError(
-                        f"distances are not equal: {internal} != {external} "
-                        f"ix: {ix_a} {ix_b} embed: {embed_a} {embed_b}")
+                shard = 0
+                while self.is_shard_available(role, shard):
+                    internal = self.do_get_internal_distance(
+                        role, shard, ix_a, ix_b)
+                    if not math.isclose(internal, external, abs_tol=1e-3):
+                        raise ValueError(
+                            "distances are not equal: "
+                            f"{internal} != {external} "
+                            f"ix: {ix_a} {ix_b} embed: {embed_a} {embed_b}")
+                    shard += 1
                 any_compute = True
                 line += 1
                 if count is not None and ix_b >= count:
@@ -331,9 +384,23 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             return
         cache = self._cache
         provider = self.get_provider(role)
-        candidates = list(self.get_index_closest(role, embed, count * 3))
+        candidates: list[tuple[int, float]] = []
+        shard = 0
+        while self.is_shard_available(role, shard):
+            start_ix = self.get_shard_start_ix(shard)
+            candidates.extend((
+                (start_ix + ix, dist)
+                for ix, dist in self.get_index_closest(
+                    role, shard, embed, count + count // 2)
+            ))
+            shard += 1
+        last_shard_offset = self.get_shard_start_ix(shard)
+        for last_ix, _, other_embed in cache.embeddings(
+                provider, start_ix=last_shard_offset):
+            candidates.append((last_ix, self.get_distance(embed, other_embed)))
         offset = cache.staging_offset(provider)
-        for other_ix, _, other_embed in cache.staging_embeddings(provider):
+        for other_ix, _, other_embed in cache.staging_embeddings(
+                provider, remove=False):
             candidates.append(
                 (other_ix + offset, self.get_distance(embed, other_embed)))
         yield from (
