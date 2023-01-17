@@ -1,13 +1,15 @@
 import contextlib
 import threading
-from typing import Iterator, TYPE_CHECKING, TypedDict
+from typing import Iterator, Type, TYPE_CHECKING, TypedDict
 
-# FIXME add sqlalchemy stubs
-import sqlalchemy as sa  # type: ignore
+import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 
 if TYPE_CHECKING:
-    from system.namespace.namespace import ModuleName, Namespace
+    from db.base import Base
+    from system.namespace.module import ModuleBase
+    from system.namespace.namespace import Namespace
 
 
 DBConfig = TypedDict('DBConfig', {
@@ -21,7 +23,7 @@ DBConfig = TypedDict('DBConfig', {
 })
 
 
-EngineKey = tuple[str, str, int, str, str]
+EngineKey = tuple[str, str, int, str, str, str]
 
 
 def get_engine_key(config: DBConfig) -> EngineKey:
@@ -31,6 +33,7 @@ def get_engine_key(config: DBConfig) -> EngineKey:
         config["port"],
         config["user"],
         config["dbname"],
+        config["schema"],
     )
 
 
@@ -55,6 +58,8 @@ def get_engine(config: DBConfig) -> sa.engine.Engine:
         dbname = config["dbname"]
         res = sa.create_engine(
             f"{dialect}://{user}:{passwd}@{host}:{port}/{dbname}")
+        res = res.execution_options(
+            schema_translate_map={None: config["schema"]})
         ENGINES[key] = res
     return res
 
@@ -62,131 +67,116 @@ def get_engine(config: DBConfig) -> sa.engine.Engine:
 class DBConnector:
     def __init__(self, config: DBConfig) -> None:
         self._engine = get_engine(config)
-        self._schema = config["schema"]
-        self._metadata_obj = sa.MetaData(self._engine, self._schema)
         self._namespaces: dict[str, int] = {}
         self._modules: dict[str, int] = {}
 
-    def table_exists(self, name: str) -> bool:
-        return self.get_table(name, autoload=False).exists()
+    def table_exists(self, table: Type['Base']) -> bool:
+        return sa.inspect(self._engine).has_table(
+            getattr(table, "__table__").name)
+
+    def create_tables(self, tables: list[Type['Base']]) -> None:
+        from db.base import Base
+
+        metadata: sa.MetaData = Base.metadata
+        metadata.create_all(
+            self._engine,
+            tables=[getattr(table, "__table__") for table in tables],
+            checkfirst=True)
 
     def is_init(self) -> bool:
-        if not self.table_exists("namespace"):
+        from db.base import ModulesTable, NamespaceTable
+
+        if not self.table_exists(NamespaceTable):
             return False
-        if not self.table_exists("modules"):
+        if not self.table_exists(ModulesTable):
             return False
         return True
 
-    @contextlib.contextmanager
-    def create_tables(self) -> Iterator[sa.MetaData]:
-        metadata_obj = sa.MetaData(self._engine, self._schema)
-        yield metadata_obj
-        metadata_obj.create_all(checkfirst=True)
+    def init_db(self) -> None:
+        from db.base import ModulesTable, NamespaceTable
 
-    @contextlib.contextmanager
+        if self.is_init():
+            return
+        self.create_tables([NamespaceTable, ModulesTable])
+
+    def is_module_init(self, module: 'ModuleBase', version: int) -> bool:
+        if not self.is_init():
+            return False
+        return self.get_module_version(module) == version
+
     def create_module_tables(
             self,
-            module: 'ModuleName',
-            version: int) -> Iterator[tuple[sa.MetaData, sa.Column]]:
+            module: 'ModuleBase',
+            version: int,
+            tables: list[Type['Base']]) -> None:
+        if not self.is_init():
+            self.init_db()
         current_version = self.get_module_version(module)
         if current_version == version:
             return
         if current_version != 0:
             raise ValueError(
                 f"cannot upgrade from version {current_version} to {version}")
-        with self._engine.begin() as conn:
-            metadata_obj = sa.MetaData(conn, self._schema)
-            yield metadata_obj, self.ns_key_column()
-            self._set_module_version(conn, module, version)
-            metadata_obj.create_all(checkfirst=True)
-
-    def init_db(self) -> None:
-        from system.namespace.load import NS_NAME_MAX_LEN
-        from system.namespace.module import MODULE_MAX_LEN
-
-        if self.is_init():
-            return
-        with self.create_tables() as metadata_obj:
-            sa.Table(
-                "namespace",
-                metadata_obj,
-                sa.Column(
-                    "id",
-                    sa.Integer,
-                    primary_key=True,
-                    autoincrement=True,
-                    nullable=False,
-                    unique=True),
-                sa.Column(
-                    "name",
-                    sa.String(NS_NAME_MAX_LEN),
-                    primary_key=True,
-                    nullable=False,
-                    unique=True))
-            sa.Table(
-                "modules",
-                metadata_obj,
-                sa.Column(
-                    "module",
-                    sa.String(MODULE_MAX_LEN),
-                    primary_key=True,
-                    nullable=False,
-                    unique=True),
-                sa.Column(
-                    "version",
-                    sa.Integer,
-                    nullable=False))
-
-    def get_table(self, name: str, *, autoload: bool = True) -> sa.Table:
-        return sa.Table(name, self._metadata_obj, autoload=autoload)
+        self.create_tables(tables)
+        self._set_module_version(module, version)
 
     def _refresh_modules(self) -> None:
+        from db.base import ModulesTable
+
         with self.get_connection() as conn:
-            t_modules = self.get_table("modules")
             res = conn.execute(sa.select(
-                [t_modules.c.module, t_modules.c.version]))
+                [ModulesTable.module, ModulesTable.version]))
             self._modules = {
                 row.module: row.version
                 for row in res
             }
 
-    def get_module_version(self, module: 'ModuleName') -> int:
-        res = self._modules.get(module)
+    def get_module_version(self, module: 'ModuleBase') -> int:
+        module_name = module.module_name()
+        res = self._modules.get(module_name)
         if res is None:
             self._refresh_modules()
-            res = self._modules.get(module)
+            res = self._modules.get(module_name)
         if res is None:
             return 0
         return res
 
     def _set_module_version(
             self,
-            conn: sa.engine.Connection,
-            module: 'ModuleName',
+            module: 'ModuleBase',
             version: int) -> None:
-        t_modules = self.get_table("modules")
-        stmt = t_modules.insert().values(module=module, version=version)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=[t_modules.c.module],
-            index_where=t_modules.c.module.like(module),
-            set_=dict(data=stmt.excluded.data))
-        conn.execute(stmt)
+        from db.base import ModulesTable
+
+        module_name = module.module_name()
+        with self.get_connection() as conn:
+            values = {
+                "module": module_name,
+                "version": version
+            }
+            stmt = pg_insert(ModulesTable).values(values)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=[ModulesTable.module],
+                index_where=ModulesTable.module.like(module_name),
+                set_=dict(stmt.excluded.items()))
+            conn.execute(stmt)
         self._refresh_modules()
 
     def _refresh_namespaces(self) -> None:
+        from db.base import NamespaceTable
+
         with self.get_connection() as conn:
-            t_namespace = self.get_table("namespace")
             res = conn.execute(sa.select(
-                [t_namespace.c.name, t_namespace.c.id]))
+                [NamespaceTable.name, NamespaceTable.id]))
             self._namespaces = {
                 row.name: row.id
                 for row in res
             }
 
     def _add_namespace(self, ns_name: str) -> None:
+        from db.base import NamespaceTable
+
         with self.get_connection() as conn:
-            t_namespace = self.get_table("namespace")
-            conn.execute(t_namespace.insert().values(name=ns_name))
+            conn.execute(sa.insert(NamespaceTable).values(name=ns_name))
         self._refresh_namespaces()
 
     def get_namespace_id(self, namespace: 'Namespace', *, create: bool) -> int:
@@ -205,13 +195,6 @@ class DBConnector:
         if res is None:
             raise KeyError(f"cannot create namespace: {ns_name}")
         return res
-
-    def ns_key_column(self) -> sa.Column:
-        t_namespace = self.get_table("namespace")
-        return t_namespace.c.id
-
-    def get_schema(self) -> str:
-        return self._schema
 
     def get_engine(self) -> sa.engine.Engine:
         return self._engine

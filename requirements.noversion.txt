@@ -18,5 +18,5 @@ python-redis-lock
 quick-server
 redis
 scikit-learn
-SQLAlchemy
+SQLAlchemy[mypy]
 transformers

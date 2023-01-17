@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from annoy import AnnoyIndex
 
+from misc.io import named_write
 from misc.util import safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
@@ -71,13 +72,13 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             role: ProviderRole,
             shard: int,
             embeds: list[torch.Tensor]) -> None:
-        key = (role, shard)
-        aindex = self._create_index(role, shard, load=False)
-        for ix, embed in enumerate(embeds):
-            aindex.add_item(ix, safe_ravel(embed).tolist())
-        aindex.build(self._trees)
-        aindex.save(self._get_file(role, shard))
-        self._indexes[key] = aindex
+        with named_write(self._get_file(role, shard)) as tname:
+            aindex = self._create_index(role, shard, load=False)
+            aindex.on_disk_build(tname)
+            for ix, embed in enumerate(embeds):
+                aindex.add_item(ix, safe_ravel(embed).tolist())
+            aindex.build(self._trees)
+            aindex.unload()
 
     def do_get_internal_distance(
             self,

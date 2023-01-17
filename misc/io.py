@@ -1,3 +1,4 @@
+import contextlib
 import errno
 import io
 import os
@@ -5,7 +6,6 @@ import shutil
 import tempfile
 import threading
 import time
-from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -200,7 +200,7 @@ def open_append(
         **kwargs))
 
 
-@contextmanager
+@contextlib.contextmanager
 def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
     filename = normalize_file(filename)
 
@@ -226,6 +226,27 @@ def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
             sfile.close()  # closes the temporary file descriptor
         elif tfd is not None:
             os.close(tfd)  # closes the actual temporary file descriptor
+        if tname is not None:
+            if writeback:
+                fastrename(tname, filename)
+            else:
+                remove_file(tname)
+
+
+@contextlib.contextmanager
+def named_write(filename: str) -> Iterator[str]:
+    filename = normalize_file(filename)
+
+    tname = None
+    writeback = False
+    try:
+        tfd, tname = tempfile.mkstemp(
+            dir=get_tmp(filename),
+            suffix=TMP_POSTFIX)
+        os.close(tfd)
+        yield tname
+        writeback = True
+    finally:
         if tname is not None:
             if writeback:
                 fastrename(tname, filename)
