@@ -1,13 +1,13 @@
 import contextlib
 import threading
-from typing import Iterator, TypedDict
+from typing import Iterator, TYPE_CHECKING, TypedDict
 
 # FIXME add sqlalchemy stubs
 import sqlalchemy as sa  # type: ignore
 
-from system.namespace.load import NS_NAME_MAX_LEN
-from system.namespace.module import MODULE_MAX_LEN
-from system.namespace.namespace import ModuleName, Namespace
+
+if TYPE_CHECKING:
+    from system.namespace.namespace import ModuleName, Namespace
 
 
 DBConfig = TypedDict('DBConfig', {
@@ -86,7 +86,7 @@ class DBConnector:
     @contextlib.contextmanager
     def create_module_tables(
             self,
-            module: ModuleName,
+            module: 'ModuleName',
             version: int) -> Iterator[tuple[sa.MetaData, sa.Column]]:
         current_version = self.get_module_version(module)
         if current_version == version:
@@ -101,6 +101,9 @@ class DBConnector:
             metadata_obj.create_all(checkfirst=True)
 
     def init_db(self) -> None:
+        from system.namespace.load import NS_NAME_MAX_LEN
+        from system.namespace.module import MODULE_MAX_LEN
+
         if self.is_init():
             return
         with self.create_tables() as metadata_obj:
@@ -147,7 +150,7 @@ class DBConnector:
                 for row in res
             }
 
-    def get_module_version(self, module: ModuleName) -> int:
+    def get_module_version(self, module: 'ModuleName') -> int:
         res = self._modules.get(module)
         if res is None:
             self._refresh_modules()
@@ -159,7 +162,7 @@ class DBConnector:
     def _set_module_version(
             self,
             conn: sa.engine.Connection,
-            module: ModuleName,
+            module: 'ModuleName',
             version: int) -> None:
         t_modules = self.get_table("modules")
         stmt = t_modules.insert().values(module=module, version=version)
@@ -186,7 +189,7 @@ class DBConnector:
             conn.execute(t_namespace.insert().values(name=ns_name))
         self._refresh_namespaces()
 
-    def get_namespace_id(self, namespace: Namespace, *, create: bool) -> int:
+    def get_namespace_id(self, namespace: 'Namespace', *, create: bool) -> int:
         return self._get_namespace_id(namespace.get_name(), create=create)
 
     def _get_namespace_id(self, ns_name: str, *, create: bool) -> int:
