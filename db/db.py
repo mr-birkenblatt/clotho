@@ -65,6 +65,7 @@ class DBConnector:
         self._schema = config["schema"]
         self._metadata_obj = sa.MetaData(self._engine, self._schema)
         self._namespaces: dict[str, int] = {}
+        self._modules: dict[str, int] = {}
 
     def is_init(self) -> bool:
         if not self.get_table("namespace", autoload=False).exists():
@@ -82,16 +83,23 @@ class DBConnector:
     @contextlib.contextmanager
     def create_module_tables(
             self,
-            _module: ModuleName,
-            _version: int) -> Iterator[tuple[sa.MetaData, sa.Column]]:
+            module: ModuleName,
+            version: int) -> Iterator[tuple[sa.MetaData, sa.Column]]:
+        current_version = self.get_module_version(module)
+        if current_version == version:
+            return
+        if current_version != 0:
+            raise ValueError(
+                f"cannot upgrade from version {current_version} to {version}")
         with self._engine.begin() as conn:
             metadata_obj = sa.MetaData(conn, self._schema)
             yield metadata_obj, self.ns_key_column()
+            self._set_module_version(conn, module, version)
             metadata_obj.create_all(checkfirst=True)
 
     def init_db(self) -> None:
         with self.create_tables() as metadata_obj:
-            t_namespace = sa.Table(
+            sa.Table(
                 "namespace",
                 metadata_obj,
                 sa.Column(
@@ -111,16 +119,11 @@ class DBConnector:
                 "modules",
                 metadata_obj,
                 sa.Column(
-                    "namespace_id",
-                    None,
-                    sa.ForeignKey(t_namespace.c.id),
-                    primary_key=True,
-                    nullable=False),
-                sa.Column(
                     "module",
                     sa.String(MODULE_MAX_LEN),
                     primary_key=True,
-                    nullable=False),
+                    nullable=False,
+                    unique=True),
                 sa.Column(
                     "version",
                     sa.Integer,
@@ -128,6 +131,39 @@ class DBConnector:
 
     def get_table(self, name: str, *, autoload: bool = True) -> sa.Table:
         return sa.Table(name, self._metadata_obj, autoload=autoload)
+
+    def _refresh_modules(self) -> None:
+        with self.get_connection() as conn:
+            t_modules = self.get_table("modules")
+            res = conn.execute(sa.select(
+                [t_modules.c.module, t_modules.c.version]))
+            self._modules = {
+                row.module: row.version
+                for row in res
+            }
+
+    def get_module_version(self, module: ModuleName) -> int:
+        res = self._modules.get(module)
+        if res is None:
+            self._refresh_modules()
+            res = self._modules.get(module)
+        if res is None:
+            return 0
+        return res
+
+    def _set_module_version(
+            self,
+            conn: sa.engine.Connection,
+            module: ModuleName,
+            version: int) -> None:
+        t_modules = self.get_table("modules")
+        stmt = t_modules.insert().values(module=module, version=version)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[t_modules.c.module],
+            index_where=t_modules.c.module.like(module),
+            set_=dict(data=stmt.excluded.data))
+        conn.execute(stmt)
+        self._refresh_modules()
 
     def _refresh_namespaces(self) -> None:
         with self.get_connection() as conn:

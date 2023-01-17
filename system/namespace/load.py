@@ -1,6 +1,7 @@
 import re
 from typing import Any, TypedDict
 
+from db.db import DBConfig
 from model.embedding import EmbeddingProviderModule
 from system.embedding.store import EmbedModule
 from system.links.store import LinkModule
@@ -18,6 +19,7 @@ RedisConfigObj = TypedDict('RedisConfigObj', {
 })
 ConnectionObj = TypedDict('ConnectionObj', {
     "redis": dict[str, RedisConfigObj],
+    "db": dict[str, DBConfig],
 })
 NamespaceObj = TypedDict('NamespaceObj', {
     "msgs": MsgsModule,
@@ -43,6 +45,21 @@ def redis_from_obj(
             "path": obj["path"],
         }
         for name, obj in redis_obj.items()
+    }
+
+
+def db_from_obj(db_obj: dict[str, Any]) -> dict[str, DBConfig]:
+    return {
+      name: {
+        "dialect": obj.get("dialect", "postgresql"),
+        "host": obj.get("host", "localhost"),
+        "port": int(obj.get("port", 5432)),
+        "user": obj["user"],
+        "passwd": obj.get("passwd", ""),
+        "dbname": obj["dbname"],
+        "schema": obj.get("schema", "public"),
+      }
+      for name, obj in db_obj.items()
     }
 
 
@@ -175,7 +192,8 @@ def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
         "embed": embed_from_obj(obj.get("embed", {})),
         "model": model_from_obj(obj.get("model", {})),
         "connections": {
-            "redis": redis_from_obj(ns_name, conns.get("redis", {}))
+            "redis": redis_from_obj(ns_name, conns.get("redis", {})),
+            "db": db_from_obj(conns.get("db", {}))
         },
         "writeback": obj.get("writeback", True),
     }

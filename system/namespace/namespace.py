@@ -12,6 +12,7 @@ from misc.redis import (
 
 
 if TYPE_CHECKING:
+    from db.db import DBConfig, DBConnector
     from model.embedding import EmbeddingProviderModule
     from system.embedding.store import EmbedModule
     from system.links.store import LinkModule
@@ -39,6 +40,7 @@ class Namespace:
     def __init__(self, name: str, obj: 'NamespaceObj') -> None:
         self._name = name
         self._obj = obj
+        self._db_cache: dict[str, 'DBConnector'] = {}
 
     def get_name(self) -> str:
         return self._name
@@ -86,6 +88,19 @@ class Namespace:
                 config["prefix"],
                 os.path.join(self.get_root(), config["path"])))
         return ns_key
+
+    def get_db_config(self, config_name: str) -> 'DBConfig':
+        return self._obj["connections"]["db"][config_name]
+
+    def get_db_connector(self, config_name: str) -> 'DBConnector':
+        from db.db import DBConnector
+
+        res = self._db_cache.get(config_name)
+        if res is not None:
+            return res
+        res = DBConnector(self.get_db_config(config_name))
+        self._db_cache[config_name] = res
+        return res
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, self.__class__):
