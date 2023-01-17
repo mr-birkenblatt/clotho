@@ -74,6 +74,14 @@ class DBStore(MessageStore):
     def _get_ns_name(self) -> str:
         return self._namespace.get_name()
 
+    @staticmethod
+    def _escape(text: str) -> str:
+        return text.replace("\\", "\\\\").replace("\0", "\\0")
+
+    @staticmethod
+    def _unescape(text: str) -> str:
+        return text.replace("\\0", "\0").replace("\\\\", "\\")
+
     def is_module_init(self) -> bool:
         return self._db.is_module_init(self, MODULE_VERSION)
 
@@ -84,14 +92,19 @@ class DBStore(MessageStore):
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()
         with self._db.get_connection() as conn:
-            values = {
-                "namespace_id": self._get_nid(),
-                "mhash": mhash.to_parseable(),
-                "text": message.get_text(),
-            }
-            stmt = pg_insert(MsgsTable).values(values)
-            stmt = stmt.on_conflict_do_nothing()
-            conn.execute(stmt)
+            try:
+                values = {
+                    "namespace_id": self._get_nid(),
+                    "mhash": mhash.to_parseable(),
+                    "text": self._escape(message.get_text()),
+                }
+                stmt = pg_insert(MsgsTable).values(values)
+                stmt = stmt.on_conflict_do_nothing()
+                conn.execute(stmt)
+            except ValueError as e:
+                raise ValueError(
+                    "error while processing "
+                    f"{message.get_hash()}: {repr(message.get_text())}") from e
         self._cache.set(mhash, message)
         return mhash
 
@@ -106,7 +119,7 @@ class DBStore(MessageStore):
             ]))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
-                cur_text: str = row.text
+                cur_text = self._unescape(row.text)
                 cur_msg = Message(msg=cur_text, msg_hash=cur_mhash)
                 self._cache.set(cur_mhash, cur_msg)
                 if cur_mhash == message_hash:
@@ -121,7 +134,7 @@ class DBStore(MessageStore):
             values = {
                 "namespace_id": self._get_nid(),
                 "mhash": mhash.to_parseable(),
-                "topic": topic.get_text(),
+                "topic": self._escape(topic.get_text()),
             }
             stmt = pg_insert(TopicsTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
@@ -137,7 +150,7 @@ class DBStore(MessageStore):
                 ).where(TopicsTable.namespace_id == self._get_nid())
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
-                cur_topic: str = row.topic
+                cur_topic = self._unescape(row.topic)
                 res[row.id] = Message(msg=cur_topic, msg_hash=cur_mhash)
         return [
             elem[1]
@@ -177,7 +190,7 @@ class DBStore(MessageStore):
                 had_data = False
                 for row in conn.execute(stmt):
                     cur_mhash = MHash.parse(row.mhash)
-                    cur_text: str = row.text
+                    cur_text = self._unescape(row.text)
                     cur_msg = Message(msg=cur_text, msg_hash=cur_mhash)
                     self._cache.set(cur_mhash, cur_msg)
                     yield cur_mhash
