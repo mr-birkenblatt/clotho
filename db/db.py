@@ -5,9 +5,10 @@ from typing import Iterator, Type, TYPE_CHECKING, TypedDict
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from db.base import Base, ModulesTable, NamespaceTable
+
 
 if TYPE_CHECKING:
-    from db.base import Base
     from system.namespace.module import ModuleBase
     from system.namespace.namespace import Namespace
 
@@ -70,22 +71,18 @@ class DBConnector:
         self._namespaces: dict[str, int] = {}
         self._modules: dict[str, int] = {}
 
-    def table_exists(self, table: Type['Base']) -> bool:
+    def table_exists(self, table: Type[Base]) -> bool:
         return sa.inspect(self._engine).has_table(
-            getattr(table, "__table__").name)
+            table.__table__.name)
 
-    def create_tables(self, tables: list[Type['Base']]) -> None:
-        from db.base import Base
-
+    def create_tables(self, tables: list[Type[Base]]) -> None:
         metadata: sa.MetaData = Base.metadata
         metadata.create_all(
             self._engine,
-            tables=[getattr(table, "__table__") for table in tables],
+            tables=[table.__table__ for table in tables],
             checkfirst=True)
 
     def is_init(self) -> bool:
-        from db.base import ModulesTable, NamespaceTable
-
         if not self.table_exists(NamespaceTable):
             return False
         if not self.table_exists(ModulesTable):
@@ -93,8 +90,6 @@ class DBConnector:
         return True
 
     def init_db(self) -> None:
-        from db.base import ModulesTable, NamespaceTable
-
         if self.is_init():
             return
         self.create_tables([NamespaceTable, ModulesTable])
@@ -108,7 +103,7 @@ class DBConnector:
             self,
             module: 'ModuleBase',
             version: int,
-            tables: list[Type['Base']]) -> None:
+            tables: list[Type[Base]]) -> None:
         if not self.is_init():
             self.init_db()
         current_version = self.get_module_version(module)
@@ -121,11 +116,8 @@ class DBConnector:
         self._set_module_version(module, version)
 
     def _refresh_modules(self) -> None:
-        from db.base import ModulesTable
-
         with self.get_connection() as conn:
-            stmt = sa.select(
-                [ModulesTable.module, ModulesTable.version])
+            stmt = sa.select([ModulesTable.module, ModulesTable.version])
             self._modules = {
                 row.module: row.version
                 for row in conn.execute(stmt)
@@ -145,8 +137,6 @@ class DBConnector:
             self,
             module: 'ModuleBase',
             version: int) -> None:
-        from db.base import ModulesTable
-
         module_name = module.module_name()
         with self.get_connection() as conn:
             values = {
@@ -162,8 +152,6 @@ class DBConnector:
         self._refresh_modules()
 
     def _refresh_namespaces(self) -> None:
-        from db.base import NamespaceTable
-
         with self.get_connection() as conn:
             stmt = sa.select(
                 [NamespaceTable.name, NamespaceTable.id])
@@ -173,8 +161,6 @@ class DBConnector:
             }
 
     def _add_namespace(self, ns_name: str) -> None:
-        from db.base import NamespaceTable
-
         with self.get_connection() as conn:
             stmt = pg_insert(NamespaceTable).values(name=ns_name)
             stmt = stmt.on_conflict_do_nothing()

@@ -1,11 +1,23 @@
 import sqlalchemy as sa
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import registry
+from sqlalchemy.orm.decl_api import DeclarativeMeta
 
 from system.namespace.load import NS_NAME_MAX_LEN
 from system.namespace.module import MODULE_MAX_LEN
 
 
-Base = declarative_base()
+mapper_registry = registry()
+
+
+class Base(
+        metaclass=DeclarativeMeta):  # pylint: disable=too-few-public-methods
+    __abstract__ = True
+    __table__: sa.Table
+
+    registry = mapper_registry
+    metadata = mapper_registry.metadata
+
+    __init__ = mapper_registry.constructor
 
 
 class NamespaceTable(Base):  # pylint: disable=too-few-public-methods
