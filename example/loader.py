@@ -296,10 +296,7 @@ def process_actions_full(
         user_pool=user_pool,
         synth_pool=synth_pool,
         counter=counter)
-    # FIXME: process by children count first (least first) (maybe)
-    # FIXME: use temporary files to filter each pass (maybe)
     # FIXME: analyze mhash storage (how many hashes per file / how deep?)
-    # FIXME: batch votes (100 at a time; maybe)
     # FIXME: add user inbox
-    # FIXME: add sort select
+    # FIXME: add sort select (when swiping left)
     # FIXME: total karma to user display

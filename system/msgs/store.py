@@ -118,5 +118,3 @@ def create_message_store(namespace: Namespace) -> MessageStore:
         from system.msgs.cold import ColdStore
         return ColdStore(namespace.get_module_root("msgs"), mobj["keep_alive"])
     raise ValueError(f"unknown message store: {mobj}")
-
-# FIXME create module base class with name, transfer, init
