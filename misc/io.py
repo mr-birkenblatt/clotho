@@ -241,19 +241,19 @@ def remove_file(fname: str) -> None:
 
 
 def get_subfolders(path: str) -> list[str]:
-    return [fobj.name for fobj in os.scandir(path) if fobj.is_dir()]
+    return sorted((fobj.name for fobj in os.scandir(path) if fobj.is_dir()))
 
 
 def get_files(path: str, ext: str) -> list[str]:
-    return [
+    return sorted((
         fobj.name
         for fobj in os.scandir(path)
         if fobj.is_file() and fobj.name.endswith(ext)
-    ]
+    ))
 
 
 def get_folder(path: str, ext: str) -> Iterable[tuple[str, bool]]:
-    for fobj in os.scandir(path):
+    for fobj in sorted(os.scandir(path), key=lambda fobj: fobj.name):
         if fobj.is_dir():
             yield fobj.name, True
         elif fobj.is_file() and fobj.name.endswith(ext):

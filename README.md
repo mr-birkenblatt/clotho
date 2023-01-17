@@ -32,3 +32,9 @@ Use `make pre-commit` to set up git to enable commit checks.
 (requires a running redis for the namespace)
 
 `python -m model` to check whether train / test generation is working
+
+Use `python -m system.namespace xfer --namespace <ns_src> --module <module> --dest <ns_dest>`
+to transfer data between namespaces (you can use this to change the module type, too).
+
+Use `python -m system.namespace init --namespace <namespace> --module <module>` to initialize a module.
+Not all modules need initialization.
