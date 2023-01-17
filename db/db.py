@@ -177,7 +177,7 @@ class DBConnector:
 
         with self.get_connection() as conn:
             stmt = pg_insert(NamespaceTable).values(name=ns_name)
-            stmt = stmt.on_conflict_do_nothin()
+            stmt = stmt.on_conflict_do_nothing()
             conn.execute(stmt)
         self._refresh_namespaces()
 

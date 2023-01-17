@@ -58,11 +58,21 @@ class DBStore(MessageStore):
             cache_size: int) -> None:
         super().__init__()
         self._db = db
-        self._ns_name = namespace.get_name()
-        self._nid = db.get_namespace_id(namespace, create=True)
+        self._namespace = namespace
+        self._nid: int | None = None
         self._cache: LRU[MHash, Message] = LRU(cache_size)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
+
+    def _get_nid(self) -> int:
+        nid = self._nid
+        if nid is None:
+            nid = self._db.get_namespace_id(self._namespace, create=True)
+            self._nid = nid
+        return nid
+
+    def _get_ns_name(self) -> str:
+        return self._namespace.get_name()
 
     def is_module_init(self) -> bool:
         return self._db.is_module_init(self, MODULE_VERSION)
@@ -75,7 +85,7 @@ class DBStore(MessageStore):
         mhash = message.get_hash()
         with self._db.get_connection() as conn:
             values = {
-                "namespace_id": self._nid,
+                "namespace_id": self._get_nid(),
                 "mhash": mhash.to_parseable(),
                 "text": message.get_text(),
             }
@@ -91,7 +101,7 @@ class DBStore(MessageStore):
             return res
         with self._db.get_connection() as conn:
             stmt = sa.select([MsgsTable.mhash, MsgsTable.text]).where(sa.and_([
-                MsgsTable.namespace_id == self._nid,
+                MsgsTable.namespace_id == self._get_nid(),
                 MsgsTable.mhash == message_hash.to_parseable()
             ]))
             for row in conn.execute(stmt):
@@ -102,16 +112,16 @@ class DBStore(MessageStore):
                 if cur_mhash == message_hash:
                     res = cur_msg
         if res is None:
-            raise KeyError(f"{message_hash} not in db ({self._ns_name})")
+            raise KeyError(f"{message_hash} not in db ({self._get_ns_name()})")
         return res
 
     def add_topic(self, topic: Message) -> MHash:
         mhash = topic.get_hash()
         with self._db.get_connection() as conn:
             values = {
-                "namespace_id": self._nid,
+                "namespace_id": self._get_nid(),
                 "mhash": mhash.to_parseable(),
-                "text": topic.get_text(),
+                "topic": topic.get_text(),
             }
             stmt = pg_insert(TopicsTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
@@ -124,7 +134,7 @@ class DBStore(MessageStore):
         with self._db.get_connection() as conn:
             stmt = sa.select(
                 [TopicsTable.id, TopicsTable.mhash, TopicsTable.topic],
-                ).where(TopicsTable.namespace_id == self._nid)
+                ).where(TopicsTable.namespace_id == self._get_nid())
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 cur_topic: str = row.topic
@@ -162,7 +172,7 @@ class DBStore(MessageStore):
             while True:
                 stmt = sa.select(
                     [MsgsTable.mhash, MsgsTable.text]).where(
-                    MsgsTable.namespace_id == self._nid,
+                    MsgsTable.namespace_id == self._get_nid(),
                     ).offset(offset).limit(chunk_size)
                 had_data = False
                 for row in conn.execute(stmt):
@@ -180,7 +190,7 @@ class DBStore(MessageStore):
 
         with self._db.get_connection() as conn:
             cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(
-                MsgsTable.namespace_id == self._nid)
+                MsgsTable.namespace_id == self._get_nid())
             count: int | None = conn.execute(cstmt).scalar()
             if progress_bar is None or count is None:
                 yield from get_rows(conn, pbar=None)
