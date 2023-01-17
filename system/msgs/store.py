@@ -100,10 +100,20 @@ DiskMessageModule = TypedDict('DiskMessageModule', {
     "name": Literal["disk"],
     "cache_size": int,
 })
+DBMessageModule = TypedDict('DBMessageModule', {
+    "name": Literal["db"],
+    "conn": str,
+    "cache_size": int,
+})
 RamMessageModule = TypedDict('RamMessageModule', {
     "name": Literal["ram"],
 })
-MsgsModule = ColdMessageModule | DiskMessageModule | RamMessageModule
+MsgsModule = (
+    ColdMessageModule |
+    DiskMessageModule |
+    DBMessageModule |
+    RamMessageModule
+)
 
 
 def create_message_store(namespace: Namespace) -> MessageStore:
@@ -111,6 +121,10 @@ def create_message_store(namespace: Namespace) -> MessageStore:
     if mobj["name"] == "disk":
         from system.msgs.disk import DiskStore
         return DiskStore(namespace.get_root(), mobj["cache_size"])
+    if mobj["name"] == "db":
+        from system.msgs.db import DBStore
+        return DBStore(
+            namespace.get_db_connector(mobj["conn"]), mobj["cache_size"])
     if mobj["name"] == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()

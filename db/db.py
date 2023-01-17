@@ -67,10 +67,13 @@ class DBConnector:
         self._namespaces: dict[str, int] = {}
         self._modules: dict[str, int] = {}
 
+    def table_exists(self, name: str) -> bool:
+        return self.get_table(name, autoload=False).exists()
+
     def is_init(self) -> bool:
-        if not self.get_table("namespace", autoload=False).exists():
+        if not self.table_exists("namespace"):
             return False
-        if not self.get_table("modules", autoload=False).exists():
+        if not self.table_exists("modules"):
             return False
         return True
 
@@ -98,6 +101,8 @@ class DBConnector:
             metadata_obj.create_all(checkfirst=True)
 
     def init_db(self) -> None:
+        if self.is_init():
+            return
         with self.create_tables() as metadata_obj:
             sa.Table(
                 "namespace",
