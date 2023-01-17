@@ -148,10 +148,10 @@ ts-build:
 	cd ui && yarn build
 
 run-redis-test:
-	PYTHON=$(PYTHON) NS=_test M=link ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_test M=links ./run_redis.sh
 
 run-redis-api:
-	PYTHON=$(PYTHON) NS=_api M=link ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_api M=links ./run_redis.sh
 
 run-redis:
 	PYTHON=$(PYTHON) NS=$(NS) M=$(M) ./run_redis.sh
