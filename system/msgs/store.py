@@ -124,7 +124,9 @@ def create_message_store(namespace: Namespace) -> MessageStore:
     if mobj["name"] == "db":
         from system.msgs.db import DBStore
         return DBStore(
-            namespace.get_db_connector(mobj["conn"]), mobj["cache_size"])
+            namespace,
+            namespace.get_db_connector(mobj["conn"]),
+            mobj["cache_size"])
     if mobj["name"] == "ram":
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()

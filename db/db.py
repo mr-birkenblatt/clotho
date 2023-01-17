@@ -124,11 +124,11 @@ class DBConnector:
         from db.base import ModulesTable
 
         with self.get_connection() as conn:
-            res = conn.execute(sa.select(
-                [ModulesTable.module, ModulesTable.version]))
+            stmt = sa.select(
+                [ModulesTable.module, ModulesTable.version])
             self._modules = {
                 row.module: row.version
-                for row in res
+                for row in conn.execute(stmt)
             }
 
     def get_module_version(self, module: 'ModuleBase') -> int:
@@ -165,18 +165,20 @@ class DBConnector:
         from db.base import NamespaceTable
 
         with self.get_connection() as conn:
-            res = conn.execute(sa.select(
-                [NamespaceTable.name, NamespaceTable.id]))
+            stmt = sa.select(
+                [NamespaceTable.name, NamespaceTable.id])
             self._namespaces = {
                 row.name: row.id
-                for row in res
+                for row in conn.execute(stmt)
             }
 
     def _add_namespace(self, ns_name: str) -> None:
         from db.base import NamespaceTable
 
         with self.get_connection() as conn:
-            conn.execute(sa.insert(NamespaceTable).values(name=ns_name))
+            stmt = pg_insert(NamespaceTable).values(name=ns_name)
+            stmt = stmt.on_conflict_do_nothin()
+            conn.execute(stmt)
         self._refresh_namespaces()
 
     def get_namespace_id(self, namespace: 'Namespace', *, create: bool) -> int:
