@@ -32,10 +32,6 @@ class RedisEmbeddingCache(EmbeddingCache):
         name = provider.get_redis_name()
         return f"{self._redis.get_prefix()}:map:{name}:{mhash.to_parseable()}"
 
-    def _get_staging_key(self, provider: EmbeddingProvider) -> str:
-        name = provider.get_redis_name()
-        return f"{self._redis.get_prefix()}:staging:{name}"
-
     def _get_order_key(self, provider: EmbeddingProvider) -> str:
         name = provider.get_redis_name()
         return f"{self._redis.get_prefix()}:order:{name}"
@@ -96,33 +92,6 @@ class RedisEmbeddingCache(EmbeddingCache):
 
     def clear_embeddings(self, provider: EmbeddingProvider) -> None:
         key = self._get_order_key(provider)
-        self._clear_embeddings(key)
-
-    def add_staging_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> None:
-        key = self._get_staging_key(provider)
-        self._add_embedding(key, mhash)
-
-    def staging_embeddings(
-            self,
-            provider: EmbeddingProvider,
-            *,
-            remove: bool
-            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        key = self._get_staging_key(provider)
-        return self._get_embeddigs(key, provider, start_ix=0, remove=remove)
-
-    def get_staging_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
-        key = self._get_staging_key(provider)
-        return self._get_index(key, index)
-
-    def staging_count(self, provider: EmbeddingProvider) -> int:
-        key = self._get_staging_key(provider)
-        return self._embeddings_size(key)
-
-    def clear_staging(self, provider: EmbeddingProvider) -> None:
-        key = self._get_staging_key(provider)
         self._clear_embeddings(key)
 
     def _add_embedding(self, key: str, mhash: MHash) -> None:

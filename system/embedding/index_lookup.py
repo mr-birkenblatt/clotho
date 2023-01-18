@@ -67,49 +67,6 @@ class EmbeddingCache:
     def clear_embeddings(self, provider: EmbeddingProvider) -> None:
         raise NotImplementedError()
 
-    def add_staging_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> None:
-        raise NotImplementedError()
-
-    def staging_embeddings(
-            self,
-            provider: EmbeddingProvider,
-            *,
-            remove: bool,
-            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        raise NotImplementedError()
-
-    def get_staging_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
-        raise NotImplementedError()
-
-    def staging_offset(self, provider: EmbeddingProvider) -> int:
-        return self.embedding_count(provider)
-
-    def staging_count(self, provider: EmbeddingProvider) -> int:
-        raise NotImplementedError()
-
-    def clear_staging(self, provider: EmbeddingProvider) -> None:
-        raise NotImplementedError()
-
-    def get_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
-        offset = self.staging_offset(provider)
-        if index < offset:
-            return self.get_entry_by_index(provider, index)
-        return self.get_staging_entry_by_index(provider, index - offset)
-
-    def all_embeddings(
-            self,
-            provider: EmbeddingProvider,
-            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        yield from self.embeddings(provider, start_ix=0)
-        offset = self.staging_offset(provider)
-        yield from (
-            (index + offset, mhash, embed)
-            for index, mhash, embed in self.staging_embeddings(
-                provider, remove=False)
-        )
-
 
 class CachedIndexEmbeddingStore(EmbeddingStore):
     def __init__(
@@ -156,9 +113,10 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 oprovider = oembed.get_provider(role)
                 provider = self.get_provider(role)
                 with ocache.get_lock(oprovider), cache.get_lock(provider):
-                    for _, mhash, embed in ocache.all_embeddings(oprovider):
+                    for _, mhash, embed in ocache.embeddings(
+                            oprovider, start_ix=0):
                         cache.set_map_embedding(provider, mhash, embed)
-                        cache.add_staging_embedding(provider, mhash)
+                        cache.add_embedding(provider, mhash)
         finally:
             self._bulk = False
 
@@ -209,19 +167,6 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                         role, shard, [embed for _, embed in cur_embeds])
                     shard += 1
                     cur_embeds = []
-            try:
-                for _, mhash, embed in cache.staging_embeddings(
-                        provider, remove=True):
-                    cache.add_embedding(provider, mhash)
-                    cur_embeds.append((mhash, embed))
-                    if len(cur_embeds) == shard_size:
-                        self.do_build_index(
-                            role, shard, [embed for _, embed in cur_embeds])
-                        shard += 1
-                        cur_embeds = []
-            finally:
-                for mhash, _ in cur_embeds:
-                    cache.add_staging_embedding(provider, mhash)
 
     def ensure_all(
             self,
@@ -229,42 +174,26 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             roles: list[ProviderRole] | None = None) -> None:
         if roles is None:
             roles = self.get_roles()
-        cache = self._cache
         shard_size = self.shard_size()
 
-        def process_name(
-                role: ProviderRole, provider: EmbeddingProvider) -> None:
+        def process_name(role: ProviderRole) -> None:
             shard = 0
             cur_embeds: list[tuple[MHash, torch.Tensor]] = []
             for mhash in msg_store.enumerate_messages(progress_bar=True):
                 embed = self.get_embedding(msg_store, role, mhash)
-                cache.add_embedding(provider, mhash)
                 cur_embeds.append((mhash, embed))
                 if len(cur_embeds) == shard_size:
                     self.do_build_index(
                         role, shard, [embed for _, embed in cur_embeds])
                     shard += 1
                     cur_embeds = []
-            try:
-                for _, mhash, embed in cache.staging_embeddings(
-                        provider, remove=True):
-                    cache.add_embedding(provider, mhash)
-                    cur_embeds.append((mhash, embed))
-                    if len(cur_embeds) == shard_size:
-                        self.do_build_index(
-                            role, shard, [embed for _, embed in cur_embeds])
-                        shard += 1
-                        cur_embeds = []
-            finally:
-                for mhash, _ in cur_embeds:
-                    cache.add_staging_embedding(provider, mhash)
 
         try:
             self._bulk = True
             for role in roles:
                 provider = self.get_provider(role)
                 with self._cache.get_lock(provider):
-                    process_name(role, provider)
+                    process_name(role)
         finally:
             self._bulk = False
 
@@ -288,9 +217,9 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         provider = self.get_provider(role)
         with cache.get_lock(provider):
             cache.set_map_embedding(provider, mhash, embed)
-            cache.add_staging_embedding(provider, mhash)
-            if (not self._bulk
-                    and cache.staging_count(provider) >= self.shard_size()):
+            cache.add_embedding(provider, mhash)
+            if (not self._bulk and self.index_in_shard(
+                    cache.embedding_count(provider)) == 0):
                 self.build_index(role)
 
     def do_get_embedding(
@@ -398,13 +327,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         for last_ix, _, other_embed in cache.embeddings(
                 provider, start_ix=last_shard_offset):
             candidates.append((last_ix, self.get_distance(embed, other_embed)))
-        offset = cache.staging_offset(provider)
-        for other_ix, _, other_embed in cache.staging_embeddings(
-                provider, remove=False):
-            candidates.append(
-                (other_ix + offset, self.get_distance(embed, other_embed)))
         yield from (
-            cache.get_by_index(provider, ix)
+            cache.get_entry_by_index(provider, ix)
             for ix, _ in sorted(
                 candidates,
                 key=lambda entry: entry[1],
@@ -430,7 +354,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
 
         total = 0
         candidates: list[tuple[MHash, float]] = []
-        for _, mhash, other_embed in cache.all_embeddings(provider):
+        for _, mhash, other_embed in cache.embeddings(provider, start_ix=0):
             dist = self.get_distance(embed, other_embed)
             mod = False
             if len(candidates) < count:

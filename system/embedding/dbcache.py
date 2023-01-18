@@ -38,13 +38,11 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         primary_key=True,
         nullable=False)
     main_order = sa.Column(sa.Integer, nullable=True)
-    staging_order = sa.Column(sa.Integer, nullable=True)
     embedding = sa.Column(
         sa.ARRAY(sa.Float),
         nullable=False)
 
     idx_main_order = sa.Index("namespace_id", "role", "main_order")
-    idx_staging_order = sa.Index("namespace_id", "role", "staging_order")
 
 
 class DBEmbeddingCache(EmbeddingCache):
@@ -106,7 +104,6 @@ class DBEmbeddingCache(EmbeddingCache):
                 "mhash": mhash.to_parseable(),
                 "embedding": self._from_tensor(embed),
                 "main_order": None,
-                "staging_order": None,
             }
             stmt = pg_insert(EmbedTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
@@ -169,86 +166,6 @@ class DBEmbeddingCache(EmbeddingCache):
     def clear_embeddings(self, provider: EmbeddingProvider) -> None:
         self._clear_column(provider, EmbedTable.main_order, "main_order")
 
-    def add_staging_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> None:
-
-        def get_next_ix(conn: sa.engine.Connection) -> int:
-            high_ix = self._first_column_index(
-                conn, provider, EmbedTable.staging_order, reverse=True)
-            return 0 if high_ix is None else high_ix + 1
-
-        self._add_embedding(
-            provider,
-            mhash,
-            EmbedTable.staging_order,
-            col_name="staging_order",
-            ctx="staging ",
-            get_next_ix=get_next_ix)
-
-    def staging_embeddings(
-            self,
-            provider: EmbeddingProvider,
-            *,
-            remove: bool,
-            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        with self._db.get_connection() as conn:
-            if not remove:
-                yield from self._iter_column(
-                    conn,
-                    provider,
-                    EmbedTable.staging_order,
-                    start_ix=0,
-                    limit=None,
-                    return_real_index=False)
-                return
-            while True:
-                with conn.begin() as trans:
-                    row = self._get_lowest_staging_entry(conn, provider)
-                    if row is None:
-                        trans.commit()
-                        break
-                    low_ix, mhash, embed = row
-                    yield (0, mhash, embed)
-                    stmt = sa.update(EmbedTable).where(sa.and_(
-                        EmbedTable.namespace_id == self._get_nid(),
-                        EmbedTable.role == provider.get_enum(),
-                        EmbedTable.staging_order == low_ix,
-                    )).values({
-                        EmbedTable.staging_order: None,
-                    })
-                    conn.execute(stmt)
-                    trans.commit()
-
-    def _get_lowest_staging_entry(
-            self,
-            conn: sa.engine.Connection,
-            provider: EmbeddingProvider,
-            ) -> tuple[int, MHash, torch.Tensor] | None:
-        res = None
-        for row in self._iter_column(
-                conn,
-                provider,
-                EmbedTable.staging_order,
-                start_ix=0,
-                limit=1,
-                return_real_index=True):
-            res = row
-        return res
-
-    def get_staging_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
-        with self._db.get_connection() as conn:
-            return self._entry_by_index(
-                conn, provider, EmbedTable.staging_order, "staging ", index)
-
-    def staging_count(self, provider: EmbeddingProvider) -> int:
-        with self._db.get_connection() as conn:
-            return self._embedding_count(
-                conn, provider, EmbedTable.staging_order)
-
-    def clear_staging(self, provider: EmbeddingProvider) -> None:
-        self._clear_column(provider, EmbedTable.staging_order, "staging_order")
-
     def _clear_column(
             self,
             provider: EmbeddingProvider,
@@ -304,23 +221,6 @@ class DBEmbeddingCache(EmbeddingCache):
             cur_embed = self._to_tensor(row.embed)
             cur_ix = row[0] if return_real_index else start_ix + ix
             yield (cur_ix, cur_mhash, cur_embed)
-
-    def _first_column_index(
-            self,
-            conn: sa.engine.Connection,
-            provider: EmbeddingProvider,
-            col: sa.Column,
-            *,
-            reverse: bool
-            ) -> int | None:
-        stmt = sa.select([col]).where(sa.and_(
-            EmbedTable.namespace_id == self._get_nid(),
-            EmbedTable.role == provider.get_enum(),
-            col.is_not(None),
-        ))
-        stmt = stmt.order_by(col.desc() if reverse else col.asc())
-        stmt = stmt.limit(1)
-        return conn.execute(stmt).scalar()
 
     def _entry_by_index(
             self,
