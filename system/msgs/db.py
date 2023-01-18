@@ -22,7 +22,8 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
 
     namespace_id = sa.Column(
         sa.Integer,
-        sa.ForeignKey(NamespaceTable.id),
+        sa.ForeignKey(
+            NamespaceTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
     mhash = sa.Column(
         sa.String(MHash.parse_size()),
@@ -36,7 +37,8 @@ class TopicsTable(Base):  # pylint: disable=too-few-public-methods
 
     namespace_id = sa.Column(
         sa.Integer,
-        sa.ForeignKey(NamespaceTable.id),
+        sa.ForeignKey(
+            NamespaceTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
     id = sa.Column(
         sa.Integer,
@@ -115,7 +117,7 @@ class DBStore(MessageStore):
         with self._db.get_connection() as conn:
             stmt = sa.select([MsgsTable.mhash, MsgsTable.text]).where(sa.and_([
                 MsgsTable.namespace_id == self._get_nid(),
-                MsgsTable.mhash == message_hash.to_parseable()
+                MsgsTable.mhash == message_hash.to_parseable(),
             ]))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
@@ -175,31 +177,22 @@ class DBStore(MessageStore):
         raise RuntimeError("random messages are not supported in db yet")
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
-        chunk_size = 1000
 
         def get_rows(
                 conn: sa.engine.Connection,
                 *,
                 pbar: Callable[[], None] | None) -> Iterable[MHash]:
-            offset = 0
-            while True:
-                stmt = sa.select(
-                    [MsgsTable.mhash, MsgsTable.text]).where(
-                    MsgsTable.namespace_id == self._get_nid(),
-                    ).offset(offset).limit(chunk_size)
-                had_data = False
-                for row in conn.execute(stmt):
-                    cur_mhash = MHash.parse(row.mhash)
-                    cur_text = self._unescape(row.text)
-                    cur_msg = Message(msg=cur_text, msg_hash=cur_mhash)
-                    self._cache.set(cur_mhash, cur_msg)
-                    yield cur_mhash
-                    offset += 1
-                    if pbar is not None:
-                        pbar()
-                    had_data = True
-                if not had_data:
-                    break
+            stmt = sa.select(
+                [MsgsTable.mhash, MsgsTable.text]).where(
+                MsgsTable.namespace_id == self._get_nid())
+            for row in conn.execute(stmt):
+                cur_mhash = MHash.parse(row.mhash)
+                cur_text = self._unescape(row.text)
+                cur_msg = Message(msg=cur_text, msg_hash=cur_mhash)
+                self._cache.set(cur_mhash, cur_msg)
+                yield cur_mhash
+                if pbar is not None:
+                    pbar()
 
         with self._db.get_connection() as conn:
             cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(

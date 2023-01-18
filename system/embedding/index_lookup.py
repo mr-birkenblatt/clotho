@@ -1,5 +1,5 @@
+import contextlib
 import math
-from contextlib import contextmanager
 from typing import Iterable, Iterator
 
 import torch
@@ -29,7 +29,7 @@ class EmbeddingCache:
         raise UnsupportedInit(
             f"{self.cache_name()} cache does not support initialization!")
 
-    @contextmanager
+    @contextlib.contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
         raise NotImplementedError()
 
@@ -268,7 +268,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         finally:
             self._bulk = False
 
-    @contextmanager
+    @contextlib.contextmanager
     def bulk_add(self, role: ProviderRole) -> Iterator[None]:
         try:
             self._bulk = True

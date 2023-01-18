@@ -1,6 +1,6 @@
+import contextlib
 import gzip
 import io
-from contextlib import contextmanager
 from typing import Iterable, Iterator
 
 import numpy as np
@@ -21,7 +21,7 @@ class RedisEmbeddingCache(EmbeddingCache):
     def cache_name() -> str:
         return "redis"
 
-    @contextmanager
+    @contextlib.contextmanager
     def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
         name = provider.get_redis_name()
         with self._redis.get_lock(f"lock:{name}"):

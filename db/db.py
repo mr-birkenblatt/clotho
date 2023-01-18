@@ -1,4 +1,5 @@
 import contextlib
+import sys
 import threading
 from typing import Iterator, Type, TYPE_CHECKING, TypedDict
 
@@ -51,6 +52,10 @@ def get_engine(config: DBConfig) -> sa.engine.Engine:
         if res is not None:
             return res
         dialect = config["dialect"]
+        if dialect != "postgresql":
+            print(
+                "dialects other than 'postgresql' are not supported. "
+                "continue at your own risk", file=sys.stderr)
         user = config["user"]
         passwd = config["passwd"]
         host = config["host"]
@@ -98,26 +103,31 @@ class DBConnector:
             return
         self.create_tables([NamespaceTable, ModulesTable])
 
-    def is_module_init(self, module: 'ModuleBase', version: int) -> bool:
+    def is_module_init(
+            self,
+            module: 'ModuleBase' | Type['ModuleBase'],
+            version: int,
+            submodule: str | None = None) -> bool:
         if not self.is_init():
             return False
-        return self.get_module_version(module) == version
+        return self.get_module_version(module, submodule) == version
 
     def create_module_tables(
             self,
-            module: 'ModuleBase',
+            module: 'ModuleBase' | Type['ModuleBase'],
             version: int,
-            tables: list[Type['Base']]) -> None:
+            tables: list[Type['Base']],
+            submodule: str | None = None) -> None:
         if not self.is_init():
             self.init_db()
-        current_version = self.get_module_version(module)
+        current_version = self.get_module_version(module, submodule)
         if current_version == version:
             return
         if current_version != 0:
             raise ValueError(
                 f"cannot upgrade from version {current_version} to {version}")
         self.create_tables(tables)
-        self._set_module_version(module, version)
+        self._set_module_version(module, submodule, version)
 
     def _refresh_modules(self) -> None:
         from db.base import ModulesTable
@@ -129,32 +139,44 @@ class DBConnector:
                 for row in conn.execute(stmt)
             }
 
-    def get_module_version(self, module: 'ModuleBase') -> int:
+    def get_module_version(
+            self,
+            module: 'ModuleBase' | Type['ModuleBase'],
+            submodule: str | None = None) -> int:
         module_name = module.module_name()
-        res = self._modules.get(module_name)
+        if submodule is not None:
+            name = f"{module_name}:{submodule}"
+        else:
+            name = module_name
+        res = self._modules.get(name)
         if res is None:
             self._refresh_modules()
-            res = self._modules.get(module_name)
+            res = self._modules.get(name)
         if res is None:
             return 0
         return res
 
     def _set_module_version(
             self,
-            module: 'ModuleBase',
+            module: 'ModuleBase' | Type['ModuleBase'],
+            submodule: str | None,
             version: int) -> None:
         from db.base import ModulesTable
 
         module_name = module.module_name()
+        if submodule is not None:
+            name = f"{module_name}:{submodule}"
+        else:
+            name = module_name
         with self.get_connection() as conn:
             values = {
-                "module": module_name,
+                "module": name,
                 "version": version
             }
             stmt = pg_insert(ModulesTable).values(values)
             stmt = stmt.on_conflict_do_update(
                 index_elements=[ModulesTable.module],
-                index_where=ModulesTable.module.like(module_name),
+                index_where=ModulesTable.module.like(name),
                 set_=dict(stmt.excluded.items()))
             conn.execute(stmt)
         self._refresh_modules()

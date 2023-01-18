@@ -1,3 +1,4 @@
+import enum
 from typing import get_args, Literal, TypedDict
 
 import torch
@@ -7,13 +8,31 @@ from system.namespace.namespace import Namespace
 
 
 ProviderRole = Literal["parent", "child"]
+PROVIDER_PARENT: ProviderRole = "parent"
+PROVIDER_CHILD: ProviderRole = "child"
 PROVIDER_ROLES: list[ProviderRole] = list(get_args(ProviderRole))
+
+
+class ProviderEnum(enum.Enum):
+    PARENT = PROVIDER_PARENT
+    CHILD = PROVIDER_CHILD
 
 
 class EmbeddingProvider:
     def __init__(self, method: str, role: ProviderRole) -> None:
         self._redis_name = f"{method}:{role}"
         self._file_name = f"{method}.{role}"
+        self._role = role
+
+    def get_enum(self) -> ProviderEnum:
+        if self._role == PROVIDER_CHILD:
+            return ProviderEnum.CHILD
+        if self._role == PROVIDER_PARENT:
+            return ProviderEnum.PARENT
+        raise ValueError(f"unknown role: {self._role}")
+
+    def get_role(self) -> ProviderRole:
+        return self._role
 
     def get_redis_name(self) -> str:
         return self._redis_name
