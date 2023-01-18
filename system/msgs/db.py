@@ -174,6 +174,11 @@ class DBStore(MessageStore):
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+        # FIXME use position, symbol, chunks to randomly select
+        # FIXME parallelize embedding retrieval
+        # FIXME use autoincrement and single pass
+        # FIXME implement db and cold for users
+        # FIXME implement cold for cache
         raise RuntimeError("random messages are not supported in db yet")
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
