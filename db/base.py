@@ -1,9 +1,23 @@
+import numpy as np
 import sqlalchemy as sa
+from psycopg2.extensions import AsIs, register_adapter
 from sqlalchemy.orm import registry
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 
 from system.namespace.load import NS_NAME_MAX_LEN
 from system.namespace.module import MODULE_MAX_LEN
+
+
+def adapt_numpy_float64(numpy_float64: np.float64) -> AsIs:
+    return AsIs(numpy_float64)
+
+
+def adapt_numpy_int64(numpy_int64: np.int64) -> AsIs:
+    return AsIs(numpy_int64)
+
+
+register_adapter(np.float64, adapt_numpy_float64)
+register_adapter(np.int64, adapt_numpy_int64)
 
 
 mapper_registry = registry()

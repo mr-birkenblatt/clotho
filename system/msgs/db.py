@@ -115,10 +115,10 @@ class DBStore(MessageStore):
         if res is not None:
             return res
         with self._db.get_connection() as conn:
-            stmt = sa.select([MsgsTable.mhash, MsgsTable.text]).where(sa.and_([
+            stmt = sa.select([MsgsTable.mhash, MsgsTable.text]).where(sa.and_(
                 MsgsTable.namespace_id == self._get_nid(),
                 MsgsTable.mhash == message_hash.to_parseable(),
-            ]))
+            ))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 cur_text = self._unescape(row.text)

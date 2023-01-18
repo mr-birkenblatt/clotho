@@ -3,6 +3,7 @@ import contextlib
 import threading
 from typing import Callable, Iterable, Iterator
 
+import numpy as np
 import sqlalchemy as sa
 import torch
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -36,11 +37,12 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         sa.String(MHash.parse_size()),
         primary_key=True,
         nullable=False)
-    embed = sa.Column(
-        sa.ARRAY(sa.Float),
-        nullable=False)
     main_order = sa.Column(sa.Integer, nullable=True)
     staging_order = sa.Column(sa.Integer, nullable=True)
+    embedding = sa.Column(
+        sa.ARRAY(sa.Float),
+        nullable=False)
+
     idx_main_order = sa.Index("namespace_id", "role", "main_order")
     idx_staging_order = sa.Index("namespace_id", "role", "staging_order")
 
@@ -69,11 +71,11 @@ class DBEmbeddingCache(EmbeddingCache):
 
     @staticmethod
     def _to_tensor(arr: list[float]) -> torch.Tensor:
-        return torch.Tensor(list(arr))
+        return torch.DoubleTensor(list(arr))
 
     @staticmethod
     def _from_tensor(x: torch.Tensor) -> list[float]:
-        return safe_ravel(x.detach()).numpy()
+        return safe_ravel(x.double().detach()).numpy().astype(np.float64)
 
     @staticmethod
     def cache_name() -> str:
@@ -102,7 +104,7 @@ class DBEmbeddingCache(EmbeddingCache):
                 "namespace_id": self._get_nid(),
                 "role": provider.get_enum(),
                 "mhash": mhash.to_parseable(),
-                "embed": self._from_tensor(embed),
+                "embedding": self._from_tensor(embed),
                 "main_order": None,
                 "staging_order": None,
             }
@@ -116,18 +118,14 @@ class DBEmbeddingCache(EmbeddingCache):
             mhash: MHash) -> torch.Tensor | None:
         with self._db.get_connection() as conn:
             # FIXME investigate type error
-            ecol: sa.Column = EmbedTable.embed  # type: ignore
-            stmt = sa.select([ecol]).where(sa.and_([
+            ecol: sa.Column = EmbedTable.embedding  # type: ignore
+            stmt = sa.select([ecol]).where(sa.and_(
                 EmbedTable.namespace_id == self._get_nid(),
                 EmbedTable.role == provider.get_enum(),
                 EmbedTable.mhash == mhash.to_parseable(),
-            ]))
+            ))
             res = conn.execute(stmt).scalar()
-        if res is None:
-            raise KeyError(
-                f"{mhash} not in db "
-                f"({self._get_ns_name()};{provider.get_role()})")
-        return self._to_tensor(res)
+        return None if res is None else self._to_tensor(res)
 
     def get_entry_by_index(
             self, provider: EmbeddingProvider, index: int) -> MHash:
@@ -211,11 +209,11 @@ class DBEmbeddingCache(EmbeddingCache):
                         break
                     low_ix, mhash, embed = row
                     yield (0, mhash, embed)
-                    stmt = sa.update(EmbedTable).where(sa.and_([
+                    stmt = sa.update(EmbedTable).where(sa.and_(
                         EmbedTable.namespace_id == self._get_nid(),
                         EmbedTable.role == provider.get_enum(),
                         EmbedTable.staging_order == low_ix,
-                    ])).values({
+                    )).values({
                         EmbedTable.staging_order: None,
                     })
                     conn.execute(stmt)
@@ -257,11 +255,11 @@ class DBEmbeddingCache(EmbeddingCache):
             col: sa.Column,
             col_name: str) -> None:
         with self._db.get_connection() as conn:
-            stmt = sa.update(EmbedTable).where(sa.and_([
+            stmt = sa.update(EmbedTable).where(sa.and_(
                 EmbedTable.namespace_id == self._get_nid(),
                 EmbedTable.role == provider.get_enum(),
                 col.is_not(None),
-            ])).values({
+            )).values({
                 col_name: None,
             })
             conn.execute(stmt)
@@ -272,11 +270,11 @@ class DBEmbeddingCache(EmbeddingCache):
             provider: EmbeddingProvider,
             order_col: sa.Column) -> int:
         cstmt = sa.select([sa.func.count()]).select_from(EmbedTable).where(
-            sa.and_([
+            sa.and_(
                 EmbedTable.namespace_id == self._get_nid(),
                 EmbedTable.role == provider.get_enum(),
                 order_col.is_not(None),
-            ]))
+            ))
         count: int | None = conn.execute(cstmt).scalar()
         return 0 if count is None else count
 
@@ -291,12 +289,12 @@ class DBEmbeddingCache(EmbeddingCache):
             return_real_index: bool
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         # FIXME investigate type error
-        ecol: sa.Column = EmbedTable.embed  # type: ignore
-        stmt = sa.select([col, EmbedTable.mhash, ecol]).where(sa.and_([
+        ecol: sa.Column = EmbedTable.embedding  # type: ignore
+        stmt = sa.select([col, EmbedTable.mhash, ecol]).where(sa.and_(
             EmbedTable.namespace_id == self._get_nid(),
             EmbedTable.role == provider.get_enum(),
             col.is_not(None),
-        ]))
+        ))
         stmt = stmt.order_by(col.asc())
         stmt = stmt.offset(start_ix)
         if limit is not None:
@@ -315,11 +313,11 @@ class DBEmbeddingCache(EmbeddingCache):
             *,
             reverse: bool
             ) -> int | None:
-        stmt = sa.select([col]).where(sa.and_([
+        stmt = sa.select([col]).where(sa.and_(
             EmbedTable.namespace_id == self._get_nid(),
             EmbedTable.role == provider.get_enum(),
             col.is_not(None),
-        ]))
+        ))
         stmt = stmt.order_by(col.desc() if reverse else col.asc())
         stmt = stmt.limit(1)
         return conn.execute(stmt).scalar()
@@ -331,11 +329,11 @@ class DBEmbeddingCache(EmbeddingCache):
             col: sa.Column,
             ctx: str,
             index: int) -> MHash:
-        stmt = sa.select([EmbedTable.mhash]).where(sa.and_([
+        stmt = sa.select([EmbedTable.mhash]).where(sa.and_(
             EmbedTable.namespace_id == self._get_nid(),
             EmbedTable.role == provider.get_enum(),
             col.is_not(None),
-        ]))
+        ))
         stmt = stmt.order_by(col.asc())
         stmt = stmt.offset(index).limit(1)
         res = conn.execute(stmt).scalar()
@@ -357,12 +355,12 @@ class DBEmbeddingCache(EmbeddingCache):
         with self._db.get_connection() as conn:
             with conn.begin() as trans:
                 high_ix = get_next_ix(conn)
-                stmt = sa.update(EmbedTable).where(sa.and_([
+                stmt = sa.update(EmbedTable).where(sa.and_(
                     EmbedTable.namespace_id == self._get_nid(),
                     EmbedTable.role == provider.get_enum(),
                     EmbedTable.mhash == mhash.to_parseable(),
                     col.is_not(None),
-                ])).values({
+                )).values({
                     col_name: high_ix,
                 })
                 res = conn.execute(stmt)

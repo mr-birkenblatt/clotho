@@ -43,13 +43,13 @@ class RedisEmbeddingCache(EmbeddingCache):
     def _serialize(self, embed: torch.Tensor) -> bytes:
         bout = io.BytesIO()
         with gzip.GzipFile(fileobj=bout, mode="w") as fout:
-            np.save(fout, embed.detach().numpy())
+            np.save(fout, embed.double().detach().numpy().astype(np.float64))
         return bout.getvalue()
 
     def _deserialize(self, content: bytes) -> torch.Tensor:
         binp = io.BytesIO(content)
         with gzip.GzipFile(fileobj=binp, mode="r") as finp:
-            return torch.Tensor(np.load(finp))
+            return torch.DoubleTensor(np.load(finp))
 
     def set_map_embedding(
             self,

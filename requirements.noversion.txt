@@ -20,3 +20,4 @@ redis
 scikit-learn
 SQLAlchemy[mypy]
 transformers
+types-psycopg2

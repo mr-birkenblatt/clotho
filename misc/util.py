@@ -339,6 +339,8 @@ def retain_some(
 
 
 def safe_ravel(x: torch.Tensor) -> torch.Tensor:
+    if len(x.shape) == 1:
+        return x
     shape = torch.Tensor(list(x.shape)).int()
     if torch.max(shape).item() != torch.prod(shape).item():
         raise ValueError(f"not safe to ravel shape {shape.tolist()}")

@@ -237,8 +237,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             shard = 0
             cur_embeds: list[tuple[MHash, torch.Tensor]] = []
             for mhash in msg_store.enumerate_messages(progress_bar=True):
-                cache.add_embedding(provider, mhash)
                 embed = self.get_embedding(msg_store, role, mhash)
+                cache.add_embedding(provider, mhash)
                 cur_embeds.append((mhash, embed))
                 if len(cur_embeds) == shard_size:
                     self.do_build_index(
