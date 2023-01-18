@@ -29,19 +29,21 @@ def get_module(namespace: Namespace, module: ModuleName) -> Module:
         lmodule = namespace.get_link_module()
         if lmodule["name"] != "redis":
             raise ValueError(f"incompatible module {lmodule}")
+        config = namespace.get_redis_config(lmodule["conn"])
         return {
             "name": lmodule["name"],
-            "port": lmodule["port"],
-            "path": os.path.join(namespace.get_root(), lmodule["path"]),
+            "port": config["port"],
+            "path": os.path.join(namespace.get_root(), config["path"]),
         }
     if module == MODULE_EMBED:
         emodule = namespace.get_embed_module()
         if emodule["name"] != "redis":
             raise ValueError(f"incompatible module {emodule}")
+        config = namespace.get_redis_config(emodule["conn"])
         return {
             "name": emodule["name"],
-            "port": emodule["port"],
-            "path": os.path.join(namespace.get_root(), emodule["path"]),
+            "port": config["port"],
+            "path": os.path.join(namespace.get_root(), config["path"]),
         }
     raise ValueError(f"invalid module: {module}")
 
