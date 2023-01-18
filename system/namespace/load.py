@@ -50,16 +50,16 @@ def redis_from_obj(
 
 def db_from_obj(db_obj: dict[str, Any]) -> dict[str, DBConfig]:
     return {
-      name: {
-        "dialect": obj.get("dialect", "postgresql"),
-        "host": obj.get("host", "localhost"),
-        "port": int(obj.get("port", 5432)),
-        "user": obj["user"],
-        "passwd": obj.get("passwd", ""),
-        "dbname": obj["dbname"],
-        "schema": obj.get("schema", "public"),
-      }
-      for name, obj in db_obj.items()
+        name: {
+            "dialect": obj.get("dialect", "postgresql"),
+            "host": obj.get("host", "localhost"),
+            "port": int(obj.get("port", 5432)),
+            "user": obj["user"],
+            "passwd": obj.get("passwd", ""),
+            "dbname": obj["dbname"],
+            "schema": obj.get("schema", "public"),
+        }
+        for name, obj in db_obj.items()
     }
 
 
