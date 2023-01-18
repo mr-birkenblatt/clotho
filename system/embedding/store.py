@@ -1,6 +1,6 @@
 import os
 from contextlib import contextmanager
-from typing import cast, Iterable, Iterator, Literal, TypedDict
+from typing import cast, Iterable, Iterator, Literal, TYPE_CHECKING, TypedDict
 
 import torch
 
@@ -14,6 +14,10 @@ from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
 from system.namespace.module import ModuleBase
 from system.namespace.namespace import ModuleName, Namespace
+
+
+if TYPE_CHECKING:
+    from system.embedding.index_lookup import EmbeddingCache
 
 
 class EmbeddingStore(ModuleBase):
@@ -128,8 +132,8 @@ def get_embed_store(namespace: Namespace) -> EmbeddingStore:
     return res
 
 
-RedisEmbedModule = TypedDict('RedisEmbedModule', {
-    "name": Literal["redis"],
+CachedEmbedModule = TypedDict('CachedEmbedModule', {
+    "name": Literal["redis", "db"],
     "conn": str,
     "path": str,
     "index": Literal["annoy"],
@@ -140,30 +144,40 @@ RedisEmbedModule = TypedDict('RedisEmbedModule', {
 NoEmbedModule = TypedDict('NoEmbedModule', {
     "name": Literal["none"],
 })
-EmbedModule = RedisEmbedModule | NoEmbedModule
+EmbedModule = CachedEmbedModule | NoEmbedModule
 
 
 def create_embed_store(namespace: Namespace) -> EmbeddingStore:
     eobj = namespace.get_embed_module()
     providers = get_embed_providers(namespace)
-    if eobj["name"] == "redis":
-        from system.embedding.annoy import AnnoyEmbeddingStore
-        from system.embedding.rediscache import RedisEmbeddingCache
-
-        root = os.path.join(namespace.get_root(), eobj["path"])
-        ns_key = namespace.get_redis_key("embedding", eobj["conn"])
-        cache = RedisEmbeddingCache(ns_key)
-        if eobj["index"] != "annoy":
-            raise ValueError(f"unsupported embedding index: {eobj['index']}")
-        return AnnoyEmbeddingStore(
-            providers,
-            cache,
-            root,
-            trees=eobj["trees"],
-            shard_size=eobj["shard_size"],
-            is_dot=eobj["metric"] == "dot")
     if eobj["name"] == "none":
         from system.embedding.noembed import NoEmbedding
 
         return NoEmbedding(providers)
+    if eobj["name"] in ("redis", "db"):
+        root = os.path.join(namespace.get_root(), eobj["path"])
+        if eobj["name"] == "redis":
+            from system.embedding.rediscache import RedisEmbeddingCache
+
+            ns_key = namespace.get_redis_key("embedding", eobj["conn"])
+            cache: 'EmbeddingCache' = RedisEmbeddingCache(ns_key)
+        elif eobj["name"] == "db":
+            from system.embedding.dbcache import DBEmbeddingCache
+
+            cache = DBEmbeddingCache(
+                namespace,
+                namespace.get_db_connector(eobj["conn"]))
+        else:
+            raise RuntimeError("internal error")
+
+        if eobj["index"] == "annoy":
+            from system.embedding.annoy import AnnoyEmbeddingStore
+            return AnnoyEmbeddingStore(
+                providers,
+                cache,
+                root,
+                trees=eobj["trees"],
+                shard_size=eobj["shard_size"],
+                is_dot=eobj["metric"] == "dot")
+        raise ValueError(f"unsupported embedding index: {eobj['index']}")
     raise ValueError(f"unknown embed store: {eobj}")

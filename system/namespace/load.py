@@ -1,5 +1,5 @@
 import re
-from typing import Any, TypedDict
+from typing import Any, cast, get_args, Literal, TypedDict
 
 from db.db import DBConfig
 from model.embedding import EmbeddingProviderModule
@@ -65,7 +65,7 @@ def db_from_obj(db_obj: dict[str, Any]) -> dict[str, DBConfig]:
 
 def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
     res: MsgsModule
-    name = obj.get("name", "disk")
+    name: str = obj.get("name", "disk")
     if name == "ram":
         res = {
             "name": "ram",
@@ -93,7 +93,7 @@ def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
 
 def links_from_obj(obj: dict[str, Any]) -> LinkModule:
     res: LinkModule
-    name = obj.get("name", "redis")
+    name: str = obj.get("name", "redis")
     if name == "redis":
         res = {
             "name": "redis",
@@ -106,7 +106,7 @@ def links_from_obj(obj: dict[str, Any]) -> LinkModule:
 
 def suggest_from_obj(obj: dict[str, Any]) -> SuggestModule:
     res: SuggestModule
-    name = obj.get("name", "random")
+    name: str = obj.get("name", "random")
     if name == "random":
         res = {
             "name": "random",
@@ -123,7 +123,7 @@ def suggest_from_obj(obj: dict[str, Any]) -> SuggestModule:
 
 def users_from_obj(obj: dict[str, Any]) -> UsersModule:
     res: UsersModule
-    name = obj.get("name", "disk")
+    name: str = obj.get("name", "disk")
     if name == "ram":
         res = {
             "name": "ram",
@@ -138,16 +138,20 @@ def users_from_obj(obj: dict[str, Any]) -> UsersModule:
     return res
 
 
+CacheEmbedName = Literal["redis", "db"]
+CACHE_EMBED_NAMES = get_args(CacheEmbedName)
+
+
 def embed_from_obj(obj: dict[str, Any]) -> EmbedModule:
     res: EmbedModule
-    name = obj.get("name", "none")
+    name: str = obj.get("name", "none")
     if name == "none":
         res = {
             "name": "none",
         }
-    elif name == "redis":
+    elif name in CACHE_EMBED_NAMES:
         res = {
-            "name": "redis",
+            "name": cast(CacheEmbedName, name),
             "conn": obj["conn"],
             "path": obj.get("path", "embed"),
             "index": obj["index"],
@@ -162,7 +166,7 @@ def embed_from_obj(obj: dict[str, Any]) -> EmbedModule:
 
 def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
     res: EmbeddingProviderModule
-    name = obj.get("name", "none")
+    name: str = obj.get("name", "none")
     if name == "none":
         res = {
             "name": "none",

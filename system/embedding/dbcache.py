@@ -9,7 +9,6 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from db.base import Base, NamespaceTable
 from db.db import DBConnector
-from misc.lru import LRU
 from misc.util import safe_ravel
 from model.embedding import EmbeddingProvider, ProviderEnum, ProviderRole
 from system.embedding.index_lookup import EmbeddingCache
@@ -50,13 +49,11 @@ class DBEmbeddingCache(EmbeddingCache):
     def __init__(
             self,
             namespace: Namespace,
-            db: DBConnector,
-            cache_size: int) -> None:
+            db: DBConnector) -> None:
         super().__init__()
         self._db = db
         self._namespace = namespace
         self._nid: int | None = None
-        self._cache: LRU[MHash, torch.Tensor] = LRU(cache_size)
         self._locks: collections.defaultdict[ProviderRole, threading.RLock] = \
             collections.defaultdict(threading.RLock)
 
