@@ -359,13 +359,14 @@ class DBEmbeddingCache(EmbeddingCache):
                     EmbedTable.namespace_id == self._get_nid(),
                     EmbedTable.role == provider.get_enum(),
                     EmbedTable.mhash == mhash.to_parseable(),
-                    col.is_not(None),
+                    col.is_(None),
                 )).values({
                     col_name: high_ix,
                 })
                 res = conn.execute(stmt)
                 if res.rowcount != 1:
                     raise ValueError(
-                        f"{ctx}item {mhash} already added or not found: "
+                        f"{ctx}item {mhash} already "
+                        f"added or not found ({res.rowcount}): "
                         f"({self._get_ns_name()};{provider.get_role()})")
                 trans.commit()
