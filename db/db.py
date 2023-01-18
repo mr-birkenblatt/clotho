@@ -171,7 +171,7 @@ class DBConnector:
         with self.get_connection() as conn:
             values = {
                 "module": name,
-                "version": version
+                "version": version,
             }
             stmt = pg_insert(ModulesTable).values(values)
             stmt = stmt.on_conflict_do_update(
