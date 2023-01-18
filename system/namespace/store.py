@@ -48,6 +48,7 @@ def get_test_namespace() -> Namespace:
                         "path": cfg["path"],
                     },
                 },
+                "db": {},
             },
             "writeback": False,
         })
