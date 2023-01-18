@@ -203,7 +203,7 @@ def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
         "model": model_from_obj(obj.get("model", {})),
         "connections": {
             "redis": redis_from_obj(ns_name, conns.get("redis", {})),
-            "db": db_from_obj(conns.get("db", {}))
+            "db": db_from_obj(conns.get("db", {})),
         },
         "writeback": obj.get("writeback", True),
     }
