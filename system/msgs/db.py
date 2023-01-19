@@ -175,35 +175,32 @@ class DBStore(MessageStore):
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
         nid = self._get_nid()
-        characters = "0123456789abcdef"
+        mhash_size = MHash.parse_size()
         remain = count
-        giveup = 0
-        max_retries = 1000
         with self._db.get_connection() as conn:
-            while remain > 0 and giveup < max_retries:
-                sub_pos = rng.integers(0, MHash.parse_size()) + 1
-                order_pos = rng.integers(0, MHash.parse_size()) + 1
-                character = characters[rng.integers(0, len(characters))]
-                stmt = sa.select([MsgsTable.mhash]).where(sa.and_(
-                    MsgsTable.namespace_id == nid,
-                    sa.func.substr(MsgsTable.mhash, sub_pos, 1) == character,
-                ))
+            total = self._get_count(conn)
+            if total is None or total == 0:
+                yield from []
+                return
+            while remain > 0:
+                order_pos = rng.integers(0, mhash_size) + 1
+                offset = rng.integers(0, total // RNG_ALIGN) * RNG_ALIGN
+                stmt = sa.select([MsgsTable.mhash]).where(
+                    MsgsTable.namespace_id == nid)
                 stmt = stmt.order_by(
-                    sa.func.substr(MsgsTable.mhash, order_pos, 1))
+                    sa.func.substr(
+                        MsgsTable.mhash,
+                        order_pos,
+                        mhash_size - order_pos + 1),
+                    MsgsTable.mhash)
+                stmt = stmt.offset(offset)
                 stmt = stmt.limit(RNG_ALIGN)
-                before_loop = remain
                 for row in conn.execute(stmt):
                     cur_mhash = MHash.parse(row.mhash)
                     yield cur_mhash
                     remain -= 1
                     if remain <= 0:
                         break
-                if before_loop == remain:
-                    giveup += 1
-        # FIXME parallelize embedding retrieval
-        # FIXME use autoincrement and single pass
-        # FIXME implement db and cold for users
-        # FIXME implement cold for cache
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
@@ -224,9 +221,7 @@ class DBStore(MessageStore):
                     pbar()
 
         with self._db.get_connection() as conn:
-            cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(
-                MsgsTable.namespace_id == self._get_nid())
-            count: int | None = conn.execute(cstmt).scalar()
+            count = self._get_count(conn)
             if progress_bar is None or count is None:
                 yield from get_rows(conn, pbar=None)
             else:
@@ -235,3 +230,8 @@ class DBStore(MessageStore):
 
                 with tqdm(total=count) as pbar:
                     yield from get_rows(conn, pbar=lambda: pbar.update(1))
+
+    def _get_count(self, conn: sa.engine.Connection) -> int | None:
+        cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(
+            MsgsTable.namespace_id == self._get_nid())
+        return conn.execute(cstmt).scalar()
