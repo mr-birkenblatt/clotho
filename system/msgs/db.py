@@ -9,7 +9,7 @@ from db.base import Base, NamespaceTable
 from db.db import DBConnector
 from misc.lru import LRU
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore
+from system.msgs.store import MessageStore, RNG_ALIGN
 from system.namespace.namespace import Namespace
 
 
@@ -174,12 +174,36 @@ class DBStore(MessageStore):
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
-        # FIXME use position, symbol, chunks to randomly select
+        nid = self._get_nid()
+        characters = "0123456789abcdef"
+        remain = count
+        giveup = 0
+        max_retries = 1000
+        with self._db.get_connection() as conn:
+            while remain > 0 and giveup < max_retries:
+                sub_pos = rng.integers(0, MHash.parse_size()) + 1
+                order_pos = rng.integers(0, MHash.parse_size()) + 1
+                character = characters[rng.integers(0, len(characters))]
+                stmt = sa.select([MsgsTable.mhash]).where(sa.and_(
+                    MsgsTable.namespace_id == nid,
+                    sa.func.substr(MsgsTable.mhash, sub_pos, 1) == character,
+                ))
+                stmt = stmt.order_by(
+                    sa.func.substr(MsgsTable.mhash, order_pos, 1))
+                stmt = stmt.limit(RNG_ALIGN)
+                before_loop = remain
+                for row in conn.execute(stmt):
+                    cur_mhash = MHash.parse(row.mhash)
+                    yield cur_mhash
+                    remain -= 1
+                    if remain <= 0:
+                        break
+                if before_loop == remain:
+                    giveup += 1
         # FIXME parallelize embedding retrieval
         # FIXME use autoincrement and single pass
         # FIXME implement db and cold for users
         # FIXME implement cold for cache
-        raise RuntimeError("random messages are not supported in db yet")
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
