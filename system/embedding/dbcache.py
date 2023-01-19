@@ -1,7 +1,7 @@
 import collections
 import contextlib
 import threading
-from typing import Callable, Iterable, Iterator
+from typing import Iterable, Iterator
 
 import numpy as np
 import sqlalchemy as sa
@@ -37,7 +37,11 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         sa.String(MHash.parse_size()),
         primary_key=True,
         nullable=False)
-    main_order = sa.Column(sa.Integer, nullable=True)
+    main_order = sa.Column(
+        sa.Integer,
+        autoincrement=True,
+        nullable=False,
+        unique=True)
     embedding = sa.Column(
         sa.ARRAY(sa.Float),
         nullable=False)
@@ -103,7 +107,6 @@ class DBEmbeddingCache(EmbeddingCache):
                 "role": provider.get_enum(),
                 "mhash": mhash.to_parseable(),
                 "embedding": self._from_tensor(embed),
-                "main_order": None,
             }
             stmt = pg_insert(EmbedTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
@@ -127,26 +130,11 @@ class DBEmbeddingCache(EmbeddingCache):
     def get_entry_by_index(
             self, provider: EmbeddingProvider, index: int) -> MHash:
         with self._db.get_connection() as conn:
-            return self._entry_by_index(
-                conn, provider, EmbedTable.main_order, "", index)
-
-    def add_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> None:
-
-        def get_next_ix(conn: sa.engine.Connection) -> int:
-            return self._embedding_count(conn, provider, EmbedTable.main_order)
-
-        self._add_embedding(
-            provider,
-            mhash,
-            EmbedTable.main_order,
-            col_name="main_order",
-            ctx="",
-            get_next_ix=get_next_ix)
+            return self._entry_by_index(conn, provider, index)
 
     def embedding_count(self, provider: EmbeddingProvider) -> int:
         with self._db.get_connection() as conn:
-            return self._embedding_count(conn, provider, EmbedTable.main_order)
+            return self._embedding_count(conn, provider)
 
     def embeddings(
             self,
@@ -158,39 +146,17 @@ class DBEmbeddingCache(EmbeddingCache):
             yield from self._iter_column(
                 conn,
                 provider,
-                EmbedTable.main_order,
                 start_ix=start_ix,
-                limit=None,
-                return_real_index=False)
-
-    def clear_embeddings(self, provider: EmbeddingProvider) -> None:
-        self._clear_column(provider, EmbedTable.main_order, "main_order")
-
-    def _clear_column(
-            self,
-            provider: EmbeddingProvider,
-            col: sa.Column,
-            col_name: str) -> None:
-        with self._db.get_connection() as conn:
-            stmt = sa.update(EmbedTable).where(sa.and_(
-                EmbedTable.namespace_id == self._get_nid(),
-                EmbedTable.role == provider.get_enum(),
-                col.is_not(None),
-            )).values({
-                col_name: None,
-            })
-            conn.execute(stmt)
+                limit=None)
 
     def _embedding_count(
             self,
             conn: sa.engine.Connection,
-            provider: EmbeddingProvider,
-            order_col: sa.Column) -> int:
+            provider: EmbeddingProvider) -> int:
         cstmt = sa.select([sa.func.count()]).select_from(EmbedTable).where(
             sa.and_(
                 EmbedTable.namespace_id == self._get_nid(),
                 EmbedTable.role == provider.get_enum(),
-                order_col.is_not(None),
             ))
         count: int | None = conn.execute(cstmt).scalar()
         return 0 if count is None else count
@@ -199,74 +165,41 @@ class DBEmbeddingCache(EmbeddingCache):
             self,
             conn: sa.engine.Connection,
             provider: EmbeddingProvider,
-            col: sa.Column,
             *,
             start_ix: int,
             limit: int | None,
-            return_real_index: bool
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         # FIXME investigate type error
         ecol: sa.Column = EmbedTable.embedding  # type: ignore
-        stmt = sa.select([col, EmbedTable.mhash, ecol]).where(sa.and_(
+        stmt = sa.select([EmbedTable.mhash, ecol]).where(sa.and_(
             EmbedTable.namespace_id == self._get_nid(),
             EmbedTable.role == provider.get_enum(),
-            col.is_not(None),
         ))
-        stmt = stmt.order_by(col.asc())
+        stmt = stmt.order_by(EmbedTable.main_order.asc())
         stmt = stmt.offset(start_ix)
         if limit is not None:
             stmt = stmt.limit(limit)
         for ix, row in enumerate(conn.execute(stmt)):
             cur_mhash = MHash.parse(row.mhash)
             cur_embed = self._to_tensor(row.embed)
-            cur_ix = row[0] if return_real_index else start_ix + ix
+            cur_ix = start_ix + ix
             yield (cur_ix, cur_mhash, cur_embed)
 
     def _entry_by_index(
             self,
             conn: sa.engine.Connection,
             provider: EmbeddingProvider,
-            col: sa.Column,
-            ctx: str,
             index: int) -> MHash:
         stmt = sa.select([EmbedTable.mhash]).where(sa.and_(
             EmbedTable.namespace_id == self._get_nid(),
             EmbedTable.role == provider.get_enum(),
-            col.is_not(None),
         ))
-        stmt = stmt.order_by(col.asc())
-        stmt = stmt.offset(index).limit(1)
+        stmt = stmt.order_by(EmbedTable.main_order.asc())
+        stmt = stmt.offset(index)
+        stmt = stmt.limit(1)
         res = conn.execute(stmt).scalar()
         if res is None:
             raise IndexError(
-                f"{index} not in {ctx}entry db "
+                f"{index} not in entry db "
                 f"({self._get_ns_name()};{provider.get_role()})")
         return MHash.parse(res)
-
-    def _add_embedding(
-            self,
-            provider: EmbeddingProvider,
-            mhash: MHash,
-            col: sa.Column,
-            *,
-            col_name: str,
-            ctx: str,
-            get_next_ix: Callable[[sa.engine.Connection], int]) -> None:
-        with self._db.get_connection() as conn:
-            with conn.begin() as trans:
-                high_ix = get_next_ix(conn)
-                stmt = sa.update(EmbedTable).where(sa.and_(
-                    EmbedTable.namespace_id == self._get_nid(),
-                    EmbedTable.role == provider.get_enum(),
-                    EmbedTable.mhash == mhash.to_parseable(),
-                    col.is_(None),
-                )).values({
-                    col_name: high_ix,
-                })
-                res = conn.execute(stmt)
-                if res.rowcount != 1:
-                    raise ValueError(
-                        f"{ctx}item {mhash} already "
-                        f"added or not found ({res.rowcount}): "
-                        f"({self._get_ns_name()};{provider.get_role()})")
-                trans.commit()

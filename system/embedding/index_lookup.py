@@ -50,9 +50,6 @@ class EmbeddingCache:
             self, provider: EmbeddingProvider, index: int) -> MHash:
         raise NotImplementedError()
 
-    def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> None:
-        raise NotImplementedError()
-
     def embedding_count(self, provider: EmbeddingProvider) -> int:
         raise NotImplementedError()
 
@@ -62,9 +59,6 @@ class EmbeddingCache:
             *,
             start_ix: int,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        raise NotImplementedError()
-
-    def clear_embeddings(self, provider: EmbeddingProvider) -> None:
         raise NotImplementedError()
 
 
@@ -116,7 +110,6 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                     for _, mhash, embed in ocache.embeddings(
                             oprovider, start_ix=0):
                         cache.set_map_embedding(provider, mhash, embed)
-                        cache.add_embedding(provider, mhash)
         finally:
             self._bulk = False
 
@@ -217,7 +210,6 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         provider = self.get_provider(role)
         with cache.get_lock(provider):
             cache.set_map_embedding(provider, mhash, embed)
-            cache.add_embedding(provider, mhash)
             if (not self._bulk and self.index_in_shard(
                     cache.embedding_count(provider)) == 0):
                 self.build_index(role)

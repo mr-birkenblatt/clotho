@@ -26,7 +26,6 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             is_dot: bool) -> None:
         super().__init__(providers, cache, shard_size)
         self._path = embed_root
-        self._indexes: dict[tuple[ProviderRole, int], AnnoyIndex] = {}
         self._trees = trees
         self._is_dot = is_dot
 
@@ -50,22 +49,13 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         return aindex
 
     def is_shard_available(self, role: ProviderRole, shard: int) -> bool:
-        key = (role, shard)
-        aindex = self._indexes.get(key)
-        if aindex is not None:
-            return True
         fname = self._get_file(role, shard)
         if os.path.exists(fname):
             return True
         return False
 
     def _get_index(self, role: ProviderRole, shard: int) -> AnnoyIndex:
-        key = (role, shard)
-        res = self._indexes.get(key)
-        if res is None:
-            res = self._create_index(role, shard, load=True)
-            self._indexes[key] = res
-        return res
+        return self._create_index(role, shard, load=True)
 
     def do_build_index(
             self,
