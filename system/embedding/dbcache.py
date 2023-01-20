@@ -1,7 +1,6 @@
 import collections
-import contextlib
 import threading
-from typing import Iterable, Iterator
+from typing import Iterable
 
 import numpy as np
 import sqlalchemy as sa
@@ -91,11 +90,6 @@ class DBEmbeddingCache(EmbeddingCache):
         self._db.create_module_tables(
             EmbeddingStore, MODULE_VERSION, [EmbedTable], "dbcache")
 
-    @contextlib.contextmanager
-    def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
-        with self._locks[provider.get_role()]:
-            yield
-
     def set_map_embedding(
             self,
             provider: EmbeddingProvider,
@@ -141,13 +135,14 @@ class DBEmbeddingCache(EmbeddingCache):
             provider: EmbeddingProvider,
             *,
             start_ix: int,
+            limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         with self._db.get_connection() as conn:
             yield from self._iter_column(
                 conn,
                 provider,
                 start_ix=start_ix,
-                limit=None)
+                limit=limit)
 
     def _embedding_count(
             self,

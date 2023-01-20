@@ -1,6 +1,5 @@
 import os
-from contextlib import contextmanager
-from typing import cast, Iterable, Iterator, Literal, TYPE_CHECKING, TypedDict
+from typing import cast, Iterable, Literal, TYPE_CHECKING, TypedDict
 
 import torch
 
@@ -8,6 +7,7 @@ from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
     get_embed_providers,
+    PROVIDER_ROLES,
     ProviderRole,
 )
 from system.msgs.message import Message, MHash
@@ -70,9 +70,20 @@ class EmbeddingStore(ModuleBase):
         msg = msg_store.read_message(mhash)
         return self.add_embedding(role, msg)
 
-    @contextmanager
-    def bulk_add(self, role: ProviderRole) -> Iterator[None]:
+    def get_all_embeddings(
+            self,
+            role: ProviderRole,
+            *,
+            progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
         raise NotImplementedError()
+
+    def from_namespace(
+            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+        oembed = get_embed_store(other_namespace)
+        for role in PROVIDER_ROLES:
+            for mhash, embed in oembed.get_all_embeddings(
+                    role, progress_bar=progress_bar):
+                self.do_add_embedding(role, mhash, embed)
 
     def ensure_all(
             self,
@@ -81,9 +92,8 @@ class EmbeddingStore(ModuleBase):
         if roles is None:
             roles = self.get_roles()
         for role in roles:
-            with self.bulk_add(role):
-                for mhash in msg_store.enumerate_messages(progress_bar=True):
-                    self.get_embedding(msg_store, role, mhash)
+            for mhash in msg_store.enumerate_messages(progress_bar=True):
+                self.get_embedding(msg_store, role, mhash)
 
     def self_test(self, role: ProviderRole, count: int | None) -> None:
         raise NotImplementedError()
@@ -173,6 +183,7 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
         if eobj["index"] == "annoy":
             from system.embedding.annoy import AnnoyEmbeddingStore
             return AnnoyEmbeddingStore(
+                namespace,
                 providers,
                 cache,
                 root,

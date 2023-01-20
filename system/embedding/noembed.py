@@ -1,5 +1,4 @@
-from contextlib import contextmanager
-from typing import Iterable, Iterator
+from typing import Iterable
 
 import torch
 
@@ -22,10 +21,6 @@ class NoEmbedding(EmbeddingStore):
             mhash: MHash) -> torch.Tensor | None:
         return torch.Tensor([0])
 
-    @contextmanager
-    def bulk_add(self, role: ProviderRole) -> Iterator[None]:
-        yield
-
     def do_get_closest(
             self,
             role: ProviderRole,
@@ -33,6 +28,13 @@ class NoEmbedding(EmbeddingStore):
             count: int,
             *,
             precise: bool) -> Iterable[MHash]:
+        yield from []
+
+    def get_all_embeddings(
+            self,
+            role: ProviderRole,
+            *,
+            progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
         yield from []
 
     def self_test(self, role: ProviderRole, count: int | None) -> None:

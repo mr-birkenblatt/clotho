@@ -345,3 +345,34 @@ def safe_ravel(x: torch.Tensor) -> torch.Tensor:
     if torch.max(shape).item() != torch.prod(shape).item():
         raise ValueError(f"not safe to ravel shape {shape.tolist()}")
     return x.ravel()
+
+
+def python_module() -> str:
+    stack = inspect.stack()
+    module = inspect.getmodule(stack[1][0])
+    if module is None:
+        raise ValueError("module not found")
+    res = module.__name__
+    if res != "__main__":
+        return res
+    package = module.__package__
+    if package is None:
+        package = ""
+    mfname = module.__file__
+    if mfname is None:
+        return package
+    fname = os.path.basename(mfname)
+    ext = ".py"
+    if fname.endswith(ext):
+        fname = fname[:-len(ext)]
+    if fname == "__init__":
+        return package
+    return f"{package}.{fname}"
+
+
+def check_pid_exists(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False

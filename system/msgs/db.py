@@ -188,10 +188,7 @@ class DBStore(MessageStore):
                 stmt = sa.select([MsgsTable.mhash]).where(
                     MsgsTable.namespace_id == nid)
                 stmt = stmt.order_by(
-                    sa.func.substr(
-                        MsgsTable.mhash,
-                        order_pos,
-                        mhash_size - order_pos + 1),
+                    sa.func.substr(MsgsTable.mhash, order_pos, mhash_size),
                     MsgsTable.mhash)
                 stmt = stmt.offset(offset)
                 stmt = stmt.limit(RNG_ALIGN)

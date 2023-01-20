@@ -5,18 +5,24 @@ import numpy as np
 import torch
 from annoy import AnnoyIndex
 
-from misc.io import named_write
-from misc.util import safe_ravel
+from misc.io import named_write, open_read, open_write, remove_file
+from misc.util import check_pid_exists, safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
     EmbeddingCache,
+    LOCK_DEAD,
+    LOCK_FREE,
+    LOCK_LOCK,
+    LockState,
 )
+from system.namespace.namespace import Namespace
 
 
 class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
     def __init__(
             self,
+            namespace: Namespace,
             providers: EmbeddingProviderMap,
             cache: EmbeddingCache,
             embed_root: str,
@@ -24,7 +30,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             trees: int,
             shard_size: int,
             is_dot: bool) -> None:
-        super().__init__(providers, cache, shard_size)
+        super().__init__(namespace, providers, cache, shard_size)
         self._path = embed_root
         self._trees = trees
         self._is_dot = is_dot
@@ -33,6 +39,35 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         provider = self.get_provider(role)
         return os.path.join(
             self._path, f"index.{provider.get_file_name()}.{shard}.ann")
+
+    def _get_lock_file(self, role: ProviderRole, shard: int) -> str:
+        provider = self.get_provider(role)
+        return os.path.join(
+            self._path, f"lock.{provider.get_file_name()}.{shard}.ann")
+
+    def set_index_lock_state(
+            self, role: ProviderRole, shard: int, pid: int | None) -> None:
+        # NOTE: this lock doesn't have to be precise
+        # it is fine if multiple processes create the same index concurrently
+        # since each uses their own tmpfile
+        fname = self._get_lock_file(role, shard)
+        if pid is None:
+            remove_file(fname)
+        else:
+            with open_write(fname, text=True) as fout:
+                fout.write(f"{pid}\n")
+
+    def get_index_lock_state(
+            self, role: ProviderRole, shard: int) -> LockState:
+        fname = self._get_lock_file(role, shard)
+        try:
+            with open_read(fname, text=True) as fin:
+                pid = int(fin.read().strip())
+            return LOCK_LOCK if check_pid_exists(pid) else LOCK_DEAD
+        except ValueError:
+            return LOCK_DEAD
+        except FileNotFoundError:
+            return LOCK_FREE
 
     def _create_index(
             self,

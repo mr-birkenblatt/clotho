@@ -1,7 +1,6 @@
-import contextlib
 import gzip
 import io
-from typing import Iterable, Iterator
+from typing import Iterable
 
 import numpy as np
 import torch
@@ -20,12 +19,6 @@ class RedisEmbeddingCache(EmbeddingCache):
     @staticmethod
     def cache_name() -> str:
         return "redis"
-
-    @contextlib.contextmanager
-    def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
-        name = provider.get_redis_name()
-        with self._redis.get_lock(f"lock:{name}"):
-            yield
 
     def _get_embedding_key(
             self, provider: EmbeddingProvider, mhash: MHash) -> str:
@@ -86,9 +79,11 @@ class RedisEmbeddingCache(EmbeddingCache):
             provider: EmbeddingProvider,
             *,
             start_ix: int,
+            limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         key = self._get_order_key(provider)
-        return self._get_embeddigs(key, provider, start_ix=start_ix)
+        return self._get_embeddigs(
+            key, provider, start_ix=start_ix, limit=limit)
 
     def _get_index(self, key: str, index: int) -> MHash:
         with self._redis.get_connection(depth=1) as conn:
@@ -103,6 +98,7 @@ class RedisEmbeddingCache(EmbeddingCache):
             provider: EmbeddingProvider,
             *,
             start_ix: int,
+            limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         offset = start_ix
         batch_size = 100
@@ -123,16 +119,23 @@ class RedisEmbeddingCache(EmbeddingCache):
             mhash = as_mhash(elem)
             return (offset + ix, mhash, as_tensor(mhash))
 
+        remain = limit
         with self._redis.get_connection(depth=1) as conn:
             while True:
+                if remain is not None and remain <= 0:
+                    break
                 res = conn.lrange(key, offset, offset + batch_size)
                 if not res:
                     break
-                yield from (
+                tmp = [
                     as_tuple(offset, ix, elem)
                     for ix, elem in enumerate(res)
-                )
-                offset += batch_size
+                ]
+                if remain is not None:
+                    tmp = tmp[:remain]
+                    remain -= len(tmp)
+                yield from tmp
+                offset += len(tmp)
 
     def _embeddings_size(self, key: str) -> int:
         with self._redis.get_connection(depth=1) as conn:

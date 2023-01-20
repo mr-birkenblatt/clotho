@@ -1,5 +1,5 @@
 import enum
-from typing import get_args, Literal, TypedDict
+from typing import cast, get_args, Literal, TypedDict
 
 import torch
 
@@ -16,6 +16,12 @@ PROVIDER_ROLES: list[ProviderRole] = list(get_args(ProviderRole))
 class ProviderEnum(enum.Enum):
     PARENT = PROVIDER_PARENT
     CHILD = PROVIDER_CHILD
+
+
+def get_provider_role(role: str) -> ProviderRole:
+    if role not in PROVIDER_ROLES:
+        raise ValueError(f"{role} not a valid provider role")
+    return cast(ProviderRole, role)
 
 
 class EmbeddingProvider:
