@@ -7,7 +7,7 @@ jupyter==1.0.0
 mypy==0.991
 praw==7.6.1
 pre-commit
-psycopg2==2.9.5
+psycopg2-binary==2.9.5
 pycodestyle==2.9.1
 pylint==2.14.5
 pytest-cov==4.0.0
