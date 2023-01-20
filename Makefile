@@ -80,7 +80,7 @@ lint-pycodestyle-debug:
 
 lint-pylint:
 	./findpy.sh | sort
-	./findpy.sh | sort | xargs pylint -j 6
+	./findpy.sh | sort | xargs pylint -j 6 -v
 
 lint-type-check:
 	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ . --config-file mypy.ini
