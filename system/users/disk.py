@@ -65,7 +65,6 @@ class DiskUserStore(UserStore):
 
     def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         all_files = list(os.walk(self._path))
-        print(all_files)
 
         def get_results(*, pbar: Callable[[], None] | None) -> Iterable[User]:
             for (root, _, files) in all_files:
