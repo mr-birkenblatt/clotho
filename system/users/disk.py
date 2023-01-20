@@ -69,11 +69,12 @@ class DiskUserStore(UserStore):
         def get_results(*, pbar: Callable[[], None] | None) -> Iterable[User]:
             for (root, _, files) in all_files:
                 for fname in files:
-                    if fname.endswith(USER_EXT):
-                        yield from self._get_users_for_file(
-                            os.path.join(root, fname))
-                    if pbar is not None:
-                        pbar()
+                    if not fname.endswith(USER_EXT):
+                        continue
+                    yield from self._get_users_for_file(
+                        os.path.join(root, fname))
+                if pbar is not None:
+                    pbar()
 
         if not progress_bar:
             yield from get_results(pbar=None)
