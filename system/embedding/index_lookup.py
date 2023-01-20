@@ -22,6 +22,9 @@ LOCK_LOCK: LockState = "locked"
 LOCK_DEAD: LockState = "dead"
 
 
+OVERSCAN = 1.5
+
+
 class EmbeddingCache:
     @staticmethod
     def cache_name() -> str:
@@ -396,7 +399,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                     role,
                     shard,
                     embed,
-                    count,
+                    max(count, int(count * OVERSCAN)),
                     precise,
                     process,
                     on_err))
@@ -415,14 +418,23 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         for th in threads:
             th.join()
         self._check_err()
+        flat_candidates = [
+            entry
+            for shard_candidates in candidates.values()
+            for entry in shard_candidates
+        ]
+        distinct_mhash = set((entry[0] for entry in flat_candidates))
+        final_candidates = []
+        for candidate in flat_candidates:
+            cur_mhash = candidate[0]
+            if cur_mhash not in distinct_mhash:
+                continue
+            distinct_mhash.discard(cur_mhash)
+            final_candidates.append(candidate)
         yield from (
             sentry[0]
             for sentry in sorted(
-                [
-                    entry
-                    for shard_candidates in candidates.values()
-                    for entry in shard_candidates
-                ],
+                final_candidates,
                 key=lambda entry: entry[1],
                 reverse=self.is_bigger_better())[:count]
         )
