@@ -277,7 +277,7 @@ def process_actions_full(
     topic_counts: collections.defaultdict[str, int] = \
         collections.defaultdict(lambda: 0)
     totals: dict[str, int] = collections.defaultdict(lambda: 0)
-    user_pool: list[User] = list(user_store.get_all_users())
+    user_pool: list[User] = list(user_store.get_all_users(progress_bar=True))
     if user_pool:
         print(f"loaded {len(user_pool)} users")
     synth_pool: list[User] = []
