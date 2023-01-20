@@ -1,40 +1,21 @@
 import os
-from typing import Any, Iterable, TypedDict
+from typing import Iterable
 
 from misc.io import ensure_folder, open_append, open_read
 from misc.lru import LRU
 from misc.util import json_compact, read_jsonl
 from system.users.store import UserStore
-from system.users.user import ensure_permissions, Permissions, User
+from system.users.user import User
 
 
 USER_EXT = ".user"
 
 
-UserDict = TypedDict('UserDict', {
-    "name": str,
-    "permissions": Permissions,
-})
-
-
-def ensure_user_dict(obj: Any) -> UserDict:
-    return {
-        "name": obj["name"],
-        "permissions": ensure_permissions(obj["permissions"]),
-    }
-
-
 class DiskUserStore(UserStore):
     def __init__(self, user_root: str, cache_size: int) -> None:
         super().__init__()
-        self._path = os.path.join(user_root, "user")
+        self._path = os.path.join(user_root, "users")
         self._cache: LRU[str, User] = LRU(cache_size)
-
-    def _get_user_dict(self, user: User) -> UserDict:
-        return {
-            "name": user.get_name(),
-            "permissions": user.get_permissions(),
-        }
 
     def _compute_path(self, user_id: str) -> str:
         # FIXME: create generic class with dedup and subtree creation
@@ -55,14 +36,14 @@ class DiskUserStore(UserStore):
         ensure_folder(os.path.dirname(self._compute_path(user_id)))
         with open_append(self._compute_path(user_id), text=True) as fout:
             fout.write(
-                f"{json_compact(self._get_user_dict(user)).decode('utf-8')}\n")
+                f"{json_compact(self.get_user_dict(user)).decode('utf-8')}\n")
 
     def _get_users_for_file(self, fname: str) -> Iterable[User]:
         users = set()
         try:
             with open_read(fname, text=True) as fin:
                 for obj in read_jsonl(fin):
-                    uobj = ensure_user_dict(obj)
+                    uobj = self.ensure_user_dict(obj)
                     user = User(uobj["name"], uobj["permissions"])
                     users.add(user)
         except FileNotFoundError:

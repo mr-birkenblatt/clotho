@@ -131,6 +131,7 @@ def create_message_store(namespace: Namespace) -> MessageStore:
         from system.msgs.ram import RamMessageStore
         return RamMessageStore()
     if mobj["name"] == "cold":
-        from system.msgs.cold import ColdStore
-        return ColdStore(namespace.get_module_root("msgs"), mobj["keep_alive"])
+        from system.msgs.cold import ColdMessageStore
+        return ColdMessageStore(
+            namespace.get_module_root("msgs"), keep_alive=mobj["keep_alive"])
     raise ValueError(f"unknown message store: {mobj}")

@@ -128,6 +128,11 @@ def users_from_obj(obj: dict[str, Any]) -> UsersModule:
         res = {
             "name": "ram",
         }
+    elif name == "cold":
+        res = {
+            "name": "cold",
+            "keep_alive": obj.get("keep_alive", 1.0),
+        }
     elif name == "disk":
         res = {
             "name": "disk",

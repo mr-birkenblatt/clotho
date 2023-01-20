@@ -143,7 +143,7 @@ def get_embed_store(namespace: Namespace) -> EmbeddingStore:
 
 
 CachedEmbedModule = TypedDict('CachedEmbedModule', {
-    "name": Literal["redis", "db"],
+    "name": Literal["redis", "db", "cold"],
     "conn": str,
     "path": str,
     "index": Literal["annoy"],
@@ -177,6 +177,10 @@ def create_embed_store(namespace: Namespace) -> EmbeddingStore:
             cache = DBEmbeddingCache(
                 namespace,
                 namespace.get_db_connector(eobj["conn"]))
+        elif eobj["name"] == "cold":
+            from system.embedding.cold import ColdEmbeddingCache
+
+            cache = ColdEmbeddingCache(root, keep_alive=1.0)
         else:
             raise RuntimeError("internal error")
 

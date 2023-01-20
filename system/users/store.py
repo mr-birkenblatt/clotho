@@ -1,9 +1,15 @@
-from typing import Iterable, Literal, TypedDict
+from typing import Any, Iterable, Literal, TypedDict
 
 from misc.util import get_short_hash
 from system.namespace.module import ModuleBase
 from system.namespace.namespace import ModuleName, Namespace
-from system.users.user import User
+from system.users.user import ensure_permissions, Permissions, User
+
+
+UserDict = TypedDict('UserDict', {
+    "name": str,
+    "permissions": Permissions,
+})
 
 
 class UserStore(ModuleBase):
@@ -25,6 +31,18 @@ class UserStore(ModuleBase):
         ousers = get_user_store(other_namespace)
         for user in ousers.get_all_users():
             self.store_user(user)
+
+    def get_user_dict(self, user: User) -> UserDict:
+        return {
+            "name": user.get_name(),
+            "permissions": user.get_permissions(),
+        }
+
+    def ensure_user_dict(self, obj: Any) -> UserDict:
+        return {
+            "name": obj["name"],
+            "permissions": ensure_permissions(obj["permissions"]),
+        }
 
     @staticmethod
     def get_id_from_name(user_name: str) -> str:
@@ -49,7 +67,11 @@ DiskUsersModule = TypedDict('DiskUsersModule', {
 RamUsersModule = TypedDict('RamUsersModule', {
     "name": Literal["ram"],
 })
-UsersModule = DiskUsersModule | RamUsersModule
+ColdUsersModule = TypedDict('ColdUsersModule', {
+    "name": Literal["cold"],
+    "keep_alive": float,
+})
+UsersModule = DiskUsersModule | RamUsersModule | ColdUsersModule
 
 
 def create_user_store(namespace: Namespace) -> UserStore:
@@ -60,4 +82,8 @@ def create_user_store(namespace: Namespace) -> UserStore:
     if uobj["name"] == "ram":
         from system.users.ram import RamUserStore
         return RamUserStore()
+    if uobj["name"] == "cold":
+        from system.users.cold import ColdUserStore
+        return ColdUserStore(
+            namespace.get_module_root("users"), keep_alive=uobj["keep_alive"])
     raise ValueError(f"unknown user store: {uobj}")
