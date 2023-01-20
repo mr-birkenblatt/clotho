@@ -74,7 +74,7 @@ class DBUserStore(UserStore):
         user_id = user.get_id()
         name = user.get_name()
         obj = {
-            "permissions": user.get_permissions()
+            "permissions": user.get_permissions(),
         }
         with self._db.get_connection() as conn:
             values = {
