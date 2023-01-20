@@ -87,7 +87,8 @@ def create_user_store(namespace: Namespace) -> UserStore:
     uobj = namespace.get_users_module()
     if uobj["name"] == "disk":
         from system.users.disk import DiskUserStore
-        return DiskUserStore(namespace.get_root(), uobj["cache_size"])
+        return DiskUserStore(
+            namespace.get_module_root("users"), uobj["cache_size"])
     if uobj["name"] == "ram":
         from system.users.ram import RamUserStore
         return RamUserStore()

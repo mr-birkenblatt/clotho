@@ -14,7 +14,7 @@ USER_EXT = ".user"
 class DiskUserStore(UserStore):
     def __init__(self, user_root: str, cache_size: int) -> None:
         super().__init__()
-        self._path = os.path.join(user_root, "users")
+        self._path = user_root
         self._cache: LRU[str, User] = LRU(cache_size)
 
     def _compute_path(self, user_id: str) -> str:
@@ -65,6 +65,7 @@ class DiskUserStore(UserStore):
 
     def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         all_files = list(os.walk(self._path))
+        print(all_files)
 
         def get_results(*, pbar: Callable[[], None] | None) -> Iterable[User]:
             for (root, _, files) in all_files:
