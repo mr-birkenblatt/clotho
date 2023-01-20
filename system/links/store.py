@@ -3,7 +3,7 @@ from typing import Iterable, Literal, TypedDict
 import pandas as pd
 
 from system.links.link import Link, RLink, VoteType
-from system.links.scorer import Scorer
+from system.links.scorer import get_scorer, Scorer
 from system.msgs.message import MHash
 from system.namespace.module import ModuleBase
 from system.namespace.namespace import ModuleName, Namespace
@@ -18,7 +18,11 @@ class LinkStore(ModuleBase):
 
     @staticmethod
     def valid_scorers() -> list[Scorer]:
-        raise NotImplementedError()
+        return [
+            get_scorer("best"),
+            get_scorer("top"),
+            get_scorer("new"),
+        ]
 
     def get_user_id(self, link: RLink) -> str | None:
         raise NotImplementedError()

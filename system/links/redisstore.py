@@ -23,7 +23,7 @@ from system.links.link import (
     VoteType,
     VT_UP,
 )
-from system.links.scorer import get_scorer, Scorer, ScorerName
+from system.links.scorer import Scorer, ScorerName
 from system.links.store import LinkStore
 from system.msgs.message import MHash
 from system.users.store import UserStore
@@ -406,14 +406,6 @@ class RedisLinkStore(LinkStore):
         mseq.add(RedisFn("SET", r_daily, daily_sum))
 
         return script
-
-    @staticmethod
-    def valid_scorers() -> list[Scorer]:
-        return [
-            get_scorer("best"),
-            get_scorer("top"),
-            get_scorer("new"),
-        ]
 
     def get_user_id(self, link: RLink) -> str | None:
         return self.r_user.maybe_get_value(link)
