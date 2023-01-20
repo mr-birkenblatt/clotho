@@ -1,5 +1,5 @@
 import os
-from typing import Iterable
+from typing import Callable, Iterable
 
 from misc.io import ensure_folder, open_append, open_read
 from misc.lru import LRU
@@ -64,8 +64,22 @@ class DiskUserStore(UserStore):
         return res
 
     def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
-        for (root, _, files) in os.walk(self._path):
-            for fname in files:
-                if not fname.endswith(USER_EXT):
-                    continue
-                yield from self._get_users_for_file(os.path.join(root, fname))
+        all_files = list(os.walk(self._path))
+
+        def get_results(*, pbar: Callable[[], None] | None) -> Iterable[User]:
+            for (root, _, files) in all_files:
+                for fname in files:
+                    if fname.endswith(USER_EXT):
+                        yield from self._get_users_for_file(
+                            os.path.join(root, fname))
+                    if pbar is not None:
+                        pbar()
+
+        if not progress_bar:
+            yield from get_results(pbar=None)
+        else:
+            # FIXME: add stubs
+            from tqdm.auto import tqdm  # type: ignore
+
+            with tqdm(total=len(all_files)) as pbar:
+                yield from get_results(pbar=lambda: pbar.update(1))

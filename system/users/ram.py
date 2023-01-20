@@ -18,6 +18,7 @@ class RamUserStore(UserStore):
     def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         if not progress_bar:
             yield from self._users.values()
+            return
         # FIXME: add stubs
         from tqdm.auto import tqdm  # type: ignore
 
