@@ -63,7 +63,7 @@ class DiskUserStore(UserStore):
             raise KeyError(f"no user for the id: {user_id}")
         return res
 
-    def get_all_users(self) -> Iterable[User]:
+    def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         for (root, _, files) in os.walk(self._path):
             for fname in files:
                 if not fname.endswith(USER_EXT):

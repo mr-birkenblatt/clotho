@@ -23,13 +23,13 @@ class UserStore(ModuleBase):
     def store_user(self, user: User) -> None:
         raise NotImplementedError()
 
-    def get_all_users(self) -> Iterable[User]:
+    def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         raise NotImplementedError()
 
     def from_namespace(
             self, other_namespace: Namespace, *, progress_bar: bool) -> None:
         ousers = get_user_store(other_namespace)
-        for user in ousers.get_all_users():
+        for user in ousers.get_all_users(progress_bar=progress_bar):
             self.store_user(user)
 
     def get_user_dict(self, user: User) -> UserDict:

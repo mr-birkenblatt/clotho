@@ -20,7 +20,7 @@ class ColdUserStore(UserStore):
         self._out.write_line(
             json_compact(self.get_user_dict(user)).decode("utf-8"))
 
-    def get_all_users(self) -> Iterable[User]:
+    def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         for line in self._out.enumerate_lines():
             obj = self.ensure_user_dict(json_read(line.encode("utf-8")))
             yield User(obj["name"], obj["permissions"])

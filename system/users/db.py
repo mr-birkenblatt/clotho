@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Callable, Iterable
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -92,10 +92,25 @@ class DBUserStore(UserStore):
                 set_=dict(stmt.excluded.items()))
             conn.execute(stmt)
 
-    def get_all_users(self) -> Iterable[User]:
+    def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         with self._db.get_connection() as conn:
             stmt = sa.select([UsersTable.name, UsersTable.data]).where(
                 UsersTable.namespace_id == self._get_nid())
-            for row in conn.execute(stmt):
-                obj = row.data
-                yield User(row.name, obj["permissions"])
+            res = conn.execute(stmt)
+
+            def get_results(
+                    *, pbar: Callable[[], None] | None) -> Iterable[User]:
+                for row in res:
+                    obj = row.data
+                    yield User(row.name, obj["permissions"])
+                    if pbar is not None:
+                        pbar()
+
+            if progress_bar:
+                # FIXME: add stubs
+                from tqdm.auto import tqdm  # type: ignore
+
+                with tqdm(total=res.rowcount) as pbar:
+                    yield from get_results(pbar=lambda: pbar.update(1))
+            else:
+                yield from get_results(pbar=None)
