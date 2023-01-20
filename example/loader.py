@@ -18,7 +18,7 @@ from system.links.store import LinkStore
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
 from system.users.store import UserStore
-from system.users.user import User
+from system.users.user import MAX_USER_NAME_LEN, User
 
 
 def actions_from_file(fname: str) -> Iterable[Action]:
@@ -64,6 +64,7 @@ def interpret_action(
         user_name = link.get("user_name")
         if user_name is None:
             user_name = "__no_user__"
+        user_name = user_name[:MAX_USER_NAME_LEN]
         user_id = user_store.get_id_from_name(user_name)
         try:
             user = user_store.get_user_by_id(user_id)

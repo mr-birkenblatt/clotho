@@ -138,6 +138,11 @@ def users_from_obj(obj: dict[str, Any]) -> UsersModule:
             "name": "disk",
             "cache_size": obj.get("cache_size", 50000),
         }
+    elif name == "db":
+        res = {
+            "name": "db",
+            "conn": obj["conn"],
+        }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res

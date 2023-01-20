@@ -48,6 +48,10 @@ class UserStore(ModuleBase):
     def get_id_from_name(user_name: str) -> str:
         return get_short_hash(user_name)
 
+    @staticmethod
+    def id_length() -> int:
+        return 8
+
 
 USER_STORE: dict[Namespace, UserStore] = {}
 
@@ -71,7 +75,12 @@ ColdUsersModule = TypedDict('ColdUsersModule', {
     "name": Literal["cold"],
     "keep_alive": float,
 })
-UsersModule = DiskUsersModule | RamUsersModule | ColdUsersModule
+DBUsersModule = TypedDict('DBUsersModule', {
+    "name": Literal["db"],
+    "conn": str,
+})
+UsersModule = (
+    DiskUsersModule | RamUsersModule | ColdUsersModule | DBUsersModule)
 
 
 def create_user_store(namespace: Namespace) -> UserStore:
@@ -86,4 +95,7 @@ def create_user_store(namespace: Namespace) -> UserStore:
         from system.users.cold import ColdUserStore
         return ColdUserStore(
             namespace.get_module_root("users"), keep_alive=uobj["keep_alive"])
+    if uobj["name"] == "db":
+        from system.users.db import DBUserStore
+        return DBUserStore(namespace, namespace.get_db_connector(uobj["conn"]))
     raise ValueError(f"unknown user store: {uobj}")
