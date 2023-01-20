@@ -97,7 +97,7 @@ def run() -> None:
     ns_name: str = args.namespace
     namespace = get_namespace(ns_name)
     role = get_provider_role(args.role)
-    shards = [int(shard) for shard in f"{args.shards}".split(",")]
+    shards = [int(shard) for shard in f"{args.shards}".split(",") if shard]
     embed_store = get_embed_store(namespace)
     if not isinstance(embed_store, CachedIndexEmbeddingStore):
         raise ValueError(
