@@ -87,7 +87,6 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         self._lock = threading.RLock()
         self._cond = threading.Condition(lock=self._lock)
         self._th: threading.Thread | None = None
-        self._start_build_loop()
 
     def _start_build_loop(self) -> None:
 
@@ -118,8 +117,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             if self._th is not None:
                 return
             th = threading.Thread(target=build_loop, daemon=True)
-            th.start()
             self._th = th
+            th.start()
 
     def maybe_request_build(self, role: ProviderRole) -> None:
         if role in self._request_build:
@@ -131,6 +130,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             with self._lock:
                 self._request_build.add(role)
                 self._cond.notify_all()
+                self._start_build_loop()
 
     def shard_size(self) -> int:
         return self._shard_size
