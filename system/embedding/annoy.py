@@ -33,6 +33,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         super().__init__(namespace, providers, cache, shard_size)
         self._path = embed_root
         self._trees = trees
+        self._annoy_cache: dict[tuple[ProviderRole, int], AnnoyIndex] = {}
         self._is_dot = is_dot
 
     def _get_file(self, role: ProviderRole, shard: int) -> str:
@@ -90,7 +91,12 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         return False
 
     def _get_index(self, role: ProviderRole, shard: int) -> AnnoyIndex:
-        return self._create_index(role, shard, load=True)
+        key = (role, shard)
+        res = self._annoy_cache.get(key)
+        if res is None:
+            res = self._create_index(role, shard, load=True)
+            self._annoy_cache[key] = res
+        return res
 
     def do_build_index(
             self,

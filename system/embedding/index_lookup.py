@@ -4,6 +4,7 @@ from typing import Iterable, Literal
 
 import torch
 
+from misc.util import ideal_thread_count
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
@@ -247,27 +248,32 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         total_count = cache.embedding_count(provider)
         shard_count = self.shard_of_index(total_count)
 
-        def process(shard: int, line: str) -> None:
+        def process(shards: list[int], line: str) -> None:
             if not line:
                 return
-            raise ValueError(f"did not expect output in shard {shard}: {line}")
+            raise ValueError(
+                f"did not expect output in shards {shards}: {line}")
 
         def on_err(err: BaseException) -> None:
             self._err = err
 
+        tcount = max(1, ideal_thread_count() // 4)
+        shards: list[list[int]] = [[] for _ in range(tcount)]
+        for shard in range(shard_count):
+            shards[shard % len(shards)].append(shard)
         threads = [
             threading.Thread(
                 target=run_index_lookup,
                 args=(
                     self._namespace,
                     role,
-                    shard,
+                    shards[tix],
                     None,
                     0,
                     False,
                     process,
                     on_err))
-            for shard in range(shard_count)
+            for tix in range(tcount)
         ]
         for th in threads:
             th.start()
@@ -391,19 +397,23 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         def on_err(err: BaseException) -> None:
             self._err = err
 
+        tcount = ideal_thread_count()
+        shards: list[list[int]] = [[] for _ in range(tcount)]
+        for shard in range(shard_count):
+            shards[shard % len(shards)].append(shard)
         threads = [
             threading.Thread(
                 target=run_index_lookup,
                 args=(
                     self._namespace,
                     role,
-                    shard,
+                    shards[tix],
                     embed,
                     max(count, int(count * OVERSCAN)),
                     precise,
                     process,
                     on_err))
-            for shard in range(shard_count)
+            for tix in range(tcount)
         ]
         for shard in range(shard_count):
             candidates[shard] = []

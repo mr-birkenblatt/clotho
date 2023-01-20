@@ -383,3 +383,10 @@ def check_pid_exists(pid: int) -> bool:
         return True
     except OSError:
         return False
+
+
+def ideal_thread_count() -> int:
+    res = os.cpu_count()
+    if res is None:
+        return 4
+    return res

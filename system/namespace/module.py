@@ -1,3 +1,4 @@
+from misc.util import parent_python_module, python_module
 from system.namespace.namespace import ModuleName, Namespace
 
 
@@ -31,11 +32,9 @@ class ModuleBase:
     def ensure_module_init(self, ns_name: str) -> None:
         if self.is_module_init():
             return
-        from system.namespace import NAMESPACE_EXEC
-
         raise ModuleNotInitialized(
             "module is not initialized!\n"
-            f"run: {NAMESPACE_EXEC} init "
+            f"run: {parent_python_module(python_module())} init "
             f"--namespace {ns_name} "
             f"--module {self.module_name()}")
 

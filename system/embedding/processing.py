@@ -18,11 +18,11 @@ if TYPE_CHECKING:
 def run_index_lookup(
         namespace: 'Namespace',
         role: 'ProviderRole',
-        shard: int,
+        shards: list[int],
         embed: torch.Tensor | None,
         count: int,
         precise: bool,
-        process_out: Callable[[int, str], None],
+        process_out: Callable[[list[int], str], None],
         on_err: Callable[[BaseException], None]) -> None:
     try:
         module = python_module()
@@ -30,7 +30,8 @@ def run_index_lookup(
         cmd = [python_exec, "-m", module]
         cmd.extend(["--namespace", namespace.get_name()])
         cmd.extend(["--role", role])
-        cmd.extend(["--shard", f"{shard}"])
+        shards_str = [f"{shard}" for shard in shards]
+        cmd.extend(["--shards", f"{','.join(shards_str)}"])
         if embed is not None:
             cmd.extend(["--count", f"{count}"])
             if precise:
@@ -49,7 +50,7 @@ def run_index_lookup(
         if res.stderr:
             print(f"STDERR_START({cmd})\n{res.stderr}\nSTDERR_STOP")
         for line in res.stdout.splitlines(keepends=False):
-            process_out(shard, line)
+            process_out(shards, line)
     except BaseException as e:  # pylint: disable=broad-except
         on_err(e)
 
@@ -64,7 +65,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--namespace", help="the namespace")
     parser.add_argument("--role", help="the provider role")
     parser.add_argument(
-        "--shard", type=int, help="the shard to build or retrieve from")
+        "--shards",
+        help="',' separated list of shards to build or retrieve from")
     parser.add_argument(
         "--count", default=None, type=int, help="how many neighbors to return")
     parser.add_argument(
@@ -94,7 +96,7 @@ def run() -> None:
     ns_name: str = args.namespace
     namespace = get_namespace(ns_name)
     role = get_provider_role(args.role)
-    shard: int = args.shard
+    shards = [int(shard) for shard in f"{args.shards}".split(",")]
     embed_store = get_embed_store(namespace)
     if not isinstance(embed_store, CachedIndexEmbeddingStore):
         raise ValueError(
@@ -102,18 +104,20 @@ def run() -> None:
             f"in namespace {ns_name}")
     index_lookup: CachedIndexEmbeddingStore = embed_store
     if args.count is None:
-        if index_lookup.can_build_index(role, shard):
-            index_lookup.set_index_lock_state(role, shard, os.getpid())
-            index_lookup.proc_build_index_shard(role, shard)
-            # NOTE: only remove the lock if we were is successful
-            index_lookup.set_index_lock_state(role, shard, None)
+        for shard in shards:
+            if index_lookup.can_build_index(role, shard):
+                index_lookup.set_index_lock_state(role, shard, os.getpid())
+                index_lookup.proc_build_index_shard(role, shard)
+                # NOTE: only remove the lock if we were is successful
+                index_lookup.set_index_lock_state(role, shard, None)
     else:
         count = args.count
         embed = deserialize_embedding(sys.stdin.read())
         ignore_index = args.precise
-        for mhash, distance in index_lookup.proc_get_closest(
-                role, shard, embed, count, ignore_index=ignore_index):
-            print(f"{mhash.to_parseable()},{distance}")
+        for shard in shards:
+            for mhash, distance in index_lookup.proc_get_closest(
+                    role, shard, embed, count, ignore_index=ignore_index):
+                print(f"{mhash.to_parseable()},{distance}")
 
 
 if __name__ == "__main__":
