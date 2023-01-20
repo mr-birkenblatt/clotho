@@ -1,7 +1,7 @@
 import argparse
-import os
 from typing import Literal
 
+from misc.util import python_module
 from system.embedding.store import get_embed_store
 from system.msgs.message import Message
 from system.msgs.store import get_message_store
@@ -42,7 +42,7 @@ def run() -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog=f"python -m {os.path.basename(os.path.dirname(__file__))}",
+        prog=f"python -m {python_module()}",
         description="Precompute embeddings")
     parser.add_argument("--namespace", default="default", help="the namespace")
     parser.add_argument(

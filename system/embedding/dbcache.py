@@ -176,7 +176,7 @@ class DBEmbeddingCache(EmbeddingCache):
             stmt = stmt.limit(limit)
         for ix, row in enumerate(conn.execute(stmt)):
             cur_mhash = MHash.parse(row.mhash)
-            cur_embed = self._to_tensor(row.embed)
+            cur_embed = self._to_tensor(row.embedding)
             cur_ix = start_ix + ix
             yield (cur_ix, cur_mhash, cur_embed)
 

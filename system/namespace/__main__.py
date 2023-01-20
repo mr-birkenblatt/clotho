@@ -6,6 +6,7 @@ from typing import TypedDict
 
 from misc.io import ensure_folder
 from misc.redis import get_redis_config
+from misc.util import python_module
 from system.namespace.module import get_module_obj
 from system.namespace.namespace import (
     get_module_name,
@@ -113,10 +114,8 @@ def run() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    from system.namespace import NAMESPACE_EXEC
-
     parser = argparse.ArgumentParser(
-        prog=NAMESPACE_EXEC,
+        prog=f"python -m {python_module()}",
         description="Extract namespace information")
     parser.add_argument(
         "command",

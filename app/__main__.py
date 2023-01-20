@@ -1,12 +1,12 @@
 import argparse
-import os
 
 from app.server import setup_server, start
+from misc.util import python_module
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog=f"python -m {os.path.basename(os.path.dirname(__file__))}",
+        prog=f"python -m {python_module()}",
         description="Run the API server")
     parser.add_argument(
         "--namespace",

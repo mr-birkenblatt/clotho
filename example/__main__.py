@@ -9,7 +9,7 @@ from example.loader import process_action_file, process_actions_full
 from example.reddit import RedditAccess
 from example.wiki import read_wiki
 from misc.io import open_append
-from misc.util import json_compact
+from misc.util import json_compact, python_module
 from system.links.store import get_link_store
 from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
@@ -111,7 +111,7 @@ def run() -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog=f"python -m {os.path.basename(os.path.dirname(__file__))}",
+        prog=f"python -m {python_module()}",
         description="Create or load example")
     parser.add_argument(
         "cmd",

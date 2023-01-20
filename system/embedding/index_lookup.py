@@ -1,26 +1,19 @@
-import argparse
 import math
-import os
-import subprocess
-import sys
 import threading
-from typing import Callable, Iterable, Literal
+from typing import Iterable, Literal
 
-import numpy as np
 import torch
 
-from misc.util import json_compact, json_read, python_module
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
-    get_provider_role,
     ProviderRole,
 )
-from system.embedding.store import EmbeddingStore, get_embed_store
+from system.embedding.processing import run_index_lookup
+from system.embedding.store import EmbeddingStore
 from system.msgs.message import MHash
 from system.namespace.module import UnsupportedInit
 from system.namespace.namespace import Namespace
-from system.namespace.store import get_namespace
 
 
 LockState = Literal["free", "locked", "dead"]
@@ -87,6 +80,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         self._lock = threading.RLock()
         self._cond = threading.Condition(lock=self._lock)
         self._th: threading.Thread | None = None
+        self._err: BaseException | None = None
 
     def _start_build_loop(self) -> None:
 
@@ -108,11 +102,14 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                                 self._request_build.discard(elem)
                         if elem is not None:
                             self._build_index(elem)
+            except BaseException as e:  # pylint: disable=broad-except
+                self._err = e
             finally:
                 with self._lock:
                     if th is self._th:
                         self._th = None
 
+        self._check_err()
         with self._lock:
             if self._th is not None:
                 return
@@ -120,7 +117,12 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             self._th = th
             th.start()
 
+    def _check_err(self) -> None:
+        if self._err is not None:
+            raise self._err
+
     def maybe_request_build(self, role: ProviderRole) -> None:
+        self._check_err()
         if role in self._request_build:
             return
         cache = self._cache
@@ -247,15 +249,28 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 return
             raise ValueError(f"did not expect output in shard {shard}: {line}")
 
+        def on_err(err: BaseException) -> None:
+            self._err = err
+
         threads = [
-            threading.Thread(target=run_index_lookup, args=(
-                self._namespace, role, shard, None, 0, False, process))
+            threading.Thread(
+                target=run_index_lookup,
+                args=(
+                    self._namespace,
+                    role,
+                    shard,
+                    None,
+                    0,
+                    False,
+                    process,
+                    on_err))
             for shard in range(shard_count)
         ]
         for th in threads:
             th.start()
         for th in threads:
             th.join()
+        self._check_err()
 
     def do_add_embedding(
             self,
@@ -370,9 +385,21 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             dist = float(right)
             candidates[shard].append((mhash, dist))
 
+        def on_err(err: BaseException) -> None:
+            self._err = err
+
         threads = [
-            threading.Thread(target=run_index_lookup, args=(
-                self._namespace, role, shard, embed, count, precise, process))
+            threading.Thread(
+                target=run_index_lookup,
+                args=(
+                    self._namespace,
+                    role,
+                    shard,
+                    embed,
+                    count,
+                    precise,
+                    process,
+                    on_err))
             for shard in range(shard_count)
         ]
         for shard in range(shard_count):
@@ -387,6 +414,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             th.start()
         for th in threads:
             th.join()
+        self._check_err()
         yield from (
             sentry[0]
             for sentry in sorted(
@@ -456,97 +484,3 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 candidates.sort(
                     key=lambda entry: entry[1], reverse=is_bigger_better)
         yield from candidates
-
-
-def run_index_lookup(
-        namespace: Namespace,
-        role: ProviderRole,
-        shard: int,
-        embed: torch.Tensor | None,
-        count: int,
-        precise: bool,
-        process_out: Callable[[int, str], None]) -> None:
-    module = python_module()
-    python_exec = sys.executable
-    cmd = [python_exec, "-m", module]
-    cmd.extend(["--namespace", namespace.get_name()])
-    cmd.extend(["--role", role])
-    cmd.extend(["--shard", f"{shard}"])
-    if embed is not None:
-        cmd.extend(["--count", f"{count}"])
-        if precise:
-            cmd.append("--precise")
-    res = subprocess.run(
-        cmd,
-        capture_output=True,
-        check=True,
-        input=None if embed is None else serialize_embedding(embed),
-        encoding="utf-8")
-    if res.stderr:
-        raise ValueError(
-            f"error executing {cmd}\n"
-            f"STDOUT\n{res.stdout}\n"
-            f"STDERR\n{res.stderr}")
-    for line in res.stdout.splitlines(keepends=False):
-        process_out(shard, line)
-
-
-def parse_args() -> argparse.Namespace:
-    description = (
-        "Build index or retrieve neighbors. "
-        "Expects the embedding as JSON in stdin if --count is set.")
-    parser = argparse.ArgumentParser(
-        prog=f"python -m {python_module()}",
-        description=description)
-    parser.add_argument("--namespace", help="the namespace")
-    parser.add_argument("--role", help="the provider role")
-    parser.add_argument(
-        "--shard", type=int, help="the shard to build or retrieve from")
-    parser.add_argument(
-        "--count", default=None, type=int, help="how many neighbors to return")
-    parser.add_argument(
-        "--precise",
-        default=False,
-        action="store_true",
-        help="whether to ignore the index during lookup")
-    return parser.parse_args()
-
-
-def serialize_embedding(embed: torch.Tensor) -> str:
-    arr = embed.double().detach().numpy().astype(np.float64).tolist()
-    return json_compact(arr).decode("utf-8")
-
-
-def deserialize_embedding(content: str) -> torch.Tensor:
-    return torch.DoubleTensor(json_read(content.encode("utf-8")))
-
-
-def run() -> None:
-    args = parse_args()
-    ns_name: str = args.namespace
-    namespace = get_namespace(ns_name)
-    role = get_provider_role(args.role)
-    shard: int = args.shard
-    embed_store = get_embed_store(namespace)
-    if not isinstance(embed_store, CachedIndexEmbeddingStore):
-        raise ValueError(
-            f"invalid embed store {embed_store.__class__.__name__} "
-            f"in namespace {ns_name}")
-    index_lookup: CachedIndexEmbeddingStore = embed_store
-    if args.count is None:
-        if index_lookup.can_build_index(role, shard):
-            index_lookup.set_index_lock_state(role, shard, os.getpid())
-            index_lookup.proc_build_index_shard(role, shard)
-            # NOTE: only remove the lock if we were is successful
-            index_lookup.set_index_lock_state(role, shard, None)
-    else:
-        count = args.count
-        embed = deserialize_embedding(sys.stdin.read())
-        ignore_index = args.precise
-        for mhash, distance in index_lookup.proc_get_closest(
-                role, shard, embed, count, ignore_index=ignore_index):
-            print(f"{mhash.to_parseable()},{distance}")
-
-
-if __name__ == "__main__":
-    run()

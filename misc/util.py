@@ -365,9 +365,16 @@ def python_module() -> str:
     ext = ".py"
     if fname.endswith(ext):
         fname = fname[:-len(ext)]
-    if fname == "__init__":
+    if fname in ("__init__", "__main__"):
         return package
     return f"{package}.{fname}"
+
+
+def parent_python_module(p_module: str) -> str:
+    dot_ix = p_module.rfind(".")
+    if dot_ix < 0:
+        return ""
+    return p_module[:dot_ix]
 
 
 def check_pid_exists(pid: int) -> bool:
