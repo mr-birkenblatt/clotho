@@ -248,16 +248,16 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         total_count = cache.embedding_count(provider)
         shard_count = self.shard_of_index(total_count)
 
-        def process(shards: list[int], line: str) -> None:
+        def process(tix: int, line: str) -> None:
             if not line:
                 return
             raise ValueError(
-                f"did not expect output in shards {shards}: {line}")
+                f"did not expect output in process {tix}: {line}")
 
         def on_err(err: BaseException) -> None:
             self._err = err
 
-        tcount = max(1, ideal_thread_count() // 4)
+        tcount = max(1, ideal_thread_count() // 2)
         shards: list[list[int]] = [[] for _ in range(tcount)]
         for shard in range(shard_count):
             shards[shard % len(shards)].append(shard)
@@ -268,6 +268,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                     self._namespace,
                     role,
                     shards[tix],
+                    tix,
                     None,
                     0,
                     False,
@@ -386,13 +387,14 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         shard_count = self.shard_of_index(total_count) + 1
         shard_size = self.shard_size()
 
-        def process(shard: int, line: str) -> None:
+        def process(tix: int, line: str) -> None:
             if not line:
                 return
             left, right = line.split(",", 1)
             mhash = MHash.parse(left)
             dist = float(right)
-            candidates[shard].append((mhash, dist))
+            # print(tix, dist)
+            candidates[tix].append((mhash, dist))
 
         def on_err(err: BaseException) -> None:
             self._err = err
@@ -408,6 +410,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                     self._namespace,
                     role,
                     shards[tix],
+                    tix,
                     embed,
                     max(count, int(count * OVERSCAN)),
                     precise,
@@ -415,8 +418,9 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                     on_err))
             for tix in range(tcount)
         ]
+        for tix in range(tcount):
+            candidates[tix] = []
         for shard in range(shard_count):
-            candidates[shard] = []
             end_ix = self.get_shard_start_ix(shard) + shard_size
             if (
                     not precise
@@ -441,6 +445,16 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 continue
             distinct_mhash.discard(cur_mhash)
             final_candidates.append(candidate)
+
+        # from system.msgs.store import get_message_store
+        # msgs = get_message_store(self._namespace)
+        # print("\n".join([
+        #     f"{msgs.read_message(entry[0]).get_text()[:40]}, {entry[1]}"
+        #     for entry in sorted(
+        #         final_candidates,
+        #         key=lambda entry: entry[1],
+        #         reverse=self.is_bigger_better())]))
+
         yield from (
             sentry[0]
             for sentry in sorted(

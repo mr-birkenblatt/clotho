@@ -19,10 +19,11 @@ def run_index_lookup(
         namespace: 'Namespace',
         role: 'ProviderRole',
         shards: list[int],
+        tix: int,
         embed: torch.Tensor | None,
         count: int,
         precise: bool,
-        process_out: Callable[[list[int], str], None],
+        process_out: Callable[[int, str], None],
         on_err: Callable[[BaseException], None]) -> None:
     try:
         module = python_module()
@@ -50,7 +51,7 @@ def run_index_lookup(
         if res.stderr:
             print(f"STDERR_START({cmd})\n{res.stderr}\nSTDERR_STOP")
         for line in res.stdout.splitlines(keepends=False):
-            process_out(shards, line)
+            process_out(tix, line)
     except BaseException as e:  # pylint: disable=broad-except
         on_err(e)
 
