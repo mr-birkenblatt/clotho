@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from misc.redis import set_redis_slow_mode
@@ -9,15 +10,23 @@ from model.datagenerator import (
     LearningPlan,
 )
 from system.links.scorer import get_scorer
+from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
 
 
+RANDOM_TEST = False
 MESSAGE_GENERATION = False
+NAMESPACE = "test"
 
 
 def run() -> None:
-    namespace = get_namespace("test")
-    if MESSAGE_GENERATION:
+    namespace = get_namespace(NAMESPACE)
+    if RANDOM_TEST:
+        msgs = get_message_store(namespace)
+        rng = np.random.default_rng(seed=42)
+        for mhash in msgs.do_get_random_messages(rng, 20):
+            print(f"{mhash}: {msgs.read_message(mhash).get_text()[:40]}")
+    elif MESSAGE_GENERATION:
         data_gen = DataGenerator(namespace, 42)
         for link in data_gen.get_valid_random_links(
                 100, scorer=get_scorer("best"), now=now_ts()):

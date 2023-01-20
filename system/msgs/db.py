@@ -175,7 +175,6 @@ class DBStore(MessageStore):
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
         nid = self._get_nid()
-        mhash_size = MHash.parse_size()
         remain = count
         with self._db.get_connection() as conn:
             total = self._get_count(conn)
@@ -183,15 +182,12 @@ class DBStore(MessageStore):
                 yield from []
                 return
             while remain > 0:
-                order_pos = rng.integers(0, mhash_size) + 1
-                offset = rng.integers(0, total // RNG_ALIGN) * RNG_ALIGN
-                stmt = sa.select([MsgsTable.mhash]).where(
+                offsets = rng.integers(0, total, size=RNG_ALIGN).tolist()
+                row_id_col = sa.func.row_number().over().label("row_id")
+                sub_stmt = sa.select([MsgsTable.mhash, row_id_col]).where(
                     MsgsTable.namespace_id == nid)
-                stmt = stmt.order_by(
-                    sa.func.substr(MsgsTable.mhash, order_pos, mhash_size),
-                    MsgsTable.mhash)
-                stmt = stmt.offset(offset)
-                stmt = stmt.limit(RNG_ALIGN)
+                stmt = sa.select(sub_stmt.subquery()).where(
+                    sa.Column("row_id").in_(offsets))
                 for row in conn.execute(stmt):
                     cur_mhash = MHash.parse(row.mhash)
                     yield cur_mhash
