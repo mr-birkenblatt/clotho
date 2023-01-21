@@ -23,7 +23,6 @@ MODULE_VERSION = 1
 class EmbedTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "embed"
 
-    id = sa.Column(sa.Integer, primary_key=True)
     namespace_id = sa.Column(
         sa.Integer,
         sa.ForeignKey(
@@ -35,12 +34,18 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False)
     mhash = sa.Column(
         sa.String(MHash.parse_size()),
+        primary_key=True,
         nullable=False)
+    main_order = sa.Column(
+        sa.Integer,
+        sa.Sequence("main_order_seq", start=1),
+        nullable=False,
+        unique=True)
     embedding = sa.Column(
         sa.ARRAY(sa.Float),
         nullable=False)
 
-    idx_random_access = sa.Index("namespace_id", "role", "mhash")
+    idx_main_order = sa.Index("namespace_id", "role", "main_order")
 
 
 class DBEmbeddingCache(EmbeddingCache):

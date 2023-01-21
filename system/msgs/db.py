@@ -35,12 +35,16 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
 class TopicsTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "topics"
 
-    id = sa.Column(sa.Integer, primary_key=True)
     namespace_id = sa.Column(
         sa.Integer,
         sa.ForeignKey(
             NamespaceTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
+    id = sa.Column(
+        sa.Integer,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False)
     mhash = sa.Column(
         sa.String(MHash.parse_size()),
         primary_key=True,
