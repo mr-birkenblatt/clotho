@@ -110,11 +110,12 @@ def suggest_from_obj(obj: dict[str, Any]) -> SuggestModule:
     if name == "random":
         res = {
             "name": "random",
+            "max": obj.get("max", None),
         }
     elif name == "model":
         res = {
             "name": "model",
-            "count": 10,
+            "count": obj.get("count", 10),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")

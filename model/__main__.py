@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import pandas as pd
 
@@ -16,11 +18,10 @@ from system.namespace.store import get_namespace
 
 RANDOM_TEST = False
 MESSAGE_GENERATION = False
-NAMESPACE = "test"
 
 
-def run() -> None:
-    namespace = get_namespace(NAMESPACE)
+def run(ns_name: str, ns_name_other: str | None) -> None:
+    namespace = get_namespace(ns_name)
     if RANDOM_TEST:
         msgs = get_message_store(namespace)
         rng = np.random.default_rng(seed=42)
@@ -46,7 +47,10 @@ def run() -> None:
     else:
         pd.set_option("display.max_columns", None)
         pd.set_option("display.max_rows", None)
-        ns_train = get_namespace("train")
+        ns_train = (
+            namespace
+            if ns_name_other is None
+            else get_namespace(ns_name_other))
         train_plan: list[EpochLearningPlan] = [
             {
                 "left": {"mode": "valid", "flip_pc": 0.5},
@@ -197,4 +201,4 @@ def run() -> None:
 
 if __name__ == "__main__":
     set_redis_slow_mode("never")
-    run()
+    run(sys.argv[1], None if len(sys.argv) < 3 else sys.argv[2])

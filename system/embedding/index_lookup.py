@@ -1,5 +1,6 @@
 import math
 import threading
+import time
 from typing import Iterable, Literal
 
 import torch
@@ -10,7 +11,7 @@ from model.embedding import (
     EmbeddingProviderMap,
     ProviderRole,
 )
-from system.embedding.processing import run_index_lookup
+from system.embedding.processing import RUN_EXEC, run_index_lookup
 from system.embedding.store import EmbeddingStore
 from system.msgs.message import MHash
 from system.namespace.module import UnsupportedInit
@@ -265,6 +266,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             threading.Thread(
                 target=run_index_lookup,
                 args=(
+                    RUN_EXEC,
                     self._namespace,
                     role,
                     shards[tix],
@@ -380,6 +382,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             count: int,
             *,
             precise: bool) -> Iterable[MHash]:
+        start_time = time.monotonic()
         cache = self._cache
         provider = self.get_provider(role)
         candidates: dict[int, list[tuple[MHash, float]]] = {}
@@ -407,6 +410,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             threading.Thread(
                 target=run_index_lookup,
                 args=(
+                    RUN_EXEC,
                     self._namespace,
                     role,
                     shards[tix],
@@ -462,6 +466,9 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
                 key=lambda entry: entry[1],
                 reverse=self.is_bigger_better())[:count]
         )
+        print(
+            "total time processing neighbors: "
+            f"{time.monotonic() - start_time:.4f}s")
 
     def proc_get_closest(
             self,

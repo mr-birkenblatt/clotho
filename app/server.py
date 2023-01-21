@@ -268,7 +268,7 @@ def setup(
         offset = link_query["offset"]
         cur_offset = offset + len(links)
         cur_limit = limit - len(links)
-        if cur_limit == 0:
+        if cur_limit == 0 or links:
             return links
         six = 0
         cur_offset -= total
@@ -292,6 +292,8 @@ def setup(
                     offset=cur_offset,
                     limit=local_limit)
             ))
+            if suggestions:
+                break
             if len(suggestions) <= prev_size:
                 six += 1
                 continue

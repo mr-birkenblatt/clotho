@@ -62,6 +62,7 @@ def get_link_suggesters(namespace: Namespace) -> list[LinkSuggester]:
 
 RandomSuggestModule = TypedDict('RandomSuggestModule', {
     "name": Literal["random"],
+    "max": int | None,
 })
 ModelSuggestModule = TypedDict('ModelSuggestModule', {
     "name": Literal["model"],
@@ -74,7 +75,7 @@ def create_link_suggesters(namespace: Namespace) -> Iterable[LinkSuggester]:
     for sobj in namespace.get_suggest_module():
         if sobj["name"] == "random":
             from system.suggest.random import RandomLinkSuggester
-            yield RandomLinkSuggester(namespace)
+            yield RandomLinkSuggester(namespace, sobj["max"])
         elif sobj["name"] == "model":
             from system.suggest.model import ModelLinkSuggester
             yield ModelLinkSuggester(namespace, sobj["count"])

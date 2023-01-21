@@ -27,6 +27,7 @@ from misc.util import (
     get_test_salt,
     is_test,
     json_compact,
+    json_pretty,
     json_read,
     NL,
 )
@@ -277,7 +278,8 @@ class RedisWrapper:
                     print(
                         f"slow redis call ({conn_time:.2f}s) "
                         f"at {fun_name} ({fun_fname}:{fun_line})\n"
-                        f"{NL.join(context)}\nlocals:\n{fun_locals}")
+                        f"{NL.join(context)}\nlocals:\n{fun_locals}\n"
+                        f"conn:{json_pretty(get_redis_config(self._ns_key))}")
                     REDIS_UNIQUE.add(fun_key)
 
     def reset(self) -> None:
