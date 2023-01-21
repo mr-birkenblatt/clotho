@@ -37,12 +37,7 @@ class Base(
 class NamespaceTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "namespace"
 
-    id = sa.Column(
-        sa.Integer,
-        primary_key=True,
-        autoincrement=True,
-        nullable=False,
-        unique=True)
+    id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(
         sa.String(NS_NAME_MAX_LEN),
         primary_key=True,
