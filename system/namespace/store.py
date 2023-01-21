@@ -27,6 +27,7 @@ def get_test_namespace() -> Namespace:
             "suggest": [
                 {
                     "name": "random",
+                    "max": None,
                 },
             ],
             "users": {
