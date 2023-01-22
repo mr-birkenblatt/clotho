@@ -6,7 +6,7 @@ import torch
 from annoy import AnnoyIndex
 
 from misc.io import named_write, open_read, open_write, remove_file
-from misc.util import check_pid_exists, safe_ravel
+from misc.util import check_pid_exists, ideal_thread_count, safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
@@ -108,7 +108,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             aindex.on_disk_build(tname)
             for ix, embed in enumerate(embeds):
                 aindex.add_item(ix, safe_ravel(embed).tolist())
-            aindex.build(self._trees)
+            aindex.build(self._trees, n_jobs=max(1, ideal_thread_count() // 4))
             aindex.unload()
 
     def do_get_internal_distance(
