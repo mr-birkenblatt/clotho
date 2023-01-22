@@ -5,7 +5,6 @@ from typing import Iterable, Literal
 
 import torch
 
-from misc.util import ideal_thread_count
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,

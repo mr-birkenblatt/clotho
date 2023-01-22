@@ -6,7 +6,7 @@ import torch
 from annoy import AnnoyIndex
 
 from misc.io import named_write, open_read, open_write, remove_file
-from misc.util import check_pid_exists, ideal_thread_count, safe_ravel
+from misc.util import check_pid_exists, safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
