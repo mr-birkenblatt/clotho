@@ -108,7 +108,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             aindex.on_disk_build(tname)
             for ix, embed in enumerate(embeds):
                 aindex.add_item(ix, safe_ravel(embed).tolist())
-            aindex.build(self._trees, n_jobs=max(1, ideal_thread_count() // 4))
+            aindex.build(self._trees, n_jobs=2)
             aindex.unload()
 
     def do_get_internal_distance(

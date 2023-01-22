@@ -258,7 +258,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         def on_err(err: BaseException) -> None:
             self._err = err
 
-        tcount = max(1, ideal_thread_count() // 2)
+        tcount = 2
         shards: list[list[int]] = [[] for _ in range(tcount)]
         for shard in range(shard_count):
             shards[shard % len(shards)].append(shard)
