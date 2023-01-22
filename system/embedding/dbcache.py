@@ -20,7 +20,8 @@ from system.namespace.namespace import Namespace
 MODULE_VERSION = 1
 
 
-MAIN_ORDER_SEQ = sa.Sequence("main_order_seq", start=1, increment=1)
+MAIN_ORDER_SEQ: sa.Sequence = sa.Sequence(
+    "main_order_seq", start=1, increment=1)
 
 
 class EmbedTable(Base):  # pylint: disable=too-few-public-methods
@@ -43,7 +44,6 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         sa.Integer,
         MAIN_ORDER_SEQ,
         nullable=False,
-        unique=True,
         server_default=MAIN_ORDER_SEQ.next_value())
     embedding = sa.Column(
         sa.ARRAY(sa.Float),
