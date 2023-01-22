@@ -72,10 +72,10 @@ def get_path(ns_name: str, module: ModuleName) -> str:
     return module_obj["path"]
 
 
-def init(ns_name: str, module: ModuleName) -> None:
+def init(ns_name: str, module: ModuleName, *, force: bool) -> None:
     namespace = get_namespace(ns_name)
     module_obj = get_module_obj(namespace, module)
-    if module_obj.is_module_init():
+    if not force and module_obj.is_module_init():
         print(
             f"module {module} already initialized "
             f"(ns: {namespace.get_name()})")
@@ -106,7 +106,7 @@ def run() -> None:
         stdout.write(f"{path}")
         stdout.flush()
     elif args.command == "init":
-        init(ns_name, module)
+        init(ns_name, module, force=args.force)
     elif args.command == "xfer":
         xfer(ns_name, module, args.dest)
     else:
@@ -125,6 +125,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--module", default="link", help="the module")
     parser.add_argument(
         "--dest", default=None, help="the destination namespace for 'xfer'")
+    parser.add_argument(
+        "--force",
+        default=False,
+        action="store_true",
+        help="forces initialization")
     return parser.parse_args()
 
 
