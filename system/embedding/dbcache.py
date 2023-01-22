@@ -20,6 +20,9 @@ from system.namespace.namespace import Namespace
 MODULE_VERSION = 1
 
 
+MAIN_ORDER_SEQ = sa.Sequence("main_order_seq", start=1, increment=1)
+
+
 class EmbedTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "embed"
 
@@ -38,9 +41,10 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False)
     main_order = sa.Column(
         sa.Integer,
-        sa.Sequence("main_order_seq", start=1),
+        MAIN_ORDER_SEQ,
         nullable=False,
-        unique=True)
+        unique=True,
+        server_default=MAIN_ORDER_SEQ.next_value())
     embedding = sa.Column(
         sa.ARRAY(sa.Float),
         nullable=False)
