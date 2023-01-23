@@ -102,6 +102,7 @@ class Noise(nn.Module):
 class Model(nn.Module):
     def __init__(self, version: int) -> None:
         super().__init__()
+        assert version >= 0
         self._bert_parent = DistilBertModel.from_pretrained(
             "distilbert-base-uncased")
         self._bert_child = DistilBertModel.from_pretrained(
@@ -190,8 +191,69 @@ class Model(nn.Module):
             child_cls.reshape([batch_size, -1, 1])).reshape([-1, 1])
 
 
+class BaselineModel(nn.Module):
+    def __init__(self, version: int) -> None:
+        super().__init__()
+        assert version < 0
+        self._bert = DistilBertModel.from_pretrained(
+            "distilbert-base-uncased")
+        if version == -2:
+            self._agg = AGG_CLS
+        else:
+            self._agg = AGG_MEAN
+        self._version = version
+
+    def set_epoch(self, epoch: int) -> None:
+        pass
+
+    def get_version(self) -> int:
+        return self._version
+
+    def get_agg(self, lhs: torch.Tensor) -> torch.Tensor:
+        if self._agg == AGG_CLS:
+            return lhs[:, 0]
+        if self._agg == AGG_MEAN:
+            return torch.mean(lhs, dim=1)
+        raise ValueError(f"unknown aggregation: {self._agg}")
+
+    def _embed(
+            self,
+            input_ids: torch.Tensor,
+            attention_mask: torch.Tensor) -> torch.Tensor:
+        outputs = self._bert(
+            input_ids=input_ids, attention_mask=attention_mask)
+        return self.get_agg(outputs.last_hidden_state)
+
+    def get_parent_embed(
+            self,
+            input_ids: torch.Tensor,
+            attention_mask: torch.Tensor) -> torch.Tensor:
+        return self._embed(input_ids, attention_mask)
+
+    def get_child_embed(
+            self,
+            input_ids: torch.Tensor,
+            attention_mask: torch.Tensor) -> torch.Tensor:
+        return self._embed(input_ids, attention_mask)
+
+    def forward(self, x: dict[ProviderRole, TokenizedInput]) -> torch.Tensor:
+        parent_cls = self.get_parent_embed(
+            input_ids=x["parent"]["input_ids"],
+            attention_mask=x["parent"]["attention_mask"])
+        child_cls = self.get_child_embed(
+            input_ids=x["child"]["input_ids"],
+            attention_mask=x["child"]["attention_mask"])
+        batch_size = parent_cls.shape[0]
+        return torch.bmm(
+            parent_cls.reshape([batch_size, 1, -1]),
+            child_cls.reshape([batch_size, -1, 1])).reshape([-1, 1])
+
+
+EitherModel = Model | BaselineModel
+
+
 class TrainingHarness(nn.Module):
-    def __init__(self, model: Model) -> None:
+    def __init__(self, model: EitherModel) -> None:
         super().__init__()
         self._model = model
         self._softmax = nn.Softmax(dim=1)
@@ -211,13 +273,19 @@ class TrainingHarness(nn.Module):
         return preds, self._loss(preds, labels)
 
 
-def load_model(fin: IO[bytes], version: int, is_harness: bool) -> Model:
+def load_model(
+        fin: IO[bytes],
+        version: int,
+        is_harness: bool) -> EitherModel:
     verbosity = logging.get_verbosity()
     try:
         logging.set_verbosity_error()
 
         device = get_device()
-        model = Model(version=version)
+        if version < 0:
+            model: EitherModel = BaselineModel(version=version)
+        else:
+            model = Model(version=version)
         if is_harness:
             harness = TrainingHarness(model)
             harness.load_state_dict(torch.load(fin, map_location=device))
@@ -231,7 +299,7 @@ def load_model(fin: IO[bytes], version: int, is_harness: bool) -> Model:
 class TransformerEmbedding(EmbeddingProvider):
     def __init__(
             self,
-            model: Model,
+            model: EitherModel,
             method: str,
             role: ProviderRole,
             embedding_name: str,
