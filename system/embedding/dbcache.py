@@ -1,7 +1,7 @@
 import collections
 import contextlib
-import io
 import os
+import shutil
 import threading
 from typing import IO, Iterable, Iterator
 
@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from db.base import Base, NamespaceTable
 from db.db import DBConnector
-from misc.io import open_read
+from misc.io import ensure_folder, open_read
 from misc.util import file_hash_size, get_file_hash, safe_ravel
 from model.embedding import EmbeddingProvider, ProviderEnum, ProviderRole
 from system.embedding.index_lookup import EmbeddingCache
@@ -35,7 +35,6 @@ class ModelsTable(Base):  # pylint: disable=too-few-public-methods
     name = sa.Column(sa.String)
     version = sa.Column(sa.Integer)
     is_harness = sa.Column(sa.Boolean)
-    data = sa.Column(sa.LargeBinary)
 
 
 EMBED_CONFIG_ID: sa.Sequence = sa.Sequence(
@@ -112,6 +111,11 @@ def initialize_cache(db: DBConnector) -> None:
         "dbcache")
 
 
+def model_registry(model_hash: str) -> str:
+    root = ensure_folder(Namespace.get_root_for("_models"))
+    return os.path.join(root, f"{model_hash}.pkl")
+
+
 def register_model(
         db: DBConnector,
         root: str,
@@ -127,17 +131,15 @@ def register_model(
         rix = model_name.rfind(".")
         if rix >= 0:
             model_name = model_name[:rix]
-        with open_read(model_file, text=False) as fin:
-            blob = fin.read()
         values = {
             "model_hash": model_hash,
             "name": model_name,
             "version": version,
             "is_harness": is_harness,
-            "data": blob,
         }
         stmt = sa.insert(ModelsTable).values(values)
         conn.execute(stmt)
+        shutil.copyfile(model_file, model_registry(model_hash))
     return model_hash
 
 
@@ -148,7 +150,6 @@ def read_db_model(
     with db.get_connection() as conn:
         stmt = sa.select(
             [
-                ModelsTable.data,
                 ModelsTable.name,
                 ModelsTable.version,
                 ModelsTable.is_harness,
@@ -157,8 +158,8 @@ def read_db_model(
         model_name = row.name
         version = row.version
         is_harness = row.is_harness
-        data = io.BytesIO(row.data)
-    yield data, model_name, version, is_harness
+    with open_read(model_registry(model_hash), text=False) as fout:
+        yield fout, model_name, version, is_harness
 
 
 class DBEmbeddingCache(EmbeddingCache):
