@@ -85,7 +85,6 @@ def call_index_lookup(
                 # NOTE: only remove the lock if we were is successful
                 index_lookup.set_index_lock_state(role, shard, None)
     else:
-        embed = deserialize_embedding(sys.stdin.read())
         for shard in shards:
             for mhash, distance in index_lookup.proc_get_closest(
                     role, shard, embed, count, ignore_index=precise):

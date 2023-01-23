@@ -64,15 +64,12 @@ BUFF_SIZE = 65536  # 64KiB
 
 def get_file_hash(fname: str) -> str:
     blake = hashlib.blake2b(digest_size=32)
-    buff = bytearray(BUFF_SIZE)
-    memv = memoryview(buff)
     with open_read(fname, text=False) as fin:
         while True:
-            # FIXME: mypy bug
-            rlen = fin.readinto(memv)  # type: ignore
-            if rlen is None:
+            buff = fin.read(BUFF_SIZE)
+            if not buff:
                 break
-            blake.update(memv[:rlen])
+            blake.update(buff)
     return blake.hexdigest()
 
 
