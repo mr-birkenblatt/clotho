@@ -28,7 +28,10 @@ class ModelsTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "models"
 
     model_hash = sa.Column(
-        sa.String(file_hash_size()), primary_key=True, nullable=False)
+        sa.String(file_hash_size()),
+        primary_key=True,
+        nullable=False,
+        unique=True)
     name = sa.Column(sa.String)
     version = sa.Column(sa.Integer)
     is_harness = sa.Column(sa.Boolean)
@@ -60,6 +63,7 @@ class EmbedConfigTable(Base):  # pylint: disable=too-few-public-methods
         sa.Integer,
         EMBED_CONFIG_ID,
         nullable=False,
+        unique=True,
         server_default=EMBED_CONFIG_ID.next_value())
 
     idx_config_id = sa.Index("config_id")
@@ -87,6 +91,7 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         sa.Integer,
         MAIN_ORDER_SEQ,
         nullable=False,
+        unique=True,
         server_default=MAIN_ORDER_SEQ.next_value())
     embedding = sa.Column(
         sa.ARRAY(sa.Float),
