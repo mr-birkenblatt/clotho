@@ -54,9 +54,9 @@ class DBUserStore(UserStore):
     def is_module_init(self) -> bool:
         return self._db.is_module_init(self, MODULE_VERSION)
 
-    def initialize_module(self) -> None:
+    def initialize_module(self, *, force: bool) -> None:
         self._db.create_module_tables(
-            self, MODULE_VERSION, [UsersTable])
+            self, MODULE_VERSION, [UsersTable], force=force)
 
     def get_user_by_id(self, user_id: str) -> User:
         with self._db.get_connection() as conn:

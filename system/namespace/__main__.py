@@ -80,7 +80,7 @@ def init(ns_name: str, module: ModuleName, *, force: bool) -> None:
             f"module {module} already initialized "
             f"(ns: {namespace.get_name()})")
         return
-    module_obj.initialize_module()
+    module_obj.initialize_module(force=force)
 
 
 def xfer(ns_name: str, module: ModuleName, ns_dest: str) -> None:

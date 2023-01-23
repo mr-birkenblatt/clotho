@@ -103,12 +103,13 @@ def is_cache_init(db: DBConnector) -> bool:
     return db.is_module_init(EmbeddingStore, MODULE_VERSION, "dbcache")
 
 
-def initialize_cache(db: DBConnector) -> None:
+def initialize_cache(db: DBConnector, *, force: bool) -> None:
     db.create_module_tables(
         EmbeddingStore,
         MODULE_VERSION,
         [EmbedTable, EmbedConfigTable, ModelsTable],
-        "dbcache")
+        "dbcache",
+        force=force)
 
 
 def model_registry(model_hash: str) -> str:
@@ -123,7 +124,7 @@ def register_model(
         version: int,
         is_harness: bool) -> str:
     if not is_cache_init(db):
-        initialize_cache(db)
+        initialize_cache(db, force=False)
     with db.get_connection() as conn:
         model_file = os.path.join(root, fname)
         model_hash = get_file_hash(model_file)
@@ -200,8 +201,8 @@ class DBEmbeddingCache(EmbeddingCache):
     def is_cache_init(self) -> bool:
         return is_cache_init(self._db)
 
-    def initialize_cache(self) -> None:
-        initialize_cache(self._db)
+    def initialize_cache(self, *, force: bool) -> None:
+        initialize_cache(self._db, force=force)
 
     def _get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         nid = self._get_nid()

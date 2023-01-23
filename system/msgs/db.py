@@ -87,9 +87,9 @@ class DBStore(MessageStore):
     def is_module_init(self) -> bool:
         return self._db.is_module_init(self, MODULE_VERSION)
 
-    def initialize_module(self) -> None:
+    def initialize_module(self, *, force: bool) -> None:
         self._db.create_module_tables(
-            self, MODULE_VERSION, [MsgsTable, TopicsTable])
+            self, MODULE_VERSION, [MsgsTable, TopicsTable], force=force)
 
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()

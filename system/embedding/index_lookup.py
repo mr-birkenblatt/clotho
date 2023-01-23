@@ -34,7 +34,7 @@ class EmbeddingCache:
     def is_cache_init(self) -> bool:
         return True
 
-    def initialize_cache(self) -> None:
+    def initialize_cache(self, *, force: bool) -> None:
         raise UnsupportedInit(
             f"{self.cache_name()} cache does not support initialization!")
 
@@ -157,8 +157,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def is_module_init(self) -> bool:
         return self._cache.is_cache_init()
 
-    def initialize_module(self) -> None:
-        return self._cache.initialize_cache()
+    def initialize_module(self, *, force: bool) -> None:
+        return self._cache.initialize_cache(force=force)
 
     def do_build_index(
             self,

@@ -22,7 +22,7 @@ class ModuleBase:
     def module_name() -> ModuleName:
         raise NotImplementedError()
 
-    def initialize_module(self) -> None:
+    def initialize_module(self, *, force: bool) -> None:
         raise UnsupportedInit(
             f"{self.module_name()} does not support initialization!")
 

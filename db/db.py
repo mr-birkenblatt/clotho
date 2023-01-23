@@ -117,7 +117,9 @@ class DBConnector:
             module: 'ModuleBase' | Type['ModuleBase'],
             version: int,
             tables: list[Type['Base']],
-            submodule: str | None = None) -> None:
+            submodule: str | None = None,
+            *,
+            force: bool) -> None:
         if not self.is_init():
             self.init_db()
         current_version = self.get_module_version(module, submodule)
