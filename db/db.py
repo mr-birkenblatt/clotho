@@ -123,9 +123,9 @@ class DBConnector:
         if not self.is_init():
             self.init_db()
         current_version = self.get_module_version(module, submodule)
-        if current_version == version:
+        if not force and current_version == version:
             return
-        if current_version != 0:
+        if not force and current_version != 0:
             raise ValueError(
                 f"cannot upgrade from version {current_version} to {version}")
         self.create_tables(tables)
