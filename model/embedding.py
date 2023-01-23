@@ -112,7 +112,10 @@ TransformerEmbeddingModule = TypedDict('TransformerEmbeddingModule', {
 NoEmbeddingModule = TypedDict('NoEmbeddingModule', {
     "name": Literal["none"],
 })
-EmbeddingProviderModule = TransformerEmbeddingModule | NoEmbeddingModule
+EmbeddingProviderModule = (
+    DBTransformerEmbeddingModule |
+    TransformerEmbeddingModule |
+    NoEmbeddingModule)
 
 
 def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:

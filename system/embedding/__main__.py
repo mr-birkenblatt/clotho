@@ -16,17 +16,19 @@ def run() -> None:
         embed_store.self_test("child", None)
         return
     msg_store = get_message_store(namespace)
+    precise: bool = args.precise
     if args.text is not None:
         name_from: Literal["parent"] = "parent"
         name_to: Literal["child"] = "child"
         print(f"from: {name_from} to: {name_to}")
         msg = Message(msg=args.text)
         mhash = msg_store.write_message(msg)
-        embed = embed_store.get_embedding(msg_store, name_from, mhash)
+        embed = embed_store.get_embedding(
+            msg_store, name_from, mhash, no_index=precise)
         divide = "=" * 42
         print(f"query: {msg.get_text()}")
         for out in embed_store.get_closest(
-                name_to, embed, 20, precise=args.precise):
+                name_to, embed, 20, precise=precise):
             if args.count:
                 continue
             print(divide)
@@ -37,7 +39,7 @@ def run() -> None:
             count += 1
         print(f"{count} messages available")
     else:
-        embed_store.ensure_all(msg_store)
+        embed_store.ensure_all(msg_store, no_index=precise)
 
 
 def parse_args() -> argparse.Namespace:
@@ -53,7 +55,9 @@ def parse_args() -> argparse.Namespace:
         "--precise",
         default=False,
         action="store_true",
-        help="whether index lookup should be precise (only used with --text)")
+        help=(
+            "whether index lookup should be precise "
+            "(this will prevent creation of an index)"))
     parser.add_argument(
         "--count",
         default=False,

@@ -206,7 +206,7 @@ class DBEmbeddingCache(EmbeddingCache):
 
     def _get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         nid = self._get_nid()
-        role = provider.get_role()
+        role = provider.get_enum()
         model_hash = provider.get_embedding_hash()
 
         def get_embedding_id(conn: sa.engine.Connection) -> int | None:

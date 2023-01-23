@@ -12,7 +12,9 @@ class NoEmbedding(EmbeddingStore):
             self,
             role: ProviderRole,
             mhash: MHash,
-            embed: torch.Tensor) -> None:
+            embed: torch.Tensor,
+            *,
+            no_index: bool) -> None:
         pass
 
     def do_get_embedding(

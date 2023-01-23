@@ -296,11 +296,14 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             self,
             role: ProviderRole,
             mhash: MHash,
-            embed: torch.Tensor) -> None:
+            embed: torch.Tensor,
+            *,
+            no_index: bool) -> None:
         cache = self._cache
         eid = self._get_embedding_id(role)
         cache.set_map_embedding(eid, mhash, embed)
-        self.maybe_request_build(role)
+        if not no_index:
+            self.maybe_request_build(role)
 
     def do_get_embedding(
             self,

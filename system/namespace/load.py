@@ -189,6 +189,12 @@ def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
             "version": int(obj["version"]),
             "is_harness": bool(obj["is_harness"]),
         }
+    elif name == "dbtransformer":
+        res = {
+            "name": "dbtransformer",
+            "conn": obj["conn"],
+            "model_hash": obj["model_hash"],
+        }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res

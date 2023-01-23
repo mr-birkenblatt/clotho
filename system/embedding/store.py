@@ -39,16 +39,22 @@ class EmbeddingStore(ModuleBase):
             self,
             role: ProviderRole,
             mhash: MHash,
-            embed: torch.Tensor) -> None:
+            embed: torch.Tensor,
+            *,
+            no_index: bool) -> None:
         raise NotImplementedError()
 
     def add_embedding(
-            self, role: ProviderRole, msg: Message) -> torch.Tensor:
+            self,
+            role: ProviderRole,
+            msg: Message,
+            *,
+            no_index: bool) -> torch.Tensor:
         provider = self._providers[role]
         embed = provider.get_embedding(msg)
         if len(embed.shape) != 1:
             raise ValueError(f"bad embedding shape: {embed.shape}")
-        self.do_add_embedding(role, msg.get_hash(), embed)
+        self.do_add_embedding(role, msg.get_hash(), embed, no_index=no_index)
         return embed
 
     def do_get_embedding(
@@ -61,14 +67,16 @@ class EmbeddingStore(ModuleBase):
             self,
             msg_store: MessageStore,
             role: ProviderRole,
-            mhash: MHash) -> torch.Tensor:
+            mhash: MHash,
+            *,
+            no_index: bool) -> torch.Tensor:
         if role not in self._providers:
             raise ValueError(f"{role} not found in {self._providers}")
         res = self.do_get_embedding(role, mhash)
         if res is not None:
             return res
         msg = msg_store.read_message(mhash)
-        return self.add_embedding(role, msg)
+        return self.add_embedding(role, msg, no_index=no_index)
 
     def get_all_embeddings(
             self,
@@ -83,17 +91,19 @@ class EmbeddingStore(ModuleBase):
         for role in PROVIDER_ROLES:
             for mhash, embed in oembed.get_all_embeddings(
                     role, progress_bar=progress_bar):
-                self.do_add_embedding(role, mhash, embed)
+                self.do_add_embedding(role, mhash, embed, no_index=True)
 
     def ensure_all(
             self,
             msg_store: MessageStore,
-            roles: list[ProviderRole] | None = None) -> None:
+            roles: list[ProviderRole] | None = None,
+            *,
+            no_index: bool) -> None:
         if roles is None:
             roles = self.get_roles()
         for role in roles:
             for mhash in msg_store.enumerate_messages(progress_bar=True):
-                self.get_embedding(msg_store, role, mhash)
+                self.get_embedding(msg_store, role, mhash, no_index=no_index)
 
     def self_test(self, role: ProviderRole, count: int | None) -> None:
         raise NotImplementedError()
@@ -126,7 +136,7 @@ class EmbeddingStore(ModuleBase):
             precise: bool) -> Iterable[MHash]:
         yield from self.do_get_closest(
             role,
-            self.get_embedding(msg_store, role, mhash),
+            self.get_embedding(msg_store, role, mhash, no_index=precise),
             count,
             precise=precise)
 
