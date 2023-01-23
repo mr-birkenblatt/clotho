@@ -31,7 +31,10 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             shard_size: int,
             is_dot: bool) -> None:
         super().__init__(namespace, providers, cache, shard_size)
-        self._path = embed_root
+        self._path = os.path.join(
+            embed_root,
+            "annoy",
+            f"t{trees}-s{shard_size}-{'d' if is_dot else 'c'}")
         self._trees = trees
         self._annoy_cache: dict[tuple[ProviderRole, int], AnnoyIndex] = {}
         self._is_dot = is_dot

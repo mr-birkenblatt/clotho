@@ -25,10 +25,19 @@ def get_provider_role(role: str) -> ProviderRole:
 
 
 class EmbeddingProvider:
-    def __init__(self, method: str, role: ProviderRole) -> None:
-        self._redis_name = f"{method}:{role}"
+    def __init__(
+            self,
+            method: str,
+            role: ProviderRole,
+            embedding_name: str,
+            embedding_hash: str,
+            embedding_version: int) -> None:
+        self._redis_name = f"{method}:{role}:{embedding_hash}"
         self._file_name = f"{method}.{role}"
         self._role = role
+        self._embedding_name = embedding_name
+        self._embedding_hash = embedding_hash
+        self._embedding_version = embedding_version
 
     def get_enum(self) -> ProviderEnum:
         if self._role == PROVIDER_CHILD:
@@ -45,6 +54,15 @@ class EmbeddingProvider:
 
     def get_file_name(self) -> str:
         return self._file_name
+
+    def get_embedding_name(self) -> str:
+        return self._embedding_name
+
+    def get_embedding_hash(self) -> str:
+        return self._embedding_hash
+
+    def get_embedding_version(self) -> int:
+        return self._embedding_version
 
     def get_embedding(self, msg: Message) -> torch.Tensor:
         raise NotImplementedError()
@@ -80,6 +98,11 @@ def get_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
     return res
 
 
+DBTransformerEmbeddingModule = TypedDict('DBTransformerEmbeddingModule', {
+    "name": Literal["dbtransformer"],
+    "conn": str,
+    "model_hash": str,
+})
 TransformerEmbeddingModule = TypedDict('TransformerEmbeddingModule', {
     "name": Literal["transformer"],
     "fname": str,
@@ -94,6 +117,11 @@ EmbeddingProviderModule = TransformerEmbeddingModule | NoEmbeddingModule
 
 def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
     pobj = namespace.get_embedding_providers()
+    if pobj["name"] == "dbtransformer":
+        from model.transformer_embed import load_db_providers
+
+        db = namespace.get_db_connector(pobj["conn"])
+        return load_db_providers(db, pobj["model_hash"])
     if pobj["name"] == "transformer":
         from model.transformer_embed import load_providers
 
@@ -104,7 +132,7 @@ def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
             pobj["is_harness"])
     if pobj["name"] == "none":
         return {
-            "parent": NoEmbeddingProvider("none", "parent"),
-            "child": NoEmbeddingProvider("none", "child"),
+            "parent": NoEmbeddingProvider("none", "parent", "none", "none", 0),
+            "child": NoEmbeddingProvider("none", "child", "none", "none", 0),
         }
     raise ValueError(f"unknown embed provider: {pobj}")

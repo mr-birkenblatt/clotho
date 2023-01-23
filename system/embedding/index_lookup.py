@@ -40,31 +40,31 @@ class EmbeddingCache:
 
     def set_map_embedding(
             self,
-            provider: EmbeddingProvider,
+            embedding_id: int,
             mhash: MHash,
             embed: torch.Tensor) -> None:
         raise NotImplementedError()
 
     def get_map_embedding(
-            self,
-            provider: EmbeddingProvider,
-            mhash: MHash) -> torch.Tensor | None:
+            self, embedding_id: int, mhash: MHash) -> torch.Tensor | None:
         raise NotImplementedError()
 
-    def get_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
+    def get_entry_by_index(self, embedding_id: int, *, index: int) -> MHash:
         raise NotImplementedError()
 
-    def embedding_count(self, provider: EmbeddingProvider) -> int:
+    def embedding_count(self, embedding_id: int) -> int:
         raise NotImplementedError()
 
     def embeddings(
             self,
-            provider: EmbeddingProvider,
+            embedding_id: int,
             *,
             start_ix: int,
             limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
+        raise NotImplementedError()
+
+    def get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         raise NotImplementedError()
 
 
@@ -80,6 +80,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         self._cache = cache
         self._shard_size = shard_size
 
+        self._embedding_ids: dict[ProviderRole, int] = {}
         self._request_build: set[ProviderRole] = set()
         self._lock = threading.RLock()
         self._cond = threading.Condition(lock=self._lock)
@@ -130,8 +131,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         if role in self._request_build:
             return
         cache = self._cache
-        provider = self.get_provider(role)
-        shard = self.shard_of_index(cache.embedding_count(provider)) - 1
+        eid = self._get_embedding_id(role)
+        shard = self.shard_of_index(cache.embedding_count(eid)) - 1
         if shard >= 0 and not self.is_shard_available(role, shard):
             with self._lock:
                 self._request_build.add(role)
@@ -188,39 +189,47 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
     def num_dimensions(self, role: ProviderRole) -> int:
         return self.get_provider(role).num_dimensions()
 
+    def _get_embedding_id(self, role: ProviderRole) -> int:
+        res = self._embedding_ids.get(role)
+        if res is None:
+            provider = self.get_provider(role)
+            res = self._cache.get_embedding_id_for(provider)
+            self._embedding_ids[role] = res
+        return res
+
     def get_all_embeddings(
             self,
             role: ProviderRole,
             *,
             progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
         cache = self._cache
-        provider = self.get_provider(role)
+        eid = self._get_embedding_id(role)
         if not progress_bar:
             yield from (
                 (mhash, embed)
                 for _, mhash, embed in cache.embeddings(
-                    provider, start_ix=0, limit=None))
+                    eid, start_ix=0, limit=None))
             return
         # FIXME: add stubs
         from tqdm.auto import tqdm  # type: ignore
 
-        count = cache.embedding_count(provider)
+        count = cache.embedding_count(eid)
         with tqdm(total=count) as pbar:
             for _, mhash, embed in cache.embeddings(
-                    provider, start_ix=0, limit=None):
+                    eid, start_ix=0, limit=None):
                 yield (mhash, embed)
                 pbar.update(1)
 
     def proc_build_index_shard(self, role: ProviderRole, shard: int) -> None:
         cache = self._cache
-        provider = self.get_provider(role)
+        eid = self._get_embedding_id(role)
         shard_size = self.shard_size()
         if self.is_shard_available(role, shard):
             return
         start_ix = self.get_shard_start_ix(shard)
         cur_embeds: list[tuple[MHash, torch.Tensor]] = []
         for _, mhash, embed in cache.embeddings(
-                provider, start_ix=start_ix, limit=shard_size):
+                eid, start_ix=start_ix, limit=shard_size):
             cur_embeds.append((mhash, embed))
         if len(cur_embeds) == shard_size:
             self.do_build_index(
@@ -244,8 +253,8 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
 
     def _build_index(self, role: ProviderRole) -> None:
         cache = self._cache
-        provider = self.get_provider(role)
-        total_count = cache.embedding_count(provider)
+        eid = self._get_embedding_id(role)
+        total_count = cache.embedding_count(eid)
         shard_count = self.shard_of_index(total_count)
 
         def process(tix: int, line: str) -> None:
@@ -289,16 +298,16 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             mhash: MHash,
             embed: torch.Tensor) -> None:
         cache = self._cache
-        provider = self.get_provider(role)
-        cache.set_map_embedding(provider, mhash, embed)
+        eid = self._get_embedding_id(role)
+        cache.set_map_embedding(eid, mhash, embed)
         self.maybe_request_build(role)
 
     def do_get_embedding(
             self,
             role: ProviderRole,
             mhash: MHash) -> torch.Tensor | None:
-        provider = self.get_provider(role)
-        return self._cache.get_map_embedding(provider, mhash)
+        eid = self._get_embedding_id(role)
+        return self._cache.get_map_embedding(eid, mhash)
 
     def do_get_internal_distance(
             self,
@@ -310,17 +319,16 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
 
     def self_test(self, role: ProviderRole, count: int | None) -> None:
         cache = self._cache
-        provider = self.get_provider(role)
+        eid = self._get_embedding_id(role)
         is_bigger_better = self.is_bigger_better()
         any_compute = False
-        for ix_a, _, embed_a in cache.embeddings(
-                provider, start_ix=0, limit=None):
+        for ix_a, _, embed_a in cache.embeddings(eid, start_ix=0, limit=None):
             min_val = None
             max_val = None
             same_val = None
             line = 0
             for ix_b, _, embed_b in cache.embeddings(
-                    provider, start_ix=0, limit=None):
+                    eid, start_ix=0, limit=None):
                 external = self.get_distance(embed_a, embed_b)
                 # print(
                 #     ix_a,
@@ -383,9 +391,9 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             precise: bool) -> Iterable[MHash]:
         start_time = time.monotonic()
         cache = self._cache
-        provider = self.get_provider(role)
+        eid = self._get_embedding_id(role)
         candidates: dict[int, list[tuple[MHash, float]]] = {}
-        total_count = cache.embedding_count(provider)
+        total_count = cache.embedding_count(eid)
         shard_count = self.shard_of_index(total_count) + 1
         shard_size = self.shard_size()
 
@@ -478,12 +486,12 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             ignore_index: bool) -> Iterable[tuple[MHash, float]]:
         precise = ignore_index
         cache = self._cache
-        provider = self.get_provider(role)
+        eid = self._get_embedding_id(role)
         start_ix = self.get_shard_start_ix(shard)
 
         if not precise and self.can_read_index(role, shard):
             yield from (
-                (cache.get_entry_by_index(provider, start_ix + ix), dist)
+                (cache.get_entry_by_index(eid, index=start_ix + ix), dist)
                 for ix, dist in self.get_index_closest(
                     role, shard, embed, count)
             )
@@ -492,7 +500,7 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
         yield from self._precise_closest(embed, count, (
             (mhash, other_embed)
             for _, mhash, other_embed in
-            cache.embeddings(provider, start_ix=start_ix, limit=shard_size)))
+            cache.embeddings(eid, start_ix=start_ix, limit=shard_size)))
 
     def _precise_closest(
             self,

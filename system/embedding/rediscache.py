@@ -15,18 +15,31 @@ class RedisEmbeddingCache(EmbeddingCache):
     def __init__(self, ns_key: ConfigKey) -> None:
         super().__init__()
         self._redis = RedisConnection(ns_key, "embed")
+        self._keys: list[str] = []
 
     @staticmethod
     def cache_name() -> str:
         return "redis"
 
-    def _get_embedding_key(
-            self, provider: EmbeddingProvider, mhash: MHash) -> str:
+    def get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         name = provider.get_redis_name()
+        try:
+            return self._keys.index(name)
+        except ValueError:
+            pass
+        embedding_id = len(self._keys)
+        self._keys.append(name)
+        return embedding_id
+
+    def _get_embedding_key(
+            self,
+            embedding_id: int,
+            mhash: MHash) -> str:
+        name = self._keys[embedding_id]
         return f"{self._redis.get_prefix()}:map:{name}:{mhash.to_parseable()}"
 
-    def _get_order_key(self, provider: EmbeddingProvider) -> str:
-        name = provider.get_redis_name()
+    def _get_order_key(self, embedding_id: int) -> str:
+        name = self._keys[embedding_id]
         return f"{self._redis.get_prefix()}:order:{name}"
 
     def _serialize(self, embed: torch.Tensor) -> bytes:
@@ -42,10 +55,10 @@ class RedisEmbeddingCache(EmbeddingCache):
 
     def set_map_embedding(
             self,
-            provider: EmbeddingProvider,
+            embedding_id: int,
             mhash: MHash,
             embed: torch.Tensor) -> None:
-        key = self._get_embedding_key(provider, mhash)
+        key = self._get_embedding_key(embedding_id, mhash)
         with self._redis.get_connection(depth=0) as conn:
             with conn.pipeline() as pipe:
                 pipe.exists(key)
@@ -55,35 +68,32 @@ class RedisEmbeddingCache(EmbeddingCache):
                 conn.rpush(key, mhash.to_parseable().encode("utf-8"))
 
     def get_map_embedding(
-            self,
-            provider: EmbeddingProvider,
-            mhash: MHash) -> torch.Tensor | None:
-        key = self._get_embedding_key(provider, mhash)
+            self, embedding_id: int, mhash: MHash) -> torch.Tensor | None:
+        key = self._get_embedding_key(embedding_id, mhash)
         with self._redis.get_connection(depth=0) as conn:
             res = conn.get(key)
         if res is None:
             return None
         return self._deserialize(res)
 
-    def get_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
-        key = self._get_order_key(provider)
+    def get_entry_by_index(self, embedding_id: int, *, index: int) -> MHash:
+        key = self._get_order_key(embedding_id)
         return self._get_index(key, index)
 
-    def embedding_count(self, provider: EmbeddingProvider) -> int:
-        key = self._get_order_key(provider)
+    def embedding_count(self, embedding_id: int) -> int:
+        key = self._get_order_key(embedding_id)
         return self._embeddings_size(key)
 
     def embeddings(
             self,
-            provider: EmbeddingProvider,
+            embedding_id: int,
             *,
             start_ix: int,
             limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        key = self._get_order_key(provider)
+        key = self._get_order_key(embedding_id)
         return self._get_embeddigs(
-            key, provider, start_ix=start_ix, limit=limit)
+            key, embedding_id, start_ix=start_ix, limit=limit)
 
     def _get_index(self, key: str, index: int) -> MHash:
         with self._redis.get_connection(depth=1) as conn:
@@ -95,7 +105,7 @@ class RedisEmbeddingCache(EmbeddingCache):
     def _get_embeddigs(
             self,
             key: str,
-            provider: EmbeddingProvider,
+            embedding_id: int,
             *,
             start_ix: int,
             limit: int | None,
@@ -107,7 +117,7 @@ class RedisEmbeddingCache(EmbeddingCache):
             return MHash.parse(elem.decode("utf-8"))
 
         def as_tensor(mhash: MHash) -> torch.Tensor:
-            tres = self.get_map_embedding(provider, mhash)
+            tres = self.get_map_embedding(embedding_id, mhash)
             if tres is None:
                 raise KeyError(f"missing key: {mhash}")
             return tres

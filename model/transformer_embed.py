@@ -1,5 +1,5 @@
 import os
-from typing import Callable, cast, Iterable, Literal, TypedDict
+from typing import Callable, cast, IO, Iterable, Literal, TypedDict
 
 import torch
 from torch import nn
@@ -11,9 +11,11 @@ from transformers import (  # type: ignore
     logging,
 )
 
+from db.db import DBConnector
 from misc.io import listdir, open_read, remove_file
 from misc.util import (
     extract_number,
+    get_file_hash,
     highest_number,
     json_load,
     retain_some,
@@ -22,8 +24,11 @@ from misc.util import (
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
+    PROVIDER_CHILD,
+    PROVIDER_PARENT,
     ProviderRole,
 )
+from system.embedding.dbcache import read_db_model
 from system.msgs.message import Message
 
 
@@ -206,7 +211,7 @@ class TrainingHarness(nn.Module):
         return preds, self._loss(preds, labels)
 
 
-def load_model(fname: str, version: int, is_harness: bool) -> Model:
+def load_model(fin: IO[bytes], version: int, is_harness: bool) -> Model:
     verbosity = logging.get_verbosity()
     try:
         logging.set_verbosity_error()
@@ -215,9 +220,9 @@ def load_model(fname: str, version: int, is_harness: bool) -> Model:
         model = Model(version=version)
         if is_harness:
             harness = TrainingHarness(model)
-            harness.load_state_dict(torch.load(fname, map_location=device))
+            harness.load_state_dict(torch.load(fin, map_location=device))
         else:
-            model.load_state_dict(torch.load(fname, map_location=device))
+            model.load_state_dict(torch.load(fin, map_location=device))
         return model
     finally:
         logging.set_verbosity(verbosity)
@@ -228,12 +233,15 @@ class TransformerEmbedding(EmbeddingProvider):
             self,
             model: Model,
             method: str,
-            role: ProviderRole) -> None:
-        super().__init__(method, role)
+            role: ProviderRole,
+            embedding_name: str,
+            embedding_hash: str) -> None:
+        super().__init__(
+            method, role, embedding_name, embedding_hash, model.get_version())
         model.to(get_device())
         self._model = model
         self._tokenizer = get_tokenizer()
-        self._is_parent = role == "parent"
+        self._is_parent = role == PROVIDER_PARENT
 
     def get_embedding(self, msg: Message) -> torch.Tensor:
         text = msg.get_text()
@@ -258,11 +266,34 @@ def load_providers(
         fname: str,
         version: int,
         is_harness: bool) -> EmbeddingProviderMap:
-    model = load_model(os.path.join(root, fname), version, is_harness)
+    model_file = os.path.join(root, fname)
+    model_hash = get_file_hash(model_file)
+    with open_read(model_file, text=False) as fin:
+        model = load_model(fin, version, is_harness)
+    model_name = fname
+    rix = model_name.rfind(".")
+    if rix >= 0:
+        model_name = model_name[:rix]
     return {
-        "parent": TransformerEmbedding(model, "transformer", "parent"),
-        "child": TransformerEmbedding(model, "transformer", "child"),
+        "parent": TransformerEmbedding(
+            model, "transformer", PROVIDER_PARENT, model_name, model_hash),
+        "child": TransformerEmbedding(
+            model, "transformer", PROVIDER_CHILD, model_name, model_hash),
     }
+
+
+def load_db_providers(
+        db: DBConnector, model_hash: str) -> EmbeddingProviderMap:
+    with read_db_model(db, model_hash) as ctx:
+        fin, model_name, version, is_harness = ctx
+        model = load_model(fin, version, is_harness)
+        res: EmbeddingProviderMap = {
+            "parent": TransformerEmbedding(
+                model, "transformer", PROVIDER_PARENT, model_name, model_hash),
+            "child": TransformerEmbedding(
+                model, "transformer", PROVIDER_CHILD, model_name, model_hash),
+        }
+    return res
 
 
 def get_model_filename_tuple(

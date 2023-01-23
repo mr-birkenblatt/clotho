@@ -170,3 +170,9 @@ coverage-report-ts:
 
 stubgen:
 	PYTHON=$(PYTHON) FORCE=$(FORCE) ./stubgen.sh $(PKG)
+
+allapps:
+	./findpy.sh \
+	| xargs grep '__name__ == "__main__"' \
+	| cut -d: -f1 \
+	| sed -e 's/^.\///' -e 's/\/__main__.py$$//' -e 's/.py$$//'

@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 import torch
 
+from misc.io import open_read
+
 
 CT = TypeVar('CT')
 RT = TypeVar('RT')
@@ -55,6 +57,27 @@ def get_short_hash(text: str) -> str:
     blake = hashlib.blake2b(digest_size=4)
     blake.update(text.encode("utf-8"))
     return blake.hexdigest()
+
+
+BUFF_SIZE = 65536  # 64KiB
+
+
+def get_file_hash(fname: str) -> str:
+    blake = hashlib.blake2b(digest_size=32)
+    buff = bytearray(BUFF_SIZE)
+    memv = memoryview(buff)
+    with open_read(fname, text=False) as fin:
+        while True:
+            # FIXME: mypy bug
+            rlen = fin.readinto(memv)  # type: ignore
+            if rlen is None:
+                break
+            blake.update(memv[:rlen])
+    return blake.hexdigest()
+
+
+def file_hash_size() -> int:
+    return 64
 
 
 def is_hex(text: str) -> bool:

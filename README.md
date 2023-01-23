@@ -38,3 +38,6 @@ to transfer data between namespaces (you can use this to change the module type,
 
 Use `python -m system.namespace init --namespace <namespace> --module <module>` to initialize a module.
 Not all modules need initialization.
+
+Registering a model: `python -m system.embedding.register --help` to see the paramters.
+This is necessary to use db stored embeddings for lookups.
