@@ -1,6 +1,6 @@
 from typing import Any
 
-from misc.util import retain_some
+from misc.util import escape, retain_some, unescape
 
 
 def test_retain_some() -> None:
@@ -86,3 +86,28 @@ def test_retain_some() -> None:
         [2, 3, 5],
         set(),
         keep_last=False)
+
+
+def test_escape() -> None:
+
+    def test(text: str, subs: dict[str, str]) -> None:
+        rsubs = {
+            repl: key
+            for key, repl in subs.items()
+        }
+        assert text == unescape(escape(text, subs), rsubs)
+
+    test("abc", {"\n": "n"})
+    test("abc\0\n", {"\n": "n"})
+    test("\\n\n", {"\n": "n"})
+    test("\\n0\\0\0\n", {"\n": "n"})
+
+    test("abc", {"\0": "0"})
+    test("abc\0\n", {"\0": "0"})
+    test("\\n\n", {"\0": "0"})
+    test("\\n0\\0\0\n", {"\0": "0"})
+
+    test("abc", {"\n": "n", "\0": "0"})
+    test("abc\0\n", {"\n": "n", "\0": "0"})
+    test("\\n\n", {"\n": "n", "\0": "0"})
+    test("\\n0\\0\0\n", {"\n": "n", "\0": "0"})

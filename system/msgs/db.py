@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from db.base import Base, NamespaceTable
 from db.db import DBConnector
 from misc.lru import LRU
+from misc.util import escape, unescape
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore, RNG_ALIGN
 from system.namespace.namespace import Namespace
@@ -78,11 +79,11 @@ class DBStore(MessageStore):
 
     @staticmethod
     def _escape(text: str) -> str:
-        return text.replace("\\", "\\\\").replace("\0", "\\0")
+        return escape(text, {"\0": "0"})
 
     @staticmethod
     def _unescape(text: str) -> str:
-        return text.replace("\\0", "\0").replace("\\\\", "\\")
+        return unescape(text, {"0": "\0"})
 
     def is_module_init(self) -> bool:
         return self._db.is_module_init(self, MODULE_VERSION)

@@ -382,9 +382,7 @@ def python_module() -> str:
     if mfname is None:
         return package
     fname = os.path.basename(mfname)
-    ext = ".py"
-    if fname.endswith(ext):
-        fname = fname[:-len(ext)]
+    fname = fname.removesuffix(".py")
     if fname in ("__init__", "__main__"):
         return package
     return f"{package}.{fname}"
@@ -410,3 +408,34 @@ def ideal_thread_count() -> int:
     if res is None:
         return 4
     return res
+
+
+def escape(text, subs: dict[str, str]) -> str:
+    text = text.replace("\\", "\\\\")
+    for key, repl in subs.items():
+        text = text.replace(key, f"\\{repl}")
+    return text
+
+
+def unescape(text: str, subs: dict[str, str]) -> str:
+    res: list[str] = []
+    in_escape = False
+    for c in text:
+        if in_escape:
+            in_escape = False
+            if c == "\\":
+                res.append("\\")
+                continue
+            done = False
+            for key, repl in subs:
+                if c == key:
+                    res.append(repl)
+                    done = True
+                    break
+            if done:
+                continue
+        if c == "\\":
+            in_escape = True
+            continue
+        res.append(c)
+    return "".join(res)

@@ -6,6 +6,7 @@ import numpy as np
 
 from misc.io import ensure_folder, get_folder, open_append, open_read
 from misc.lru import LRU
+from misc.util import escape, unescape
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
 
@@ -25,11 +26,11 @@ class DiskStore(MessageStore):
 
     @staticmethod
     def _escape(text: str) -> str:
-        return text.replace("\\", "\\\\").replace("\n", "\\n")
+        return escape(text, {"\n": "n"})
 
     @staticmethod
     def _unescape(text: str) -> str:
-        return text.replace("\\n", "\n").replace("\\\\", "\\")
+        return unescape(text, {"n": "\n"})
 
     def _compute_path(self, message_hash: MHash) -> str:
 

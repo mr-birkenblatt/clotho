@@ -3,6 +3,8 @@ import threading
 import time
 from typing import Iterable, TextIO
 
+from misc.util import escape, unescape
+
 
 class ColdAccess:
     def __init__(self, fname: str, *, keep_alive: float) -> None:
@@ -60,11 +62,11 @@ class ColdAccess:
 
     @staticmethod
     def _escape(text: str) -> str:
-        return text.replace("\\", "\\\\").replace("\n", "\\n")
+        return escape(text, {"\n": "n"})
 
     @staticmethod
     def _unescape(text: str) -> str:
-        return text.replace("\\n", "\n").replace("\\\\", "\\")
+        return unescape(text, {"n": "\n"})
 
     def write_line(self, line: str) -> None:
         self._write_line(f"{self._escape(line)}\n")
@@ -72,6 +74,5 @@ class ColdAccess:
     def enumerate_lines(self) -> Iterable[str]:
         with gzip.open(self._fname, mode="rt", encoding="utf-8") as fin:
             for line in fin:
-                if line.endswith("\n"):
-                    line = line[:-1]
+                line = line.removesuffix("\n")
                 yield self._unescape(line)
