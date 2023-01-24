@@ -410,7 +410,7 @@ def ideal_thread_count() -> int:
     return res
 
 
-def escape(text, subs: dict[str, str]) -> str:
+def escape(text: str, subs: dict[str, str]) -> str:
     text = text.replace("\\", "\\\\")
     for key, repl in subs.items():
         text = text.replace(key, f"\\{repl}")
@@ -427,7 +427,7 @@ def unescape(text: str, subs: dict[str, str]) -> str:
                 res.append("\\")
                 continue
             done = False
-            for key, repl in subs:
+            for key, repl in subs.items():
                 if c == key:
                     res.append(repl)
                     done = True
