@@ -4,6 +4,7 @@ flake8
 flake8-commas
 flake8-isort
 jupyter
+matplotlib
 mypy
 numpy
 pandas

@@ -85,6 +85,9 @@ class EmbeddingStore(ModuleBase):
             progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
         raise NotImplementedError()
 
+    def get_embedding_count(self, role: ProviderRole) -> int:
+        raise NotImplementedError()
+
     def from_namespace(
             self, other_namespace: Namespace, *, progress_bar: bool) -> None:
         oembed = get_embed_store(other_namespace)

@@ -72,7 +72,11 @@ class Message:
         self._msg = msg
         self._msg_hash = None
         if msg_hash is not None:
-            assert MHash.from_message(msg) == msg_hash
+            if MHash.from_message(msg) != msg_hash:
+                raise ValueError(
+                    "mismatch between message and hash: "
+                    f"{MHash.from_message(msg)} != {msg_hash} "
+                    f"for {repr(msg)}")
             self._msg_hash = msg_hash
 
     def single_line_text(self) -> str:

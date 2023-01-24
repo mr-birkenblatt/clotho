@@ -4,6 +4,7 @@ flake8-commas==2.1.0
 flake8-isort==5.0.0
 flake8==5.0.4
 jupyter==1.0.0
+matplotlib==3.6.3
 mypy==0.991
 praw==7.6.1
 pre-commit

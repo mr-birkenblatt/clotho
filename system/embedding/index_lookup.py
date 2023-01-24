@@ -197,6 +197,37 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             self._embedding_ids[role] = res
         return res
 
+    def get_embedding_count(self, role: ProviderRole) -> int:
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        return cache.embedding_count(eid)
+
+    def get_embedding_at(
+            self, role: ProviderRole, pos_index: int) -> torch.Tensor:
+        """
+        Get an embedding at a specified location defined by the insertion
+        order of embeddings. This method is slow! Consider using
+        `get_all_embeddings` instead.
+
+        Args:
+            role (ProviderRole): The role.
+            pos_index (int): The index.
+
+        Raises:
+            IndexError: If trying to access out of bounds.
+
+        Returns:
+            torch.Tensor: The embedding vector.
+        """
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        mhash = cache.get_entry_by_index(eid, index=pos_index)
+        res = cache.get_map_embedding(eid, mhash)
+        if res is None:
+            raise IndexError(
+                f"could not find embedding for index: {pos_index}")
+        return res
+
     def get_all_embeddings(
             self,
             role: ProviderRole,

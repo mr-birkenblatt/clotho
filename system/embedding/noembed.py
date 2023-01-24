@@ -39,5 +39,8 @@ class NoEmbedding(EmbeddingStore):
             progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
         yield from []
 
+    def get_embedding_count(self, role: ProviderRole) -> int:
+        return 0
+
     def self_test(self, role: ProviderRole, count: int | None) -> None:
         raise ValueError("no computation has happened; nothing to test")
