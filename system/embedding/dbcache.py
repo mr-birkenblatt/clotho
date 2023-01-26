@@ -27,14 +27,21 @@ MODULE_VERSION = 1
 class ModelsTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "models"
 
+    id = sa.Column(
+        sa.Integer,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
+        unique=True)
     model_hash = sa.Column(
         sa.String(file_hash_size()),
-        primary_key=True,
         nullable=False,
         unique=True)
     name = sa.Column(sa.String)
     version = sa.Column(sa.Integer)
     is_harness = sa.Column(sa.Boolean)
+
+    idx_model_hash = sa.Index("model_hash")
 
 
 EMBED_CONFIG_ID: sa.Sequence = sa.Sequence(

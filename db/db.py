@@ -6,6 +6,8 @@ from typing import Iterator, Type, TYPE_CHECKING, TypedDict
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
+from db.base import MHashTable
+
 
 if TYPE_CHECKING:
     from db.base import Base
@@ -94,6 +96,8 @@ class DBConnector:
             return False
         if not self.table_exists(ModulesTable):
             return False
+        if not self.table_exists(MHashTable):
+            return False
         return True
 
     def init_db(self) -> None:
@@ -101,7 +105,7 @@ class DBConnector:
 
         if self.is_init():
             return
-        self.create_tables([NamespaceTable, ModulesTable])
+        self.create_tables([NamespaceTable, ModulesTable, MHashTable])
 
     def is_module_init(
             self,

@@ -4,6 +4,7 @@ from psycopg2.extensions import AsIs, register_adapter
 from sqlalchemy.orm import registry
 from sqlalchemy.orm.decl_api import DeclarativeMeta
 
+from system.msgs.message import MHash
 from system.namespace.load import NS_NAME_MAX_LEN
 from system.namespace.module import MODULE_MAX_LEN
 
@@ -61,3 +62,19 @@ class ModulesTable(Base):  # pylint: disable=too-few-public-methods
     version = sa.Column(
         sa.Integer,
         nullable=False)
+
+
+class MHashTable(Base):  # pylint: disable=too-few-public-methods
+    __tablename__ = "mhashes"
+
+    id = sa.Column(
+        sa.Integer,
+        primary_key=True,
+        autoincrement=True,
+        nullable=False,
+        unique=True)
+    mhash = sa.Column(
+        sa.String(MHash.parse_size()),
+        nullable=False)
+
+    idx_mhash = sa.Index("mhash")
