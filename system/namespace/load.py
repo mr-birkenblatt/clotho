@@ -1,13 +1,16 @@
 import re
-from typing import Any, cast, get_args, Literal, TypedDict
+from typing import Any, cast, get_args, Literal, TYPE_CHECKING, TypedDict
 
-from db.db import DBConfig
 from model.embedding import EmbeddingProviderModule
 from system.embedding.store import EmbedModule
 from system.links.store import LinkModule
 from system.msgs.store import MsgsModule
 from system.suggest.suggest import SuggestModule
 from system.users.store import UsersModule
+
+
+if TYPE_CHECKING:
+    from db.db import DBConfig
 
 
 RedisConfigObj = TypedDict('RedisConfigObj', {
@@ -19,7 +22,7 @@ RedisConfigObj = TypedDict('RedisConfigObj', {
 })
 ConnectionObj = TypedDict('ConnectionObj', {
     "redis": dict[str, RedisConfigObj],
-    "db": dict[str, DBConfig],
+    "db": dict[str, 'DBConfig'],
 })
 NamespaceObj = TypedDict('NamespaceObj', {
     "msgs": MsgsModule,
@@ -48,7 +51,7 @@ def redis_from_obj(
     }
 
 
-def db_from_obj(db_obj: dict[str, Any]) -> dict[str, DBConfig]:
+def db_from_obj(db_obj: dict[str, Any]) -> dict[str, 'DBConfig']:
     return {
         name: {
             "dialect": obj.get("dialect", "postgresql"),

@@ -75,6 +75,7 @@ class MHashTable(Base):  # pylint: disable=too-few-public-methods
         unique=True)
     mhash = sa.Column(
         sa.String(MHash.parse_size()),
-        nullable=False)
+        nullable=False,
+        unique=True)
 
     idx_mhash = sa.Index("mhash")

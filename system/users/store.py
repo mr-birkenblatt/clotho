@@ -1,6 +1,6 @@
 from typing import Any, Iterable, Literal, TypedDict
 
-from misc.util import get_short_hash
+from misc.util import get_short_hash, short_hash_size
 from system.namespace.module import ModuleBase
 from system.namespace.namespace import ModuleName, Namespace
 from system.users.user import ensure_permissions, Permissions, User
@@ -50,7 +50,7 @@ class UserStore(ModuleBase):
 
     @staticmethod
     def id_length() -> int:
-        return 8
+        return short_hash_size()
 
 
 USER_STORE: dict[Namespace, UserStore] = {}

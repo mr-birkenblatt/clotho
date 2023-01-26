@@ -53,10 +53,18 @@ def get_text_hash(text: str) -> str:
     return blake.hexdigest()
 
 
+def text_hash_size() -> int:
+    return 64
+
+
 def get_short_hash(text: str) -> str:
     blake = hashlib.blake2b(digest_size=4)
     blake.update(text.encode("utf-8"))
     return blake.hexdigest()
+
+
+def short_hash_size() -> int:
+    return 8
 
 
 BUFF_SIZE = 65536  # 64KiB
