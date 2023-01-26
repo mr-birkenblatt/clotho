@@ -26,15 +26,15 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
         sa.ForeignKey(
             NamespaceTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
-    mhash_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey(
-            MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
-        primary_key=True)
-    # mhash = sa.Column(
-    #     sa.String(MHash.parse_size()),
-    #     primary_key=True,
-    #     nullable=False)
+    # mhash_id = sa.Column(
+    #     sa.Integer,
+    #     sa.ForeignKey(
+    #         MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
+    #     primary_key=True)
+    mhash = sa.Column(
+        sa.String(MHash.parse_size()),
+        primary_key=True,
+        nullable=False)
     text = sa.Column(sa.Text, nullable=False)
 
 
