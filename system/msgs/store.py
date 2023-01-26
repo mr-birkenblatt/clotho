@@ -40,7 +40,7 @@ class MessageStore(ModuleBase):
         raise NotImplementedError()
 
     def get_topics_count(self) -> int:
-        return len(self.get_topics(0, None))
+        raise NotImplementedError()
 
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
@@ -78,6 +78,9 @@ class MessageStore(ModuleBase):
         return res[rel_start:rel_start + limit]
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
+        raise NotImplementedError()
+
+    def get_message_count(self) -> int:
         raise NotImplementedError()
 
 

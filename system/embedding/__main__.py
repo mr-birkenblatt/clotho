@@ -17,6 +17,7 @@ def run() -> None:
         return
     msg_store = get_message_store(namespace)
     precise: bool = args.precise
+    no_cache: bool = args.no_cache
     if args.text is not None:
         name_from: Literal["parent"] = "parent"
         name_to: Literal["child"] = "child"
@@ -24,21 +25,22 @@ def run() -> None:
         msg = Message(msg=args.text)
         mhash = msg_store.write_message(msg)
         embed = embed_store.get_embedding(
-            msg_store, name_from, mhash, no_index=precise)
+            msg_store, name_from, mhash, no_index=precise, no_cache=no_cache)
         divide = "=" * 42
         print(f"query: {msg.get_text()}")
         for out in embed_store.get_closest(
-                name_to, embed, 20, precise=precise):
+                name_to, embed, 20, precise=precise, no_cache=no_cache):
             if args.count:
                 continue
             print(divide)
             print(msg_store.read_message(out).get_text())
     elif args.count:
-        count = 0
-        for _ in msg_store.enumerate_messages(progress_bar=False):
-            count += 1
+        count = msg_store.get_message_count()
         print(f"{count} messages available")
     else:
+        if no_cache:
+            print("nothing to do (remove --no-cache)")
+            return
         embed_store.ensure_all(msg_store, no_index=precise)
 
 
@@ -58,6 +60,13 @@ def parse_args() -> argparse.Namespace:
         help=(
             "whether index lookup should be precise "
             "(this will prevent creation of an index)"))
+    parser.add_argument(
+        "--no-cache",
+        default=False,
+        action="store_true",
+        help=(
+            "does not cache embeddings "
+            "(this will prevent cache from building, too)"))
     parser.add_argument(
         "--count",
         default=False,

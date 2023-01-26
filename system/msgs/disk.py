@@ -112,6 +112,9 @@ class DiskStore(MessageStore):
             return self._topic_cache[offset:]
         return self._topic_cache[offset:offset + limit]
 
+    def get_topics_count(self) -> int:
+        return len(self.get_topics(0, None))
+
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
         remain = count
@@ -156,3 +159,9 @@ class DiskStore(MessageStore):
             first_level_size = len(list(get_folder(self._path, MSG_EXT)))
             with tqdm(total=first_level_size) as pbar:
                 yield from get_level(self._path, pbar=lambda: pbar.update(1))
+
+    def get_message_count(self) -> int:
+        count = 0
+        for _ in self.enumerate_messages(progress_bar=False):
+            count += 1
+        return count

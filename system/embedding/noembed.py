@@ -29,7 +29,8 @@ class NoEmbedding(EmbeddingStore):
             embed: torch.Tensor,
             count: int,
             *,
-            precise: bool) -> Iterable[MHash]:
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
         yield from []
 
     def get_all_embeddings(

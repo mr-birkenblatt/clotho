@@ -41,6 +41,12 @@ class ColdMessageStore(MessageStore):
         for line in self._topics.enumerate_lines():
             yield Message(msg=line)
 
+    def get_topics_count(self) -> int:
+        count = 0
+        for _ in self._topics.enumerate_lines():
+            count += 1
+        return count
+
     def get_topics(
             self,
             offset: int,
@@ -69,3 +75,9 @@ class ColdMessageStore(MessageStore):
             res = msg.get_hash()
             self._buff.set(res, msg)
             yield res
+
+    def get_message_count(self) -> int:
+        count = 0
+        for _ in self._msgs.enumerate_lines():
+            count += 1
+        return count

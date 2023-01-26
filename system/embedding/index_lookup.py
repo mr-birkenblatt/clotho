@@ -13,6 +13,7 @@ from model.embedding import (
 from system.embedding.processing import RUN_EXEC, run_index_lookup
 from system.embedding.store import EmbeddingStore
 from system.msgs.message import MHash
+from system.msgs.store import get_message_store
 from system.namespace.module import UnsupportedInit
 from system.namespace.namespace import Namespace
 
@@ -422,7 +423,25 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             embed: torch.Tensor,
             count: int,
             *,
-            precise: bool) -> Iterable[MHash]:
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
+        if no_cache:
+
+            def get_embeds() -> Iterable[tuple[MHash, torch.Tensor]]:
+                msg_store = get_message_store(self._namespace)
+                for mhash in msg_store.enumerate_messages(
+                        progress_bar=False):
+                    msg_embed = self.get_embedding(
+                        msg_store, role, mhash, no_index=True, no_cache=True)
+                    yield (mhash, msg_embed)
+
+            yield from (
+                res_mhash
+                for res_mhash, _ in
+                self._precise_closest(embed, count, get_embeds())
+            )
+            return
+
         start_time = time.monotonic()
         cache = self._cache
         eid = self._get_embedding_id(role)
@@ -491,7 +510,6 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             distinct_mhash.discard(cur_mhash)
             final_candidates.append(candidate)
 
-        # from system.msgs.store import get_message_store
         # msgs = get_message_store(self._namespace)
         # print("\n".join([
         #     f"{msgs.read_message(entry[0]).get_text()[:40]}, {entry[1]}"

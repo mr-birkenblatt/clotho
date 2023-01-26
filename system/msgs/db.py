@@ -173,6 +173,14 @@ class DBStore(MessageStore):
             return self._topic_cache[offset:]
         return self._topic_cache[offset:offset + limit]
 
+    def get_topics_count(self) -> int:
+        with self._db.get_connection() as conn:
+            cstmt = sa.select(
+                [sa.func.count()]).select_from(TopicsTable).where(
+                TopicsTable.namespace_id == self._get_nid())
+            count = conn.execute(cstmt).scalar()
+        return 0 if count is None else count
+
     def do_get_random_messages(
             self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
         nid = self._get_nid()
@@ -224,6 +232,11 @@ class DBStore(MessageStore):
 
                 with tqdm(total=count) as pbar:
                     yield from get_rows(conn, pbar=lambda: pbar.update(1))
+
+    def get_message_count(self) -> int:
+        with self._db.get_connection() as conn:
+            count = self._get_count(conn)
+        return 0 if count is None else count
 
     def _get_count(self, conn: sa.engine.Connection) -> int | None:
         cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(

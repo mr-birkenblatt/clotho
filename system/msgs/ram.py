@@ -51,3 +51,6 @@ class RamMessageStore(MessageStore):
             for mhash in list(self._msgs.keys()):
                 yield mhash
                 pbar.update(1)
+
+    def get_message_count(self) -> int:
+        return len(self._msgs)

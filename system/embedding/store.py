@@ -49,12 +49,15 @@ class EmbeddingStore(ModuleBase):
             role: ProviderRole,
             msg: Message,
             *,
-            no_index: bool) -> torch.Tensor:
+            no_index: bool,
+            no_cache: bool) -> torch.Tensor:
         provider = self._providers[role]
         embed = provider.get_embedding(msg)
         if len(embed.shape) != 1:
             raise ValueError(f"bad embedding shape: {embed.shape}")
-        self.do_add_embedding(role, msg.get_hash(), embed, no_index=no_index)
+        if not no_cache:
+            self.do_add_embedding(
+                role, msg.get_hash(), embed, no_index=no_index)
         return embed
 
     def do_get_embedding(
@@ -69,14 +72,17 @@ class EmbeddingStore(ModuleBase):
             role: ProviderRole,
             mhash: MHash,
             *,
-            no_index: bool) -> torch.Tensor:
+            no_index: bool,
+            no_cache: bool) -> torch.Tensor:
         if role not in self._providers:
             raise ValueError(f"{role} not found in {self._providers}")
-        res = self.do_get_embedding(role, mhash)
-        if res is not None:
-            return res
+        if not no_cache:
+            res = self.do_get_embedding(role, mhash)
+            if res is not None:
+                return res
         msg = msg_store.read_message(mhash)
-        return self.add_embedding(role, msg, no_index=no_index)
+        return self.add_embedding(
+            role, msg, no_index=no_index, no_cache=no_cache)
 
     def get_all_embeddings(
             self,
@@ -106,7 +112,8 @@ class EmbeddingStore(ModuleBase):
             roles = self.get_roles()
         for role in roles:
             for mhash in msg_store.enumerate_messages(progress_bar=True):
-                self.get_embedding(msg_store, role, mhash, no_index=no_index)
+                self.get_embedding(
+                    msg_store, role, mhash, no_index=no_index, no_cache=False)
 
     def self_test(self, role: ProviderRole, count: int | None) -> None:
         raise NotImplementedError()
@@ -117,7 +124,8 @@ class EmbeddingStore(ModuleBase):
             embed: torch.Tensor,
             count: int,
             *,
-            precise: bool) -> Iterable[MHash]:
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
         raise NotImplementedError()
 
     def get_closest(
@@ -126,8 +134,10 @@ class EmbeddingStore(ModuleBase):
             embed: torch.Tensor,
             count: int,
             *,
-            precise: bool) -> Iterable[MHash]:
-        yield from self.do_get_closest(role, embed, count, precise=precise)
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
+        yield from self.do_get_closest(
+            role, embed, count, precise=precise, no_cache=no_cache)
 
     def get_closest_for_hash(
             self,
@@ -136,12 +146,15 @@ class EmbeddingStore(ModuleBase):
             mhash: MHash,
             count: int,
             *,
-            precise: bool) -> Iterable[MHash]:
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
         yield from self.do_get_closest(
             role,
-            self.get_embedding(msg_store, role, mhash, no_index=precise),
+            self.get_embedding(
+                msg_store, role, mhash, no_index=precise, no_cache=no_cache),
             count,
-            precise=precise)
+            precise=precise,
+            no_cache=no_cache)
 
 
 EMBED_STORE: dict[Namespace, EmbeddingStore] = {}
