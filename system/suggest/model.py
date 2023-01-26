@@ -23,16 +23,19 @@ class ModelLinkSuggester(LinkSuggester):
             limit: int) -> Iterable[MHash]:
         embed = self._embed
         precise = False
+        no_cache = False
         other_embed = embed.get_embedding(
             self._message_store,
             "parent" if is_parent else "child",
             other,
-            no_index=precise)
+            no_index=precise,
+            no_cache=no_cache)
         res = list(embed.get_closest(
             "child" if is_parent else "parent",
             other_embed,
             min(self._count, offset + limit),
-            precise=precise))
+            precise=precise,
+            no_cache=no_cache))
         return res[offset:]
 
     def max_suggestions(self) -> int | None:
