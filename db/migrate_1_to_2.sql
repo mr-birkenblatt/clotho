@@ -36,6 +36,8 @@ UPDATE msgs
     FROM mhashes
     WHERE msgs.mhash = mhashes.mhash;
 
+SELECT * FROM msgs LIMIT 20;
+
 -- add foreign constraint
 ALTER TABLE msgs
     ADD FOREIGN KEY (mhash_id)
@@ -77,6 +79,8 @@ UPDATE topics
     FROM mhashes
     WHERE topics.mhash = mhashes.mhash;
 
+SELECT * FROM topics LIMIT 20;
+
 -- add foreign constraint
 ALTER TABLE topics
     ADD FOREIGN KEY (mhash_id)
@@ -117,6 +121,8 @@ UPDATE embed
     SET mhash_id = mhashes.id
     FROM mhashes
     WHERE embed.mhash = mhashes.mhash;
+
+SELECT * FROM embed LIMIT 20;
 
 -- add foreign constraint
 ALTER TABLE embed
@@ -171,6 +177,8 @@ ALTER SEQUENCE models_id_seq OWNED BY models.id;
 -- make id unqiue
 ALTER TABLE models ADD CONSTRAINT models_id_key UNIQUE (id);
 
+SELECT * FROM models LIMIT 20;
+
 -- look at embedconfig
 SELECT * FROM embedconfig LIMIT 20;
 
@@ -182,6 +190,8 @@ UPDATE embedconfig
     SET model_id = models.id
     FROM models
     WHERE embedconfig.model_hash = models.model_hash;
+
+SELECT * FROM embedconfig LIMIT 20;
 
 -- add foreign constraint
 ALTER TABLE embedconfig

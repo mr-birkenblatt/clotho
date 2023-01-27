@@ -1,7 +1,6 @@
 from typing import Callable, Iterable
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from db.base import Base, NamespaceTable
 from db.db import DBConnector
@@ -87,21 +86,21 @@ class DBUserStore(UserStore):
         obj = {
             "permissions": user.get_permissions(),
         }
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             values = {
                 "namespace_id": nid,
                 "id": user_id,
                 "name": name,
                 "data": obj,
             }
-            stmt = pg_insert(UsersTable).values(values)
+            stmt = self._db.upsert(UsersTable).values(values)
             stmt = stmt.on_conflict_do_update(
                 index_elements=[UsersTable.namespace_id, UsersTable.id],
                 index_where=sa.and_(
                     UsersTable.namespace_id == nid,
                     UsersTable.id == user_id),
                 set_=dict(stmt.excluded.items()))
-            conn.execute(stmt)
+            session.execute(stmt)
 
     def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         with self._db.get_connection() as conn:

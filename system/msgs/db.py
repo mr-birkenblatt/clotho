@@ -3,7 +3,6 @@ from typing import Callable, Iterable
 
 import numpy as np
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from db.base import Base, MHashTable, NamespaceTable
 from db.db import DBConnector
@@ -134,16 +133,17 @@ class DBStore(MessageStore):
 
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             try:
                 values = {
                     "namespace_id": self._get_nid(),
-                    "mhash": mhash.to_parseable(),
+                    "mhash_id": self._db.get_mhash_id(
+                        session, mhash, likely_exists=False),
                     "text": self._escape(message.get_text()),
                 }
-                stmt = pg_insert(MsgsTable).values(values)
+                stmt = self._db.upsert(MsgsTable).values(values)
                 stmt = stmt.on_conflict_do_nothing()
-                conn.execute(stmt)
+                session.execute(stmt)
             except ValueError as e:
                 raise ValueError(
                     "error while processing "
@@ -174,15 +174,16 @@ class DBStore(MessageStore):
 
     def add_topic(self, topic: Message) -> MHash:
         mhash = topic.get_hash()
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             values = {
                 "namespace_id": self._get_nid(),
-                "mhash": mhash.to_parseable(),
+                "mhash_id": self._db.get_mhash_id(
+                    session, mhash, likely_exists=False),
                 "topic": self._escape(topic.get_text()),
             }
-            stmt = pg_insert(TopicsTable).values(values)
+            stmt = self._db.upsert(TopicsTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
-            conn.execute(stmt)
+            session.execute(stmt)
         self._topic_cache = None
         return mhash
 

@@ -8,7 +8,6 @@ from typing import IO, Iterable, Iterator
 import numpy as np
 import sqlalchemy as sa
 import torch
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from db.base import Base, MHashTable, NamespaceTable
 from db.db import DBConnector
@@ -171,21 +170,18 @@ def register_model(
         is_harness: bool) -> str:
     if not is_cache_init(db):
         initialize_cache(db, force=False)
-    with db.get_connection() as conn:
+    with db.get_session() as session:
         model_file = os.path.join(root, fname)
         model_hash = get_file_hash(model_file)
         model_name = fname
         rix = model_name.rfind(".")
         if rix >= 0:
             model_name = model_name[:rix]
-        values = {
-            "model_hash": model_hash,
-            "name": model_name,
-            "version": version,
-            "is_harness": is_harness,
-        }
-        stmt = sa.insert(ModelsTable).values(values)
-        conn.execute(stmt)
+        session.add(ModelsTable(
+            model_hash=model_hash,
+            name=model_name,
+            version=version,
+            is_harness=is_harness))
         try:
             shutil.copyfile(model_file, model_registry(model_hash))
         except shutil.SameFileError:
@@ -220,7 +216,8 @@ class DBEmbeddingCache(EmbeddingCache):
         self._db = db
         self._namespace = namespace
         self._nid: int | None = None
-        self._ctx_map: dict[tuple[ProviderRole, str], int] = {}
+        self._model_ids: dict[ProviderRole, int] = {}
+        self._ctx_map: dict[ProviderRole, int] = {}
         self._locks: collections.defaultdict[ProviderRole, threading.RLock] = \
             collections.defaultdict(threading.RLock)
 
@@ -252,46 +249,54 @@ class DBEmbeddingCache(EmbeddingCache):
     def initialize_cache(self, *, force: bool) -> None:
         initialize_cache(self._db, force=force)
 
+    def _get_model_id(
+            self, session: sa.orm.Session, provider: EmbeddingProvider) -> int:
+        role = provider.get_role()
+        res = self._model_ids.get(role)
+        if res is None:
+            model_hash = provider.get_embedding_hash()
+            stmt = sa.select(ModelsTable.id).where(
+                ModelsTable.model_hash == model_hash)
+            res = session.execute(stmt).scalar()
+            if res is None:
+                raise ValueError(f"no model found for '{model_hash}' ({role})")
+            self._model_ids[role] = res
+        return res
+
     def _get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         nid = self._get_nid()
         role = provider.get_enum()
-        model_hash = provider.get_embedding_hash()
 
-        def get_embedding_id(conn: sa.engine.Connection) -> int | None:
+        def get_embedding_id(
+                session: sa.orm.Session, model_id: int) -> int | None:
             stmt = sa.select(EmbedConfigTable.config_id).where(sa.and_(
                 EmbedConfigTable.namespace_id == nid,
                 EmbedConfigTable.role == role,
-                EmbedConfigTable.model_id == ModelsTable.id,
-                ModelsTable.model_hash == model_hash))
-            return conn.execute(stmt).scalar()
+                EmbedConfigTable.model_id == model_id))
+            return session.execute(stmt).scalar()
 
-        with self._db.get_connection() as conn:
-            res = get_embedding_id(conn)
+        with self._db.get_session() as session:
+            model_id = self._get_model_id(session, provider)
+            res = get_embedding_id(session, model_id)
             if res is None:
-                values = {
-                    "namespace_id": nid,
-                    "role": role,
-                    "model_id": model_hash,
-                }
-                ins_stmt = sa.insert(EmbedConfigTable).values(values)
-                conn.execute(ins_stmt)
-                res = get_embedding_id(conn)
+                session.add(EmbedConfigTable(
+                    namespace_id=nid, role=role, model_id=model_id))
+                session.commit()
+                res = get_embedding_id(session, model_id)
                 if res is None:
                     raise ValueError(
                         "error while adding config: "
                         f"ns={self._get_ns_name()} "
                         f"role={role} "
-                        f"model_hash={model_hash}")
+                        f"model_hash={provider.get_embedding_hash()}")
         return res
 
     def get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         role = provider.get_role()
-        model_hash = provider.get_embedding_hash()
-        key = (role, model_hash)
-        res = self._ctx_map.get(key)
+        res = self._ctx_map.get(role)
         if res is None:
             res = self._get_embedding_id_for(provider)
-            self._ctx_map[key] = res
+            self._ctx_map[role] = res
         return res
 
     def set_map_embedding(
@@ -299,15 +304,16 @@ class DBEmbeddingCache(EmbeddingCache):
             embedding_id: int,
             mhash: MHash,
             embed: torch.Tensor) -> None:
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             values = {
                 "config_id": embedding_id,
-                "mhash": mhash.to_parseable(),
+                "mhash_id": self._db.get_mhash_id(
+                    session, mhash, likely_exists=True),
                 "embedding": self._from_tensor(embed),
             }
-            stmt = pg_insert(EmbedTable).values(values)
+            stmt = self._db.upsert(EmbedTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
-            conn.execute(stmt)
+            session.execute(stmt)
 
     def get_map_embedding(
             self, embedding_id: int, mhash: MHash) -> torch.Tensor | None:

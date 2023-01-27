@@ -1,7 +1,7 @@
 import contextlib
 import sys
 import threading
-from typing import Iterator, Type, TYPE_CHECKING, TypedDict
+from typing import Any, Iterator, Type, TYPE_CHECKING, TypedDict
 
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -11,6 +11,7 @@ from db.base import MHashTable
 
 if TYPE_CHECKING:
     from db.base import Base
+    from system.msgs.message import MHash
     from system.namespace.module import ModuleBase
     from system.namespace.namespace import Namespace
 
@@ -64,7 +65,8 @@ def get_engine(config: DBConfig) -> sa.engine.Engine:
         port = config["port"]
         dbname = config["dbname"]
         res = sa.create_engine(
-            f"{dialect}://{user}:{passwd}@{host}:{port}/{dbname}")
+            f"{dialect}://{user}:{passwd}@{host}:{port}/{dbname}",
+            echo=False)
         res = res.execution_options(
             schema_translate_map={None: config["schema"]})
         ENGINES[key] = res
@@ -175,17 +177,17 @@ class DBConnector:
             name = f"{module_name}:{submodule}"
         else:
             name = module_name
-        with self.get_connection() as conn:
+        with self.get_session() as session:
             values = {
                 "module": name,
                 "version": version,
             }
-            stmt = pg_insert(ModulesTable).values(values)
+            stmt = self.upsert(ModulesTable).values(values)
             stmt = stmt.on_conflict_do_update(
                 index_elements=[ModulesTable.module],
                 index_where=ModulesTable.module.like(name),
                 set_=dict(stmt.excluded.items()))
-            conn.execute(stmt)
+            session.execute(stmt)
         self._refresh_modules()
 
     def _refresh_namespaces(self) -> None:
@@ -201,10 +203,10 @@ class DBConnector:
     def _add_namespace(self, ns_name: str) -> None:
         from db.base import NamespaceTable
 
-        with self.get_connection() as conn:
-            stmt = pg_insert(NamespaceTable).values(name=ns_name)
+        with self.get_session() as session:
+            stmt = self.upsert(NamespaceTable).values(name=ns_name)
             stmt = stmt.on_conflict_do_nothing()
-            conn.execute(stmt)
+            session.execute(stmt)
         self._refresh_namespaces()
 
     def get_namespace_id(self, namespace: 'Namespace', *, create: bool) -> int:
@@ -224,6 +226,35 @@ class DBConnector:
             raise KeyError(f"cannot create namespace: {ns_name}")
         return res
 
+    def get_mhash_id(
+            self,
+            session: sa.orm.Session,
+            mhash: 'MHash',
+            *,
+            likely_exists: bool) -> int:
+        mhash_str = mhash.to_parseable()
+
+        def read_mhash_id() -> int | None:
+            mstmt = sa.select(MHashTable.id).where(
+                MHashTable.mhash == mhash_str)
+            return session.execute(mstmt).scalar()
+
+        if likely_exists:
+            res: int | None = read_mhash_id()
+            if res is not None:
+                return res
+        stmt = self.upsert(MHashTable).values(mhash=mhash_str)
+        stmt = stmt.returning(MHashTable.id)
+        stmt = stmt.on_conflict_do_nothing()
+        res = session.execute(stmt).scalar()
+        session.commit()
+        if res is not None:
+            return res
+        res = read_mhash_id()
+        if res is None:
+            raise ValueError(f"error while retrieving mhash: {mhash_str}")
+        return res
+
     def get_engine(self) -> sa.engine.Engine:
         return self._engine
 
@@ -233,6 +264,18 @@ class DBConnector:
             yield conn
 
     @contextlib.contextmanager
-    def get_session(self) -> Iterator[sa.orm.Session]:
+    def get_session(self, autocommit: bool = True) -> Iterator[sa.orm.Session]:
+        success = False
         with sa.orm.Session(self._engine) as session:
-            yield session
+            try:
+                yield session
+                success = True
+            finally:
+                if autocommit:
+                    if success:
+                        session.commit()
+                    else:
+                        session.rollback()
+
+    def upsert(self, table: Type['Base']) -> Any:
+        return pg_insert(table)
