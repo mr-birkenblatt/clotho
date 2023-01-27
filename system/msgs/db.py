@@ -38,13 +38,19 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
         back_populates="msgs",
         uselist=False,
         primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=NamespaceTable.id)
+        foreign_keys=namespace_id)
     mhashes = sa.orm.relationship(
         MHashTable,
         back_populates="msgs",
         uselist=False,
         primaryjoin=mhash_id == MHashTable.id,
-        foreign_keys=MHashTable.id)
+        foreign_keys=mhash_id)
+
+
+NamespaceTable.msgs = sa.orm.relationship(
+    MsgsTable, back_populates="namespace", uselist=False)
+MHashTable.msgs = sa.orm.relationship(
+    MsgsTable, back_populates="mhashes", uselist=False)
 
 
 class TopicsTable(Base):  # pylint: disable=too-few-public-methods
@@ -72,13 +78,19 @@ class TopicsTable(Base):  # pylint: disable=too-few-public-methods
         back_populates="topics",
         uselist=False,
         primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=NamespaceTable.id)
+        foreign_keys=namespace_id)
     mhashes = sa.orm.relationship(
         MHashTable,
         back_populates="topics",
         uselist=False,
         primaryjoin=mhash_id == MHashTable.id,
-        foreign_keys=MHashTable.id)
+        foreign_keys=mhash_id)
+
+
+NamespaceTable.topics = sa.orm.relationship(
+    TopicsTable, back_populates="namespace", uselist=False)
+MHashTable.topics = sa.orm.relationship(
+    TopicsTable, back_populates="mhashes", uselist=False)
 
 
 class DBStore(MessageStore):
@@ -144,7 +156,7 @@ class DBStore(MessageStore):
         if res is not None:
             return res
         with self._db.get_connection() as conn:
-            stmt = sa.select([MHashTable.mhash, MsgsTable.text]).where(sa.and_(
+            stmt = sa.select(MHashTable.mhash, MsgsTable.text).where(sa.and_(
                 MsgsTable.namespace_id == self._get_nid(),
                 MsgsTable.mhash_id == MHashTable.id,
                 MHashTable.mhash == message_hash.to_parseable(),
@@ -178,7 +190,7 @@ class DBStore(MessageStore):
         res: dict[int, Message] = {}
         with self._db.get_connection() as conn:
             stmt = sa.select(
-                [TopicsTable.id, MHashTable.mhash, TopicsTable.topic],
+                TopicsTable.id, MHashTable.mhash, TopicsTable.topic,
                 ).where(sa.and_(
                     TopicsTable.namespace_id == self._get_nid(),
                     TopicsTable.mhash_id == MHashTable.id))
@@ -207,7 +219,7 @@ class DBStore(MessageStore):
     def get_topics_count(self) -> int:
         with self._db.get_connection() as conn:
             cstmt = sa.select(
-                [sa.func.count()]).select_from(TopicsTable).where(
+                sa.func.count()).select_from(TopicsTable).where(
                 TopicsTable.namespace_id == self._get_nid())
             count = conn.execute(cstmt).scalar()
         return 0 if count is None else count
@@ -225,7 +237,7 @@ class DBStore(MessageStore):
                 offsets = rng.integers(0, total, size=RNG_ALIGN).tolist()
                 row_id_col = sa.func.row_number().over().label("row_id")
                 sub_stmt = sa.select(
-                    [MHashTable.mhash, row_id_col]).where(sa.and_(
+                    MHashTable.mhash, row_id_col).where(sa.and_(
                         MsgsTable.namespace_id == nid,
                         MsgsTable.mhash_id == MHashTable.id))
                 stmt = sa.select(sub_stmt.subquery()).where(
@@ -244,7 +256,7 @@ class DBStore(MessageStore):
                 *,
                 pbar: Callable[[], None] | None) -> Iterable[MHash]:
             stmt = sa.select(
-                [MHashTable.mhash, MsgsTable.text]).where(sa.and_(
+                MHashTable.mhash, MsgsTable.text).where(sa.and_(
                     MsgsTable.namespace_id == self._get_nid(),
                     MsgsTable.mhash_id == MHashTable.id))
             for row in conn.execute(stmt):
@@ -273,6 +285,6 @@ class DBStore(MessageStore):
         return 0 if count is None else count
 
     def _get_count(self, conn: sa.engine.Connection) -> int | None:
-        cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(
+        cstmt = sa.select(sa.func.count()).select_from(MsgsTable).where(
             MsgsTable.namespace_id == self._get_nid())
         return conn.execute(cstmt).scalar()

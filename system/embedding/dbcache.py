@@ -43,9 +43,6 @@ class ModelsTable(Base):  # pylint: disable=too-few-public-methods
 
     idx_model_hash = sa.Index("model_hash")
 
-    embedconfig = sa.orm.relationship(
-        'EmbedConfigTable', back_populates="models", uselist=False)
-
 
 EMBED_CONFIG_ID: sa.Sequence = sa.Sequence(
     "embed_config_id_seq", start=1, increment=1)
@@ -82,15 +79,19 @@ class EmbedConfigTable(Base):  # pylint: disable=too-few-public-methods
         back_populates="embedconfig",
         uselist=False,
         primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=NamespaceTable.id)
+        foreign_keys=namespace_id)
     models = sa.orm.relationship(
         ModelsTable,
         back_populates="embedconfig",
         uselist=False,
         primaryjoin=model_id == ModelsTable.id,
-        foreign_keys=ModelsTable.id)
-    embed = sa.orm.relationship(
-        'EmbedTable', back_populates="embedconfig", uselist=False)
+        foreign_keys=model_id)
+
+
+NamespaceTable.embedconfig = sa.orm.relationship(
+    EmbedConfigTable, back_populates="namespace", uselist=False)
+ModelsTable.embedconfig = sa.orm.relationship(
+    EmbedConfigTable, back_populates="models", uselist=False)
 
 
 MAIN_ORDER_SEQ: sa.Sequence = sa.Sequence(
@@ -129,13 +130,19 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         back_populates="embed",
         uselist=False,
         primaryjoin=config_id == EmbedConfigTable.config_id,
-        foreign_keys=EmbedConfigTable.config_id)
+        foreign_keys=config_id)
     mhashes = sa.orm.relationship(
         MHashTable,
         back_populates="embed",
         uselist=False,
         primaryjoin=mhash_id == MHashTable.id,
-        foreign_keys=MHashTable.id)
+        foreign_keys=mhash_id)
+
+
+EmbedConfigTable.embed = sa.orm.relationship(
+    EmbedTable, back_populates="embedconfig", uselist=False)
+MHashTable.embed = sa.orm.relationship(
+    EmbedTable, back_populates="mhashes", uselist=False)
 
 
 def is_cache_init(db: DBConnector) -> bool:
@@ -179,7 +186,10 @@ def register_model(
         }
         stmt = sa.insert(ModelsTable).values(values)
         conn.execute(stmt)
-        shutil.copyfile(model_file, model_registry(model_hash))
+        try:
+            shutil.copyfile(model_file, model_registry(model_hash))
+        except shutil.SameFileError:
+            pass
     return model_hash
 
 
@@ -189,11 +199,10 @@ def read_db_model(
         model_hash: str) -> Iterator[tuple[IO[bytes], str, int, bool]]:
     with db.get_connection() as conn:
         stmt = sa.select(
-            [
                 ModelsTable.name,
                 ModelsTable.version,
                 ModelsTable.is_harness,
-            ]).where(ModelsTable.model_hash == model_hash)
+            ).where(ModelsTable.model_hash == model_hash)
         row = conn.execute(stmt).one()
         model_name = row.name
         version = row.version
@@ -249,7 +258,7 @@ class DBEmbeddingCache(EmbeddingCache):
         model_hash = provider.get_embedding_hash()
 
         def get_embedding_id(conn: sa.engine.Connection) -> int | None:
-            stmt = sa.select([EmbedConfigTable.config_id]).where(sa.and_(
+            stmt = sa.select(EmbedConfigTable.config_id).where(sa.and_(
                 EmbedConfigTable.namespace_id == nid,
                 EmbedConfigTable.role == role,
                 EmbedConfigTable.model_id == ModelsTable.id,
@@ -303,9 +312,7 @@ class DBEmbeddingCache(EmbeddingCache):
     def get_map_embedding(
             self, embedding_id: int, mhash: MHash) -> torch.Tensor | None:
         with self._db.get_connection() as conn:
-            # FIXME investigate type error
-            ecol: sa.Column = EmbedTable.embedding  # type: ignore
-            stmt = sa.select([ecol]).where(sa.and_(
+            stmt = sa.select(EmbedTable.embedding).where(sa.and_(
                 EmbedTable.config_id == embedding_id,
                 EmbedTable.mhash_id == MHashTable.id,
                 MHashTable.mhash == mhash.to_parseable(),
@@ -337,7 +344,7 @@ class DBEmbeddingCache(EmbeddingCache):
 
     def _embedding_count(
             self, conn: sa.engine.Connection, embedding_id: int) -> int:
-        cstmt = sa.select([sa.func.count()]).select_from(EmbedTable).where(
+        cstmt = sa.select(sa.func.count()).select_from(EmbedTable).where(
             EmbedTable.config_id == embedding_id)
         count: int | None = conn.execute(cstmt).scalar()
         return 0 if count is None else count
@@ -350,9 +357,7 @@ class DBEmbeddingCache(EmbeddingCache):
             start_ix: int,
             limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        # FIXME investigate type error
-        ecol: sa.Column = EmbedTable.embedding  # type: ignore
-        stmt = sa.select([MHashTable.mhash, ecol]).where(sa.and_(
+        stmt = sa.select(MHashTable.mhash, EmbedTable.embedding).where(sa.and_(
             EmbedTable.config_id == embedding_id,
             EmbedTable.mhash_id == MHashTable.id))
         stmt = stmt.order_by(EmbedTable.main_order.asc())
@@ -371,7 +376,7 @@ class DBEmbeddingCache(EmbeddingCache):
             embedding_id: int,
             *,
             index: int) -> MHash:
-        stmt = sa.select([MHashTable.mhash]).where(sa.and_(
+        stmt = sa.select(MHashTable.mhash).where(sa.and_(
             EmbedTable.config_id == embedding_id,
             EmbedTable.mhash_id == MHashTable.id))
         stmt = stmt.order_by(EmbedTable.main_order.asc())

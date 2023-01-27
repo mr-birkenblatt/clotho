@@ -76,10 +76,11 @@ class DBConnector:
         self._engine = get_engine(config)
         self._namespaces: dict[str, int] = {}
         self._modules: dict[str, int] = {}
+        self._schema = config["schema"]
 
     def table_exists(self, table: Type['Base']) -> bool:
         return sa.inspect(self._engine).has_table(
-            table.__table__.name)
+            table.__table__.name, schema=self._schema)
 
     def create_tables(self, tables: list[Type['Base']]) -> None:
         from db.base import Base
@@ -139,7 +140,7 @@ class DBConnector:
         from db.base import ModulesTable
 
         with self.get_connection() as conn:
-            stmt = sa.select([ModulesTable.module, ModulesTable.version])
+            stmt = sa.select(ModulesTable.module, ModulesTable.version)
             self._modules = {
                 row.module: row.version
                 for row in conn.execute(stmt)
@@ -191,8 +192,7 @@ class DBConnector:
         from db.base import NamespaceTable
 
         with self.get_connection() as conn:
-            stmt = sa.select(
-                [NamespaceTable.name, NamespaceTable.id])
+            stmt = sa.select(NamespaceTable.name, NamespaceTable.id)
             self._namespaces = {
                 row.name: row.id
                 for row in conn.execute(stmt)
