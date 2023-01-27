@@ -222,18 +222,19 @@ class DataGenerator:
         return self._msgs.read_message(mhash).to_debug(False)
 
     def vote_score(self, link: Link) -> float:
-        vhonor = link.get_votes("honor").get_total_votes()
+        #vhonor = link.get_votes("honor").get_total_votes()
         vup = link.get_votes("up").get_total_votes()
-        vdown = link.get_votes("down").get_total_votes()
-        return abs(vup - HONOR_MUL * vhonor - DOWN_MUL * vdown)
+        #vdown = link.get_votes("down").get_total_votes()
+        return max(0, vup)  # - HONOR_MUL * vhonor)  # - DOWN_MUL * vdown)
 
     def is_weak(self, link: Link) -> bool:
         vup = link.get_votes("up").get_total_votes()
-        vdown = link.get_votes("down").get_total_votes()
-        if vup < 2 and vdown < 1:
+        #vdown = link.get_votes("down").get_total_votes()
+        vdown = 0.0
+        if vup < 2.0 and vdown < 1.0:
             return True
-        if vdown < 2 and vup < 2:
-            return True
+        #if vdown < 2.0 and vup < 2.0:
+        #    return True
         return False
 
     def has_topic(self, link: Link) -> bool:
@@ -256,8 +257,8 @@ BatchRow = TypedDict('BatchRow', {
     "child_left": str,
     "parent_right": str,
     "child_right": str,
-    "sway_left": float,
-    "sway_right": float,
+    "score_left": float,
+    "score_right": float,
     "correct_is_right": bool,
 })
 COLUMNS = [
@@ -266,8 +267,8 @@ COLUMNS = [
     "child_left",
     "parent_right",
     "child_right",
-    "sway_left",
-    "sway_right",
+    "score_left",
+    "score_right",
     "correct_is_right",
 ]
 
@@ -569,14 +570,14 @@ class TrainTestGenerator:
                 if data.has_topic(left_link):
                     continue
 
-            sway_right = float(sigmoid(score_right - score_left))
+            #sway_right = float(sigmoid(score_right - score_left))
             yield {
                 "parent_left": text_pl,
                 "child_left": text_cl,
                 "parent_right": text_pr,
                 "child_right": text_cr,
-                "sway_left": 1.0 - sway_right,
-                "sway_right": sway_right,
+                "score_left": score_left,  #1.0 - sway_right,
+                "score_right": score_right,  #sway_right,
                 "correct_is_right": score_right > score_left,
                 "gen_name": name,
             }
