@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 import sqlalchemy as sa
 from psycopg2.extensions import AsIs, register_adapter
@@ -7,6 +9,12 @@ from sqlalchemy.orm.decl_api import DeclarativeMeta
 from system.msgs.message import MHash
 from system.namespace.load import NS_NAME_MAX_LEN
 from system.namespace.module import MODULE_MAX_LEN
+
+
+if TYPE_CHECKING:
+    from system.embedding.dbcache import EmbedConfigTable, EmbedTable
+    from system.msgs.db import MsgsTable, TopicsTable
+    from system.users.db import UsersTable
 
 
 def adapt_numpy_float64(numpy_float64: np.float64) -> AsIs:
@@ -50,6 +58,15 @@ class NamespaceTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False,
         unique=True)
 
+    users = sa.orm.relationship(
+        'UsersTable', back_populates="namespace", uselist=False)
+    msgs = sa.orm.relationship(
+        'MsgsTable', back_populates="namespace", uselist=False)
+    topics = sa.orm.relationship(
+        'TopicsTable', back_populates="namespace", uselist=False)
+    embedconfig = sa.orm.relationship(
+        'EmbedConfigTable', back_populates="namespace", uselist=False)
+
 
 class ModulesTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "modules"
@@ -79,3 +96,10 @@ class MHashTable(Base):  # pylint: disable=too-few-public-methods
         unique=True)
 
     idx_mhash = sa.Index("mhash")
+
+    msgs = sa.orm.relationship(
+        'MsgsTable', back_populates="mhashes", uselist=False)
+    topics = sa.orm.relationship(
+        'TopicsTable', back_populates="mhashes", uselist=False)
+    embed = sa.orm.relationship(
+        'EmbedTable', back_populates="mhashes", uselist=False)

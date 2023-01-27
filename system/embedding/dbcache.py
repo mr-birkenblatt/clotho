@@ -10,7 +10,7 @@ import sqlalchemy as sa
 import torch
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from db.base import Base, NamespaceTable
+from db.base import Base, MHashTable, NamespaceTable
 from db.db import DBConnector
 from misc.io import ensure_folder, open_read
 from misc.util import file_hash_size, get_file_hash, safe_ravel
@@ -43,6 +43,9 @@ class ModelsTable(Base):  # pylint: disable=too-few-public-methods
 
     idx_model_hash = sa.Index("model_hash")
 
+    embedconfig = sa.orm.relationship(
+        'EmbedConfigTable', back_populates="models", uselist=False)
+
 
 EMBED_CONFIG_ID: sa.Sequence = sa.Sequence(
     "embed_config_id_seq", start=1, increment=1)
@@ -60,10 +63,10 @@ class EmbedConfigTable(Base):  # pylint: disable=too-few-public-methods
         sa.Enum(ProviderEnum),
         primary_key=True,
         nullable=False)
-    model_hash = sa.Column(
-        sa.String(file_hash_size()),
+    model_id = sa.Column(
+        sa.Integer,
         sa.ForeignKey(
-            ModelsTable.model_hash, onupdate="CASCADE", ondelete="CASCADE"),
+            ModelsTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
     config_id = sa.Column(
         sa.Integer,
@@ -73,6 +76,21 @@ class EmbedConfigTable(Base):  # pylint: disable=too-few-public-methods
         server_default=EMBED_CONFIG_ID.next_value())
 
     idx_config_id = sa.Index("config_id")
+
+    namespace = sa.orm.relationship(
+        NamespaceTable,
+        back_populates="embedconfig",
+        uselist=False,
+        primaryjoin=namespace_id == NamespaceTable.id,
+        foreign_keys=NamespaceTable.id)
+    models = sa.orm.relationship(
+        ModelsTable,
+        back_populates="embedconfig",
+        uselist=False,
+        primaryjoin=model_id == ModelsTable.id,
+        foreign_keys=ModelsTable.id)
+    embed = sa.orm.relationship(
+        'EmbedTable', back_populates="embedconfig", uselist=False)
 
 
 MAIN_ORDER_SEQ: sa.Sequence = sa.Sequence(
@@ -89,10 +107,11 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
             onupdate="CASCADE",
             ondelete="CASCADE"),
         primary_key=True)
-    mhash = sa.Column(
-        sa.String(MHash.parse_size()),
-        primary_key=True,
-        nullable=False)
+    mhash_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey(
+            MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
+        primary_key=True)
     main_order = sa.Column(
         sa.Integer,
         MAIN_ORDER_SEQ,
@@ -104,6 +123,19 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False)
 
     idx_main_order = sa.Index("config_id", "main_order")
+
+    embedconfig = sa.orm.relationship(
+        EmbedConfigTable,
+        back_populates="embed",
+        uselist=False,
+        primaryjoin=config_id == EmbedConfigTable.id,
+        foreign_keys=EmbedConfigTable.id)
+    mhashes = sa.orm.relationship(
+        MHashTable,
+        back_populates="embed",
+        uselist=False,
+        primaryjoin=mhash_id == MHashTable.id,
+        foreign_keys=MHashTable.id)
 
 
 def is_cache_init(db: DBConnector) -> bool:
@@ -220,7 +252,8 @@ class DBEmbeddingCache(EmbeddingCache):
             stmt = sa.select([EmbedConfigTable.config_id]).where(sa.and_(
                 EmbedConfigTable.namespace_id == nid,
                 EmbedConfigTable.role == role,
-                EmbedConfigTable.model_hash == model_hash))
+                EmbedConfigTable.model_id == ModelsTable.id,
+                ModelsTable.model_hash == model_hash))
             return conn.execute(stmt).scalar()
 
         with self._db.get_connection() as conn:
@@ -229,7 +262,7 @@ class DBEmbeddingCache(EmbeddingCache):
                 values = {
                     "namespace_id": nid,
                     "role": role,
-                    "model_hash": model_hash,
+                    "model_id": model_hash,
                 }
                 ins_stmt = sa.insert(EmbedConfigTable).values(values)
                 conn.execute(ins_stmt)

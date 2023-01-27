@@ -231,3 +231,8 @@ class DBConnector:
     def get_connection(self) -> Iterator[sa.engine.Connection]:
         with self._engine.connect() as conn:
             yield conn
+
+    @contextlib.contextmanager
+    def get_session(self) -> Iterator[sa.orm.Session]:
+        with sa.orm.Session(self._engine) as session:
+            yield session

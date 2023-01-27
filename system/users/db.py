@@ -30,6 +30,13 @@ class UsersTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False)
     data = sa.Column(sa.JSON(), nullable=False)
 
+    namespace = sa.orm.relationship(
+        NamespaceTable,
+        back_populates="users",
+        uselist=False,
+        primaryjoin=namespace_id == NamespaceTable.id,
+        foreign_keys=NamespaceTable.id)
+
 
 class DBUserStore(UserStore):
     def __init__(

@@ -33,6 +33,19 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
         primary_key=True)
     text = sa.Column(sa.Text, nullable=False)
 
+    namespace = sa.orm.relationship(
+        NamespaceTable,
+        back_populates="msgs",
+        uselist=False,
+        primaryjoin=namespace_id == NamespaceTable.id,
+        foreign_keys=NamespaceTable.id)
+    mhashes = sa.orm.relationship(
+        MHashTable,
+        back_populates="msgs",
+        uselist=False,
+        primaryjoin=mhash_id == MHashTable.id,
+        foreign_keys=MHashTable.id)
+
 
 class TopicsTable(Base):  # pylint: disable=too-few-public-methods
     __tablename__ = "topics"
@@ -53,6 +66,19 @@ class TopicsTable(Base):  # pylint: disable=too-few-public-methods
             MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
     topic = sa.Column(sa.Text, nullable=False)
+
+    namespace = sa.orm.relationship(
+        NamespaceTable,
+        back_populates="topics",
+        uselist=False,
+        primaryjoin=namespace_id == NamespaceTable.id,
+        foreign_keys=NamespaceTable.id)
+    mhashes = sa.orm.relationship(
+        MHashTable,
+        back_populates="topics",
+        uselist=False,
+        primaryjoin=mhash_id == MHashTable.id,
+        foreign_keys=MHashTable.id)
 
 
 class DBStore(MessageStore):
