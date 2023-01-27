@@ -144,9 +144,10 @@ class DBStore(MessageStore):
         if res is not None:
             return res
         with self._db.get_connection() as conn:
-            stmt = sa.select([MsgsTable.mhash, MsgsTable.text]).where(sa.and_(
+            stmt = sa.select([MHashTable.mhash, MsgsTable.text]).where(sa.and_(
                 MsgsTable.namespace_id == self._get_nid(),
-                MsgsTable.mhash == message_hash.to_parseable(),
+                MsgsTable.mhash_id == MHashTable.id,
+                MHashTable.mhash == message_hash.to_parseable(),
             ))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
@@ -177,8 +178,10 @@ class DBStore(MessageStore):
         res: dict[int, Message] = {}
         with self._db.get_connection() as conn:
             stmt = sa.select(
-                [TopicsTable.id, TopicsTable.mhash, TopicsTable.topic],
-                ).where(TopicsTable.namespace_id == self._get_nid())
+                [TopicsTable.id, MHashTable.mhash, TopicsTable.topic],
+                ).where(sa.and_(
+                    TopicsTable.namespace_id == self._get_nid(),
+                    TopicsTable.mhash_id == MHashTable.id))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 cur_topic = self._unescape(row.topic)
@@ -221,8 +224,10 @@ class DBStore(MessageStore):
             while remain > 0:
                 offsets = rng.integers(0, total, size=RNG_ALIGN).tolist()
                 row_id_col = sa.func.row_number().over().label("row_id")
-                sub_stmt = sa.select([MsgsTable.mhash, row_id_col]).where(
-                    MsgsTable.namespace_id == nid)
+                sub_stmt = sa.select(
+                    [MHashTable.mhash, row_id_col]).where(sa.and_(
+                        MsgsTable.namespace_id == nid,
+                        MsgsTable.mhash_id == MHashTable.id))
                 stmt = sa.select(sub_stmt.subquery()).where(
                     sa.Column("row_id").in_(offsets))
                 for row in conn.execute(stmt):
@@ -239,8 +244,9 @@ class DBStore(MessageStore):
                 *,
                 pbar: Callable[[], None] | None) -> Iterable[MHash]:
             stmt = sa.select(
-                [MsgsTable.mhash, MsgsTable.text]).where(
-                MsgsTable.namespace_id == self._get_nid())
+                [MHashTable.mhash, MsgsTable.text]).where(sa.and_(
+                    MsgsTable.namespace_id == self._get_nid(),
+                    MsgsTable.mhash_id == MHashTable.id))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 cur_text = self._unescape(row.text)

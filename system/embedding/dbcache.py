@@ -128,8 +128,8 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
         EmbedConfigTable,
         back_populates="embed",
         uselist=False,
-        primaryjoin=config_id == EmbedConfigTable.id,
-        foreign_keys=EmbedConfigTable.id)
+        primaryjoin=config_id == EmbedConfigTable.config_id,
+        foreign_keys=EmbedConfigTable.config_id)
     mhashes = sa.orm.relationship(
         MHashTable,
         back_populates="embed",
@@ -307,7 +307,8 @@ class DBEmbeddingCache(EmbeddingCache):
             ecol: sa.Column = EmbedTable.embedding  # type: ignore
             stmt = sa.select([ecol]).where(sa.and_(
                 EmbedTable.config_id == embedding_id,
-                EmbedTable.mhash == mhash.to_parseable(),
+                EmbedTable.mhash_id == MHashTable.id,
+                MHashTable.mhash == mhash.to_parseable(),
             ))
             res = conn.execute(stmt).scalar()
         return None if res is None else self._to_tensor(res)
@@ -351,9 +352,9 @@ class DBEmbeddingCache(EmbeddingCache):
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         # FIXME investigate type error
         ecol: sa.Column = EmbedTable.embedding  # type: ignore
-        stmt = sa.select([EmbedTable.mhash, ecol]).where(sa.and_(
+        stmt = sa.select([MHashTable.mhash, ecol]).where(sa.and_(
             EmbedTable.config_id == embedding_id,
-        ))
+            EmbedTable.mhash_id == MHashTable.id))
         stmt = stmt.order_by(EmbedTable.main_order.asc())
         stmt = stmt.offset(start_ix)
         if limit is not None:
@@ -370,9 +371,9 @@ class DBEmbeddingCache(EmbeddingCache):
             embedding_id: int,
             *,
             index: int) -> MHash:
-        stmt = sa.select([EmbedTable.mhash]).where(sa.and_(
+        stmt = sa.select([MHashTable.mhash]).where(sa.and_(
             EmbedTable.config_id == embedding_id,
-        ))
+            EmbedTable.mhash_id == MHashTable.id))
         stmt = stmt.order_by(EmbedTable.main_order.asc())
         stmt = stmt.offset(index)
         stmt = stmt.limit(1)
