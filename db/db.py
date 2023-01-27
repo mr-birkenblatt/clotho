@@ -62,7 +62,15 @@ def get_engine(config: DBConfig) -> sa.engine.Engine:
         port = config["port"]
         dbname = config["dbname"]
         res = sa.create_engine(
-            f"{dialect}://{user}:{passwd}@{host}:{port}/{dbname}")
+            f"{dialect}://{user}:{passwd}@{host}:{port}/{dbname}",
+            echo=False)
+        """
+         SELECT anon_1.mhash, anon_1.row_id
+FROM (SELECT public.msgs.mhash AS mhash, row_number() OVER () AS row_id
+FROM public.msgs
+WHERE public.msgs.namespace_id = %(namespace_id_1)s) AS anon_1
+WHERE row_id IN (%(row_id_1_1)s, %(row_id_1_2)s, %(row_id_1_3)s, %(row_id_1_4)s, %(row_id_1_5)s, %(row_id_1_6)s, %(row_id_1_7)s, %(row_id_1_8)s, %(row_id_1_9)s, %(row_id_1_10)s)
+        """
         res = res.execution_options(
             schema_translate_map={None: config["schema"]})
         ENGINES[key] = res
