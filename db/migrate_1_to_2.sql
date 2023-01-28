@@ -239,3 +239,9 @@ SELECT e.*, m.model_hash
 SELECT * FROM models;
 
 -- *** end of embedconfig ***
+
+-- update modules versions
+UPDATE modules SET version = 2 WHERE module IN ('msgs', 'embed:dbcache');
+
+-- confirm
+SELECT * FROM modules;
