@@ -17,20 +17,26 @@ from system.users.store import get_user_store
 
 
 def get_roots(is_train: bool) -> list[str]:
-    if is_train:
-        return ["politics", "news", "worldnews", "conservative"]
-    return ["askscience", "askreddit", "explainlikeimfive", "todayilearned"]
+    return ["all"] if is_train else ["all"]
+    # if is_train:
+    #     return ["politics", "news", "worldnews", "conservative"]
+    # return ["askscience", "askreddit", "explainlikeimfive", "todayilearned"]
 
 
 def reddit_action_file(ns_name: str) -> str:
     return os.path.join(os.path.dirname(__file__), f"reddit.{ns_name}.jsonl")
 
 
-def process_reddit(reddit: RedditAccess, fname: str, subs: list[str]) -> None:
+def process_reddit(
+        reddit: RedditAccess,
+        fname: str,
+        subs: list[str],
+        *,
+        is_top: bool) -> None:
     dups: set[str] = set()
     with open_append(fname, text=True) as fout:
         for sub in subs:
-            for doc in reddit.get_posts(sub):
+            for doc in reddit.get_posts(sub, is_top=is_top):
                 print(
                     f"processing {doc.subreddit_name_prefixed} "
                     f"\"{doc.title}\" (est. comments {doc.num_comments})")
@@ -94,10 +100,12 @@ def run() -> None:
     args = parse_args()
     ns_name = args.namespace
     if args.cmd == "reddit":
+        is_top = args.top
         process_reddit(
             RedditAccess(do_log=False),
             reddit_action_file(ns_name),
-            get_roots(ns_name == "train"))
+            get_roots(ns_name == "train"),
+            is_top=is_top)
     elif args.cmd == "load":
         process_load(ns_name)
     elif args.cmd == "wiki":
@@ -125,6 +133,11 @@ def parse_args() -> argparse.Namespace:
         default=False,
         action="store_true",
         help="whether the wiki file is abstracts only or full text")
+    parser.add_argument(
+        "--top",
+        default=False,
+        action="store_true",
+        help="if set read the top of all time in reddit instead of hot")
     return parser.parse_args()
 
 
