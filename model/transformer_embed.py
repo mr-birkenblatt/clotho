@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Callable, cast, IO, Iterable, Literal, TypedDict
 
@@ -8,7 +9,7 @@ from torch import nn
 from transformers import (  # type: ignore
     DistilBertModel,
     DistilBertTokenizer,
-    logging,
+    modeling_utils,
 )
 
 from db.db import DBConnector
@@ -99,6 +100,21 @@ class Noise(nn.Module):
         return x + prob * gauss
 
 
+def batch_dot(batch_a: torch.Tensor, batch_b: torch.Tensor) -> torch.Tensor:
+    batch_size = batch_a.shape[0]
+    return torch.bmm(
+        batch_a.reshape([batch_size, 1, -1]),
+        batch_b.reshape([batch_size, -1, 1])).reshape([-1, 1])
+
+
+def dot_as_distance(dot: torch.Tensor) -> torch.Tensor:
+    return torch.log1p(torch.exp(-dot))
+
+
+def cos_as_distance(cos: torch.Tensor) -> torch.Tensor:
+    return torch.sqrt(max(0.0, 2.0 - 2.0 * cos))
+
+
 class Model(nn.Module):
     def __init__(self, version: int) -> None:
         super().__init__()
@@ -176,19 +192,22 @@ class Model(nn.Module):
             out = self._noise(out)
         return out
 
-    def forward(self, x: dict[ProviderRole, TokenizedInput]) -> torch.Tensor:
-        parent_cls = self.get_parent_embed(
+    def forward(
+            self,
+            x: dict[ProviderRole, TokenizedInput],
+            *,
+            as_distance: bool = False) -> torch.Tensor:
+        parent_embed = self.get_parent_embed(
             input_ids=x["parent"]["input_ids"],
             attention_mask=x["parent"]["attention_mask"])
-        child_cls = self.get_child_embed(
+        child_embed = self.get_child_embed(
             input_ids=x["child"]["input_ids"],
             attention_mask=x["child"]["attention_mask"])
         if self._cos is not None:
-            return self._cos(parent_cls, child_cls).reshape([-1, 1])
-        batch_size = parent_cls.shape[0]
-        return torch.bmm(
-            parent_cls.reshape([batch_size, 1, -1]),
-            child_cls.reshape([batch_size, -1, 1])).reshape([-1, 1])
+            res = self._cos(parent_embed, child_embed).reshape([-1, 1])
+            return cos_as_distance(res) if as_distance else res
+        res = batch_dot(parent_embed, child_embed)
+        return dot_as_distance(res) if as_distance else res
 
 
 class BaselineModel(nn.Module):
@@ -236,17 +255,19 @@ class BaselineModel(nn.Module):
             attention_mask: torch.Tensor) -> torch.Tensor:
         return self._embed(input_ids, attention_mask)
 
-    def forward(self, x: dict[ProviderRole, TokenizedInput]) -> torch.Tensor:
-        parent_cls = self.get_parent_embed(
+    def forward(
+            self,
+            x: dict[ProviderRole, TokenizedInput],
+            *,
+            as_distance: bool = False) -> torch.Tensor:
+        parent_embed = self.get_parent_embed(
             input_ids=x["parent"]["input_ids"],
             attention_mask=x["parent"]["attention_mask"])
-        child_cls = self.get_child_embed(
+        child_embed = self.get_child_embed(
             input_ids=x["child"]["input_ids"],
             attention_mask=x["child"]["attention_mask"])
-        batch_size = parent_cls.shape[0]
-        return torch.bmm(
-            parent_cls.reshape([batch_size, 1, -1]),
-            child_cls.reshape([batch_size, -1, 1])).reshape([-1, 1])
+        res = batch_dot(parent_embed, child_embed)
+        return dot_as_distance(res) if as_distance else res
 
 
 EitherModel = Model | BaselineModel
@@ -258,9 +279,21 @@ class TrainingHarness(nn.Module):
         self._model = model
         self._softmax = nn.Softmax(dim=1)
         self._loss = nn.BCELoss()
+        self._score_loss = nn.MSELoss()
 
     def get_version(self) -> int:
         return self._model.get_version()
+
+    def score_loss(
+            self,
+            inputs: TokenizedInput,
+            scores: torch.Tensor,
+            *,
+            as_distance: bool) -> tuple[torch.Tensor, torch.Tensor]:
+        out = self._model(inputs, as_distance=as_distance)
+        dists = dot_as_distance(scores) if as_distance else scores
+        preds = torch.cdist(out, dists)
+        return preds, self._score_loss(out, dists)
 
     def forward(
             self,
@@ -277,9 +310,10 @@ def load_model(
         fin: IO[bytes],
         version: int,
         is_harness: bool) -> EitherModel:
-    verbosity = logging.get_verbosity()
+    logger = modeling_utils.logger
+    level = logger.getEffectiveLevel()
     try:
-        logging.set_verbosity_error()
+        logger.setLevel(logging.ERROR)
 
         device = get_device()
         if version < 0:
@@ -293,7 +327,7 @@ def load_model(
             model.load_state_dict(torch.load(fin, map_location=device))
         return model
     finally:
-        logging.set_verbosity(verbosity)
+        logger.setLevel(level)
 
 
 class TransformerEmbedding(EmbeddingProvider):

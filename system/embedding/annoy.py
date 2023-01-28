@@ -1,13 +1,13 @@
 import os
 from typing import Iterable
 
-import numpy as np
 import torch
 from annoy import AnnoyIndex
 
 from misc.io import named_write, open_read, open_write, remove_file
 from misc.util import check_pid_exists, safe_ravel
 from model.embedding import EmbeddingProviderMap, ProviderRole
+from model.transformer_embed import cos_as_distance
 from system.embedding.index_lookup import (
     CachedIndexEmbeddingStore,
     EmbeddingCache,
@@ -140,7 +140,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
             return torch.dot(safe_ravel(embed_a), safe_ravel(embed_b)).item()
         cos = torch.nn.functional.cosine_similarity(
             safe_ravel(embed_a), safe_ravel(embed_b), dim=0).item()
-        return np.sqrt(max(0.0, 2.0 - 2.0 * cos))
+        return cos_as_distance(cos)
 
     def is_bigger_better(self) -> bool:
         return self._is_dot
