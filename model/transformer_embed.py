@@ -116,13 +116,25 @@ def cos_as_distance(cos: torch.Tensor) -> torch.Tensor:
 
 
 class Model(nn.Module):
-    def __init__(self, version: int) -> None:
+    def __init__(
+            self,
+            version: int,
+            *,
+            ignore_pretrained_warning: bool = False) -> None:
         super().__init__()
         assert version >= 0
-        self._bert_parent = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased")
-        self._bert_child = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased")
+        logger = modeling_utils.logger
+        level = logger.getEffectiveLevel()
+        try:
+            if ignore_pretrained_warning:
+                logger.setLevel(logging.ERROR)
+            self._bert_parent = DistilBertModel.from_pretrained(
+                "distilbert-base-uncased")
+            self._bert_child = DistilBertModel.from_pretrained(
+                "distilbert-base-uncased")
+        finally:
+            if ignore_pretrained_warning:
+                logger.setLevel(level)
         if version in (1, 3, 4, 6):
             self._pdense: nn.Sequential | None = nn.Sequential(
                 nn.Linear(EMBED_SIZE, EMBED_SIZE),
@@ -211,11 +223,23 @@ class Model(nn.Module):
 
 
 class BaselineModel(nn.Module):
-    def __init__(self, version: int) -> None:
+    def __init__(
+            self,
+            version: int,
+            *,
+            ignore_pretrained_warning: bool = False) -> None:
         super().__init__()
         assert version < 0
-        self._bert = DistilBertModel.from_pretrained(
-            "distilbert-base-uncased")
+        logger = modeling_utils.logger
+        level = logger.getEffectiveLevel()
+        try:
+            if ignore_pretrained_warning:
+                logger.setLevel(logging.ERROR)
+            self._bert = DistilBertModel.from_pretrained(
+                "distilbert-base-uncased")
+        finally:
+            if ignore_pretrained_warning:
+                logger.setLevel(level)
         if version == -2:
             self._agg = AGG_CLS
         else:
@@ -310,24 +334,18 @@ def load_model(
         fin: IO[bytes],
         version: int,
         is_harness: bool) -> EitherModel:
-    logger = modeling_utils.logger
-    level = logger.getEffectiveLevel()
-    try:
-        logger.setLevel(logging.ERROR)
-
-        device = get_device()
-        if version < 0:
-            model: EitherModel = BaselineModel(version=version)
-        else:
-            model = Model(version=version)
-        if is_harness:
-            harness = TrainingHarness(model)
-            harness.load_state_dict(torch.load(fin, map_location=device))
-        else:
-            model.load_state_dict(torch.load(fin, map_location=device))
-        return model
-    finally:
-        logger.setLevel(level)
+    device = get_device()
+    model: EitherModel
+    if version < 0:
+        model = BaselineModel(version=version, ignore_pretrained_warning=True)
+    else:
+        model = Model(version=version, ignore_pretrained_warning=True)
+    if is_harness:
+        harness = TrainingHarness(model)
+        harness.load_state_dict(torch.load(fin, map_location=device))
+    else:
+        model.load_state_dict(torch.load(fin, map_location=device))
+    return model
 
 
 class TransformerEmbedding(EmbeddingProvider):
