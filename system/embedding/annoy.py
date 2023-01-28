@@ -139,8 +139,8 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         if self._is_dot:
             return torch.dot(safe_ravel(embed_a), safe_ravel(embed_b)).item()
         cos = torch.nn.functional.cosine_similarity(
-            safe_ravel(embed_a), safe_ravel(embed_b), dim=0).item()
-        return cos_as_distance(cos)
+            safe_ravel(embed_a), safe_ravel(embed_b), dim=0)
+        return cos_as_distance(cos).item()
 
     def is_bigger_better(self) -> bool:
         return self._is_dot
