@@ -32,24 +32,24 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
         primary_key=True)
     text = sa.Column(sa.Text, nullable=False)
 
-    namespace = sa.orm.relationship(
-        NamespaceTable,
-        back_populates="msgs",
-        uselist=False,
-        primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=namespace_id)
-    mhashes = sa.orm.relationship(
-        MHashTable,
-        back_populates="msgs",
-        uselist=False,
-        primaryjoin=mhash_id == MHashTable.id,
-        foreign_keys=mhash_id)
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="msgs",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
+    # mhashes = sa.orm.relationship(
+    #     MHashTable,
+    #     back_populates="msgs",
+    #     uselist=False,
+    #     primaryjoin=mhash_id == MHashTable.id,
+    #     foreign_keys=mhash_id)
 
 
-NamespaceTable.msgs = sa.orm.relationship(
-    MsgsTable, back_populates="namespace", uselist=False)
-MHashTable.msgs = sa.orm.relationship(
-    MsgsTable, back_populates="mhashes", uselist=False)
+# NamespaceTable.msgs = sa.orm.relationship(
+#     MsgsTable, back_populates="namespace", uselist=False)
+# MHashTable.msgs = sa.orm.relationship(
+#     MsgsTable, back_populates="mhashes", uselist=False)
 
 
 class TopicsTable(Base):  # pylint: disable=too-few-public-methods
@@ -72,24 +72,24 @@ class TopicsTable(Base):  # pylint: disable=too-few-public-methods
         primary_key=True)
     topic = sa.Column(sa.Text, nullable=False)
 
-    namespace = sa.orm.relationship(
-        NamespaceTable,
-        back_populates="topics",
-        uselist=False,
-        primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=namespace_id)
-    mhashes = sa.orm.relationship(
-        MHashTable,
-        back_populates="topics",
-        uselist=False,
-        primaryjoin=mhash_id == MHashTable.id,
-        foreign_keys=mhash_id)
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="topics",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
+    # mhashes = sa.orm.relationship(
+    #     MHashTable,
+    #     back_populates="topics",
+    #     uselist=False,
+    #     primaryjoin=mhash_id == MHashTable.id,
+    #     foreign_keys=mhash_id)
 
 
-NamespaceTable.topics = sa.orm.relationship(
-    TopicsTable, back_populates="namespace", uselist=False)
-MHashTable.topics = sa.orm.relationship(
-    TopicsTable, back_populates="mhashes", uselist=False)
+# NamespaceTable.topics = sa.orm.relationship(
+#     TopicsTable, back_populates="namespace", uselist=False)
+# MHashTable.topics = sa.orm.relationship(
+#     TopicsTable, back_populates="mhashes", uselist=False)
 
 
 class DBStore(MessageStore):

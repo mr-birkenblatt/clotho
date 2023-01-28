@@ -29,16 +29,16 @@ class UsersTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False)
     data = sa.Column(sa.JSON(), nullable=False)
 
-    namespace = sa.orm.relationship(
-        NamespaceTable,
-        back_populates="users",
-        uselist=False,
-        primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=namespace_id)
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="users",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
 
 
-NamespaceTable.users = sa.orm.relationship(
-    UsersTable, back_populates="namespace", uselist=False)
+# NamespaceTable.users = sa.orm.relationship(
+#     UsersTable, back_populates="namespace", uselist=False)
 
 
 class DBUserStore(UserStore):

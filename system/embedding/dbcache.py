@@ -73,24 +73,24 @@ class EmbedConfigTable(Base):  # pylint: disable=too-few-public-methods
 
     idx_config_id = sa.Index("config_id")
 
-    namespace = sa.orm.relationship(
-        NamespaceTable,
-        back_populates="embedconfig",
-        uselist=False,
-        primaryjoin=namespace_id == NamespaceTable.id,
-        foreign_keys=namespace_id)
-    models = sa.orm.relationship(
-        ModelsTable,
-        back_populates="embedconfig",
-        uselist=False,
-        primaryjoin=model_id == ModelsTable.id,
-        foreign_keys=model_id)
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="embedconfig",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
+    # models = sa.orm.relationship(
+    #     ModelsTable,
+    #     back_populates="embedconfig",
+    #     uselist=False,
+    #     primaryjoin=model_id == ModelsTable.id,
+    #     foreign_keys=model_id)
 
 
-NamespaceTable.embedconfig = sa.orm.relationship(
-    EmbedConfigTable, back_populates="namespace", uselist=False)
-ModelsTable.embedconfig = sa.orm.relationship(
-    EmbedConfigTable, back_populates="models", uselist=False)
+# NamespaceTable.embedconfig = sa.orm.relationship(
+#     EmbedConfigTable, back_populates="namespace", uselist=False)
+# ModelsTable.embedconfig = sa.orm.relationship(
+#     EmbedConfigTable, back_populates="models", uselist=False)
 
 
 MAIN_ORDER_SEQ: sa.Sequence = sa.Sequence(
@@ -124,24 +124,24 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
 
     idx_main_order = sa.Index("config_id", "main_order")
 
-    embedconfig = sa.orm.relationship(
-        EmbedConfigTable,
-        back_populates="embed",
-        uselist=False,
-        primaryjoin=config_id == EmbedConfigTable.config_id,
-        foreign_keys=config_id)
-    mhashes = sa.orm.relationship(
-        MHashTable,
-        back_populates="embed",
-        uselist=False,
-        primaryjoin=mhash_id == MHashTable.id,
-        foreign_keys=mhash_id)
+    # embedconfig = sa.orm.relationship(
+    #     EmbedConfigTable,
+    #     back_populates="embed",
+    #     uselist=False,
+    #     primaryjoin=config_id == EmbedConfigTable.config_id,
+    #     foreign_keys=config_id)
+    # mhashes = sa.orm.relationship(
+    #     MHashTable,
+    #     back_populates="embed",
+    #     uselist=False,
+    #     primaryjoin=mhash_id == MHashTable.id,
+    #     foreign_keys=mhash_id)
 
 
-EmbedConfigTable.embed = sa.orm.relationship(
-    EmbedTable, back_populates="embedconfig", uselist=False)
-MHashTable.embed = sa.orm.relationship(
-    EmbedTable, back_populates="mhashes", uselist=False)
+# EmbedConfigTable.embed = sa.orm.relationship(
+#     EmbedTable, back_populates="embedconfig", uselist=False)
+# MHashTable.embed = sa.orm.relationship(
+#     EmbedTable, back_populates="mhashes", uselist=False)
 
 
 def is_cache_init(db: DBConnector) -> bool:

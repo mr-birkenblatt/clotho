@@ -33,14 +33,14 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
     elif MESSAGE_GENERATION:
         data_gen = DataGenerator(namespace, 42)
         for link in data_gen.get_valid_random_links(
-                100, scorer=get_scorer("best"), now=now_ts()):
+                100, scorer=get_scorer("best"), now=now_ts(), verbose=False):
             print(
                 f"{data_gen.short_info(link.get_parent())} -- "
                 f"{data_gen.short_info(link.get_child())} -- "
                 f"{data_gen.vote_score(link)}")
         print("====================")
         for link in data_gen.get_valid_random_links(
-                5, scorer=get_scorer("best"), now=now_ts()):
+                5, scorer=get_scorer("best"), now=now_ts(), verbose=False):
             print(f"{data_gen.long_info(link.get_parent())}")
             print("--------------------")
             print(f"{data_gen.long_info(link.get_child())}")
