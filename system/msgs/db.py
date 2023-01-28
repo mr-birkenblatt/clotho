@@ -329,7 +329,9 @@ class DBStore(MessageStore):
         return 0 if count is None else count
 
     def _get_db_count(
-            self, conn: sa.engine.Connection) -> tuple[int, int, int] | None:
+            self,
+            conn: sa.engine.Connection,
+            ) -> tuple[int | None, int | None, int | None]:
         cstmt = sa.select(
                 sa.func.min(MsgsTable.mhash_id).label("mh_min"),
                 sa.func.max(MsgsTable.mhash_id).label("mh_max"),
@@ -337,7 +339,7 @@ class DBStore(MessageStore):
             MsgsTable.namespace_id == self._get_nid())
         row = conn.execute(cstmt).one_or_none()
         if row is None:
-            return None
+            return (None, None, None)
         return (row.count, row.mh_min, row.mh_max)
 
     def _ensure_count(self, conn: sa.engine.Connection) -> None:
