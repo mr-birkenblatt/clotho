@@ -106,6 +106,8 @@ class DBStore(MessageStore):
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
         self._size_cache: int | None = None
+        self._min_cache: int | None = None
+        self._max_cache: int | None = None
         self._size_update: float = 0.0
 
     def _get_nid(self) -> int:
@@ -232,14 +234,14 @@ class DBStore(MessageStore):
             get_random: RandomGeneratingFunction,
             count: int) -> Iterable[MHash]:
         nid = self._get_nid()
-        with self._db.get_connection() as conn:
-            total = self._get_count(conn)
-            if total is None or total == 0:
-                yield from []
-                return
+
+        def slow_retrieve(
+                conn: sa.engine.Connection,
+                remain: int,
+                total: int) -> Iterable[MHash]:
             offsets = [
-                get_random(high=total, for_row=pos)
-                for pos in range(count)
+                get_random(high=total, for_row=pos) + 1
+                for pos in range(remain)
             ]
             row_id_col = sa.func.row_number().over().label("row_id")
             sub_stmt = sa.select(
@@ -252,6 +254,44 @@ class DBStore(MessageStore):
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 yield cur_mhash
+
+        def fast_retrieve(
+                conn: sa.engine.Connection,
+                remain: int,
+                mh_min: int,
+                mh_max: int) -> Iterable[MHash]:
+            offsets = [
+                get_random(high=mh_max - mh_min + 1, for_row=pos) + mh_min
+                for pos in range(remain)
+            ]
+            stmt = sa.select(
+                MHashTable.mhash).select_from(MHashTable).join(
+                    MsgsTable, MsgsTable.mhash_id == MHashTable.id)
+            stmt = stmt.where(sa.and_(
+                MsgsTable.mhash_id.in_(offsets),
+                MsgsTable.namespace_id == nid))
+            for row in conn.execute(stmt):
+                cur_mhash = MHash.parse(row.mhash)
+                yield cur_mhash
+
+        with self._db.get_connection() as conn:
+            total, mh_min, mh_max = self._get_stat(conn)
+            if total is None or total == 0:
+                yield from []
+                return
+            remain = count
+            tries = 10  # 0
+            while remain > 0 and tries > 0:
+                if mh_min is None or mh_max is None:
+                    break
+                for mhash in fast_retrieve(conn, remain, mh_min, mh_max):
+                    yield mhash
+                    remain -= 1
+                    if remain <= 0:
+                        break
+                tries -= 1
+            if remain > 0:
+                yield from slow_retrieve(conn, remain, total)
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
@@ -288,15 +328,33 @@ class DBStore(MessageStore):
             count = self._get_count(conn)
         return 0 if count is None else count
 
-    def _get_db_count(self, conn: sa.engine.Connection) -> int | None:
-        cstmt = sa.select(sa.func.count()).select_from(MsgsTable).where(
+    def _get_db_count(
+            self, conn: sa.engine.Connection) -> tuple[int, int, int] | None:
+        cstmt = sa.select(
+                sa.func.min(MsgsTable.mhash_id).label("mh_min"),
+                sa.func.max(MsgsTable.mhash_id).label("mh_max"),
+                sa.func.count().label("count")).select_from(MsgsTable).where(
             MsgsTable.namespace_id == self._get_nid())
-        return conn.execute(cstmt).scalar()
+        row = conn.execute(cstmt).one_or_none()
+        if row is None:
+            return None
+        return (row.count, row.mh_min, row.mh_max)
 
-    def _get_count(self, conn: sa.engine.Connection) -> int | None:
+    def _ensure_count(self, conn: sa.engine.Connection) -> None:
         cur_time = time.monotonic()
         if (self._size_cache is None
                 or cur_time >= self._size_update + RELOAD_SIZE_FREQ):
-            self._size_cache = self._get_db_count(conn)
+            res = self._get_db_count(conn)
+            self._size_cache, self._min_cache, self._max_cache = res
             self._size_update = cur_time
+
+    def _get_count(self, conn: sa.engine.Connection) -> int | None:
+        self._ensure_count(conn)
         return self._size_cache
+
+    def _get_stat(
+            self,
+            conn: sa.engine.Connection,
+            ) -> tuple[int | None, int | None, int | None]:
+        self._ensure_count(conn)
+        return (self._size_cache, self._min_cache, self._max_cache)
