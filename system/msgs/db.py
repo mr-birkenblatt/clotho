@@ -1,21 +1,20 @@
 import time
 from typing import Callable, Iterable
 
-import numpy as np
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from db.base import Base, NamespaceTable
+from db.base import Base, MHashTable, NamespaceTable
 from db.db import DBConnector
 from misc.lru import LRU
 from misc.util import escape, unescape
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore, RNG_ALIGN
+from system.msgs.store import MessageStore, RandomGeneratingFunction
 from system.namespace.namespace import Namespace
 
 
-MODULE_VERSION = 1
+MODULE_VERSION = 2
 RELOAD_TOPICS_FREQ = 60 * 60  # 1h
+RELOAD_SIZE_FREQ = 60  # 1min
 
 
 class MsgsTable(Base):  # pylint: disable=too-few-public-methods
@@ -26,11 +25,31 @@ class MsgsTable(Base):  # pylint: disable=too-few-public-methods
         sa.ForeignKey(
             NamespaceTable.id, onupdate="CASCADE", ondelete="CASCADE"),
         primary_key=True)
-    mhash = sa.Column(
-        sa.String(MHash.parse_size()),
-        primary_key=True,
-        nullable=False)
+    mhash_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey(
+            MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
+        primary_key=True)
     text = sa.Column(sa.Text, nullable=False)
+
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="msgs",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
+    # mhashes = sa.orm.relationship(
+    #     MHashTable,
+    #     back_populates="msgs",
+    #     uselist=False,
+    #     primaryjoin=mhash_id == MHashTable.id,
+    #     foreign_keys=mhash_id)
+
+
+# NamespaceTable.msgs = sa.orm.relationship(
+#     MsgsTable, back_populates="namespace", uselist=False)
+# MHashTable.msgs = sa.orm.relationship(
+#     MsgsTable, back_populates="mhashes", uselist=False)
 
 
 class TopicsTable(Base):  # pylint: disable=too-few-public-methods
@@ -46,11 +65,31 @@ class TopicsTable(Base):  # pylint: disable=too-few-public-methods
         primary_key=True,
         autoincrement=True,
         nullable=False)
-    mhash = sa.Column(
-        sa.String(MHash.parse_size()),
-        primary_key=True,
-        nullable=False)
+    mhash_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey(
+            MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
+        primary_key=True)
     topic = sa.Column(sa.Text, nullable=False)
+
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="topics",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
+    # mhashes = sa.orm.relationship(
+    #     MHashTable,
+    #     back_populates="topics",
+    #     uselist=False,
+    #     primaryjoin=mhash_id == MHashTable.id,
+    #     foreign_keys=mhash_id)
+
+
+# NamespaceTable.topics = sa.orm.relationship(
+#     TopicsTable, back_populates="namespace", uselist=False)
+# MHashTable.topics = sa.orm.relationship(
+#     TopicsTable, back_populates="mhashes", uselist=False)
 
 
 class DBStore(MessageStore):
@@ -66,6 +105,10 @@ class DBStore(MessageStore):
         self._cache: LRU[MHash, Message] = LRU(cache_size)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
+        self._size_cache: int | None = None
+        self._min_cache: int | None = None
+        self._max_cache: int | None = None
+        self._size_update: float = 0.0
 
     def _get_nid(self) -> int:
         nid = self._nid
@@ -94,16 +137,17 @@ class DBStore(MessageStore):
 
     def write_message(self, message: Message) -> MHash:
         mhash = message.get_hash()
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             try:
                 values = {
                     "namespace_id": self._get_nid(),
-                    "mhash": mhash.to_parseable(),
+                    "mhash_id": self._db.get_mhash_id(
+                        session, mhash, likely_exists=False),
                     "text": self._escape(message.get_text()),
                 }
-                stmt = pg_insert(MsgsTable).values(values)
+                stmt = self._db.upsert(MsgsTable).values(values)
                 stmt = stmt.on_conflict_do_nothing()
-                conn.execute(stmt)
+                session.execute(stmt)
             except ValueError as e:
                 raise ValueError(
                     "error while processing "
@@ -116,9 +160,10 @@ class DBStore(MessageStore):
         if res is not None:
             return res
         with self._db.get_connection() as conn:
-            stmt = sa.select([MsgsTable.mhash, MsgsTable.text]).where(sa.and_(
+            stmt = sa.select(MHashTable.mhash, MsgsTable.text).where(sa.and_(
                 MsgsTable.namespace_id == self._get_nid(),
-                MsgsTable.mhash == message_hash.to_parseable(),
+                MsgsTable.mhash_id == MHashTable.id,
+                MHashTable.mhash == message_hash.to_parseable(),
             ))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
@@ -133,15 +178,16 @@ class DBStore(MessageStore):
 
     def add_topic(self, topic: Message) -> MHash:
         mhash = topic.get_hash()
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             values = {
                 "namespace_id": self._get_nid(),
-                "mhash": mhash.to_parseable(),
+                "mhash_id": self._db.get_mhash_id(
+                    session, mhash, likely_exists=False),
                 "topic": self._escape(topic.get_text()),
             }
-            stmt = pg_insert(TopicsTable).values(values)
+            stmt = self._db.upsert(TopicsTable).values(values)
             stmt = stmt.on_conflict_do_nothing()
-            conn.execute(stmt)
+            session.execute(stmt)
         self._topic_cache = None
         return mhash
 
@@ -149,8 +195,10 @@ class DBStore(MessageStore):
         res: dict[int, Message] = {}
         with self._db.get_connection() as conn:
             stmt = sa.select(
-                [TopicsTable.id, TopicsTable.mhash, TopicsTable.topic],
-                ).where(TopicsTable.namespace_id == self._get_nid())
+                TopicsTable.id, MHashTable.mhash, TopicsTable.topic,
+                ).where(sa.and_(
+                    TopicsTable.namespace_id == self._get_nid(),
+                    TopicsTable.mhash_id == MHashTable.id))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 cur_topic = self._unescape(row.topic)
@@ -176,33 +224,74 @@ class DBStore(MessageStore):
     def get_topics_count(self) -> int:
         with self._db.get_connection() as conn:
             cstmt = sa.select(
-                [sa.func.count()]).select_from(TopicsTable).where(
+                sa.func.count()).select_from(TopicsTable).where(
                 TopicsTable.namespace_id == self._get_nid())
             count = conn.execute(cstmt).scalar()
         return 0 if count is None else count
 
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         nid = self._get_nid()
-        remain = count
+
+        def slow_retrieve(
+                conn: sa.engine.Connection,
+                remain: int,
+                total: int) -> Iterable[MHash]:
+            offsets = [
+                get_random(high=total, for_row=pos) + 1
+                for pos in range(remain)
+            ]
+            row_id_col = sa.func.row_number().over().label("row_id")
+            sub_stmt = sa.select(
+                MsgsTable.mhash_id.label("mid"), row_id_col).where(
+                    MsgsTable.namespace_id == nid)
+            stmt = sa.select(
+                MHashTable.mhash).select_from(MHashTable).join(
+                    sub_stmt.subquery(), sa.Column("mid") == MHashTable.id)
+            stmt = stmt.where(sa.Column("row_id").in_(offsets))
+            for row in conn.execute(stmt):
+                cur_mhash = MHash.parse(row.mhash)
+                yield cur_mhash
+
+        def fast_retrieve(
+                conn: sa.engine.Connection,
+                remain: int,
+                mh_min: int,
+                mh_max: int) -> Iterable[MHash]:
+            offsets = [
+                get_random(high=mh_max - mh_min + 1, for_row=pos) + mh_min
+                for pos in range(remain)
+            ]
+            stmt = sa.select(
+                MHashTable.mhash).select_from(MHashTable).join(
+                    MsgsTable, MsgsTable.mhash_id == MHashTable.id)
+            stmt = stmt.where(sa.and_(
+                MsgsTable.mhash_id.in_(offsets),
+                MsgsTable.namespace_id == nid))
+            for row in conn.execute(stmt):
+                cur_mhash = MHash.parse(row.mhash)
+                yield cur_mhash
+
         with self._db.get_connection() as conn:
-            total = self._get_count(conn)
+            total, mh_min, mh_max = self._get_stat(conn)
             if total is None or total == 0:
                 yield from []
                 return
-            while remain > 0:
-                offsets = rng.integers(0, total, size=RNG_ALIGN).tolist()
-                row_id_col = sa.func.row_number().over().label("row_id")
-                sub_stmt = sa.select([MsgsTable.mhash, row_id_col]).where(
-                    MsgsTable.namespace_id == nid)
-                stmt = sa.select(sub_stmt.subquery()).where(
-                    sa.Column("row_id").in_(offsets))
-                for row in conn.execute(stmt):
-                    cur_mhash = MHash.parse(row.mhash)
-                    yield cur_mhash
+            remain = count
+            tries = 10  # 0
+            while remain > 0 and tries > 0:
+                if mh_min is None or mh_max is None:
+                    break
+                for mhash in fast_retrieve(conn, remain, mh_min, mh_max):
+                    yield mhash
                     remain -= 1
                     if remain <= 0:
                         break
+                tries -= 1
+            if remain > 0:
+                yield from slow_retrieve(conn, remain, total)
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
@@ -211,8 +300,9 @@ class DBStore(MessageStore):
                 *,
                 pbar: Callable[[], None] | None) -> Iterable[MHash]:
             stmt = sa.select(
-                [MsgsTable.mhash, MsgsTable.text]).where(
-                MsgsTable.namespace_id == self._get_nid())
+                MHashTable.mhash, MsgsTable.text).where(sa.and_(
+                    MsgsTable.namespace_id == self._get_nid(),
+                    MsgsTable.mhash_id == MHashTable.id))
             for row in conn.execute(stmt):
                 cur_mhash = MHash.parse(row.mhash)
                 cur_text = self._unescape(row.text)
@@ -238,7 +328,35 @@ class DBStore(MessageStore):
             count = self._get_count(conn)
         return 0 if count is None else count
 
-    def _get_count(self, conn: sa.engine.Connection) -> int | None:
-        cstmt = sa.select([sa.func.count()]).select_from(MsgsTable).where(
+    def _get_db_count(
+            self,
+            conn: sa.engine.Connection,
+            ) -> tuple[int | None, int | None, int | None]:
+        cstmt = sa.select(
+                sa.func.min(MsgsTable.mhash_id).label("mh_min"),
+                sa.func.max(MsgsTable.mhash_id).label("mh_max"),
+                sa.func.count().label("cnt")).select_from(MsgsTable).where(
             MsgsTable.namespace_id == self._get_nid())
-        return conn.execute(cstmt).scalar()
+        row = conn.execute(cstmt).one_or_none()
+        if row is None:
+            return (None, None, None)
+        return (row.cnt, row.mh_min, row.mh_max)
+
+    def _ensure_count(self, conn: sa.engine.Connection) -> None:
+        cur_time = time.monotonic()
+        if (self._size_cache is None
+                or cur_time >= self._size_update + RELOAD_SIZE_FREQ):
+            res = self._get_db_count(conn)
+            self._size_cache, self._min_cache, self._max_cache = res
+            self._size_update = cur_time
+
+    def _get_count(self, conn: sa.engine.Connection) -> int | None:
+        self._ensure_count(conn)
+        return self._size_cache
+
+    def _get_stat(
+            self,
+            conn: sa.engine.Connection,
+            ) -> tuple[int | None, int | None, int | None]:
+        self._ensure_count(conn)
+        return (self._size_cache, self._min_cache, self._max_cache)

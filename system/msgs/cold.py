@@ -1,12 +1,10 @@
 import os
 from typing import Iterable
 
-import numpy as np
-
 from misc.cold_writer import ColdAccess
 from misc.lru import LRU
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore
+from system.msgs.store import MessageStore, RandomGeneratingFunction
 
 
 class ColdMessageStore(MessageStore):
@@ -65,7 +63,9 @@ class ColdMessageStore(MessageStore):
         return res
 
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         raise RuntimeError(
             "retrieving random messages is not supported in cold storage")
 

@@ -2,7 +2,7 @@ import re
 from typing import Callable
 
 from effects.effects import EqType
-from misc.util import get_text_hash, is_hex
+from misc.util import get_text_hash, is_hex, text_hash_size
 
 
 SHORT_HASH = 6
@@ -17,7 +17,7 @@ class MHash(EqType):
 
     @staticmethod
     def parse_size() -> int:
-        return 64
+        return text_hash_size()
 
     @classmethod
     def parse(cls, msg_hash: str) -> 'MHash':

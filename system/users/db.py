@@ -1,7 +1,6 @@
 from typing import Callable, Iterable
 
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from db.base import Base, NamespaceTable
 from db.db import DBConnector
@@ -29,6 +28,17 @@ class UsersTable(Base):  # pylint: disable=too-few-public-methods
         sa.String(MAX_USER_NAME_LEN),
         nullable=False)
     data = sa.Column(sa.JSON(), nullable=False)
+
+    # namespace = sa.orm.relationship(
+    #     NamespaceTable,
+    #     back_populates="users",
+    #     uselist=False,
+    #     primaryjoin=namespace_id == NamespaceTable.id,
+    #     foreign_keys=namespace_id)
+
+
+# NamespaceTable.users = sa.orm.relationship(
+#     UsersTable, back_populates="namespace", uselist=False)
 
 
 class DBUserStore(UserStore):
@@ -60,7 +70,7 @@ class DBUserStore(UserStore):
 
     def get_user_by_id(self, user_id: str) -> User:
         with self._db.get_connection() as conn:
-            stmt = sa.select([UsersTable.name, UsersTable.data]).where(sa.and_(
+            stmt = sa.select(UsersTable.name, UsersTable.data).where(sa.and_(
                 UsersTable.namespace_id == self._get_nid(),
                 UsersTable.id == user_id))
             res = conn.execute(stmt).one_or_none()
@@ -76,25 +86,25 @@ class DBUserStore(UserStore):
         obj = {
             "permissions": user.get_permissions(),
         }
-        with self._db.get_connection() as conn:
+        with self._db.get_session() as session:
             values = {
                 "namespace_id": nid,
                 "id": user_id,
                 "name": name,
                 "data": obj,
             }
-            stmt = pg_insert(UsersTable).values(values)
+            stmt = self._db.upsert(UsersTable).values(values)
             stmt = stmt.on_conflict_do_update(
                 index_elements=[UsersTable.namespace_id, UsersTable.id],
                 index_where=sa.and_(
                     UsersTable.namespace_id == nid,
                     UsersTable.id == user_id),
                 set_=dict(stmt.excluded.items()))
-            conn.execute(stmt)
+            session.execute(stmt)
 
     def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
         with self._db.get_connection() as conn:
-            stmt = sa.select([UsersTable.name, UsersTable.data]).where(
+            stmt = sa.select(UsersTable.name, UsersTable.data).where(
                 UsersTable.namespace_id == self._get_nid())
             res = conn.execute(stmt)
 

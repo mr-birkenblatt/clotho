@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, Literal, TypedDict
+from typing import Callable, Iterable, Literal, Protocol, TypedDict
 
 import numpy as np
 
@@ -9,6 +9,12 @@ from system.namespace.namespace import ModuleName, Namespace
 
 RNG_ALIGN = 10
 SEED_MUL = 17
+
+
+class RandomGeneratingFunction(  # pylint: disable=too-few-public-methods
+        Protocol):
+    def __call__(self, *, high: int, for_row: int) -> int:
+        ...
 
 
 class MessageStore(ModuleBase):
@@ -43,7 +49,9 @@ class MessageStore(ModuleBase):
         raise NotImplementedError()
 
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         raise NotImplementedError()
 
     def get_random_messages(
@@ -66,15 +74,27 @@ class MessageStore(ModuleBase):
             rng_fn: Callable[[int], np.random.Generator],
             offset: int,
             limit: int) -> list[MHash]:
-        start = offset - (offset % RNG_ALIGN)
+        rel_start = offset % RNG_ALIGN
+        start = offset - rel_start
         end = offset + limit
+        total = end - start
+        rngs: dict[int, np.random.Generator] = {}
+
+        def get_random(*, high: int, for_row: int) -> int:
+            cur_ix = (start + for_row) // RNG_ALIGN
+            rng = rngs.get(cur_ix)
+            if rng is None:
+                rng = rng_fn(cur_ix)
+                rngs[cur_ix] = rng
+            return rng.integers(0, high)
+
         res: list[MHash] = []
-        cur_ix = start
-        while cur_ix < end:
-            rng = rng_fn(cur_ix)
-            res.extend(self.do_get_random_messages(rng, RNG_ALIGN))
-            cur_ix += RNG_ALIGN
-        rel_start = offset - start
+        while len(res) < total:
+            prev_len = len(res)
+            res.extend(
+                self.do_get_random_messages(get_random, total - len(res)))
+            if prev_len == len(res):
+                raise ValueError("random function did not return any results")
         return res[rel_start:rel_start + limit]
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:

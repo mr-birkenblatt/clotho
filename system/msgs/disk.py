@@ -2,13 +2,11 @@ import os
 import time
 from typing import Callable, Iterable
 
-import numpy as np
-
 from misc.io import ensure_folder, get_folder, open_append, open_read
 from misc.lru import LRU
 from misc.util import escape, unescape
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore
+from system.msgs.store import MessageStore, RandomGeneratingFunction
 
 
 MSG_EXT = ".msg"
@@ -116,20 +114,25 @@ class DiskStore(MessageStore):
         return len(self.get_topics(0, None))
 
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         remain = count
         cur_path = self._path
+        cur_ix = 0
         while remain > 0:
             candidates = list(get_folder(cur_path, MSG_EXT))
             if candidates:
-                seg, recurse = candidates[rng.integers(0, len(candidates))]
+                seg, recurse = candidates[get_random(
+                    high=len(candidates), for_row=cur_ix)]
                 cur_path = os.path.join(cur_path, seg)
                 if recurse:
                     continue
                 cur = list(set((
                     msg.get_hash() for msg in self._load_file(cur_path))))
                 if cur:
-                    yield cur[rng.integers(0, len(cur))]
+                    yield cur[get_random(high=len(cur), for_row=cur_ix)]
+                    cur_ix += 1
             remain -= 1
             cur_path = self._path
 

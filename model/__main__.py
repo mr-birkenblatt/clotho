@@ -1,4 +1,5 @@
 import sys
+import time
 
 import numpy as np
 import pandas as pd
@@ -16,7 +17,7 @@ from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
 
 
-RANDOM_TEST = False
+RANDOM_TEST = True
 MESSAGE_GENERATION = False
 
 
@@ -24,20 +25,22 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
     namespace = get_namespace(ns_name)
     if RANDOM_TEST:
         msgs = get_message_store(namespace)
-        rng = np.random.default_rng(seed=42)
-        for mhash in msgs.do_get_random_messages(rng, 20):
+        cur_time = time.monotonic()
+        for mhash in msgs.generate_random_messages(
+                lambda seed: np.random.default_rng(42 * seed + 23), 0, 100):
             print(f"{mhash}: {msgs.read_message(mhash).get_text()[:40]}")
+        print(f"time: {time.monotonic() - cur_time:.4f}s")
     elif MESSAGE_GENERATION:
         data_gen = DataGenerator(namespace, 42)
         for link in data_gen.get_valid_random_links(
-                100, scorer=get_scorer("best"), now=now_ts()):
+                100, scorer=get_scorer("best"), now=now_ts(), verbose=False):
             print(
                 f"{data_gen.short_info(link.get_parent())} -- "
                 f"{data_gen.short_info(link.get_child())} -- "
                 f"{data_gen.vote_score(link)}")
         print("====================")
         for link in data_gen.get_valid_random_links(
-                5, scorer=get_scorer("best"), now=now_ts()):
+                5, scorer=get_scorer("best"), now=now_ts(), verbose=False):
             print(f"{data_gen.long_info(link.get_parent())}")
             print("--------------------")
             print(f"{data_gen.long_info(link.get_child())}")
