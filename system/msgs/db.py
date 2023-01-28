@@ -12,7 +12,7 @@ from system.msgs.store import MessageStore, RandomGeneratingFunction
 from system.namespace.namespace import Namespace
 
 
-MODULE_VERSION = 1
+MODULE_VERSION = 2
 RELOAD_TOPICS_FREQ = 60 * 60  # 1h
 RELOAD_SIZE_FREQ = 60  # 1min
 

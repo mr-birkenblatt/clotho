@@ -20,7 +20,7 @@ from system.msgs.message import MHash
 from system.namespace.namespace import Namespace
 
 
-MODULE_VERSION = 1
+MODULE_VERSION = 2
 
 
 class ModelsTable(Base):  # pylint: disable=too-few-public-methods
