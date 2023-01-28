@@ -1,13 +1,13 @@
-import time
 import collections
 import threading
+import time
 from typing import Callable, Iterable, Literal, Sequence, TypedDict, TypeVar
 
 import numpy as np
 import pandas as pd
 
 from misc.lru import LRU
-from misc.util import now_ts, sigmoid
+from misc.util import now_ts
 from system.links.link import Link
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_link_store
@@ -191,13 +191,17 @@ class DataGenerator:
             self,
             count: int,
             scorer: Scorer,
-            now: pd.Timestamp) -> list[Link]:
+            now: pd.Timestamp,
+            *,
+            verbose: bool) -> list[Link]:
         cur_time = time.monotonic()
         messages = self._get_random_messages(count)
-        print(f"valid messages: {time.monotonic() - cur_time:.4f}")
+        if verbose:
+            print(f"valid messages: {time.monotonic() - cur_time:.4f}")
         cur_time = time.monotonic()
         res = self._get_valid_links_from_messages(messages, scorer, now)
-        print(f"valid links: {time.monotonic() - cur_time:.4f}")
+        if verbose:
+            print(f"valid links: {time.monotonic() - cur_time:.4f}")
         return res
 
     def get_path_links(
@@ -208,16 +212,20 @@ class DataGenerator:
         paths = self._get_random_paths(count)
         return self._get_links_from_paths(paths, scorer, now)
 
-    def get_truly_random_links(self, count: int) -> list[Link]:
+    def get_truly_random_links(
+            self, count: int, *, verbose: bool) -> list[Link]:
         cur_time = time.monotonic()
         parents = self._get_random_messages(count)
-        print(f"random parents: {time.monotonic() - cur_time:.4f}")
+        if verbose:
+            print(f"random parents: {time.monotonic() - cur_time:.4f}")
         cur_time = time.monotonic()
         children = self._get_random_messages(count)
-        print(f"random children: {time.monotonic() - cur_time:.4f}")
+        if verbose:
+            print(f"random children: {time.monotonic() - cur_time:.4f}")
         cur_time = time.monotonic()
         res = self._get_random_links_from_messages(parents, children)
-        print(f"random links: {time.monotonic() - cur_time:.4f}")
+        if verbose:
+            print(f"random links: {time.monotonic() - cur_time:.4f}")
         return res
 
     def get_random_numbers(self, count: int) -> list[float]:
@@ -241,19 +249,19 @@ class DataGenerator:
         return self._msgs.read_message(mhash).to_debug(False)
 
     def vote_score(self, link: Link) -> float:
-        #vhonor = link.get_votes("honor").get_total_votes()
+        # vhonor = link.get_votes("honor").get_total_votes()
         vup = link.get_votes("up").get_total_votes()
-        #vdown = link.get_votes("down").get_total_votes()
+        # vdown = link.get_votes("down").get_total_votes()
         return max(0, vup)  # - HONOR_MUL * vhonor)  # - DOWN_MUL * vdown)
 
     def is_weak(self, link: Link) -> bool:
         vup = link.get_votes("up").get_total_votes()
-        #vdown = link.get_votes("down").get_total_votes()
+        # vdown = link.get_votes("down").get_total_votes()
         vdown = 0.0
         if vup < 2.0 and vdown < 1.0:
             return True
-        #if vdown < 2.0 and vup < 2.0:
-        #    return True
+        # if vdown < 2.0 and vup < 2.0:
+        #     return True
         return False
 
     def has_topic(self, link: Link) -> bool:
@@ -312,6 +320,7 @@ class TrainTestGenerator:
             compute_batch_size: int | None = None,
             scorer: Scorer | None = None,
             now: pd.Timestamp | None = None,
+            verbose: bool = False,
             ) -> None:
         assert train is not train_validation
         assert train is not test
@@ -367,6 +376,8 @@ class TrainTestGenerator:
         self._th_err: BaseException | None = None
         self._lock = threading.RLock()
         self._cond = threading.Condition(self._lock)
+
+        self._verbose = verbose
 
     def get_batch_size(self) -> int:
         return self._batch_size
@@ -500,55 +511,43 @@ class TrainTestGenerator:
             learning_plan: list[LearningPlan],
             count: int,
             scorer: Scorer,
-            now: pd.Timestamp) -> Iterable[BatchRow]:
-        cur_time = time.monotonic()
-
-        def measure(name: str) -> None:
-            nonlocal cur_time
-
-            next_time = time.monotonic()
-            #print(f"{name}: {next_time - cur_time:.4f}s")
-            cur_time = next_time
-
+            now: pd.Timestamp,
+            *,
+            verbose: bool) -> Iterable[BatchRow]:
         plan = data.get_weighted_choice(
             learning_plan,
             [lplan["weight"] for lplan in learning_plan],
             count)
-        measure("choice")
         flip_lrs = data.get_random_numbers(count)
         flip_left_pc = data.get_random_numbers(count)
         flip_right_pc = data.get_random_numbers(count)
-        measure("rng")
         rcounts: collections.defaultdict[RowMode, int] = \
             collections.defaultdict(lambda: 0)
         for pentry in plan:
             if pentry["left"] is not None:
                 rcounts[pentry["left"]["mode"]] += 1
             rcounts[pentry["right"]["mode"]] += 1
-        measure("rcounts")
 
         def gen(mode: RowMode, rcount: int) -> list[Link]:
-            measure("before gen")
             if mode == "random":
-                res = data.get_truly_random_links(rcount)
+                res = data.get_truly_random_links(
+                    rcount, verbose=verbose)
             elif mode == "valid":
-                res = data.get_valid_random_links(rcount, scorer, now)
+                res = data.get_valid_random_links(
+                    rcount, scorer, now, verbose=verbose)
             elif mode == "path":
                 res = data.get_path_links(rcount, scorer, now)
             else:
                 raise ValueError(f"invalid mode: {mode}")
-            measure(mode)
             return res
 
         links = {
             key: collections.deque(gen(key, kcount))
             for key, kcount in rcounts.items()
         }
-        measure("links")
         produced = 0
         rejected = 0
         for ix, pentry in enumerate(plan):
-            measure("loop enter")
             right = pentry["right"]
             right_link = links[right["mode"]].popleft()
             name_right = f"{right['mode']}"
@@ -572,13 +571,11 @@ class TrainTestGenerator:
                 name = f"*{name_right}--{name_left}"
             else:
                 name = f"{name_left}--{name_right}"
-            measure("flip")
 
             text_pl = data.get_text(left_link.get_parent())
             text_cl = data.get_text(left_link.get_child())
             text_pr = data.get_text(right_link.get_parent())
             text_cr = data.get_text(right_link.get_child())
-            measure("family")
             mtl = pentry["min_text_length"]
             if mtl is not None:
                 name = f"{name};(mtl:{mtl})"
@@ -591,14 +588,12 @@ class TrainTestGenerator:
                 if any(len(txt) < mtl for txt in texts):
                     rejected += 1
                     continue
-            measure("mtl")
 
             score_left = data.vote_score(left_link)
             score_right = data.vote_score(right_link)
             if score_left == score_right:
                 rejected += 1
                 continue
-            measure("score")
 
             if pentry["skip_weak"]:
                 name = f"{name};(sw)"
@@ -608,7 +603,6 @@ class TrainTestGenerator:
                 if score_right < score_left and data.is_weak(left_link):
                     rejected += 1
                     continue
-            measure("weak")
 
             if pentry["skip_topics"]:
                 name = f"{name};(st)"
@@ -618,22 +612,21 @@ class TrainTestGenerator:
                 if data.has_topic(left_link):
                     rejected += 1
                     continue
-            measure("skip topics")
 
-            #sway_right = float(sigmoid(score_right - score_left))
+            # sway_right = float(sigmoid(score_right - score_left))
             yield {
                 "parent_left": text_pl,
                 "child_left": text_cl,
                 "parent_right": text_pr,
                 "child_right": text_cr,
-                "score_left": score_left,  #1.0 - sway_right,
-                "score_right": score_right,  #sway_right,
+                "score_left": score_left,  # 1.0 - sway_right,
+                "score_right": score_right,  # sway_right,
                 "correct_is_right": score_right > score_left,
                 "gen_name": name,
             }
             produced += 1
-            measure("yield")
-        print(f"produced: {produced} rejected: {rejected}")
+        if verbose:
+            print(f"produced: {produced} rejected: {rejected}")
         if produced == 0:
             print(
                 "WARNING: current setting produced no output "
@@ -649,7 +642,8 @@ class TrainTestGenerator:
                 learning_plan,
                 self._compute_batch_size,
                 self._scorer,
-                self._now):
+                self._now,
+                verbose=self._verbose):
             buff.append(row)
             with self._cond:
                 self._cond.notify_all()
