@@ -16,6 +16,9 @@ if TYPE_CHECKING:
     from system.namespace.namespace import Namespace
 
 
+VERBOSE = False
+
+
 DBConfig = TypedDict('DBConfig', {
     "dialect": str,
     "host": str,
@@ -66,7 +69,7 @@ def get_engine(config: DBConfig) -> sa.engine.Engine:
         dbname = config["dbname"]
         res = sa.create_engine(
             f"{dialect}://{user}:{passwd}@{host}:{port}/{dbname}",
-            echo=False)
+            echo=VERBOSE)
         res = res.execution_options(
             schema_translate_map={None: config["schema"]})
         ENGINES[key] = res

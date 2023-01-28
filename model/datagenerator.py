@@ -89,6 +89,12 @@ class DataGenerator:
             now: pd.Timestamp) -> list[Link]:
         rng = self._rng
         links = self._links
+        pool: collections.deque[MHash] = collections.deque()
+
+        def random_message() -> MHash:
+            while not pool:
+                pool.extend(self._get_random_messages(100))
+            return pool.popleft()
 
         def get_link(msg: MHash) -> Link:
             pcount = max(links.get_all_parents_count(msg, now), 1)
@@ -99,7 +105,7 @@ class DataGenerator:
                 offset=int(rng.integers(0, pcount)),
                 limit=1))
             if not res:
-                res = [links.get_link(msg, self._get_random_messages(1)[0])]
+                res = [links.get_link(msg, random_message())]
             return res[0]
 
         return [

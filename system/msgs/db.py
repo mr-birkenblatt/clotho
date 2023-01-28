@@ -1,7 +1,6 @@
 import time
 from typing import Callable, Iterable
 
-import numpy as np
 import sqlalchemy as sa
 
 from db.base import Base, MHashTable, NamespaceTable
@@ -9,12 +8,13 @@ from db.db import DBConnector
 from misc.lru import LRU
 from misc.util import escape, unescape
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore, RNG_ALIGN
+from system.msgs.store import MessageStore, RandomGeneratingFunction
 from system.namespace.namespace import Namespace
 
 
 MODULE_VERSION = 1
 RELOAD_TOPICS_FREQ = 60 * 60  # 1h
+RELOAD_SIZE_FREQ = 60  # 1min
 
 
 class MsgsTable(Base):  # pylint: disable=too-few-public-methods
@@ -105,6 +105,8 @@ class DBStore(MessageStore):
         self._cache: LRU[MHash, Message] = LRU(cache_size)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
+        self._size_cache: int | None = None
+        self._size_update: float = 0.0
 
     def _get_nid(self) -> int:
         nid = self._nid
@@ -226,29 +228,30 @@ class DBStore(MessageStore):
         return 0 if count is None else count
 
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         nid = self._get_nid()
-        remain = count
         with self._db.get_connection() as conn:
             total = self._get_count(conn)
             if total is None or total == 0:
                 yield from []
                 return
-            while remain > 0:
-                offsets = rng.integers(0, total, size=RNG_ALIGN).tolist()
-                row_id_col = sa.func.row_number().over().label("row_id")
-                sub_stmt = sa.select(
-                    MHashTable.mhash, row_id_col).where(sa.and_(
-                        MsgsTable.namespace_id == nid,
-                        MsgsTable.mhash_id == MHashTable.id))
-                stmt = sa.select(sub_stmt.subquery()).where(
-                    sa.Column("row_id").in_(offsets))
-                for row in conn.execute(stmt):
-                    cur_mhash = MHash.parse(row.mhash)
-                    yield cur_mhash
-                    remain -= 1
-                    if remain <= 0:
-                        break
+            offsets = [
+                get_random(high=total, for_row=pos)
+                for pos in range(count)
+            ]
+            row_id_col = sa.func.row_number().over().label("row_id")
+            sub_stmt = sa.select(
+                MsgsTable.mhash_id.label("mid"), row_id_col).where(
+                    MsgsTable.namespace_id == nid)
+            stmt = sa.select(
+                MHashTable.mhash).select_from(MHashTable).join(
+                    sub_stmt.subquery(), sa.Column("mid") == MHashTable.id)
+            stmt = stmt.where(sa.Column("row_id").in_(offsets))
+            for row in conn.execute(stmt):
+                cur_mhash = MHash.parse(row.mhash)
+                yield cur_mhash
 
     def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
@@ -285,7 +288,15 @@ class DBStore(MessageStore):
             count = self._get_count(conn)
         return 0 if count is None else count
 
-    def _get_count(self, conn: sa.engine.Connection) -> int | None:
+    def _get_db_count(self, conn: sa.engine.Connection) -> int | None:
         cstmt = sa.select(sa.func.count()).select_from(MsgsTable).where(
             MsgsTable.namespace_id == self._get_nid())
         return conn.execute(cstmt).scalar()
+
+    def _get_count(self, conn: sa.engine.Connection) -> int | None:
+        cur_time = time.monotonic()
+        if (self._size_cache is None
+                or cur_time >= self._size_update + RELOAD_SIZE_FREQ):
+            self._size_cache = self._get_db_count(conn)
+            self._size_update = cur_time
+        return self._size_cache
