@@ -335,12 +335,12 @@ class DBStore(MessageStore):
         cstmt = sa.select(
                 sa.func.min(MsgsTable.mhash_id).label("mh_min"),
                 sa.func.max(MsgsTable.mhash_id).label("mh_max"),
-                sa.func.count().label("count")).select_from(MsgsTable).where(
+                sa.func.count().label("cnt")).select_from(MsgsTable).where(
             MsgsTable.namespace_id == self._get_nid())
         row = conn.execute(cstmt).one_or_none()
         if row is None:
             return (None, None, None)
-        return (row.count, row.mh_min, row.mh_max)
+        return (row.cnt, row.mh_min, row.mh_max)
 
     def _ensure_count(self, conn: sa.engine.Connection) -> None:
         cur_time = time.monotonic()
