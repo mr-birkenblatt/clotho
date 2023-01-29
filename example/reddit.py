@@ -49,7 +49,7 @@ class RedditAccess:
     def get_posts(
             self, subreddit: str, *, is_top: bool) -> Iterable[Submission]:
         if is_top:
-            yield from self._reddit.subreddit(subreddit).top()
+            yield from self._reddit.get_subreddit(subreddit).get_top_from_all()
         else:
             yield from self._reddit.subreddit(subreddit).hot()
 
