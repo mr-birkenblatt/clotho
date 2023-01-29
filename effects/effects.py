@@ -98,7 +98,7 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
             self, parser: tuple[str, Callable[[str], KT]]) -> Iterable[KT]:
         raise NotImplementedError()
 
-    def key_count(self) -> int:
+    def key_count(self, parser: tuple[str, Callable[[str], KT]]) -> int:
         raise NotImplementedError()
 
 

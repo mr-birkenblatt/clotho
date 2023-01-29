@@ -113,8 +113,9 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             for key in sorted(self.get_range_keys(prefix=prefix))
         )
 
-    def key_count(self) -> int:
-        return self._redis.keys_count(f"{self._redis.get_prefix()}:")
+    def key_count(self, parser: tuple[str, Callable[[str], KT]]) -> int:
+        prefix, _ = parser
+        return self._redis.keys_count(f"{self._redis.get_prefix()}:{prefix}")
 
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
@@ -174,8 +175,9 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
             for key in sorted(self._redis.keys_str(prefix, None))
         )
 
-    def key_count(self) -> int:
-        return self._redis.keys_count(f"{self._redis.get_prefix()}:")
+    def key_count(self, parser: tuple[str, Callable[[str], KT]]) -> int:
+        prefix, _ = parser
+        return self._redis.keys_count(f"{self._redis.get_prefix()}:{prefix}")
 
 
 class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):

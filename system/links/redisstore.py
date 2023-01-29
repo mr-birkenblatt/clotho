@@ -654,13 +654,13 @@ class RedisLinkStore(LinkStore):
         from tqdm.auto import tqdm  # type: ignore
 
         total_key_count = (
-            self.r_user.key_count()
-            + self.r_user_links.key_count()
-            + self.r_voted.key_count()
-            + self.r_total.key_count()
-            + self.r_daily.key_count()
-            + self.r_first.key_count()
-            + self.r_last.key_count()
+            self.r_user.key_count(self.r_user_parser)
+            + self.r_user_links.key_count(self.r_user_links_parser)
+            + self.r_voted.key_count(self.r_voted_parser)
+            + self.r_total.key_count(self.r_total_parser)
+            + self.r_daily.key_count(self.r_daily_parser)
+            + self.r_first.key_count(self.r_first_parser)
+            + self.r_last.key_count(self.r_last_parser)
         )
         with tqdm(total=total_key_count) as pbar:
             yield from process(lambda: pbar.update(1))
