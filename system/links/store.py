@@ -211,7 +211,11 @@ RedisLinkModule = TypedDict('RedisLinkModule', {
     "name": Literal["redis"],
     "conn": str,
 })
-LinkModule = RedisLinkModule
+ColdLinkModule = TypedDict('ColdLinkModule', {
+    "name": Literal["cold"],
+    "keep_alive": float,
+})
+LinkModule = RedisLinkModule | ColdLinkModule
 
 
 def create_link_store(namespace: Namespace) -> LinkStore:
@@ -221,4 +225,9 @@ def create_link_store(namespace: Namespace) -> LinkStore:
 
         return RedisLinkStore(
             namespace.get_redis_key("linkstore", lobj["conn"]))
+    if lobj["name"] == "cold":
+        from system.links.cold import ColdLinkStore
+
+        return ColdLinkStore(
+            namespace.get_module_root("links"), keep_alive=lobj["keep_alive"])
     raise ValueError(f"unknown link store: {lobj}")
