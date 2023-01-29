@@ -27,6 +27,7 @@ def from_json(line: str, user_store: UserStore) -> LinkSer:
             child=MHash.parse(value["child"]))
 
     obj = json_maybe_read(line)
+    assert obj is not None
     kind = obj["kind"]
     if kind == "user":
         return {

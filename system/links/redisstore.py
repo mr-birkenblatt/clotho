@@ -665,27 +665,27 @@ class RedisLinkStore(LinkStore):
 
     def do_parse_vote_fragment(
             self, link_ser: LinkSer, now: pd.Timestamp | None) -> None:
-        kind = link_ser["kind"]
-        if kind == "user":
+        if link_ser["kind"] == "user":
             self.r_user.set_value(
                 link_ser["link"], link_ser["user"].get_id(), now)
-        elif kind == "user_links":
+        elif link_ser["kind"] == "user_links":
             user_id = link_ser["user"].get_id()
             for link in link_ser["links"]:
                 self.r_user_links.add_value(
                     user_id, parseable_link(link.parent, link.child), now)
-        elif kind == "voted":
+        elif link_ser["kind"] == "voted":
             link = link_ser["link"]
             for user in link_ser["users"]:
                 self.r_voted.add_value(link, user.get_id(), now)
-        elif kind == "total":
+        elif link_ser["kind"] == "total":
             self.r_total.set_value(link_ser["link"], link_ser["total"], now)
-        elif kind == "daily":
+        elif link_ser["kind"] == "daily":
             self.r_daily.set_value(link_ser["link"], link_ser["daily"], now)
-        elif kind == "first":
+        elif link_ser["kind"] == "first":
             self.r_first.set_value(link_ser["link"], link_ser["first"], now)
-        elif kind == "last":
+        elif link_ser["kind"] == "last":
             self.r_last.set_value(link_ser["link"], link_ser["last"], now)
         else:
             raise ValueError(
-                f"unkown serialization kind '{kind}' in {link_ser}")
+                "unkown serialization kind "
+                f"'{link_ser['kind']}' in {link_ser}")
