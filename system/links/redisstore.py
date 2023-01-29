@@ -138,16 +138,14 @@ class RedisLinkStore(LinkStore):
             return f"{vuserlinks}{user}"
 
         def parse_user_links_key(key: str) -> str:
-            if not key.startswith(vuserlinks):
-                raise ValueError(f"invalid key: {key} for {vuserlinks}")
-            return key.removeprefix(vuserlinks)
+            return key
 
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
             ns_key, "link", key_constructor("user"))
         self.r_user_parser = parse_key_constructor("user")
         self.r_user_links = SetRootRedisType[str](
             ns_key, "link", construct_user_links_key)
-        self.r_user_links_parser = parse_user_links_key
+        self.r_user_links_parser = (vuserlinks, parse_user_links_key)
         self.r_voted: SetRootRedisType[RLink] = SetRootRedisType(
             ns_key, "link", key_constructor("voted"))
         self.r_voted_parser = parse_key_constructor("voted")

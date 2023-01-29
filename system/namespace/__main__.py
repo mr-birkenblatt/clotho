@@ -86,6 +86,8 @@ def init(ns_name: str, module: ModuleName, *, force: bool) -> None:
 def xfer(ns_name: str, module: ModuleName, ns_dest: str) -> None:
     namespace = get_namespace(ns_name)
     dest_namespace = get_namespace(ns_dest)
+    if namespace == dest_namespace:
+        raise ValueError(f"{namespace} == {dest_namespace}")
     module_obj = get_module_obj(dest_namespace, module)
     module_obj.ensure_module_init(ns_name)
     module_obj.from_namespace(namespace, progress_bar=True)
