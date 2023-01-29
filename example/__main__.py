@@ -48,7 +48,8 @@ def process_reddit(
                     continue
                 for action in reddit.get_comments(doc):
                     a_str = json_compact(action).decode("utf-8")
-                    a_str = a_str.replace("\n", "\\n")
+                    if "\n" in a_str:
+                        raise ValueError(f"should not be possible: {action}")
                     if a_str in dups:
                         print(f"skip duplicate action {a_str}")
                         continue
