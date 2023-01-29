@@ -105,8 +105,13 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             for key in self._redis.keys_gap_str(prefix, gap, postfix)
         )
 
-    def get_keys(self, parse_key: Callable[[str], KT]) -> Iterable[KT]:
-        yield from (parse_key(key) for key in self.get_range_keys(prefix=""))
+    def get_keys(
+            self, parser: tuple[str, Callable[[str], KT]]) -> Iterable[KT]:
+        prefix, parse_key = parser
+        yield from (
+            parse_key(key)
+            for key in sorted(self.get_range_keys(prefix=prefix))
+        )
 
     def key_count(self) -> int:
         return self._redis.keys_count(f"{self._redis.get_prefix()}:")
@@ -159,12 +164,14 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
         with self._redis.get_connection(depth=1) as conn:
             return int(conn.scard(rkey))
 
-    def get_keys(self, parse_key: Callable[[str], KT]) -> Iterable[KT]:
-        prefix = f"{self._redis.get_prefix()}:"
+    def get_keys(
+            self, parser: tuple[str, Callable[[str], KT]]) -> Iterable[KT]:
+        prefix, parse_key = parser
+        prefix = f"{self._redis.get_prefix()}:{prefix}"
         fromix = len(prefix)
         return (
             parse_key(key[fromix:])
-            for key in self._redis.keys_str(prefix, None)
+            for key in sorted(self._redis.keys_str(prefix, None))
         )
 
     def key_count(self) -> int:

@@ -102,6 +102,11 @@ def links_from_obj(obj: dict[str, Any]) -> LinkModule:
             "name": "redis",
             "conn": obj["conn"],
         }
+    elif name == "cold":
+        res = {
+            "name": "cold",
+            "keep_alive": obj.get("keep_alive", 1.0),
+        }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res

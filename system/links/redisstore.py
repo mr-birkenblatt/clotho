@@ -64,18 +64,17 @@ def key_parent_constructor(prefix: str) -> Callable[[PLink], str]:
     return construct_key
 
 
-def parse_parent_key_constructor(prefix: str) -> Callable[[str], PLink]:
+def parse_parent_key_constructor(
+        prefix: str) -> tuple[str, Callable[[str], PLink]]:
     rprefix = f"{prefix}:"
 
     def parse_key(key: str) -> PLink:
-        if not key.startswith(rprefix):
-            raise ValueError(f"invalid key: {key} for {prefix}")
-        vtype, parent = key.removeprefix(f"{rprefix}:").split(":", 1)
+        vtype, parent = key.split(":", 1)
         return PLink(
             vote_type=parse_vote_type(vtype),
             parent=MHash.parse(parent))
 
-    return parse_key
+    return (rprefix, parse_key)
 
 
 def key_child_constructor(prefix: str) -> Callable[[CLink], str]:
@@ -88,18 +87,17 @@ def key_child_constructor(prefix: str) -> Callable[[CLink], str]:
     return construct_key
 
 
-def parse_child_key_constructor(prefix: str) -> Callable[[str], CLink]:
+def parse_child_key_constructor(
+        prefix: str) -> tuple[str, Callable[[str], CLink]]:
     rprefix = f"{prefix}:"
 
     def parse_key(key: str) -> CLink:
-        if not key.startswith(rprefix):
-            raise ValueError(f"invalid key: {key} for {prefix}")
-        vtype, child = key.removeprefix(f"{rprefix}:").split(":", 1)
+        vtype, child = key.split(":", 1)
         return CLink(
             vote_type=parse_vote_type(vtype),
             child=MHash.parse(child))
 
-    return parse_key
+    return (rprefix, parse_key)
 
 
 def key_constructor(prefix: str) -> Callable[[RLink], str]:
@@ -113,19 +111,17 @@ def key_constructor(prefix: str) -> Callable[[RLink], str]:
     return construct_key
 
 
-def parse_key_constructor(prefix: str) -> RLink:
+def parse_key_constructor(prefix: str) -> tuple[str, Callable[[str], RLink]]:
     rprefix = f"{prefix}:"
 
     def parse_key(key: str) -> RLink:
-        if not key.startswith(rprefix):
-            raise ValueError(f"invalid key: {key} for {prefix}")
-        vtype, parent, child = key.removeprefix(rprefix).split(":", 2)
+        vtype, parent, child = key.split(":", 2)
         return RLink(
             vote_type=parse_vote_type(vtype),
             parent=MHash.parse(parent),
             child=MHash.parse(child))
 
-    return parse_key
+    return (rprefix, parse_key)
 
 
 class RedisLinkStore(LinkStore):

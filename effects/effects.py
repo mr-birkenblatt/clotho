@@ -94,7 +94,8 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
     def maybe_get_value(self, key: KT) -> VT | None:
         raise NotImplementedError()
 
-    def get_keys(self, parse_key: Callable[[str], KT]) -> Iterable[KT]:
+    def get_keys(
+            self, parser: tuple[str, Callable[[str], KT]]) -> Iterable[KT]:
         raise NotImplementedError()
 
     def key_count(self) -> int:
