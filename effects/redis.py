@@ -105,6 +105,12 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
             for key in self._redis.keys_gap_str(prefix, gap, postfix)
         )
 
+    def get_keys(self, parse_key: Callable[[str], KT]) -> Iterable[KT]:
+        yield from (parse_key(key) for key in self.get_range_keys(prefix=""))
+
+    def key_count(self) -> int:
+        return self._redis.keys_count(f"{self._redis.get_prefix()}:")
+
 
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def __init__(
@@ -152,6 +158,17 @@ class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
         rkey = self.get_redis_key(key)
         with self._redis.get_connection(depth=1) as conn:
             return int(conn.scard(rkey))
+
+    def get_keys(self, parse_key: Callable[[str], KT]) -> Iterable[KT]:
+        prefix = f"{self._redis.get_prefix()}:"
+        fromix = len(prefix)
+        return (
+            parse_key(key[fromix:])
+            for key in self._redis.keys_str(prefix, None)
+        )
+
+    def key_count(self) -> int:
+        return self._redis.keys_count(f"{self._redis.get_prefix()}:")
 
 
 class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):

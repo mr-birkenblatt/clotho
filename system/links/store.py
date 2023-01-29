@@ -7,8 +7,54 @@ from system.links.scorer import get_scorer, Scorer
 from system.msgs.message import MHash
 from system.namespace.module import ModuleBase
 from system.namespace.namespace import ModuleName, Namespace
-from system.users.store import UserStore
+from system.users.store import get_user_store, UserStore
 from system.users.user import User
+
+
+SerUser = TypedDict('SerUser', {
+    "kind": Literal["user"],
+    "link": RLink,
+    "user": User,
+})
+SerUserLinks = TypedDict('SerUserLinks', {
+    "kind": Literal["user_links"],
+    "user": User,
+    "links": list[RLink],
+})
+SerVoted = TypedDict('SerVoted', {
+    "kind": Literal["voted"],
+    "link": RLink,
+    "users": list[User],
+})
+SerTotal = TypedDict('SerTotal', {
+    "kind": Literal["total"],
+    "link": RLink,
+    "total": float,
+})
+SerDaily = TypedDict('SerDaily', {
+    "kind": Literal["daily"],
+    "link": RLink,
+    "daily": float,
+})
+SerFirst = TypedDict('SerFirst', {
+    "kind": Literal["first"],
+    "link": RLink,
+    "first": float,
+})
+SerLast = TypedDict('SerLast', {
+    "kind": Literal["last"],
+    "link": RLink,
+    "last": float,
+})
+LinkSer = (
+    SerUser
+    | SerUserLinks
+    | SerVoted
+    | SerTotal
+    | SerDaily
+    | SerFirst
+    | SerLast
+)
 
 
 class LinkStore(ModuleBase):
@@ -128,6 +174,26 @@ class LinkStore(ModuleBase):
 
     def get_link(self, parent: MHash, child: MHash) -> Link:
         return Link(self, parent, child)
+
+    def enumerate_votes(
+            self,
+            user_store: UserStore,
+            *,
+            progress_bar: bool) -> Iterable[LinkSer]:
+        raise NotImplementedError()
+
+    def do_parse_vote_fragment(
+            self, link_ser: LinkSer, now: pd.Timestamp | None) -> None:
+        raise NotImplementedError()
+
+    def from_namespace(
+            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+        other_links = get_link_store(other_namespace)
+        other_users = get_user_store(other_namespace)
+        now = None
+        for link_ser in other_links.enumerate_votes(
+                other_users, progress_bar=progress_bar):
+            self.do_parse_vote_fragment(link_ser, now=now)
 
 
 LINK_STORE: dict[Namespace, LinkStore] = {}

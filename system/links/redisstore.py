@@ -15,6 +15,7 @@ from system.links.link import (
     deserialize_clink,
     deserialize_plink,
     Link,
+    parse_vote_type,
     PLink,
     RLink,
     serialize_link,
@@ -24,7 +25,7 @@ from system.links.link import (
     VT_UP,
 )
 from system.links.scorer import Scorer, ScorerName
-from system.links.store import LinkStore
+from system.links.store import LinkSer, LinkStore
 from system.msgs.message import MHash
 from system.users.store import UserStore
 from system.users.user import User
@@ -63,6 +64,20 @@ def key_parent_constructor(prefix: str) -> Callable[[PLink], str]:
     return construct_key
 
 
+def parse_parent_key_constructor(prefix: str) -> Callable[[str], PLink]:
+    rprefix = f"{prefix}:"
+
+    def parse_key(key: str) -> PLink:
+        if not key.startswith(rprefix):
+            raise ValueError(f"invalid key: {key} for {prefix}")
+        vtype, parent = key.removeprefix(f"{rprefix}:").split(":", 1)
+        return PLink(
+            vote_type=parse_vote_type(vtype),
+            parent=MHash.parse(parent))
+
+    return parse_key
+
+
 def key_child_constructor(prefix: str) -> Callable[[CLink], str]:
 
     def construct_key(link: CLink) -> str:
@@ -71,6 +86,20 @@ def key_child_constructor(prefix: str) -> Callable[[CLink], str]:
             f"{link.child.to_parseable()}")
 
     return construct_key
+
+
+def parse_child_key_constructor(prefix: str) -> Callable[[str], CLink]:
+    rprefix = f"{prefix}:"
+
+    def parse_key(key: str) -> CLink:
+        if not key.startswith(rprefix):
+            raise ValueError(f"invalid key: {key} for {prefix}")
+        vtype, child = key.removeprefix(f"{rprefix}:").split(":", 1)
+        return CLink(
+            vote_type=parse_vote_type(vtype),
+            child=MHash.parse(child))
+
+    return parse_key
 
 
 def key_constructor(prefix: str) -> Callable[[RLink], str]:
@@ -84,6 +113,21 @@ def key_constructor(prefix: str) -> Callable[[RLink], str]:
     return construct_key
 
 
+def parse_key_constructor(prefix: str) -> RLink:
+    rprefix = f"{prefix}:"
+
+    def parse_key(key: str) -> RLink:
+        if not key.startswith(rprefix):
+            raise ValueError(f"invalid key: {key} for {prefix}")
+        vtype, parent, child = key.removeprefix(rprefix).split(":", 2)
+        return RLink(
+            vote_type=parse_vote_type(vtype),
+            parent=MHash.parse(parent),
+            child=MHash.parse(child))
+
+    return parse_key
+
+
 class RedisLinkStore(LinkStore):
     def __init__(self, ns_key: ConfigKey) -> None:
         super().__init__()
@@ -92,20 +136,37 @@ class RedisLinkStore(LinkStore):
         obs = "obs"
         pen = "pen"
 
+        vuserlinks = "vuserlinks:"
+
+        def construct_user_links_key(user: str) -> str:
+            return f"{vuserlinks}{user}"
+
+        def parse_user_links_key(key: str) -> str:
+            if not key.startswith(vuserlinks):
+                raise ValueError(f"invalid key: {key} for {vuserlinks}")
+            return key.removeprefix(vuserlinks)
+
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
             ns_key, "link", key_constructor("user"))
+        self.r_user_parser = parse_key_constructor("user")
         self.r_user_links = SetRootRedisType[str](
-            ns_key, "link", lambda user: f"vuserlinks:{user}")
+            ns_key, "link", construct_user_links_key)
+        self.r_user_links_parser = parse_user_links_key
         self.r_voted: SetRootRedisType[RLink] = SetRootRedisType(
             ns_key, "link", key_constructor("voted"))
+        self.r_voted_parser = parse_key_constructor("voted")
         self.r_total: ValueRootRedisType[RLink, float] = ValueRootRedisType(
             ns_key, "link", key_constructor("vtotal"))
+        self.r_total_parser = parse_key_constructor("vtotal")
         self.r_daily: ValueRootRedisType[RLink, float] = ValueRootRedisType(
             ns_key, "link", key_constructor("vdaily"))
+        self.r_daily_parser = parse_key_constructor("vdaily")
         self.r_first: ValueRootRedisType[RLink, float] = ValueRootRedisType(
             ns_key, "link", key_constructor("vfirst"))
+        self.r_first_parser = parse_key_constructor("vfirst")
         self.r_last: ValueRootRedisType[RLink, float] = ValueRootRedisType(
             ns_key, "link", key_constructor("vlast"))
+        self.r_last_parser = parse_key_constructor("vlast")
 
         # all children for a given parent
 
@@ -504,3 +565,133 @@ class RedisLinkStore(LinkStore):
                 user_id, offset, offset + limit, now):
             rlink = parse_link(VT_UP, link)
             yield self.get_link(rlink.parent, rlink.child)
+
+    def enumerate_votes(
+            self,
+            user_store: UserStore,
+            *,
+            progress_bar: bool) -> Iterable[LinkSer]:
+
+        def process(pbar: Callable[[], None]) -> Iterable[LinkSer]:
+            for user_key in self.r_user.get_keys(self.r_user_parser):
+                user_value = self.r_user.maybe_get_value(user_key)
+                assert user_value is not None
+                yield {
+                    "kind": "user",
+                    "link": user_key,
+                    "user": user_store.get_user_by_id(user_value),
+                }
+                pbar()
+
+            for user_links_key in self.r_user_links.get_keys(
+                    self.r_user_links_parser):
+                user_links_value = self.r_user_links.maybe_get_value(
+                    user_links_key)
+                assert user_links_value is not None
+                yield {
+                    "kind": "user_links",
+                    "user": user_store.get_user_by_id(user_links_key),
+                    "links": [
+                        parse_link(VT_UP, link)
+                        for link in user_links_value
+                    ],
+                }
+                pbar()
+
+            for voted_key in self.r_voted.get_keys(self.r_voted_parser):
+                voted_value = self.r_voted.maybe_get_value(voted_key)
+                assert voted_value is not None
+                yield {
+                    "kind": "voted",
+                    "link": voted_key,
+                    "users": [
+                        user_store.get_user_by_id(user_id)
+                        for user_id in voted_value
+                    ],
+                }
+                pbar()
+
+            for total_key in self.r_total.get_keys(self.r_total_parser):
+                total_value = self.r_total.maybe_get_value(total_key)
+                assert total_value is not None
+                yield {
+                    "kind": "total",
+                    "link": total_key,
+                    "total": total_value,
+                }
+                pbar()
+
+            for daily_key in self.r_daily.get_keys(self.r_daily_parser):
+                daily_value = self.r_daily.maybe_get_value(daily_key)
+                assert daily_value is not None
+                yield {
+                    "kind": "daily",
+                    "link": daily_key,
+                    "daily": daily_value,
+                }
+                pbar()
+
+            for first_key in self.r_first.get_keys(self.r_first_parser):
+                first_value = self.r_first.maybe_get_value(first_key)
+                assert first_value is not None
+                yield {
+                    "kind": "first",
+                    "link": first_key,
+                    "first": first_value,
+                }
+                pbar()
+
+            for last_key in self.r_last.get_keys(self.r_last_parser):
+                last_value = self.r_last.maybe_get_value(last_key)
+                assert last_value is not None
+                yield {
+                    "kind": "last",
+                    "link": last_key,
+                    "last": last_value,
+                }
+                pbar()
+
+        if not progress_bar:
+            yield from process(lambda: None)
+            return
+        # FIXME: add stubs
+        from tqdm.auto import tqdm  # type: ignore
+
+        total_key_count = (
+            self.r_user.key_count()
+            + self.r_user_links.key_count()
+            + self.r_voted.key_count()
+            + self.r_total.key_count()
+            + self.r_daily.key_count()
+            + self.r_first.key_count()
+            + self.r_last.key_count()
+        )
+        with tqdm(total=total_key_count) as pbar:
+            yield from process(lambda: pbar.update(1))
+
+    def do_parse_vote_fragment(
+            self, link_ser: LinkSer, now: pd.Timestamp | None) -> None:
+        kind = link_ser["kind"]
+        if kind == "user":
+            self.r_user.set_value(
+                link_ser["link"], link_ser["user"].get_id(), now)
+        elif kind == "user_links":
+            user_id = link_ser["user"].get_id()
+            for link in link_ser["links"]:
+                self.r_user_links.add_value(
+                    user_id, parseable_link(link.parent, link.child), now)
+        elif kind == "voted":
+            link = link_ser["link"]
+            for user in link_ser["users"]:
+                self.r_voted.add_value(link, user.get_id(), now)
+        elif kind == "total":
+            self.r_total.set_value(link_ser["link"], link_ser["total"], now)
+        elif kind == "daily":
+            self.r_daily.set_value(link_ser["link"], link_ser["daily"], now)
+        elif kind == "first":
+            self.r_first.set_value(link_ser["link"], link_ser["first"], now)
+        elif kind == "last":
+            self.r_last.set_value(link_ser["link"], link_ser["last"], now)
+        else:
+            raise ValueError(
+                f"unkown serialization kind '{kind}' in {link_ser}")

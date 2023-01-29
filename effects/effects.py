@@ -1,6 +1,14 @@
 import contextlib
 import threading
-from typing import Callable, Generic, Iterator, Literal, TYPE_CHECKING, TypeVar
+from typing import (
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    Literal,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 import pandas as pd
 
@@ -84,6 +92,12 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
         return res
 
     def maybe_get_value(self, key: KT) -> VT | None:
+        raise NotImplementedError()
+
+    def get_keys(self, parse_key: Callable[[str], KT]) -> Iterable[KT]:
+        raise NotImplementedError()
+
+    def key_count(self) -> int:
         raise NotImplementedError()
 
 
