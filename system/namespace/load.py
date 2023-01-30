@@ -206,8 +206,8 @@ def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
             "name": "dbtransformer",
             "conn": obj["conn"],
             "model_hash": obj["model_hash"],
-            "storage_method": parse_storage_method(
-                obj.get("storage_method", STORAGE_COMPRESSED)),
+            "storage": parse_storage_method(
+                obj.get("storage", STORAGE_COMPRESSED)),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")

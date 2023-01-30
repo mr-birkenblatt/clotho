@@ -151,8 +151,7 @@ def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
         from model.transformer_embed import load_db_providers
 
         db = namespace.get_db_connector(pobj["conn"])
-        return load_db_providers(
-            db, pobj["model_hash"], pobj["storage_method"])
+        return load_db_providers(db, pobj["model_hash"], pobj["storage"])
     if pobj["name"] == "transformer":
         from model.transformer_embed import load_providers
 
