@@ -5,7 +5,16 @@ import io
 import os
 import shutil
 import threading
-from typing import Callable, IO, Iterable, Iterator, NamedTuple
+from typing import (
+    Any,
+    Callable,
+    IO,
+    Iterable,
+    Iterator,
+    NamedTuple,
+    Sequence,
+    Type,
+)
 
 import numpy as np
 import sqlalchemy as sa
@@ -188,6 +197,17 @@ class CEmbedTable(Base):  # pylint: disable=too-few-public-methods
     idx_cmain_order = sa.Index("config_id", "cmain_order")
 
 
+class EmbedTableAccess(NamedTuple):
+    table: Type[EmbedTable] | Type[CEmbedTable]
+    embedding: sa.orm.attributes.InstrumentedAttribute[Any]
+    encode_embed: Callable[[torch.Tensor], Sequence[float] | bytes]
+    decode_embed: Callable[[Any], torch.Tensor]
+    filter_eid: Callable[[int], Any]
+    filter_mhash_id: Callable[
+        [sa.orm.attributes.InstrumentedAttribute[int | None]], Any]
+    order_by_main: Any
+
+
 def is_cache_init(db: DBConnector) -> bool:
     return db.is_module_init(EmbeddingStore, MODULE_VERSION, "dbcache")
 
@@ -251,14 +271,6 @@ def read_db_model(
         yield fout, model_name, version, is_harness
 
 
-class EmbedTableAccess(NamedTuple):
-    table: EmbedTable | CEmbedTable
-    main_order: sa.Column
-    embedding: sa.Column
-    encode_embed: Callable[[torch.Tensor], list[float] | bytes]
-    decode_embed: Callable[[list[float] | bytes], torch.Tensor]
-
-
 class DBEmbeddingCache(EmbeddingCache):
     def __init__(
             self,
@@ -285,11 +297,11 @@ class DBEmbeddingCache(EmbeddingCache):
         return self._namespace.get_name()
 
     @staticmethod
-    def _to_tensor(arr: list[float]) -> torch.Tensor:
+    def _to_tensor(arr: Sequence[float]) -> torch.Tensor:
         return torch.DoubleTensor(list(arr))
 
     @staticmethod
-    def _from_tensor(x: torch.Tensor) -> list[float]:
+    def _from_tensor(x: torch.Tensor) -> Sequence[float]:
         return safe_ravel(x.double().detach()).numpy().astype(np.float64)
 
     @staticmethod
@@ -388,17 +400,21 @@ class DBEmbeddingCache(EmbeddingCache):
         if smode == STORAGE_ARRAY_ID:
             return EmbedTableAccess(
                 table=EmbedTable,
-                main_order=EmbedTable.main_order,
                 embedding=EmbedTable.embedding,
                 encode_embed=self._from_tensor,
-                decode_embed=self._to_tensor)
+                decode_embed=self._to_tensor,
+                filter_eid=lambda eid: EmbedTable.config_id == eid,
+                filter_mhash_id=lambda mh_col: EmbedTable.mhash_id == mh_col,
+                order_by_main=EmbedTable.main_order.asc())
         if smode == STORAGE_COMPRESSED_ID:
             return EmbedTableAccess(
                 table=CEmbedTable,
-                main_order=CEmbedTable.cmain_order,
                 embedding=CEmbedTable.cembedding,
                 encode_embed=self._serialize,
-                decode_embed=self._deserialize)
+                decode_embed=self._deserialize,
+                filter_eid=lambda eid: CEmbedTable.config_id == eid,
+                filter_mhash_id=lambda mh_col: CEmbedTable.mhash_id == mh_col,
+                order_by_main=CEmbedTable.cmain_order.asc())
         raise ValueError(f"unhandled smode: {smode}")
 
     def set_map_embedding(
@@ -423,8 +439,8 @@ class DBEmbeddingCache(EmbeddingCache):
         with self._db.get_connection() as conn:
             etable = self._get_embed_table(embedding_id)
             stmt = sa.select(etable.embedding).where(sa.and_(
-                etable.table.config_id == embedding_id,
-                etable.table.mhash_id == MHashTable.id,
+                etable.filter_eid(embedding_id),
+                etable.filter_mhash_id(MHashTable.id),
                 MHashTable.mhash == mhash.to_parseable(),
             ))
             res = conn.execute(stmt).scalar()
@@ -456,7 +472,7 @@ class DBEmbeddingCache(EmbeddingCache):
             self, conn: sa.engine.Connection, embedding_id: int) -> int:
         etable = self._get_embed_table(embedding_id)
         cstmt = sa.select(sa.func.count()).select_from(etable.table).where(
-            etable.table.config_id == embedding_id)
+            etable.filter_eid(embedding_id))
         count: int | None = conn.execute(cstmt).scalar()
         return 0 if count is None else count
 
@@ -472,9 +488,9 @@ class DBEmbeddingCache(EmbeddingCache):
         stmt = sa.select(
             MHashTable.mhash,
             etable.embedding.label("embedding")).where(sa.and_(
-                etable.table.config_id == embedding_id,
-                etable.table.mhash_id == MHashTable.id))
-        stmt = stmt.order_by(etable.main_order.asc())
+                etable.filter_eid(embedding_id),
+                etable.filter_mhash_id(MHashTable.id)))
+        stmt = stmt.order_by(etable.order_by_main)
         stmt = stmt.offset(start_ix)
         if limit is not None:
             stmt = stmt.limit(limit)
@@ -492,9 +508,9 @@ class DBEmbeddingCache(EmbeddingCache):
             index: int) -> MHash:
         etable = self._get_embed_table(embedding_id)
         stmt = sa.select(MHashTable.mhash).where(sa.and_(
-            etable.table.config_id == embedding_id,
-            etable.table.mhash_id == MHashTable.id))
-        stmt = stmt.order_by(etable.main_order.asc())
+            etable.filter_eid(embedding_id),
+            etable.filter_mhash_id(MHashTable.id)))
+        stmt = stmt.order_by(etable.order_by_main)
         stmt = stmt.offset(index)
         stmt = stmt.limit(1)
         res = conn.execute(stmt).scalar()
