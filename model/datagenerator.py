@@ -120,7 +120,7 @@ class DataGenerator:
         links = self._links
         return [
             links.get_link(parent, child)
-            for (parent, child) in zip(parents, children)
+            for (parent, child) in zip(parents, children, strict=True)
         ]
 
     def get_pc_flip_link(self, link: Link) -> Link:

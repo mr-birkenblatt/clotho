@@ -28,6 +28,8 @@ from model.embedding import (
     PROVIDER_CHILD,
     PROVIDER_PARENT,
     ProviderRole,
+    STORAGE_ARRAY,
+    StorageMethod,
 )
 from system.embedding.dbcache import read_db_model
 from system.msgs.message import Message
@@ -355,9 +357,15 @@ class TransformerEmbedding(EmbeddingProvider):
             method: str,
             role: ProviderRole,
             embedding_name: str,
-            embedding_hash: str) -> None:
+            embedding_hash: str,
+            storage_method: StorageMethod) -> None:
         super().__init__(
-            method, role, embedding_name, embedding_hash, model.get_version())
+            method,
+            role,
+            embedding_name,
+            embedding_hash,
+            model.get_version(),
+            storage_method)
         model.to(get_device())
         self._model = model
         self._tokenizer = get_tokenizer()
@@ -396,22 +404,44 @@ def load_providers(
         model_name = model_name[:rix]
     return {
         "parent": TransformerEmbedding(
-            model, "transformer", PROVIDER_PARENT, model_name, model_hash),
+            model,
+            "transformer",
+            PROVIDER_PARENT,
+            model_name,
+            model_hash,
+            STORAGE_ARRAY),
         "child": TransformerEmbedding(
-            model, "transformer", PROVIDER_CHILD, model_name, model_hash),
+            model,
+            "transformer",
+            PROVIDER_CHILD,
+            model_name,
+            model_hash,
+            STORAGE_ARRAY),
     }
 
 
 def load_db_providers(
-        db: DBConnector, model_hash: str) -> EmbeddingProviderMap:
+        db: DBConnector,
+        model_hash: str,
+        storage_method: StorageMethod) -> EmbeddingProviderMap:
     with read_db_model(db, model_hash) as ctx:
         fin, model_name, version, is_harness = ctx
         model = load_model(fin, version, is_harness)
         res: EmbeddingProviderMap = {
             "parent": TransformerEmbedding(
-                model, "transformer", PROVIDER_PARENT, model_name, model_hash),
+                model,
+                "transformer",
+                PROVIDER_PARENT,
+                model_name,
+                model_hash,
+                storage_method),
             "child": TransformerEmbedding(
-                model, "transformer", PROVIDER_CHILD, model_name, model_hash),
+                model,
+                "transformer",
+                PROVIDER_CHILD,
+                model_name,
+                model_hash,
+                storage_method),
         }
     return res
 

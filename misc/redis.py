@@ -730,7 +730,7 @@ class ObjectRedis(RedisConnection):
         with self.get_connection(depth=1) as conn:
             return {
                 key[len(path):]: json_read(res)
-                for (key, res) in zip(keys, conn.mget(keys))
+                for (key, res) in zip(keys, conn.mget(keys), strict=True)
                 if res is not None
             }
 

@@ -1,9 +1,11 @@
 import collections
 import contextlib
+import gzip
+import io
 import os
 import shutil
 import threading
-from typing import IO, Iterable, Iterator
+from typing import Callable, IO, Iterable, Iterator, NamedTuple
 
 import numpy as np
 import sqlalchemy as sa
@@ -13,7 +15,14 @@ from db.base import Base, MHashTable, NamespaceTable
 from db.db import DBConnector
 from misc.io import ensure_folder, open_read
 from misc.util import file_hash_size, get_file_hash, safe_ravel
-from model.embedding import EmbeddingProvider, ProviderEnum, ProviderRole
+from model.embedding import (
+    EmbeddingProvider,
+    ProviderEnum,
+    ProviderRole,
+    STORAGE_ARRAY_ID,
+    STORAGE_COMPRESSED_ID,
+    STORAGE_MAP,
+)
 from system.embedding.index_lookup import EmbeddingCache
 from system.embedding.store import EmbeddingStore
 from system.msgs.message import MHash
@@ -70,6 +79,9 @@ class EmbedConfigTable(Base):  # pylint: disable=too-few-public-methods
         nullable=False,
         unique=True,
         server_default=EMBED_CONFIG_ID.next_value())
+    storage_method = sa.Column(
+        sa.Integer,
+        nullable=False)
 
     idx_config_id = sa.Index("config_id")
 
@@ -144,6 +156,38 @@ class EmbedTable(Base):  # pylint: disable=too-few-public-methods
 #     EmbedTable, back_populates="mhashes", uselist=False)
 
 
+CMAIN_ORDER_SEQ: sa.Sequence = sa.Sequence(
+    "cmain_order_seq", start=1, increment=1)
+
+
+class CEmbedTable(Base):  # pylint: disable=too-few-public-methods
+    __tablename__ = "cembed"
+
+    config_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey(
+            EmbedConfigTable.config_id,
+            onupdate="CASCADE",
+            ondelete="CASCADE"),
+        primary_key=True)
+    mhash_id = sa.Column(
+        sa.Integer,
+        sa.ForeignKey(
+            MHashTable.id, onupdate="CASCADE", ondelete="CASCADE"),
+        primary_key=True)
+    cmain_order = sa.Column(
+        sa.Integer,
+        CMAIN_ORDER_SEQ,
+        nullable=False,
+        unique=True,
+        server_default=CMAIN_ORDER_SEQ.next_value())
+    cembedding = sa.Column(
+        sa.LargeBinary,
+        nullable=False)
+
+    idx_cmain_order = sa.Index("config_id", "cmain_order")
+
+
 def is_cache_init(db: DBConnector) -> bool:
     return db.is_module_init(EmbeddingStore, MODULE_VERSION, "dbcache")
 
@@ -152,7 +196,7 @@ def initialize_cache(db: DBConnector, *, force: bool) -> None:
     db.create_module_tables(
         EmbeddingStore,
         MODULE_VERSION,
-        [EmbedTable, EmbedConfigTable, ModelsTable],
+        [CEmbedTable, EmbedTable, EmbedConfigTable, ModelsTable],
         "dbcache",
         force=force)
 
@@ -207,6 +251,14 @@ def read_db_model(
         yield fout, model_name, version, is_harness
 
 
+class EmbedTableAccess(NamedTuple):
+    table: EmbedTable | CEmbedTable
+    main_order: sa.Column
+    embedding: sa.Column
+    encode_embed: Callable[[torch.Tensor], list[float] | bytes]
+    decode_embed: Callable[[list[float] | bytes], torch.Tensor]
+
+
 class DBEmbeddingCache(EmbeddingCache):
     def __init__(
             self,
@@ -216,6 +268,7 @@ class DBEmbeddingCache(EmbeddingCache):
         self._db = db
         self._namespace = namespace
         self._nid: int | None = None
+        self._smodes: dict[int, int] = {}
         self._model_ids: dict[ProviderRole, int] = {}
         self._ctx_map: dict[ProviderRole, int] = {}
         self._locks: collections.defaultdict[ProviderRole, threading.RLock] = \
@@ -238,6 +291,21 @@ class DBEmbeddingCache(EmbeddingCache):
     @staticmethod
     def _from_tensor(x: torch.Tensor) -> list[float]:
         return safe_ravel(x.double().detach()).numpy().astype(np.float64)
+
+    @staticmethod
+    def _serialize(embed: torch.Tensor) -> bytes:
+        bout = io.BytesIO()
+        with gzip.GzipFile(fileobj=bout, mode="w") as fout:
+            np.save(
+                fout,
+                safe_ravel(embed).double().detach().numpy().astype(np.float64))
+        return bout.getvalue()
+
+    @staticmethod
+    def _deserialize(content: bytes) -> torch.Tensor:
+        binp = io.BytesIO(content)
+        with gzip.GzipFile(fileobj=binp, mode="r") as finp:
+            return torch.DoubleTensor(np.load(finp))
 
     @staticmethod
     def cache_name() -> str:
@@ -266,21 +334,36 @@ class DBEmbeddingCache(EmbeddingCache):
     def _get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         nid = self._get_nid()
         role = provider.get_enum()
+        smethod = provider.get_storage_method()
 
         def get_embedding_id(
                 session: sa.orm.Session, model_id: int) -> int | None:
-            stmt = sa.select(EmbedConfigTable.config_id).where(sa.and_(
-                EmbedConfigTable.namespace_id == nid,
-                EmbedConfigTable.role == role,
-                EmbedConfigTable.model_id == model_id))
-            return session.execute(stmt).scalar()
+            stmt = sa.select(
+                EmbedConfigTable.config_id,
+                EmbedConfigTable.storage_method).where(sa.and_(
+                    EmbedConfigTable.namespace_id == nid,
+                    EmbedConfigTable.role == role,
+                    EmbedConfigTable.model_id == model_id))
+            row = session.execute(stmt).one_or_none()
+            if row is None:
+                return None
+            eid: int = row.config_id
+            self._smodes[eid] = row.storage_method
+            if self._smodes[eid] != STORAGE_MAP[smethod]:
+                raise ValueError(
+                    f"storage mode mismatch. expected: {self._smodes[eid]} "
+                    f"got: {STORAGE_MAP[smethod]} ({smethod})")
+            return eid
 
         with self._db.get_session() as session:
             model_id = self._get_model_id(session, provider)
             res = get_embedding_id(session, model_id)
             if res is None:
                 session.add(EmbedConfigTable(
-                    namespace_id=nid, role=role, model_id=model_id))
+                    namespace_id=nid,
+                    role=role,
+                    model_id=model_id,
+                    storage_method=STORAGE_MAP[smethod]))
                 session.commit()
                 res = get_embedding_id(session, model_id)
                 if res is None:
@@ -288,7 +371,8 @@ class DBEmbeddingCache(EmbeddingCache):
                         "error while adding config: "
                         f"ns={self._get_ns_name()} "
                         f"role={role} "
-                        f"model_hash={provider.get_embedding_hash()}")
+                        f"model_hash={provider.get_embedding_hash()} "
+                        f"storage_method={smethod}")
         return res
 
     def get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
@@ -299,32 +383,52 @@ class DBEmbeddingCache(EmbeddingCache):
             self._ctx_map[role] = res
         return res
 
+    def _get_embed_table(self, embedding_id: int) -> EmbedTableAccess:
+        smode = self._smodes[embedding_id]
+        if smode == STORAGE_ARRAY_ID:
+            return EmbedTableAccess(
+                table=EmbedTable,
+                main_order=EmbedTable.main_order,
+                embedding=EmbedTable.embedding,
+                encode_embed=self._from_tensor,
+                decode_embed=self._to_tensor)
+        if smode == STORAGE_COMPRESSED_ID:
+            return EmbedTableAccess(
+                table=CEmbedTable,
+                main_order=CEmbedTable.cmain_order,
+                embedding=CEmbedTable.cembedding,
+                encode_embed=self._serialize,
+                decode_embed=self._deserialize)
+        raise ValueError(f"unhandled smode: {smode}")
+
     def set_map_embedding(
             self,
             embedding_id: int,
             mhash: MHash,
             embed: torch.Tensor) -> None:
         with self._db.get_session() as session:
+            etable = self._get_embed_table(embedding_id)
             values = {
                 "config_id": embedding_id,
                 "mhash_id": self._db.get_mhash_id(
                     session, mhash, likely_exists=True),
-                "embedding": self._from_tensor(embed),
+                etable.embedding: etable.encode_embed(embed),
             }
-            stmt = self._db.upsert(EmbedTable).values(values)
+            stmt = self._db.upsert(etable.table).values(values)
             stmt = stmt.on_conflict_do_nothing()
             session.execute(stmt)
 
     def get_map_embedding(
             self, embedding_id: int, mhash: MHash) -> torch.Tensor | None:
         with self._db.get_connection() as conn:
-            stmt = sa.select(EmbedTable.embedding).where(sa.and_(
-                EmbedTable.config_id == embedding_id,
-                EmbedTable.mhash_id == MHashTable.id,
+            etable = self._get_embed_table(embedding_id)
+            stmt = sa.select(etable.embedding).where(sa.and_(
+                etable.table.config_id == embedding_id,
+                etable.table.mhash_id == MHashTable.id,
                 MHashTable.mhash == mhash.to_parseable(),
             ))
             res = conn.execute(stmt).scalar()
-        return None if res is None else self._to_tensor(res)
+        return None if res is None else etable.decode_embed(res)
 
     def get_entry_by_index(self, embedding_id: int, *, index: int) -> MHash:
         with self._db.get_connection() as conn:
@@ -350,8 +454,9 @@ class DBEmbeddingCache(EmbeddingCache):
 
     def _embedding_count(
             self, conn: sa.engine.Connection, embedding_id: int) -> int:
-        cstmt = sa.select(sa.func.count()).select_from(EmbedTable).where(
-            EmbedTable.config_id == embedding_id)
+        etable = self._get_embed_table(embedding_id)
+        cstmt = sa.select(sa.func.count()).select_from(etable.table).where(
+            etable.table.config_id == embedding_id)
         count: int | None = conn.execute(cstmt).scalar()
         return 0 if count is None else count
 
@@ -363,16 +468,17 @@ class DBEmbeddingCache(EmbeddingCache):
             start_ix: int,
             limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        stmt = sa.select(MHashTable.mhash, EmbedTable.embedding).where(sa.and_(
-            EmbedTable.config_id == embedding_id,
-            EmbedTable.mhash_id == MHashTable.id))
-        stmt = stmt.order_by(EmbedTable.main_order.asc())
+        etable = self._get_embed_table(embedding_id)
+        stmt = sa.select(MHashTable.mhash, etable.embedding).where(sa.and_(
+            etable.table.config_id == embedding_id,
+            etable.table.mhash_id == MHashTable.id))
+        stmt = stmt.order_by(etable.main_order.asc())
         stmt = stmt.offset(start_ix)
         if limit is not None:
             stmt = stmt.limit(limit)
         for ix, row in enumerate(conn.execute(stmt)):
             cur_mhash = MHash.parse(row.mhash)
-            cur_embed = self._to_tensor(row.embedding)
+            cur_embed = etable.decode_embed(row[etable.embedding])
             cur_ix = start_ix + ix
             yield (cur_ix, cur_mhash, cur_embed)
 
@@ -382,10 +488,11 @@ class DBEmbeddingCache(EmbeddingCache):
             embedding_id: int,
             *,
             index: int) -> MHash:
+        etable = self._get_embed_table(embedding_id)
         stmt = sa.select(MHashTable.mhash).where(sa.and_(
-            EmbedTable.config_id == embedding_id,
-            EmbedTable.mhash_id == MHashTable.id))
-        stmt = stmt.order_by(EmbedTable.main_order.asc())
+            etable.table.config_id == embedding_id,
+            etable.table.mhash_id == MHashTable.id))
+        stmt = stmt.order_by(etable.main_order.asc())
         stmt = stmt.offset(index)
         stmt = stmt.limit(1)
         res = conn.execute(stmt).scalar()

@@ -132,7 +132,7 @@ class AnnoyEmbeddingStore(CachedIndexEmbeddingStore):
         aindex = self._get_index(role, shard)
         elems, dists = aindex.get_nns_by_vector(
             safe_ravel(embed).tolist(), count, include_distances=True)
-        yield from zip(elems, dists)
+        yield from zip(elems, dists, strict=True)
 
     def get_distance(
             self, embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:

@@ -18,6 +18,27 @@ class ProviderEnum(enum.Enum):
     CHILD = PROVIDER_CHILD
 
 
+StorageMethod = Literal["array", "zip"]
+VALID_STORAGE_METHODS: set[StorageMethod] = set(get_args(StorageMethod))
+
+STORAGE_ARRAY: StorageMethod = "array"
+STORAGE_COMPRESSED: StorageMethod = "zip"
+
+STORAGE_ARRAY_ID = 0
+STORAGE_COMPRESSED_ID = 1
+
+STORAGE_MAP: dict[StorageMethod, int] = {
+    STORAGE_ARRAY: STORAGE_ARRAY_ID,
+    STORAGE_COMPRESSED: STORAGE_COMPRESSED_ID,
+}
+
+
+def parse_storage_method(text: str) -> StorageMethod:
+    if text not in VALID_STORAGE_METHODS:
+        raise ValueError(f"invalid storage method: {text}")
+    return cast(StorageMethod, text)
+
+
 def get_provider_role(role: str) -> ProviderRole:
     if role not in PROVIDER_ROLES:
         raise ValueError(f"{role} not a valid provider role")
@@ -31,13 +52,15 @@ class EmbeddingProvider:
             role: ProviderRole,
             embedding_name: str,
             embedding_hash: str,
-            embedding_version: int) -> None:
+            embedding_version: int,
+            storage_method: StorageMethod) -> None:
         self._redis_name = f"{method}:{role}:{embedding_hash}"
         self._file_name = f"{method}.{role}"
         self._role = role
         self._embedding_name = embedding_name
         self._embedding_hash = embedding_hash
         self._embedding_version = embedding_version
+        self._storage_method = storage_method
 
     def get_enum(self) -> ProviderEnum:
         if self._role == PROVIDER_CHILD:
@@ -63,6 +86,9 @@ class EmbeddingProvider:
 
     def get_embedding_version(self) -> int:
         return self._embedding_version
+
+    def get_storage_method(self) -> StorageMethod:
+        return self._storage_method
 
     def get_embedding(self, msg: Message) -> torch.Tensor:
         raise NotImplementedError()
@@ -102,6 +128,7 @@ DBTransformerEmbeddingModule = TypedDict('DBTransformerEmbeddingModule', {
     "name": Literal["dbtransformer"],
     "conn": str,
     "model_hash": str,
+    "storage": StorageMethod,
 })
 TransformerEmbeddingModule = TypedDict('TransformerEmbeddingModule', {
     "name": Literal["transformer"],
@@ -124,7 +151,8 @@ def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
         from model.transformer_embed import load_db_providers
 
         db = namespace.get_db_connector(pobj["conn"])
-        return load_db_providers(db, pobj["model_hash"])
+        return load_db_providers(
+            db, pobj["model_hash"], pobj["storage_method"])
     if pobj["name"] == "transformer":
         from model.transformer_embed import load_providers
 
@@ -135,7 +163,9 @@ def create_embed_providers(namespace: Namespace) -> EmbeddingProviderMap:
             pobj["is_harness"])
     if pobj["name"] == "none":
         return {
-            "parent": NoEmbeddingProvider("none", "parent", "none", "none", 0),
-            "child": NoEmbeddingProvider("none", "child", "none", "none", 0),
+            "parent": NoEmbeddingProvider(
+                "none", "parent", "none", "none", 0, STORAGE_ARRAY),
+            "child": NoEmbeddingProvider(
+                "none", "child", "none", "none", 0, STORAGE_ARRAY),
         }
     raise ValueError(f"unknown embed provider: {pobj}")

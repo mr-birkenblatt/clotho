@@ -1,7 +1,11 @@
 import re
 from typing import Any, cast, get_args, Literal, TYPE_CHECKING, TypedDict
 
-from model.embedding import EmbeddingProviderModule
+from model.embedding import (
+    EmbeddingProviderModule,
+    parse_storage_method,
+    STORAGE_COMPRESSED,
+)
 from system.embedding.store import EmbedModule
 from system.links.store import LinkModule
 from system.msgs.store import MsgsModule
@@ -202,6 +206,8 @@ def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
             "name": "dbtransformer",
             "conn": obj["conn"],
             "model_hash": obj["model_hash"],
+            "storage_method": parse_storage_method(
+                obj.get("storage_method", STORAGE_COMPRESSED)),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")

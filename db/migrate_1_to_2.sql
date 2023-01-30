@@ -1,5 +1,5 @@
 -- This script assumes module version 1 for the modules msgs, embed:dbcache
--- Create mhashes table before running queries here
+-- Create mhashes and cembed table before running queries here
 
 -- copy all hashes into the new table
 INSERT INTO mhashes (mhash)
@@ -245,3 +245,8 @@ UPDATE modules SET version = 2 WHERE module IN ('msgs', 'embed:dbcache');
 
 -- confirm
 SELECT * FROM modules;
+
+-- *** compressed embeddings ***
+ALTER TABLE embedconfig ADD COLUMN storage_method integer NOT NULL DEFAULT 0;
+
+ALTER TABLE embedconfig ALTER COLUMN storage_method DROP DEFAULT;
