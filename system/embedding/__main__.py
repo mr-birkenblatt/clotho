@@ -1,7 +1,7 @@
 import argparse
-from typing import Literal
 
 from misc.util import python_module
+from model.embedding import ProviderRole
 from system.embedding.store import get_embed_store
 from system.msgs.message import Message
 from system.msgs.store import get_message_store
@@ -19,8 +19,9 @@ def run() -> None:
     precise: bool = args.precise
     no_cache: bool = args.no_cache
     if args.text is not None:
-        name_from: Literal["parent"] = "parent"
-        name_to: Literal["child"] = "child"
+        is_flip: bool = args.parent
+        name_from: ProviderRole = "child" if is_flip else "parent"
+        name_to: ProviderRole = "parent" if is_flip else "child"
         print(f"from: {name_from} to: {name_to}")
         msg = Message(msg=args.text)
         mhash = msg_store.write_message(msg)
@@ -77,6 +78,11 @@ def parse_args() -> argparse.Namespace:
         default=False,
         action="store_true",
         help="check whether distance definitions are compatible")
+    parser.add_argument(
+        "--parent",
+        default=False,
+        action="store_true",
+        help="search for a parent instead of a child")
     return parser.parse_args()
 
 

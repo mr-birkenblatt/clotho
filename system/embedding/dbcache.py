@@ -469,16 +469,18 @@ class DBEmbeddingCache(EmbeddingCache):
             limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         etable = self._get_embed_table(embedding_id)
-        stmt = sa.select(MHashTable.mhash, etable.embedding).where(sa.and_(
-            etable.table.config_id == embedding_id,
-            etable.table.mhash_id == MHashTable.id))
+        stmt = sa.select(
+            MHashTable.mhash,
+            etable.embedding.label("embedding")).where(sa.and_(
+                etable.table.config_id == embedding_id,
+                etable.table.mhash_id == MHashTable.id))
         stmt = stmt.order_by(etable.main_order.asc())
         stmt = stmt.offset(start_ix)
         if limit is not None:
             stmt = stmt.limit(limit)
         for ix, row in enumerate(conn.execute(stmt)):
             cur_mhash = MHash.parse(row.mhash)
-            cur_embed = etable.decode_embed(row[etable.embedding])
+            cur_embed = etable.decode_embed(row.embedding)
             cur_ix = start_ix + ix
             yield (cur_ix, cur_mhash, cur_embed)
 
