@@ -141,7 +141,6 @@ def interpret_action(
             text = "[missing]"
         is_topic = False
         if ((text.startswith("r/") or text.startswith("t/"))):
-            # and text[2:].lower() in roots):
             tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
@@ -151,7 +150,9 @@ def interpret_action(
             topics = list(message_store.get_topics(0, None))
             if msg not in topics:
                 message_store.add_topic(msg)
-                print(f"adding topic: {msg.get_text()}")
+                text = msg.get_text()
+                print(f"adding topic: {text}")
+                print(f"is in root: {text[2:].lower() in roots}")
                 totals["new_topics"] += 1
             totals["topics"] = len(topics)
         try:
