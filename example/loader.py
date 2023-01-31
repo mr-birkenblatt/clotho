@@ -140,8 +140,8 @@ def interpret_action(
         if not text:
             text = "[missing]"
         is_topic = False
-        if ((text.startswith("r/") or text.startswith("t/"))
-                and text[2:].lower() in roots):
+        if ((text.startswith("r/") or text.startswith("t/"))):
+                # and text[2:].lower() in roots):
             tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
@@ -297,7 +297,6 @@ def process_actions_full(
         user_pool=user_pool,
         synth_pool=synth_pool,
         counter=counter)
-    # FIXME: analyze mhash storage (how many hashes per file / how deep?)
     # FIXME: add user inbox
     # FIXME: add sort select (when swiping left)
     # FIXME: total karma to user display
