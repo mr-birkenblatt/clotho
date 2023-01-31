@@ -141,7 +141,7 @@ def interpret_action(
             text = "[missing]"
         is_topic = False
         if ((text.startswith("r/") or text.startswith("t/"))):
-                # and text[2:].lower() in roots):
+            # and text[2:].lower() in roots):
             tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
