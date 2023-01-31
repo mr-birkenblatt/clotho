@@ -140,7 +140,7 @@ def interpret_action(
         if not text:
             text = "[missing]"
         is_topic = False
-        if ((text.startswith("r/") or text.startswith("t/"))):
+        if text.startswith("r/") or text.startswith("t/"):
             tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
