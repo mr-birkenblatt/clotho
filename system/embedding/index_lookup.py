@@ -5,6 +5,7 @@ from typing import Iterable, Literal
 
 import torch
 
+from misc.util import nbest
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
@@ -24,7 +25,7 @@ LOCK_LOCK: LockState = "locked"
 LOCK_DEAD: LockState = "dead"
 
 
-OVERSCAN = 1.5
+OVERSCAN = 1
 
 
 class EmbeddingCache:
@@ -501,29 +502,13 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             for shard_candidates in candidates.values()
             for entry in shard_candidates
         ]
-        distinct_mhash = set((entry[0] for entry in flat_candidates))
-        final_candidates = []
-        for candidate in flat_candidates:
-            cur_mhash = candidate[0]
-            if cur_mhash not in distinct_mhash:
-                continue
-            distinct_mhash.discard(cur_mhash)
-            final_candidates.append(candidate)
-
-        # msgs = get_message_store(self._namespace)
-        # print("\n".join([
-        #     f"{msgs.read_message(entry[0]).get_text()[:40]}, {entry[1]}"
-        #     for entry in sorted(
-        #         final_candidates,
-        #         key=lambda entry: entry[1],
-        #         reverse=self.is_bigger_better())]))
-
         yield from (
-            sentry[0]
-            for sentry in sorted(
-                final_candidates,
+            entry[0]
+            for entry in nbest(
+                flat_candidates,
                 key=lambda entry: entry[1],
-                reverse=self.is_bigger_better())[:count]
+                count=count,
+                is_bigger_better=self.is_bigger_better())
         )
         print(
             "total time processing neighbors: "
@@ -561,28 +546,12 @@ class CachedIndexEmbeddingStore(EmbeddingStore):
             embeddings: Iterable[tuple[MHash, torch.Tensor]],
             ) -> Iterable[tuple[MHash, float]]:
         is_bigger_better = self.is_bigger_better()
-
-        def is_better(dist_new: float, dist_old: float) -> bool:
-            if is_bigger_better:
-                return dist_new > dist_old
-            return dist_new < dist_old
-
-        def is_already(mhash: MHash) -> bool:
-            return mhash in (elem[0] for elem in candidates)
-
-        candidates: list[tuple[MHash, float]] = []
-        for mhash, other_embed in embeddings:
-            dist = self.get_distance(embed, other_embed)
-            mod = False
-            if len(candidates) < count:
-                if not is_already(mhash):
-                    candidates.append((mhash, dist))
-                    mod = True
-            elif is_better(dist, candidates[-1][1]):
-                if not is_already(mhash):
-                    candidates[-1] = (mhash, dist)
-                    mod = True
-            if mod:
-                candidates.sort(
-                    key=lambda entry: entry[1], reverse=is_bigger_better)
-        yield from candidates
+        dists = [
+            (mhash, self.get_distance(embed, other_embed))
+            for mhash, other_embed in embeddings
+        ]
+        yield from nbest(
+            dists,
+            key=lambda entry: entry[1],
+            count=count,
+            is_bigger_better=is_bigger_better)

@@ -15,6 +15,7 @@ import torch
 from misc.io import open_read
 
 
+ET = TypeVar('ET')
 CT = TypeVar('CT')
 RT = TypeVar('RT')
 VT = TypeVar('VT')
@@ -447,3 +448,20 @@ def unescape(text: str, subs: dict[str, str]) -> str:
             continue
         res.append(c)
     return "".join(res)
+
+
+def nbest(
+        array: list[ET],
+        key: Callable[[ET], float],
+        *,
+        count: int,
+        is_bigger_better: bool) -> list[ET]:
+    arr = np.array([
+        key(elem) if is_bigger_better else -key(elem)
+        for elem in array
+    ], dtype=np.float64)
+    ind = np.argpartition(arr, -count)[-count:]
+    return [
+        array[ix]
+        for ix in ind[np.argsort(arr[ind])[::-1]]
+    ]
