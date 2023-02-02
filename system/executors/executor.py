@@ -55,7 +55,7 @@ class ExecutorManager(Generic[K, V]):
                     if cur_th is self._th:
                         self._th = None
 
-            cur_th = threading.Thread(target=heartbeat)
+            cur_th = threading.Thread(target=heartbeat, daemon=True)
             self._th = cur_th
             cur_th.start()
 

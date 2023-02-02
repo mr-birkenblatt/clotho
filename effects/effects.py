@@ -83,6 +83,9 @@ class EffectBase(Generic[KT]):
         for dependent in self._dependents:
             dependent.set_outdated(key, now)
 
+    def name(self) -> str:
+        raise NotImplementedError()
+
 
 class EffectRoot(Generic[KT, VT], EffectBase[KT]):
     def get_value(self, key: KT, default: VT) -> VT:
@@ -175,7 +178,10 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
 
     def init_thread(self) -> None:
         if self._thread is None:
-            th = threading.Thread(target=self.updater, daemon=True)
+            th = threading.Thread(
+                target=self.updater,
+                daemon=True,
+                name=f"updater({self.name()})")
             self._thread = th
             th.start()
 

@@ -31,12 +31,17 @@ LT = TypeVar('LT', bound=tuple[EffectBase, ...])
 class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
     def __init__(
             self,
+            name: str,
             ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str]) -> None:
         super().__init__()
+        self._name = name
         self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
+
+    def name(self) -> str:
+        return self._name
 
     def get_redis_key(self, key: KT) -> str:
         return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
@@ -121,12 +126,17 @@ class ValueRootRedisType(Generic[KT, VT], ValueRootType[KT, VT]):
 class SetRootRedisType(Generic[KT], SetRootType[KT, str]):
     def __init__(
             self,
+            name: str,
             ns_key: ConfigKey,
             module: RedisModule,
             key_fn: Callable[[KT], str]) -> None:
         super().__init__()
+        self._name = name
         self._redis = RedisConnection(ns_key, module)
         self._key_fn = key_fn
+
+    def name(self) -> str:
+        return self._name
 
     def get_redis_key(self, key: KT) -> str:
         return f"{self._redis.get_prefix()}:{self._key_fn(key)}"
@@ -207,6 +217,9 @@ class ValueDependentRedisType(Generic[KT, VT], EffectDependent[KT, VT]):
         self._value_prefix = value_prefix
         self._marker_prefix = marker_prefix
         self._marker_queue = marker_queue
+
+    def name(self) -> str:
+        return self._name
 
     def get_value_redis_key(self, key: KT) -> str:
         value_prefix = self._value_prefix
@@ -358,6 +371,9 @@ class ListDependentRedisType(Generic[KT], ListEffectDependent[KT, str]):
         self._update_new_val: Script | None = None
         self._empty = empty
         self._empty_str = "" if empty is None else empty.decode("utf-8")
+
+    def name(self) -> str:
+        return self._name
 
     def get_value_redis_key(self, key: KT) -> str:
         value_prefix = self._value_prefix

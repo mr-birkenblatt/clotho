@@ -141,25 +141,25 @@ class RedisLinkStore(LinkStore):
             return key
 
         self.r_user: ValueRootRedisType[RLink, str] = ValueRootRedisType(
-            ns_key, "link", key_constructor("user"))
+            "r_user", ns_key, "link", key_constructor("user"))
         self.r_user_parser = parse_key_constructor("user")
         self.r_user_links = SetRootRedisType[str](
-            ns_key, "link", construct_user_links_key)
+            "r_user_links", ns_key, "link", construct_user_links_key)
         self.r_user_links_parser = (vuserlinks, parse_user_links_key)
         self.r_voted: SetRootRedisType[RLink] = SetRootRedisType(
-            ns_key, "link", key_constructor("voted"))
+            "r_voted", ns_key, "link", key_constructor("voted"))
         self.r_voted_parser = parse_key_constructor("voted")
         self.r_total: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            ns_key, "link", key_constructor("vtotal"))
+            "r_total", ns_key, "link", key_constructor("vtotal"))
         self.r_total_parser = parse_key_constructor("vtotal")
         self.r_daily: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            ns_key, "link", key_constructor("vdaily"))
+            "r_daily", ns_key, "link", key_constructor("vdaily"))
         self.r_daily_parser = parse_key_constructor("vdaily")
         self.r_first: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            ns_key, "link", key_constructor("vfirst"))
+            "r_first", ns_key, "link", key_constructor("vfirst"))
         self.r_first_parser = parse_key_constructor("vfirst")
         self.r_last: ValueRootRedisType[RLink, float] = ValueRootRedisType(
-            ns_key, "link", key_constructor("vlast"))
+            "r_last", ns_key, "link", key_constructor("vlast"))
         self.r_last_parser = parse_key_constructor("vlast")
 
         # all children for a given parent
