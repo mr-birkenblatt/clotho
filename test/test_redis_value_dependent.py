@@ -16,9 +16,9 @@ def test_dependent() -> None:
     now = 1670580000.0
     set_old_threshold(0.1)
     value_a: ValueRootRedisType[str, int] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
+        "value_a", REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
+        "value_b", REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
 
     def key_id(key: str) -> str:
         return key
@@ -188,9 +188,9 @@ def test_dependent_list() -> None:
     now = 1670580000.0
     set_old_threshold(10.0)
     value_a: ValueRootRedisType[str, int] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
+        "value_a", REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
+        "value_b", REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
 
     def key_id(key: str) -> str:
         return key

@@ -177,7 +177,11 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             parent.add_dependent(Dependent(self, convert))  # type: ignore
 
     def init_thread(self) -> None:
-        if self._thread is None:
+        if self._thread is not None:
+            return
+        with self._update_lock:
+            if self._thread is not None:
+                return
             th = threading.Thread(
                 target=self.updater,
                 daemon=True,

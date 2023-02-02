@@ -83,7 +83,7 @@ lint-pylint:
 	./findpy.sh | sort | xargs pylint -j 6 -v
 
 lint-type-check:
-	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ . --config-file mypy.ini
+	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ --config-file mypy.ini .
 
 lint-flake8:
 	flake8 --verbose --select C812,C815,I001,I002,I003,I004,I005 --exclude \
