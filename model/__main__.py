@@ -13,7 +13,8 @@ from model.datagenerator import (
     LearningPlan,
 )
 from system.links.scorer import get_scorer
-from system.logger.frontend import register_logger_backend
+
+# from system.logger.frontend import register_logger_backend
 from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
 
