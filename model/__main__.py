@@ -12,7 +12,7 @@ from model.datagenerator import (
     EpochLearningPlan,
     LearningPlan,
 )
-from system.links.link import VoteType, VT_UP
+from system.links.link import VT_UP
 from system.links.scorer import get_scorer
 
 # from system.logger.frontend import register_logger_backend
