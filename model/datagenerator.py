@@ -146,6 +146,7 @@ class DataGenerator:
 
     def _get_all_valid_scored_links(
             self, *, skip_weak: bool) -> list[Link]:
+        cur_time = time.monotonic()
 
         def get_all() -> Iterable[Link]:
             for total, vtype, link in self.get_all_valid_links():
@@ -156,12 +157,22 @@ class DataGenerator:
                 yield link
 
         if skip_weak:
-            if self._strong_links_cache is None:
-                self._strong_links_cache = list(get_all())
-            return self._strong_links_cache
-        if self._all_links_cache is None:
-            self._all_links_cache = list(get_all())
-        return self._all_links_cache
+            res = self._strong_links_cache
+            if res is None:
+                res = list(get_all())
+                self._strong_links_cache = res
+                print(
+                    "built strong_links_cache in "
+                    f"{time.monotonic() - cur_time:.4f}s ({len(res)} links)")
+        else:
+            res = self._all_links_cache
+            if res is None:
+                res = list(get_all())
+                self._all_links_cache = res
+                print(
+                    "built all_links_cache in "
+                    f"{time.monotonic() - cur_time:.4f}s ({len(res)} links)")
+        return res
 
     def _get_valid_links_from_messages(
             self,
@@ -327,11 +338,11 @@ class DataGenerator:
         cur_time = time.monotonic()
         messages = self._get_random_messages(count)
         if verbose:
-            print(f"valid messages: {time.monotonic() - cur_time:.4f}")
+            print(f"valid messages: {time.monotonic() - cur_time:.4f}s")
         cur_time = time.monotonic()
         res = self._get_valid_links_from_messages(messages, scorer, now)
         if verbose:
-            print(f"valid links: {time.monotonic() - cur_time:.4f}")
+            print(f"valid links: {time.monotonic() - cur_time:.4f}s")
         return res
 
     def get_path_links(
@@ -347,15 +358,15 @@ class DataGenerator:
         cur_time = time.monotonic()
         parents = self._get_random_messages(count)
         if verbose:
-            print(f"random parents: {time.monotonic() - cur_time:.4f}")
+            print(f"random parents: {time.monotonic() - cur_time:.4f}s")
         cur_time = time.monotonic()
         children = self._get_random_messages(count)
         if verbose:
-            print(f"random children: {time.monotonic() - cur_time:.4f}")
+            print(f"random children: {time.monotonic() - cur_time:.4f}s")
         cur_time = time.monotonic()
         res = self._get_random_links_from_messages(parents, children)
         if verbose:
-            print(f"random links: {time.monotonic() - cur_time:.4f}")
+            print(f"random links: {time.monotonic() - cur_time:.4f}s")
         return res
 
     def get_random_numbers(self, count: int) -> list[float]:
