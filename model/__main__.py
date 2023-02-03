@@ -31,10 +31,14 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
         now = now_ts()
         data_gen = DataGenerator(namespace, 42)
         cur_time = time.monotonic()
+        valid_score_links = 0
         valid_links = 0
-        for _ in data_gen.get_all_valid_links(now, progress_bar=True):
+        for link in data_gen.get_all_valid_links(now, progress_bar=True):
             valid_links += 1
+            if link.get_votes("up").get_total_votes() >= 2.0:
+                valid_score_links += 1
         print(f"valid links: {valid_links}")
+        print(f"valid score links: {valid_score_links}")
         path_links = 0
         for _ in data_gen.get_all_path_links(now):
             path_links += 1
