@@ -175,6 +175,9 @@ class LinkStore(ModuleBase):
     def get_link(self, parent: MHash, child: MHash) -> Link:
         return Link(self, parent, child)
 
+    def get_all_totals(self) -> Iterable[tuple[float, VoteType, Link]]:
+        raise NotImplementedError()
+
     def enumerate_votes(
             self,
             user_store: UserStore,

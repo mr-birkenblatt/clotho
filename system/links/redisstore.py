@@ -560,6 +560,16 @@ class RedisLinkStore(LinkStore):
             rlink = parse_link(VT_UP, link)
             yield self.get_link(rlink.parent, rlink.child)
 
+    def get_all_totals(self) -> Iterable[tuple[float, VoteType, Link]]:
+        for total_key in self.r_total.get_keys(self.r_total_parser):
+            total_value = self.r_total.maybe_get_value(total_key)
+            assert total_value is not None
+            yield (
+                total_value,
+                total_key.vote_type,
+                Link(self, total_key.parent, total_key.child),
+            )
+
     def enumerate_votes(
             self,
             user_store: UserStore,

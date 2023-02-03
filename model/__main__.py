@@ -12,6 +12,7 @@ from model.datagenerator import (
     EpochLearningPlan,
     LearningPlan,
 )
+from system.links.link import VoteType, VT_UP
 from system.links.scorer import get_scorer
 
 # from system.logger.frontend import register_logger_backend
@@ -33,9 +34,11 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
         cur_time = time.monotonic()
         valid_score_links = 0
         valid_links = 0
-        for link in data_gen.get_all_valid_links(now, progress_bar=True):
+        for total, vtype, _ in data_gen.get_all_valid_links():
+            if vtype != VT_UP:
+                continue
             valid_links += 1
-            if link.get_votes("up").get_total_votes() >= 2.0:
+            if total >= 2.0:
                 valid_score_links += 1
         print(f"valid links: {valid_links}")
         print(f"valid score links: {valid_score_links}")

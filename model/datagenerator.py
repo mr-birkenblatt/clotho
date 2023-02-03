@@ -8,7 +8,7 @@ import pandas as pd
 
 from misc.lru import LRU
 from misc.util import now_ts
-from system.links.link import Link
+from system.links.link import Link, VoteType
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_link_store
 from system.msgs.message import MHash
@@ -83,7 +83,7 @@ class DataGenerator:
         return self._msgs.generate_random_messages(
             self._get_rng, rix, count)
 
-    def get_all_valid_links(
+    def get_all_valid_links_by_message(
             self,
             now: pd.Timestamp,
             *,
@@ -92,6 +92,9 @@ class DataGenerator:
         links = self._links
         for msg in msgs.enumerate_messages(progress_bar=progress_bar):
             yield from links.get_all_parents(msg, now)
+
+    def get_all_valid_links(self) -> Iterable[tuple[float, VoteType, Link]]:
+        yield from self._links.get_all_totals()
 
     def _get_valid_links_from_messages(
             self,
