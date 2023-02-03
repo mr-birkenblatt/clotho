@@ -22,7 +22,7 @@ from system.namespace.store import get_namespace
 
 RANDOM_TEST = False
 MESSAGE_GENERATION = False
-GENERATE_ALL = True
+GENERATE_ALL = False
 
 
 def run(ns_name: str, ns_name_other: str | None) -> None:
@@ -61,14 +61,24 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
     elif MESSAGE_GENERATION:
         data_gen = DataGenerator(namespace, 42)
         for link in data_gen.get_valid_random_links(
-                100, scorer=get_scorer("best"), now=now_ts(), verbose=False):
+                100,
+                scorer=get_scorer("best"),
+                now=now_ts(),
+                skip_weak=False,
+                use_fast_gen_only=False,
+                verbose=False):
             print(
                 f"{data_gen.short_info(link.get_parent())} -- "
                 f"{data_gen.short_info(link.get_child())} -- "
                 f"{data_gen.vote_score(link)}")
         print("====================")
         for link in data_gen.get_valid_random_links(
-                5, scorer=get_scorer("best"), now=now_ts(), verbose=False):
+                5,
+                scorer=get_scorer("best"),
+                now=now_ts(),
+                skip_weak=False,
+                use_fast_gen_only=False,
+                verbose=False):
             print(f"{data_gen.long_info(link.get_parent())}")
             print("--------------------")
             print(f"{data_gen.long_info(link.get_child())}")
@@ -94,28 +104,28 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
                 "last_epoch": None,
                 "weight": 100,
             },
-            {
-                "left": {"mode": "random", "flip_pc": 0.0},
-                "right": {"mode": "path", "flip_pc": 0.0},
-                "min_text_length": None,
-                "skip_weak": True,
-                "skip_topics": True,
-                "flip_lr": 0.5,
-                "first_epoch": None,
-                "last_epoch": 5,
-                "weight": 60,
-            },
-            {
-                "left": None,
-                "right": {"mode": "path", "flip_pc": 0.0},
-                "min_text_length": 20,
-                "skip_weak": False,
-                "skip_topics": True,
-                "flip_lr": 0.5,
-                "first_epoch": None,
-                "last_epoch": 5,
-                "weight": 40,
-            },
+            # {
+            #     "left": {"mode": "random", "flip_pc": 0.0},
+            #     "right": {"mode": "path", "flip_pc": 0.0},
+            #     "min_text_length": None,
+            #     "skip_weak": True,
+            #     "skip_topics": True,
+            #     "flip_lr": 0.5,
+            #     "first_epoch": None,
+            #     "last_epoch": 5,
+            #     "weight": 60,
+            # },
+            # {
+            #     "left": None,
+            #     "right": {"mode": "path", "flip_pc": 0.0},
+            #     "min_text_length": 20,
+            #     "skip_weak": False,
+            #     "skip_topics": True,
+            #     "flip_lr": 0.5,
+            #     "first_epoch": None,
+            #     "last_epoch": 5,
+            #     "weight": 40,
+            # },
             {
                 "left": {"mode": "random", "flip_pc": 0.0},
                 "right": {"mode": "valid", "flip_pc": 0.0},
@@ -173,6 +183,7 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
             train_val_size=500,
             test_size=500,
             test_val_size=500,
+            use_fast_gen_only=True,
             compute_batch_size=10)
         ttgen.set_epoch(3)
         bar = "=" * 42
