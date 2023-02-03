@@ -30,9 +30,10 @@ class LoggerFrontend:
         self._on_context_change(old_context)
 
     def _with_context(self, context: LoggerContextUpdate) -> None:
+        old = self._get_context()
         new_context: LoggerContext = {
-            key: context.get(key, value)
-            for key, value in self._get_context().items()
+            key: context.get(key, old.get(key))  # type: ignore
+            for key in old.keys() | context.keys()
         }
         self._set_context(new_context)
 
@@ -82,8 +83,9 @@ def logger_context(context: LoggerContextUpdate) -> Iterator[LoggerFrontend]:
         yield logger
 
 
-BackendName = Literal["stdout"]
+BackendName = Literal["stdout", "stdcount"]
 BACKEND_STDOUT: BackendName = "stdout"
+BACKEND_STDCOUNT: BackendName = "stdcount"
 
 
 def register_logger_backend(backend_name: BackendName) -> None:
@@ -91,5 +93,8 @@ def register_logger_backend(backend_name: BackendName) -> None:
     if backend_name == BACKEND_STDOUT:
         from system.logger.stdout import StdoutLogger
         logger.register_backend(StdoutLogger())
+    elif backend_name == BACKEND_STDCOUNT:
+        from system.logger.stdcount import StdcountLogger
+        logger.register_backend(StdcountLogger())
     else:
         raise ValueError(f"unknown logger backend: {backend_name}")

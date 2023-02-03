@@ -13,17 +13,33 @@ from model.datagenerator import (
     LearningPlan,
 )
 from system.links.scorer import get_scorer
+from system.logger.frontend import register_logger_backend
 from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
 
 
-RANDOM_TEST = True
+RANDOM_TEST = False
 MESSAGE_GENERATION = False
+GENERATE_ALL = True
 
 
 def run(ns_name: str, ns_name_other: str | None) -> None:
     namespace = get_namespace(ns_name)
-    if RANDOM_TEST:
+    if GENERATE_ALL:
+        # register_logger_backend("stdcount")
+        now = now_ts()
+        data_gen = DataGenerator(namespace, 42)
+        cur_time = time.monotonic()
+        valid_links = 0
+        for _ in data_gen.get_all_valid_links(now, progress_bar=True):
+            valid_links += 1
+        print(f"valid links: {valid_links}")
+        path_links = 0
+        for _ in data_gen.get_all_path_links(now):
+            path_links += 1
+        print(f"valid links: {path_links}")
+        print(f"time: {time.monotonic() - cur_time:.4f}s")
+    elif RANDOM_TEST:
         msgs = get_message_store(namespace)
         cur_time = time.monotonic()
         for mhash in msgs.generate_random_messages(

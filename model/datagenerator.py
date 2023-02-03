@@ -83,6 +83,16 @@ class DataGenerator:
         return self._msgs.generate_random_messages(
             self._get_rng, rix, count)
 
+    def get_all_valid_links(
+            self,
+            now: pd.Timestamp,
+            *,
+            progress_bar: bool) -> Iterable[Link]:
+        msgs = self._msgs
+        links = self._links
+        for msg in msgs.enumerate_messages(progress_bar=progress_bar):
+            yield from links.get_all_parents(msg, now)
+
     def _get_valid_links_from_messages(
             self,
             messages: list[MHash],
@@ -126,6 +136,38 @@ class DataGenerator:
     def get_pc_flip_link(self, link: Link) -> Link:
         links = self._links
         return links.get_link(link.get_child(), link.get_parent())
+
+    def get_all_path_links(self, now: pd.Timestamp) -> Iterable[Link]:
+        msgs = self._msgs
+        links = self._links
+
+        def recurse(parent: MHash) -> Iterable[Link]:
+            for link in links.get_all_children(parent, now):
+                yield link
+                yield from recurse(link.get_child())
+
+        for topic in msgs.get_topics(0, None):
+            yield from recurse(topic.get_hash())
+
+    def get_all_paths_with_links(
+            self,
+            scorer: Scorer,
+            now: pd.Timestamp) -> Iterable[tuple[list[int], Link]]:
+        msgs = self._msgs
+        links = self._links
+
+        def recurse(
+                prefix: list[int],
+                parent: MHash) -> Iterable[tuple[list[int], Link]]:
+            count = links.get_all_children_count(parent, now)
+            for pos, link in enumerate(links.get_children(
+                    parent, scorer=scorer, now=now, offset=0, limit=count)):
+                cur_path = prefix + [pos]
+                yield (list(cur_path), link)
+                yield from recurse(cur_path, link.get_child())
+
+        for pos, topic in enumerate(msgs.get_topics(0, None)):
+            yield from recurse([pos], topic.get_hash())
 
     def _get_random_paths(self, count: int) -> list[list[int]]:
         rng = self._rng
