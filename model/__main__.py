@@ -38,14 +38,18 @@ def run(ns_name: str, ns_name_other: str | None) -> None:
             if vtype != VT_UP:
                 continue
             valid_links += 1
-            if total >= 2.0:
+            if total > 1.0:
                 valid_score_links += 1
         print(f"valid links: {valid_links}")
         print(f"valid score links: {valid_score_links}")
         path_links = 0
-        for _ in data_gen.get_all_path_links(now):
+        path_score_links = 0
+        for link in data_gen.get_all_path_links(now=now):
             path_links += 1
-        print(f"valid links: {path_links}")
+            if link.get_votes(VT_UP).get_total_votes() > 1.0:
+                path_score_links += 1
+        print(f"path links: {path_links}")
+        print(f"path score links: {path_score_links}")
         print(f"time: {time.monotonic() - cur_time:.4f}s")
     elif RANDOM_TEST:
         msgs = get_message_store(namespace)

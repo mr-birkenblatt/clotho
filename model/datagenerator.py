@@ -140,17 +140,21 @@ class DataGenerator:
         links = self._links
         return links.get_link(link.get_child(), link.get_parent())
 
-    def get_all_path_links(self, now: pd.Timestamp) -> Iterable[Link]:
+    def get_all_path_links(self, *, now: pd.Timestamp) -> Iterable[Link]:
         msgs = self._msgs
         links = self._links
 
-        def recurse(parent: MHash) -> Iterable[Link]:
+        def recurse(parent: MHash, prev: set[MHash]) -> Iterable[Link]:
+            new_prev = prev | {parent}
             for link in links.get_all_children(parent, now):
                 yield link
-                yield from recurse(link.get_child())
+                child = link.get_child()
+                if child not in new_prev:
+                    yield from recurse(link.get_child(), new_prev)
 
         for topic in msgs.get_topics(0, None):
-            yield from recurse(topic.get_hash())
+            mhash = topic.get_hash()
+            yield from recurse(mhash, {mhash})
 
     def get_all_paths_with_links(
             self,
@@ -161,16 +165,21 @@ class DataGenerator:
 
         def recurse(
                 prefix: list[int],
-                parent: MHash) -> Iterable[tuple[list[int], Link]]:
+                parent: MHash,
+                prev: set[MHash]) -> Iterable[tuple[list[int], Link]]:
             count = links.get_all_children_count(parent, now)
+            new_prev = prev | {parent}
             for pos, link in enumerate(links.get_children(
                     parent, scorer=scorer, now=now, offset=0, limit=count)):
                 cur_path = prefix + [pos]
                 yield (list(cur_path), link)
-                yield from recurse(cur_path, link.get_child())
+                child = link.get_child()
+                if child not in new_prev:
+                    yield from recurse(cur_path, link.get_child(), new_prev)
 
         for pos, topic in enumerate(msgs.get_topics(0, None)):
-            yield from recurse([pos], topic.get_hash())
+            mhash = topic.get_hash()
+            yield from recurse([pos], mhash, {mhash})
 
     def _get_random_paths(self, count: int) -> list[list[int]]:
         rng = self._rng
@@ -301,13 +310,9 @@ class DataGenerator:
 
     def is_weak(self, link: Link) -> bool:
         vup = link.get_votes("up").get_total_votes()
-        # vdown = link.get_votes("down").get_total_votes()
-        vdown = 0.0
-        if vup < 2.0 and vdown < 1.0:
-            return True
-        # if vdown < 2.0 and vup < 2.0:
-        #     return True
-        return False
+        if vup > 1.0:
+            return False
+        return True
 
     def has_topic(self, link: Link) -> bool:
         if self.is_topic_like(link.get_parent()):
