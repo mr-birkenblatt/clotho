@@ -6,7 +6,7 @@ import pandas as pd
 from misc.cold_writer import ColdAccess
 from misc.util import json_compact, json_maybe_read
 from system.links.link import Link, parse_vote_type, RLink, VoteType
-from system.links.store import LinkSer, LinkStore
+from system.links.store import LinkSer, LinkStore, SerTotal
 from system.msgs.message import MHash
 from system.users.store import UserStore
 from system.users.user import User
@@ -18,14 +18,27 @@ def not_supported() -> NoReturn:
         "because it would require a full scan")
 
 
+def parse_link(value: Any) -> RLink:
+    return RLink(
+        vote_type=parse_vote_type(value["vote_type"]),
+        parent=MHash.parse(value["parent"]),
+        child=MHash.parse(value["child"]))
+
+
+def total_from_json(line: str) -> SerTotal | None:
+    obj = json_maybe_read(line)
+    assert obj is not None
+    kind = obj["kind"]
+    if kind == "total":
+        return {
+            "kind": "total",
+            "link": parse_link(obj["link"]),
+            "total": float(obj["total"]),
+        }
+    return None
+
+
 def from_json(line: str, user_store: UserStore) -> LinkSer:
-
-    def parse_link(value: Any) -> RLink:
-        return RLink(
-            vote_type=parse_vote_type(value["vote_type"]),
-            parent=MHash.parse(value["parent"]),
-            child=MHash.parse(value["child"]))
-
     obj = json_maybe_read(line)
     assert obj is not None
     kind = obj["kind"]
@@ -136,6 +149,20 @@ class ColdLinkStore(LinkStore):
             if not line:
                 continue
             yield from_json(line, user_store)
+
+    def get_all_totals(self) -> Iterable[tuple[float, VoteType, Link]]:
+        for line in self._links.enumerate_lines():
+            if not line:
+                continue
+            mser = total_from_json(line)
+            if mser is None:
+                continue
+            rlink = mser["link"]
+            yield (
+                mser["total"],
+                rlink.vote_type,
+                Link(self, rlink.parent, rlink.child),
+            )
 
     def do_parse_vote_fragment(
             self, link_ser: LinkSer, now: pd.Timestamp | None) -> None:
