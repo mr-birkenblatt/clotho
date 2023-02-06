@@ -246,6 +246,14 @@ class BaselineModel(nn.Module):
             self._agg = AGG_CLS
         else:
             self._agg = AGG_MEAN
+        if version != -3:
+            self._dense = None
+        else:
+            self._dense = nn.Sequential(
+                nn.Linear(EMBED_SIZE, EMBED_SIZE),
+                nn.Dropout(p=0.2),
+                nn.ReLU(),
+                nn.Linear(EMBED_SIZE, EMBED_SIZE))
         self._version = version
 
     def set_epoch(self, epoch: int) -> None:
@@ -267,7 +275,10 @@ class BaselineModel(nn.Module):
             attention_mask: torch.Tensor) -> torch.Tensor:
         outputs = self._bert(
             input_ids=input_ids, attention_mask=attention_mask)
-        return self.get_agg(outputs.last_hidden_state)
+        out = self.get_agg(outputs.last_hidden_state)
+        if self._dense is not None:
+            out = self._dense(out)
+        return out
 
     def get_parent_embed(
             self,
