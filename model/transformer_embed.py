@@ -39,8 +39,11 @@ EMBED_SIZE = 768
 
 
 def get_device() -> torch.device:
-    is_cuda = torch.cuda.is_available()
-    return torch.device("cuda") if is_cuda else torch.device("cpu")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
 
 
 TokenizedInput = TypedDict('TokenizedInput', {
