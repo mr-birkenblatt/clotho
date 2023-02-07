@@ -275,11 +275,13 @@ class BaselineModel(nn.Module):
     def _embed(
             self,
             input_ids: torch.Tensor,
-            attention_mask: torch.Tensor) -> torch.Tensor:
+            attention_mask: torch.Tensor,
+            *,
+            use_dense: bool) -> torch.Tensor:
         outputs = self._bert(
             input_ids=input_ids, attention_mask=attention_mask)
         out = self.get_agg(outputs.last_hidden_state)
-        if self._dense is not None:
+        if use_dense and self._dense is not None:
             out = self._dense(out)
         return out
 
@@ -287,13 +289,13 @@ class BaselineModel(nn.Module):
             self,
             input_ids: torch.Tensor,
             attention_mask: torch.Tensor) -> torch.Tensor:
-        return self._embed(input_ids, attention_mask)
+        return self._embed(input_ids, attention_mask, use_dense=True)
 
     def get_child_embed(
             self,
             input_ids: torch.Tensor,
             attention_mask: torch.Tensor) -> torch.Tensor:
-        return self._embed(input_ids, attention_mask)
+        return self._embed(input_ids, attention_mask, use_dense=False)
 
     def forward(
             self,
