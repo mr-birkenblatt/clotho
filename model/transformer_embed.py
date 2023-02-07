@@ -128,6 +128,7 @@ class Model(nn.Module):
             ignore_pretrained_warning: bool = False) -> None:
         super().__init__()
         assert version >= 0
+        assert version <= 7
         logger = modeling_utils.logger
         level = logger.getEffectiveLevel()
         try:
@@ -235,6 +236,7 @@ class BaselineModel(nn.Module):
             ignore_pretrained_warning: bool = False) -> None:
         super().__init__()
         assert version < 0
+        assert version >= -3
         logger = modeling_utils.logger
         level = logger.getEffectiveLevel()
         try:
