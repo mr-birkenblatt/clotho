@@ -39,7 +39,11 @@ class ModuleBase:
             f"--module {self.module_name()}")
 
     def from_namespace(
-            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+            self,
+            own_namespace: Namespace,
+            other_namespace: Namespace,
+            *,
+            progress_bar: bool) -> None:
         raise UnsupportedTransfer(
             f"{self.module_name()} cannot be transferred")
 

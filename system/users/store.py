@@ -27,7 +27,11 @@ class UserStore(ModuleBase):
         raise NotImplementedError()
 
     def from_namespace(
-            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+            self,
+            own_namespace: Namespace,
+            other_namespace: Namespace,
+            *,
+            progress_bar: bool) -> None:
         ousers = get_user_store(other_namespace)
         for user in ousers.get_all_users(progress_bar=progress_bar):
             self.store_user(user)

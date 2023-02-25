@@ -95,7 +95,11 @@ class EmbeddingStore(ModuleBase):
         raise NotImplementedError()
 
     def from_namespace(
-            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+            self,
+            own_namespace: Namespace,
+            other_namespace: Namespace,
+            *,
+            progress_bar: bool) -> None:
         oembed = get_embed_store(other_namespace)
         for role in PROVIDER_ROLES:
             for mhash, embed in oembed.get_all_embeddings(

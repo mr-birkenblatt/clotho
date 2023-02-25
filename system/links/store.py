@@ -190,9 +190,13 @@ class LinkStore(ModuleBase):
         raise NotImplementedError()
 
     def from_namespace(
-            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+            self,
+            own_namespace: Namespace,
+            other_namespace: Namespace,
+            *,
+            progress_bar: bool) -> None:
         other_links = get_link_store(other_namespace)
-        other_users = get_user_store(other_namespace)
+        other_users = get_user_store(own_namespace)
         now = None
         for link_ser in other_links.enumerate_votes(
                 other_users, progress_bar=progress_bar):

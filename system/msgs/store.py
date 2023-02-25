@@ -23,7 +23,11 @@ class MessageStore(ModuleBase):
         return "msgs"
 
     def from_namespace(
-            self, other_namespace: Namespace, *, progress_bar: bool) -> None:
+            self,
+            own_namespace: Namespace,
+            other_namespace: Namespace,
+            *,
+            progress_bar: bool) -> None:
         omsgs = get_message_store(other_namespace)
         for topic in omsgs.get_topics(offset=0, limit=None):
             self.add_topic(topic)
