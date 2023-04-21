@@ -1,5 +1,4 @@
-from contextlib import contextmanager
-from typing import Iterable, Iterator
+from typing import Iterable
 
 import torch
 
@@ -13,7 +12,9 @@ class NoEmbedding(EmbeddingStore):
             self,
             role: ProviderRole,
             mhash: MHash,
-            embed: torch.Tensor) -> None:
+            embed: torch.Tensor,
+            *,
+            no_index: bool) -> None:
         pass
 
     def do_get_embedding(
@@ -22,13 +23,25 @@ class NoEmbedding(EmbeddingStore):
             mhash: MHash) -> torch.Tensor | None:
         return torch.Tensor([0])
 
-    @contextmanager
-    def bulk_add(self, role: ProviderRole) -> Iterator[None]:
-        yield
-
     def do_get_closest(
             self,
             role: ProviderRole,
             embed: torch.Tensor,
-            count: int) -> Iterable[MHash]:
+            count: int,
+            *,
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
         yield from []
+
+    def get_all_embeddings(
+            self,
+            role: ProviderRole,
+            *,
+            progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
+        yield from []
+
+    def get_embedding_count(self, role: ProviderRole) -> int:
+        return 0
+
+    def self_test(self, role: ProviderRole, count: int | None) -> None:
+        raise ValueError("no computation has happened; nothing to test")

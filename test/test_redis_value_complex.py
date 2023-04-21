@@ -30,6 +30,7 @@ def test_complex() -> None:
     now = 1670580000.0
     set_old_threshold(0.1)
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
+        "links",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"link:{key.l_from}:{key.l_to}")
@@ -44,6 +45,7 @@ def test_complex() -> None:
 
     dests: ValueDependentRedisType[FLink, list[int]] = \
         ValueDependentRedisType(
+            "dests",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"dests:{key.l_from}",
@@ -57,6 +59,7 @@ def test_complex() -> None:
             effect=compute_destinations)
     srcs: ValueDependentRedisType[TLink, list[int]] = \
         ValueDependentRedisType(
+            "srcs",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"srcs:{key.l_to}",
@@ -103,7 +106,10 @@ def test_complex_list() -> None:
     now = 1670580000.0
     set_old_threshold(0.1)
     links: ValueRootRedisType[Link, int] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"link:{key.l_from}:{key.l_to}")
+        "links",
+        REDIS_TEST_CONFIG,
+        "test",
+        lambda key: f"link:{key.l_from}:{key.l_to}")
 
     def compute_destinations(key: FLink, now: pd.Timestamp | None) -> None:
         dests.set_value(key, sorted((
@@ -118,6 +124,7 @@ def test_complex_list() -> None:
 
     dests: ListDependentRedisType[FLink] = \
         ListDependentRedisType(
+            "dests",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"dests:{key.l_from}",
@@ -132,6 +139,7 @@ def test_complex_list() -> None:
             empty=b"")
     srcs: ListDependentRedisType[TLink] = \
         ListDependentRedisType(
+            "srcs",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"srcs:{key.l_to}",

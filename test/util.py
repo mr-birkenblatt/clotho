@@ -1,11 +1,13 @@
 import collections
 import os
 import re
-import xml.etree.ElementTree as ET
 from typing import Iterable
+from xml.etree import ElementTree as ET
 
 import pandas as pd
 import pandas.testing as pd_test
+
+from misc.io import listdir
 
 
 XML_FILE_PATTERN = re.compile(r".*\.xml")
@@ -18,14 +20,13 @@ def check_equal(a: pd.DataFrame, b: pd.DataFrame) -> None:
 
 
 def find_tests(folder: str) -> Iterable[str]:
-    items = os.listdir(folder)
-    for item in items:
+    for item in listdir(folder):
         if not os.path.isdir(item) and TEST_FILE_PATTERN.match(item):
             yield os.path.join(folder, item)
 
 
 def merge_results(base_folder: str, out_filename: str) -> None:
-    xml_files = sorted(os.listdir(os.path.join(base_folder, "parts")))
+    xml_files = sorted(listdir(os.path.join(base_folder, "parts")))
 
     testsuites = ET.Element("testsuites")
     combined = ET.SubElement(testsuites, "testsuite")

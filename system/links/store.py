@@ -2,19 +2,73 @@ from typing import Iterable, Literal, TypedDict
 
 import pandas as pd
 
-from misc.redis import create_redis_config, get_redis_ns_key, register_redis_ns
 from system.links.link import Link, RLink, VoteType
-from system.links.scorer import Scorer
+from system.links.scorer import get_scorer, Scorer
 from system.msgs.message import MHash
-from system.namespace.namespace import Namespace
-from system.users.store import UserStore
+from system.namespace.module import ModuleBase
+from system.namespace.namespace import ModuleName, Namespace
+from system.users.store import get_user_store, UserStore
 from system.users.user import User
 
 
-class LinkStore:
+SerUser = TypedDict('SerUser', {
+    "kind": Literal["user"],
+    "link": RLink,
+    "user": User,
+})
+SerUserLinks = TypedDict('SerUserLinks', {
+    "kind": Literal["user_links"],
+    "user": User,
+    "links": list[RLink],
+})
+SerVoted = TypedDict('SerVoted', {
+    "kind": Literal["voted"],
+    "link": RLink,
+    "users": list[User],
+})
+SerTotal = TypedDict('SerTotal', {
+    "kind": Literal["total"],
+    "link": RLink,
+    "total": float,
+})
+SerDaily = TypedDict('SerDaily', {
+    "kind": Literal["daily"],
+    "link": RLink,
+    "daily": float,
+})
+SerFirst = TypedDict('SerFirst', {
+    "kind": Literal["first"],
+    "link": RLink,
+    "first": float,
+})
+SerLast = TypedDict('SerLast', {
+    "kind": Literal["last"],
+    "link": RLink,
+    "last": float,
+})
+LinkSer = (
+    SerUser
+    | SerUserLinks
+    | SerVoted
+    | SerTotal
+    | SerDaily
+    | SerFirst
+    | SerLast
+)
+
+
+class LinkStore(ModuleBase):
+    @staticmethod
+    def module_name() -> ModuleName:
+        return "links"
+
     @staticmethod
     def valid_scorers() -> list[Scorer]:
-        raise NotImplementedError()
+        return [
+            get_scorer("best"),
+            get_scorer("top"),
+            get_scorer("new"),
+        ]
 
     def get_user_id(self, link: RLink) -> str | None:
         raise NotImplementedError()
@@ -121,6 +175,33 @@ class LinkStore:
     def get_link(self, parent: MHash, child: MHash) -> Link:
         return Link(self, parent, child)
 
+    def get_all_totals(self) -> Iterable[tuple[float, VoteType, Link]]:
+        raise NotImplementedError()
+
+    def enumerate_votes(
+            self,
+            user_store: UserStore,
+            *,
+            progress_bar: bool) -> Iterable[LinkSer]:
+        raise NotImplementedError()
+
+    def do_parse_vote_fragment(
+            self, link_ser: LinkSer, now: pd.Timestamp | None) -> None:
+        raise NotImplementedError()
+
+    def from_namespace(
+            self,
+            own_namespace: Namespace,
+            other_namespace: Namespace,
+            *,
+            progress_bar: bool) -> None:
+        other_links = get_link_store(other_namespace)
+        other_users = get_user_store(own_namespace)
+        now = None
+        for link_ser in other_links.enumerate_votes(
+                other_users, progress_bar=progress_bar):
+            self.do_parse_vote_fragment(link_ser, now=now)
+
 
 LINK_STORE: dict[Namespace, LinkStore] = {}
 
@@ -135,13 +216,13 @@ def get_link_store(namespace: Namespace) -> LinkStore:
 
 RedisLinkModule = TypedDict('RedisLinkModule', {
     "name": Literal["redis"],
-    "host": str,
-    "port": int,
-    "passwd": str,
-    "prefix": str,
-    "path": str,
+    "conn": str,
 })
-LinkModule = RedisLinkModule
+ColdLinkModule = TypedDict('ColdLinkModule', {
+    "name": Literal["cold"],
+    "keep_alive": float,
+})
+LinkModule = RedisLinkModule | ColdLinkModule
 
 
 def create_link_store(namespace: Namespace) -> LinkStore:
@@ -149,13 +230,11 @@ def create_link_store(namespace: Namespace) -> LinkStore:
     if lobj["name"] == "redis":
         from system.links.redisstore import RedisLinkStore
 
-        ns_key = get_redis_ns_key(namespace.get_name(), "linkstore")
-        if not ns_key[0].startswith("_"):
-            register_redis_ns(ns_key, create_redis_config(
-                lobj["host"],
-                lobj["port"],
-                lobj["passwd"],
-                lobj["prefix"],
-                lobj["path"]))
-        return RedisLinkStore(ns_key)
+        return RedisLinkStore(
+            namespace.get_redis_key("linkstore", lobj["conn"]))
+    if lobj["name"] == "cold":
+        from system.links.cold import ColdLinkStore
+
+        return ColdLinkStore(
+            namespace.get_module_root("links"), keep_alive=lobj["keep_alive"])
     raise ValueError(f"unknown link store: {lobj}")

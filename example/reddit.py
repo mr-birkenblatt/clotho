@@ -46,8 +46,12 @@ class RedditAccess:
         self._reddit = reddit
         self._users: dict[str, tuple[str, str]] = {}
 
-    def get_posts(self, subreddit: str) -> Iterable[Submission]:
-        yield from self._reddit.subreddit(subreddit).hot()
+    def get_posts(
+            self, subreddit: str, *, is_top: bool) -> Iterable[Submission]:
+        if is_top:
+            yield from self._reddit.subreddit(subreddit).top(limit=25)
+        else:
+            yield from self._reddit.subreddit(subreddit).hot()
 
     def get_user(self, value: Submission | Comment) -> tuple[str, str]:
         if not hasattr(value, "author_fullname"):

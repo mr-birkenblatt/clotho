@@ -7,9 +7,11 @@ from system.suggest.suggest import LinkSuggester
 
 
 class RandomLinkSuggester(LinkSuggester):
-    def __init__(self, namespace: Namespace) -> None:
+    def __init__(
+            self, namespace: Namespace, max_suggestions: int | None) -> None:
         super().__init__(namespace)
         self._message_store = get_message_store(namespace)
+        self._max_suggestions = max_suggestions
 
     def suggest_messages(
             self,
@@ -22,7 +24,7 @@ class RandomLinkSuggester(LinkSuggester):
             other, is_parent, offset, limit)
 
     def max_suggestions(self) -> int | None:
-        return None
+        return self._max_suggestions
 
     @staticmethod
     def get_name() -> str:

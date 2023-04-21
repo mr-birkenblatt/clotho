@@ -1,12 +1,23 @@
 import collections
 import threading
-from typing import Callable, Iterable, Literal, Sequence, TypedDict, TypeVar
+import time
+from typing import (
+    Callable,
+    Iterable,
+    Literal,
+    overload,
+    Sequence,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 import pandas as pd
 
-from misc.util import now_ts, sigmoid
-from system.links.link import Link
+from misc.lru import LRU
+from misc.util import now_ts
+from system.links.link import Link, VoteType, VT_UP
 from system.links.scorer import get_scorer, Scorer
 from system.links.store import get_link_store
 from system.msgs.message import MHash
@@ -24,6 +35,8 @@ T = TypeVar('T')
 
 
 RowMode = Literal["path", "valid", "random"]
+ExtRowMode = Union[RowMode, Literal["valid_strong", "valid_weak"]]
+FAST_MODES: set[RowMode] = {"valid", "random"}
 RowGen = TypedDict('RowGen', {
     "mode": RowMode,
     "flip_pc": float,
@@ -32,6 +45,8 @@ LearningPlan = TypedDict('LearningPlan', {
     "left": RowGen | None,
     "right": RowGen,
     "min_text_length": int | None,
+    "skip_weak": bool,
+    "skip_topics": bool,
     "flip_lr": float,
     "weight": float,
 })
@@ -41,9 +56,45 @@ EpochLearningPlan = TypedDict('EpochLearningPlan', {
     "first_epoch": int | None,
     "last_epoch": int | None,
     "min_text_length": int | None,
+    "skip_weak": bool,
+    "skip_topics": bool,
     "flip_lr": float,
     "weight": float,
 })
+
+
+@overload
+def validate_row_gen(
+        lplan: EpochLearningPlan | LearningPlan,
+        row_gen: RowGen,
+        *,
+        use_fast_gen_only: bool) -> RowGen:
+    ...
+
+
+@overload
+def validate_row_gen(
+        lplan: EpochLearningPlan | LearningPlan,
+        row_gen: None,
+        *,
+        use_fast_gen_only: bool) -> None:
+    ...
+
+
+def validate_row_gen(
+        lplan: EpochLearningPlan | LearningPlan,
+        row_gen: RowGen | None,
+        *,
+        use_fast_gen_only: bool) -> RowGen | None:
+    if not use_fast_gen_only:
+        return row_gen
+    if row_gen is None:
+        return None
+    if row_gen["mode"] not in FAST_MODES:
+        raise ValueError(
+            "use_fast_gen_only is True but trainings plan contains "
+            f"slow gen: {row_gen['mode']} ({lplan})")
+    return row_gen
 
 
 class DataGenerator:
@@ -56,6 +107,9 @@ class DataGenerator:
         self._seed_offset = 0
         self._rng = self._get_rng(0)
         self._rix = 0
+
+        self._all_links_cache: list[Link] | None = None
+        self._strong_links_cache: list[Link] | None = None
 
     def _get_rng(self, cur_ix: int) -> np.random.Generator:
         calc = self._seed * (1 + SEED_OFFSET_MUL * self._seed_offset) + 1
@@ -77,6 +131,49 @@ class DataGenerator:
         return self._msgs.generate_random_messages(
             self._get_rng, rix, count)
 
+    def get_all_valid_links_by_message(
+            self,
+            now: pd.Timestamp,
+            *,
+            progress_bar: bool) -> Iterable[Link]:
+        msgs = self._msgs
+        links = self._links
+        for msg in msgs.enumerate_messages(progress_bar=progress_bar):
+            yield from links.get_all_parents(msg, now)
+
+    def get_all_valid_links(self) -> Iterable[tuple[float, VoteType, Link]]:
+        yield from self._links.get_all_totals()
+
+    def _get_all_valid_scored_links(
+            self, *, skip_weak: bool) -> list[Link]:
+        cur_time = time.monotonic()
+
+        def get_all() -> Iterable[Link]:
+            for total, vtype, link in self.get_all_valid_links():
+                if vtype != VT_UP:
+                    continue
+                if skip_weak and self._is_weak(total):
+                    continue
+                yield link
+
+        if skip_weak:
+            res = self._strong_links_cache
+            if res is None:
+                res = list(get_all())
+                self._strong_links_cache = res
+                print(
+                    "built strong_links_cache in "
+                    f"{time.monotonic() - cur_time:.4f}s ({len(res)} links)")
+        else:
+            res = self._all_links_cache
+            if res is None:
+                res = list(get_all())
+                self._all_links_cache = res
+                print(
+                    "built all_links_cache in "
+                    f"{time.monotonic() - cur_time:.4f}s ({len(res)} links)")
+        return res
+
     def _get_valid_links_from_messages(
             self,
             messages: list[MHash],
@@ -84,6 +181,12 @@ class DataGenerator:
             now: pd.Timestamp) -> list[Link]:
         rng = self._rng
         links = self._links
+        pool: collections.deque[MHash] = collections.deque()
+
+        def random_message() -> MHash:
+            while not pool:
+                pool.extend(self._get_random_messages(100))
+            return pool.popleft()
 
         def get_link(msg: MHash) -> Link:
             pcount = max(links.get_all_parents_count(msg, now), 1)
@@ -94,7 +197,7 @@ class DataGenerator:
                 offset=int(rng.integers(0, pcount)),
                 limit=1))
             if not res:
-                res = [links.get_link(msg, self._get_random_messages(1)[0])]
+                res = [links.get_link(msg, random_message())]
             return res[0]
 
         return [
@@ -108,12 +211,53 @@ class DataGenerator:
         links = self._links
         return [
             links.get_link(parent, child)
-            for (parent, child) in zip(parents, children)
+            for (parent, child) in zip(parents, children, strict=True)
         ]
 
     def get_pc_flip_link(self, link: Link) -> Link:
         links = self._links
         return links.get_link(link.get_child(), link.get_parent())
+
+    def get_all_path_links(self, *, now: pd.Timestamp) -> Iterable[Link]:
+        msgs = self._msgs
+        links = self._links
+
+        def recurse(parent: MHash, prev: set[MHash]) -> Iterable[Link]:
+            new_prev = prev | {parent}
+            for link in links.get_all_children(parent, now):
+                yield link
+                child = link.get_child()
+                if child not in new_prev:
+                    yield from recurse(link.get_child(), new_prev)
+
+        for topic in msgs.get_topics(0, None):
+            mhash = topic.get_hash()
+            yield from recurse(mhash, {mhash})
+
+    def get_all_paths_with_links(
+            self,
+            scorer: Scorer,
+            now: pd.Timestamp) -> Iterable[tuple[list[int], Link]]:
+        msgs = self._msgs
+        links = self._links
+
+        def recurse(
+                prefix: list[int],
+                parent: MHash,
+                prev: set[MHash]) -> Iterable[tuple[list[int], Link]]:
+            count = links.get_all_children_count(parent, now)
+            new_prev = prev | {parent}
+            for pos, link in enumerate(links.get_children(
+                    parent, scorer=scorer, now=now, offset=0, limit=count)):
+                cur_path = prefix + [pos]
+                yield (list(cur_path), link)
+                child = link.get_child()
+                if child not in new_prev:
+                    yield from recurse(cur_path, link.get_child(), new_prev)
+
+        for pos, topic in enumerate(msgs.get_topics(0, None)):
+            mhash = topic.get_hash()
+            yield from recurse([pos], mhash, {mhash})
 
     def _get_random_paths(self, count: int) -> list[list[int]]:
         rng = self._rng
@@ -179,9 +323,27 @@ class DataGenerator:
             self,
             count: int,
             scorer: Scorer,
-            now: pd.Timestamp) -> list[Link]:
+            now: pd.Timestamp,
+            *,
+            skip_weak: bool,
+            use_fast_gen_only: bool,
+            verbose: bool) -> list[Link]:
+        if use_fast_gen_only:
+            rng = self._rng
+            vs_links = self._get_all_valid_scored_links(skip_weak=skip_weak)
+            return [
+                vs_links[ix]
+                for ix in rng.integers(0, len(vs_links), size=count)
+            ]
+        cur_time = time.monotonic()
         messages = self._get_random_messages(count)
-        return self._get_valid_links_from_messages(messages, scorer, now)
+        if verbose:
+            print(f"valid messages: {time.monotonic() - cur_time:.4f}s")
+        cur_time = time.monotonic()
+        res = self._get_valid_links_from_messages(messages, scorer, now)
+        if verbose:
+            print(f"valid links: {time.monotonic() - cur_time:.4f}s")
+        return res
 
     def get_path_links(
             self,
@@ -191,10 +353,21 @@ class DataGenerator:
         paths = self._get_random_paths(count)
         return self._get_links_from_paths(paths, scorer, now)
 
-    def get_truly_random_links(self, count: int) -> list[Link]:
+    def get_truly_random_links(
+            self, count: int, *, verbose: bool) -> list[Link]:
+        cur_time = time.monotonic()
         parents = self._get_random_messages(count)
+        if verbose:
+            print(f"random parents: {time.monotonic() - cur_time:.4f}s")
+        cur_time = time.monotonic()
         children = self._get_random_messages(count)
-        return self._get_random_links_from_messages(parents, children)
+        if verbose:
+            print(f"random children: {time.monotonic() - cur_time:.4f}s")
+        cur_time = time.monotonic()
+        res = self._get_random_links_from_messages(parents, children)
+        if verbose:
+            print(f"random links: {time.monotonic() - cur_time:.4f}s")
+        return res
 
     def get_random_numbers(self, count: int) -> list[float]:
         rng = self._rng
@@ -216,25 +389,44 @@ class DataGenerator:
     def long_info(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).to_debug(False)
 
+    def _vote_score(self, total_up: float) -> float:
+        return max(0, total_up)
+
     def vote_score(self, link: Link) -> float:
-        vhonor = link.get_votes("honor").get_total_votes()
         vup = link.get_votes("up").get_total_votes()
-        vdown = link.get_votes("down").get_total_votes()
-        return abs(vup - HONOR_MUL * vhonor - DOWN_MUL * vdown)
+        return self._vote_score(vup)
+
+    def _is_weak(self, total_up: float) -> bool:
+        is_strong = total_up > 1.0
+        return not is_strong
+
+    def is_weak(self, link: Link) -> bool:
+        vup = link.get_votes("up").get_total_votes()
+        return self._is_weak(vup)
+
+    def has_topic(self, link: Link) -> bool:
+        if self.is_topic_like(link.get_parent()):
+            return True
+        if self.is_topic_like(link.get_child()):
+            return True
+        return False
+
+    def is_topic_like(self, mhash: MHash) -> bool:
+        return not self._msgs.read_message(mhash).is_valid_message()
 
     def get_text(self, mhash: MHash) -> str:
         return self._msgs.read_message(mhash).single_line_text()
 
 
 BatchRow = TypedDict('BatchRow', {
+    "gen_name": str,
     "parent_left": str,
     "child_left": str,
     "parent_right": str,
     "child_right": str,
-    "sway_left": float,
-    "sway_right": float,
+    "score_left": float,
+    "score_right": float,
     "correct_is_right": bool,
-    "gen_name": str,
 })
 COLUMNS = [
     "gen_name",
@@ -242,8 +434,8 @@ COLUMNS = [
     "child_left",
     "parent_right",
     "child_right",
-    "sway_left",
-    "sway_right",
+    "score_left",
+    "score_right",
     "correct_is_right",
 ]
 
@@ -265,10 +457,11 @@ class TrainTestGenerator:
             train_val_size: int,
             test_size: int,
             test_val_size: int,
+            use_fast_gen_only: bool,
             compute_batch_size: int | None = None,
-            reset_train: bool = False,
             scorer: Scorer | None = None,
             now: pd.Timestamp | None = None,
+            verbose: bool = False,
             ) -> None:
         assert train is not train_validation
         assert train is not test
@@ -289,10 +482,10 @@ class TrainTestGenerator:
         self._train_val_size = train_val_size
         self._test_size = test_size
         self._test_val_size = test_val_size
+        self._use_fast_gen_only = use_fast_gen_only
         self._compute_batch_size = \
             batch_size if compute_batch_size is None else compute_batch_size
         self._epoch_batches = epoch_batches
-        self._reset_train = reset_train
 
         self._scorer = get_scorer("best") if scorer is None else scorer
         self._now = now_ts() if now is None else now
@@ -303,11 +496,19 @@ class TrainTestGenerator:
         self._test_buff: collections.deque[BatchRow] = collections.deque()
         self._test_validation_buff: collections.deque[BatchRow] = \
             collections.deque()
-        self._cur_train_batch = 0
-        self._cur_train_validation_size = 0
-        self._cur_test_size = 0
-        self._cur_test_validation_size = 0
         self._cur_epoch = 0
+
+        self._train_epoch_cache: LRU[int, list[BatchRow]] = LRU(35)
+        self._cur_train_cache: list[BatchRow] = []
+
+        self._cur_train_validation_cache: list[BatchRow] = []
+        self._cur_test_cache: list[BatchRow] = []
+        self._cur_test_validation_cache: list[BatchRow] = []
+
+        self._cur_train_ix = 0
+        self._cur_train_validation_ix = 0
+        self._cur_test_ix = 0
+        self._cur_test_validation_ix = 0
 
         self._th_train: threading.Thread | None = None
         self._th_train_val: threading.Thread | None = None
@@ -317,6 +518,8 @@ class TrainTestGenerator:
         self._th_err: BaseException | None = None
         self._lock = threading.RLock()
         self._cond = threading.Condition(self._lock)
+
+        self._verbose = verbose
 
     def get_batch_size(self) -> int:
         return self._batch_size
@@ -354,62 +557,68 @@ class TrainTestGenerator:
         self._check_err()
         self._th_term = False
 
+    def _empty_train_cache(self) -> None:
+        train_cache = list(self._cur_train_cache)
+        if len(train_cache) == self.get_epoch_train_size():
+            self._train_epoch_cache.set(self._cur_epoch, train_cache)
+        self._cur_train_cache = []
+        self._cur_train_ix = 0
+
     def reset(self) -> None:
         self._th_terminate()
+        self._empty_train_cache()
         self._train.reset()
-        self._train_validation.reset()
-        self._test.reset()
-        self._test_validation.reset()
         self._train_buff.clear()
-        self._train_validation_buff.clear()
-        self._test_buff.clear()
-        self._test_validation_buff.clear()
-        self._cur_train_batch = 0
-        self._cur_train_validation_size = 0
-        self._cur_test_size = 0
-        self._cur_test_validation_size = 0
+        self._cur_train_validation_ix = 0
+        self._cur_test_ix = 0
+        self._cur_test_validation_ix = 0
         self._cur_epoch = 0
 
     def advance_epoch(self) -> None:
-        if (self._cur_train_batch != self._epoch_batches
-                or self._cur_train_validation_size != self._train_val_size
-                or self._cur_test_size != self._test_size):
+        if (self._cur_train_ix != self.get_epoch_train_size()
+                or self._cur_train_validation_ix != self._train_val_size
+                or self._cur_test_ix != self._test_size):
             raise ValueError(
                 "epoch not exhausted! "
-                f"train: {self._cur_train_batch} "
-                f"train validation: {self._cur_train_validation_size} "
-                f"test: {self._cur_test_size} "
+                f"train: {self._cur_train_ix} "
+                f"train validation: {self._cur_train_validation_ix} "
+                f"test: {self._cur_test_ix} "
+                f"train validation: {self._cur_test_validation_ix} "
                 f"batches per epoch: {self._epoch_batches} "
                 f"train val size: {self._train_val_size} "
-                f"test size: {self._test_size}")
+                f"test size: {self._test_size} "
+                f"test val size: {self._test_val_size}")
         self._th_terminate()
-        self._cur_epoch += 1
-        if self._reset_train:
-            self._train.reset()
-        else:
-            self._train.set_seed_offset(self._cur_epoch)
-        self._train_validation.reset()
-        self._test.reset()
+        self._empty_train_cache()
+        self._set_epoch(self._cur_epoch + 1)
+        self._train.set_seed_offset(self._cur_epoch)
         self._train_buff.clear()
-        self._train_validation_buff.clear()
-        self._test_buff.clear()
-        self._cur_train_batch = 0
-        self._cur_train_validation_size = 0
-        self._cur_test_size = 0
+        self._cur_train_validation_ix = 0
+        self._cur_test_ix = 0
+        self._cur_test_validation_ix = 0
 
     def get_epoch(self) -> int:
         return self._cur_epoch
 
+    def _set_epoch(self, epoch: int) -> None:
+        self._cur_epoch = epoch
+        train_cache = self._train_epoch_cache.get(self._cur_epoch)
+        if train_cache is not None:
+            self._cur_train_cache = train_cache
+        else:
+            self._cur_train_cache = []
+
     def set_epoch(self, epoch: int) -> None:
         self.reset()
-        self._cur_epoch = epoch
-        if not self._reset_train:
-            self._train.set_seed_offset(self._cur_epoch)
+        self._set_epoch(epoch)
+        self._train.set_seed_offset(self._cur_epoch)
 
     @staticmethod
     def _epoch_learning_plan(
             epoch: int,
             learning_plan: Sequence[EpochLearningPlan | LearningPlan],
+            *,
+            use_fast_gen_only: bool,
             ) -> list[LearningPlan]:
 
         def after_first(
@@ -428,9 +637,17 @@ class TrainTestGenerator:
 
         return [
             {
-                "left": lplan["left"],
-                "right": lplan["right"],
+                "left": validate_row_gen(
+                    lplan,
+                    lplan["left"],
+                    use_fast_gen_only=use_fast_gen_only),
+                "right": validate_row_gen(
+                    lplan,
+                    lplan["right"],
+                    use_fast_gen_only=use_fast_gen_only),
                 "min_text_length": lplan["min_text_length"],
+                "skip_weak": lplan["skip_weak"],
+                "skip_topics": lplan["skip_topics"],
                 "flip_lr": lplan["flip_lr"],
                 "weight": lplan["weight"],
             }
@@ -444,7 +661,10 @@ class TrainTestGenerator:
             learning_plan: list[LearningPlan],
             count: int,
             scorer: Scorer,
-            now: pd.Timestamp) -> Iterable[BatchRow]:
+            now: pd.Timestamp,
+            *,
+            use_fast_gen_only: bool,
+            verbose: bool) -> Iterable[BatchRow]:
         plan = data.get_weighted_choice(
             learning_plan,
             [lplan["weight"] for lplan in learning_plan],
@@ -452,31 +672,71 @@ class TrainTestGenerator:
         flip_lrs = data.get_random_numbers(count)
         flip_left_pc = data.get_random_numbers(count)
         flip_right_pc = data.get_random_numbers(count)
-        rcounts: collections.defaultdict[RowMode, int] = \
+        rcounts: collections.defaultdict[ExtRowMode, int] = \
             collections.defaultdict(lambda: 0)
+
+        def add_rcount(pentry: LearningPlan, mode: ExtRowMode) -> ExtRowMode:
+            if use_fast_gen_only and mode == "valid":
+                return "valid_strong" if pentry["skip_weak"] else "valid_weak"
+            return mode
+
         for pentry in plan:
             if pentry["left"] is not None:
-                rcounts[pentry["left"]["mode"]] += 1
-            rcounts[pentry["right"]["mode"]] += 1
+                rcounts[add_rcount(pentry, pentry["left"]["mode"])] += 1
+            rcounts[add_rcount(pentry, pentry["right"]["mode"])] += 1
 
-        def gen(mode: RowMode, rcount: int) -> list[Link]:
+        def gen(mode: ExtRowMode, rcount: int) -> list[Link]:
             if mode == "random":
-                return data.get_truly_random_links(rcount)
-            if mode == "valid":
-                return data.get_valid_random_links(rcount, scorer, now)
-            if mode == "path":
-                return data.get_path_links(rcount, scorer, now)
-            raise ValueError(f"invalid mode: {mode}")
+                res = data.get_truly_random_links(
+                    rcount, verbose=verbose)
+            elif use_fast_gen_only and mode == "valid_strong":
+                res = data.get_valid_random_links(
+                    rcount,
+                    scorer,
+                    now,
+                    skip_weak=True,
+                    use_fast_gen_only=True,
+                    verbose=verbose)
+            elif use_fast_gen_only and mode == "valid_weak":
+                res = data.get_valid_random_links(
+                    rcount,
+                    scorer,
+                    now,
+                    skip_weak=False,
+                    use_fast_gen_only=True,
+                    verbose=verbose)
+            elif not use_fast_gen_only and mode == "valid":
+                res = data.get_valid_random_links(
+                    rcount,
+                    scorer,
+                    now,
+                    skip_weak=False,
+                    use_fast_gen_only=False,
+                    verbose=verbose)
+            elif not use_fast_gen_only and mode == "path":
+                res = data.get_path_links(rcount, scorer, now)
+            else:
+                raise ValueError(
+                    f"invalid mode: {mode} ufgo: {use_fast_gen_only}")
+            return res
+
+        def get_mode(pentry: LearningPlan, mode: RowMode) -> ExtRowMode:
+            if use_fast_gen_only and mode == "valid":
+                return "valid_strong" if pentry["skip_weak"] else "valid_weak"
+            return mode
 
         links = {
             key: collections.deque(gen(key, kcount))
             for key, kcount in rcounts.items()
         }
         produced = 0
+        rejected = 0
         for ix, pentry in enumerate(plan):
             right = pentry["right"]
-            right_link = links[right["mode"]].popleft()
-            name_right = f"{right['mode']}"
+
+            rmode = get_mode(pentry, right["mode"])
+            right_link = links[rmode].popleft()
+            name_right = f"{rmode}"
             if flip_right_pc[ix] < right["flip_pc"]:
                 right_link = data.get_pc_flip_link(right_link)
                 name_right = f"!{name_right}"
@@ -486,8 +746,9 @@ class TrainTestGenerator:
                 left_link = data.get_pc_flip_link(right_link)
                 name_left = "!copy"
             else:
-                left_link = links[left["mode"]].popleft()
-                name_left = f"{left['mode']}"
+                lmode = get_mode(pentry, left["mode"])
+                left_link = links[lmode].popleft()
+                name_left = f"{lmode}"
                 if flip_left_pc[ix] < left["flip_pc"]:
                     left_link = data.get_pc_flip_link(left_link)
                     name_left = f"!{name_left}"
@@ -504,6 +765,7 @@ class TrainTestGenerator:
             text_cr = data.get_text(right_link.get_child())
             mtl = pentry["min_text_length"]
             if mtl is not None:
+                name = f"{name};(mtl:{mtl})"
                 texts = [
                     text_pl,
                     text_cl,
@@ -511,24 +773,47 @@ class TrainTestGenerator:
                     text_cr,
                 ]
                 if any(len(txt) < mtl for txt in texts):
+                    rejected += 1
                     continue
 
             score_left = data.vote_score(left_link)
             score_right = data.vote_score(right_link)
             if score_left == score_right:
+                rejected += 1
                 continue
-            sway_right = float(sigmoid(score_right - score_left))
+
+            if pentry["skip_weak"]:
+                name = f"{name};(sw)"
+                if score_right > score_left and data.is_weak(right_link):
+                    rejected += 1
+                    continue
+                if score_right < score_left and data.is_weak(left_link):
+                    rejected += 1
+                    continue
+
+            if pentry["skip_topics"]:
+                name = f"{name};(st)"
+                if data.has_topic(right_link):
+                    rejected += 1
+                    continue
+                if data.has_topic(left_link):
+                    rejected += 1
+                    continue
+
+            # sway_right = float(sigmoid(score_right - score_left))
             yield {
                 "parent_left": text_pl,
                 "child_left": text_cl,
                 "parent_right": text_pr,
                 "child_right": text_cr,
-                "sway_left": 1.0 - sway_right,
-                "sway_right": sway_right,
+                "score_left": score_left,  # 1.0 - sway_right,
+                "score_right": score_right,  # sway_right,
                 "correct_is_right": score_right > score_left,
                 "gen_name": name,
             }
             produced += 1
+        if verbose:
+            print(f"produced: {produced} rejected: {rejected}")
         if produced == 0:
             print(
                 "WARNING: current setting produced no output "
@@ -544,7 +829,9 @@ class TrainTestGenerator:
                 learning_plan,
                 self._compute_batch_size,
                 self._scorer,
-                self._now):
+                self._now,
+                use_fast_gen_only=self._use_fast_gen_only,
+                verbose=self._verbose):
             buff.append(row)
             with self._cond:
                 self._cond.notify_all()
@@ -564,8 +851,8 @@ class TrainTestGenerator:
     def _get_batch_for(
             self,
             start_th: Callable[[], None],
-            buff: collections.deque[BatchRow]) -> list[BatchRow]:
-        res = []
+            buff: collections.deque[BatchRow],
+            out: list[BatchRow]) -> None:
 
         def has_rows() -> bool:
             return bool(buff)
@@ -576,9 +863,8 @@ class TrainTestGenerator:
                 start_th()
                 with self._cond:
                     self._cond.wait_for(has_rows, 1.0)
-            res.append(buff.popleft())
+            out.append(buff.popleft())
         self._check_err()
-        return res
 
     def _check_err(self) -> None:
         if self._th_err is not None:
@@ -597,7 +883,9 @@ class TrainTestGenerator:
             def run() -> None:
                 try:
                     lplan = self._epoch_learning_plan(
-                        self._cur_epoch, self._train_learning_plan)
+                        self._cur_epoch,
+                        self._train_learning_plan,
+                        use_fast_gen_only=self._use_fast_gen_only)
                     self._th_compute_batch(
                         is_alive, self._train, lplan, self._train_buff)
                 except BaseException as e:  # pylint: disable=broad-except
@@ -626,7 +914,9 @@ class TrainTestGenerator:
             def run() -> None:
                 try:
                     lplan = self._epoch_learning_plan(
-                        0, self._train_val_learning_plan)
+                        0,
+                        self._train_val_learning_plan,
+                        use_fast_gen_only=self._use_fast_gen_only)
                     self._th_compute_batch(
                         is_alive,
                         self._train_validation,
@@ -658,7 +948,9 @@ class TrainTestGenerator:
             def run() -> None:
                 try:
                     lplan = self._epoch_learning_plan(
-                        0, self._test_learning_plan)
+                        0,
+                        self._test_learning_plan,
+                        use_fast_gen_only=self._use_fast_gen_only)
                     self._th_compute_batch(
                         is_alive,
                         self._test,
@@ -690,7 +982,9 @@ class TrainTestGenerator:
             def run() -> None:
                 try:
                     lplan = self._epoch_learning_plan(
-                        0, self._test_val_learning_plan)
+                        0,
+                        self._test_val_learning_plan,
+                        use_fast_gen_only=self._use_fast_gen_only)
                     self._th_compute_batch(
                         is_alive,
                         self._test_validation,
@@ -710,49 +1004,61 @@ class TrainTestGenerator:
             th.start()
 
     def next_train_batch(self) -> list[BatchRow] | None:
-        if self._cur_train_batch >= self._epoch_batches:
+        train_size = self.get_epoch_train_size()
+        if self._cur_train_ix >= train_size:
             return None
-        res = self._get_batch_for(self._th_run_train, self._train_buff)
-        self._cur_train_batch += 1
+        cache = self._cur_train_cache
+        while self._cur_train_ix >= len(cache):
+            self._get_batch_for(self._th_run_train, self._train_buff, cache)
+        end_ix = min(
+            self._cur_train_ix + self._batch_size, train_size)
+        res = cache[self._cur_train_ix:end_ix]
+        self._cur_train_ix += len(res)
         return res
 
     def next_train_validation_batch(self) -> list[BatchRow] | None:
         train_val_size = self._train_val_size
-        if self._cur_train_validation_size >= train_val_size:
+        if self._cur_train_validation_ix >= train_val_size:
             return None
-        res = self._get_batch_for(
-            self._th_run_train_val, self._train_validation_buff)
-        new_cur_size = self._cur_train_validation_size + len(res)
-        if new_cur_size > train_val_size:
-            res = res[:new_cur_size - train_val_size]
-        self._cur_train_validation_size += len(res)
+        cache = self._cur_train_validation_cache
+        while self._cur_train_validation_ix >= len(cache):
+            self._get_batch_for(
+                self._th_run_train_val, self._train_validation_buff, cache)
+        end_ix = min(
+            self._cur_train_validation_ix + self._batch_size, train_val_size)
+        res = cache[self._cur_train_validation_ix:end_ix]
+        self._cur_train_validation_ix += len(res)
         return res
 
     def next_test_batch(self) -> list[BatchRow] | None:
         test_size = self._test_size
-        if self._cur_test_size >= test_size:
+        if self._cur_test_ix >= test_size:
             return None
-        res = self._get_batch_for(self._th_run_test, self._test_buff)
-        new_cur_size = self._cur_test_size + len(res)
-        if new_cur_size > test_size:
-            res = res[:new_cur_size - test_size]
-        self._cur_test_size += len(res)
+        cache = self._cur_test_cache
+        while self._cur_test_ix >= len(cache):
+            self._get_batch_for(self._th_run_test, self._test_buff, cache)
+        end_ix = min(
+            self._cur_test_ix + self._batch_size, test_size)
+        res = cache[self._cur_test_ix:end_ix]
+        self._cur_test_ix += len(res)
         return res
 
     def next_test_validation_batch(self) -> list[BatchRow] | None:
         test_val_size = self._test_val_size
-        if self._cur_test_validation_size >= test_val_size:
+        if self._cur_test_validation_ix >= test_val_size:
             return None
-        res = self._get_batch_for(
-            self._th_run_test_val, self._test_validation_buff)
-        new_cur_size = self._cur_test_validation_size + len(res)
-        if new_cur_size > test_val_size:
-            res = res[:new_cur_size - test_val_size]
-        self._cur_test_validation_size += len(res)
+        cache = self._cur_test_validation_cache
+        while self._cur_test_validation_ix >= len(cache):
+            self._get_batch_for(
+                self._th_run_test_val, self._test_validation_buff, cache)
+        end_ix = min(
+            self._cur_test_validation_ix + self._batch_size, test_val_size)
+        res = cache[self._cur_test_validation_ix:end_ix]
+        self._cur_test_validation_ix += len(res)
         return res
 
     def train_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_train_batch >= self._epoch_batches:
+        if self._cur_train_ix >= self.get_epoch_train_size():
             raise ValueError("train batches already exhausted!")
         while True:
             res = self.next_train_batch()
@@ -761,7 +1067,7 @@ class TrainTestGenerator:
             yield res
 
     def train_validation_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_train_validation_size >= self._train_val_size:
+        if self._cur_train_validation_ix >= self._train_val_size:
             raise ValueError("train validation batches already exhausted!")
         while True:
             res = self.next_train_validation_batch()
@@ -770,7 +1076,7 @@ class TrainTestGenerator:
             yield res
 
     def test_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_test_size >= self._test_size:
+        if self._cur_test_ix >= self._test_size:
             raise ValueError("test batches already exhausted!")
         while True:
             res = self.next_test_batch()
@@ -779,7 +1085,7 @@ class TrainTestGenerator:
             yield res
 
     def test_validation_batches(self) -> Iterable[list[BatchRow]]:
-        if self._cur_test_validation_size >= self._test_val_size:
+        if self._cur_test_validation_ix >= self._test_val_size:
             raise ValueError("test validation batches already exhausted!")
         while True:
             res = self.next_test_validation_batch()
@@ -827,12 +1133,12 @@ def create_train_test(
         train_val_size: int,
         test_size: int,
         test_val_size: int,
+        use_fast_gen_only: bool,
         train_seed: int = 42,
         train_validation_seed: int = 37,
         test_seed: int = 69,
         test_validation_seed: int = 23,
         compute_batch_size: int | None = None,
-        reset_train: bool = False,
         scorer: Scorer | None = None,
         now: pd.Timestamp | None = None) -> TrainTestGenerator:
     return TrainTestGenerator(
@@ -851,7 +1157,7 @@ def create_train_test(
         train_val_size=train_val_size,
         test_size=test_size,
         test_val_size=test_val_size,
+        use_fast_gen_only=use_fast_gen_only,
         compute_batch_size=compute_batch_size,
-        reset_train=reset_train,
         scorer=scorer,
         now=now)

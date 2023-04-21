@@ -2,7 +2,7 @@ import re
 from typing import Callable
 
 from effects.effects import EqType
-from misc.util import get_text_hash, is_hex
+from misc.util import get_text_hash, is_hex, text_hash_size
 
 
 SHORT_HASH = 6
@@ -17,7 +17,7 @@ class MHash(EqType):
 
     @staticmethod
     def parse_size() -> int:
-        return 64
+        return text_hash_size()
 
     @classmethod
     def parse(cls, msg_hash: str) -> 'MHash':
@@ -72,7 +72,11 @@ class Message:
         self._msg = msg
         self._msg_hash = None
         if msg_hash is not None:
-            assert MHash.from_message(msg) == msg_hash
+            if MHash.from_message(msg) != msg_hash:
+                raise ValueError(
+                    "mismatch between message and hash: "
+                    f"{MHash.from_message(msg)} != {msg_hash} "
+                    f"for {repr(msg)}")
             self._msg_hash = msg_hash
 
     def single_line_text(self) -> str:

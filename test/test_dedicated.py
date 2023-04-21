@@ -34,7 +34,7 @@ def test_dedicated() -> None:
     input_b = script.add_arg("input_b")
 
     value_a: ValueRootRedisType[str, float] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: key)
+        "value_a", REDIS_TEST_CONFIG, "test", lambda key: key)
     output_a: RootValue[str, float] = script.add_key(
         "value_a", RootValue(value_a))
     var_a = script.add_local(0.0)

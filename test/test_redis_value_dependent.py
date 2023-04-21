@@ -16,9 +16,9 @@ def test_dependent() -> None:
     now = 1670580000.0
     set_old_threshold(0.1)
     value_a: ValueRootRedisType[str, int] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
+        "value_a", REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
+        "value_b", REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
 
     def key_id(key: str) -> str:
         return key
@@ -37,6 +37,7 @@ def test_dependent() -> None:
 
     dep_a: ValueDependentRedisType[str, list[str]] = \
         ValueDependentRedisType(
+            "dep_a",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"list:{key}",
@@ -50,6 +51,7 @@ def test_dependent() -> None:
             effect=update_a)
     dep_b: ValueDependentRedisType[str, int] = \
         ValueDependentRedisType(
+            "dep_b",
             REDIS_TEST_CONFIG,
             "test",
             lambda key: f"len:{key}",
@@ -107,6 +109,7 @@ def test_dependent() -> None:
             dep_a_c.set_value(key, "-".join(val), now_ts)
 
     dep_a_a: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+        "dep_a_a",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"concat:{key}",
@@ -119,6 +122,7 @@ def test_dependent() -> None:
         convert=key_id,
         effect=update_a_a)
     dep_a_b: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+        "dep_a_b",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"first:{key}",
@@ -131,6 +135,7 @@ def test_dependent() -> None:
         convert=key_id,
         effect=update_a_b)
     dep_a_c: ValueDependentRedisType[str, str] = ValueDependentRedisType(
+        "dep_a_c",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"never:{key}",
@@ -183,9 +188,9 @@ def test_dependent_list() -> None:
     now = 1670580000.0
     set_old_threshold(10.0)
     value_a: ValueRootRedisType[str, int] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
+        "value_a", REDIS_TEST_CONFIG, "test", lambda key: f"count:{key}")
     value_b: ValueRootRedisType[str, str] = ValueRootRedisType(
-        REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
+        "value_b", REDIS_TEST_CONFIG, "test", lambda key: f"name:{key}")
 
     def key_id(key: str) -> str:
         return key
@@ -207,6 +212,7 @@ def test_dependent_list() -> None:
             assert dep_b.maybe_get_value(key, now_ts) == old
 
     dep_a = ListDependentRedisType(
+        "dep_a",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"slista:{key}",
@@ -220,6 +226,7 @@ def test_dependent_list() -> None:
         effect=update_a,
         empty=b"")
     dep_b = ListDependentRedisType(
+        "dep_b",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"slistb:{key}",
@@ -237,6 +244,7 @@ def test_dependent_list() -> None:
         dep_a_a.set_value(key, len(dep_a.get_value(key, [], now_ts)), now_ts)
 
     dep_a_a: ValueDependentRedisType[str, int] = ValueDependentRedisType(
+        "dep_a_a",
         REDIS_TEST_CONFIG,
         "test",
         lambda key: f"counta:{key}",

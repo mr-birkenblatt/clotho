@@ -4,11 +4,13 @@ flake8
 flake8-commas
 flake8-isort
 jupyter
+matplotlib
 mypy
 numpy
 pandas
 praw
 pre-commit
+psycopg2
 pycodestyle
 pylint
 pytest
@@ -17,4 +19,6 @@ python-redis-lock
 quick-server
 redis
 scikit-learn
+SQLAlchemy[mypy]
 transformers
+types-psycopg2

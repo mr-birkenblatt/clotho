@@ -1,6 +1,14 @@
 import contextlib
 import threading
-from typing import Callable, Generic, Iterator, Literal, TYPE_CHECKING, TypeVar
+from typing import (
+    Callable,
+    Generic,
+    Iterable,
+    Iterator,
+    Literal,
+    TYPE_CHECKING,
+    TypeVar,
+)
 
 import pandas as pd
 
@@ -75,6 +83,9 @@ class EffectBase(Generic[KT]):
         for dependent in self._dependents:
             dependent.set_outdated(key, now)
 
+    def name(self) -> str:
+        raise NotImplementedError()
+
 
 class EffectRoot(Generic[KT, VT], EffectBase[KT]):
     def get_value(self, key: KT, default: VT) -> VT:
@@ -84,6 +95,13 @@ class EffectRoot(Generic[KT, VT], EffectBase[KT]):
         return res
 
     def maybe_get_value(self, key: KT) -> VT | None:
+        raise NotImplementedError()
+
+    def get_keys(
+            self, parser: tuple[str, Callable[[str], KT]]) -> Iterable[KT]:
+        raise NotImplementedError()
+
+    def key_count(self, parser: tuple[str, Callable[[str], KT]]) -> int:
         raise NotImplementedError()
 
 
@@ -159,8 +177,15 @@ class EffectDependent(Generic[KT, VT], EffectBase[KT]):
             parent.add_dependent(Dependent(self, convert))  # type: ignore
 
     def init_thread(self) -> None:
-        if self._thread is None:
-            th = threading.Thread(target=self.updater, daemon=True)
+        if self._thread is not None:
+            return
+        with self._update_lock:
+            if self._thread is not None:
+                return
+            th = threading.Thread(
+                target=self.updater,
+                daemon=True,
+                name=f"updater({self.name()})")
             self._thread = th
             th.start()
 

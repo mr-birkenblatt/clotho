@@ -1,7 +1,11 @@
 import re
-from typing import Any, TypedDict
+from typing import Any, cast, get_args, Literal, TYPE_CHECKING, TypedDict
 
-from model.embedding import EmbeddingProviderModule
+from model.embedding import (
+    EmbeddingProviderModule,
+    parse_storage_method,
+    STORAGE_COMPRESSED,
+)
 from system.embedding.store import EmbedModule
 from system.links.store import LinkModule
 from system.msgs.store import MsgsModule
@@ -9,6 +13,21 @@ from system.suggest.suggest import SuggestModule
 from system.users.store import UsersModule
 
 
+if TYPE_CHECKING:
+    from db.db import DBConfig
+
+
+RedisConfigObj = TypedDict('RedisConfigObj', {
+    "host": str,
+    "port": int,
+    "passwd": str,
+    "prefix": str,
+    "path": str,
+})
+ConnectionObj = TypedDict('ConnectionObj', {
+    "redis": dict[str, RedisConfigObj],
+    "db": dict[str, 'DBConfig'],
+})
 NamespaceObj = TypedDict('NamespaceObj', {
     "msgs": MsgsModule,
     "links": LinkModule,
@@ -16,12 +35,44 @@ NamespaceObj = TypedDict('NamespaceObj', {
     "users": UsersModule,
     "embed": EmbedModule,
     "model": EmbeddingProviderModule,
+    "connections": ConnectionObj,
+    "writeback": bool,
 })
 
 
-def msgs_from_obj(ns_name: str, obj: dict[str, Any]) -> MsgsModule:
+def redis_from_obj(
+        ns_name: str,
+        redis_obj: dict[str, Any]) -> dict[str, RedisConfigObj]:
+    return {
+        name: {
+            "host": obj.get("host", "localhost"),
+            "port": int(obj.get("port", 6379)),
+            "passwd": obj.get("passwd", ""),
+            "prefix": obj.get("prefix", f"{ns_name}"),
+            "path": obj["path"],
+        }
+        for name, obj in redis_obj.items()
+    }
+
+
+def db_from_obj(db_obj: dict[str, Any]) -> dict[str, 'DBConfig']:
+    return {
+        name: {
+            "dialect": obj.get("dialect", "postgresql"),
+            "host": obj.get("host", "localhost"),
+            "port": int(obj.get("port", 5432)),
+            "user": obj["user"],
+            "passwd": obj.get("passwd", ""),
+            "dbname": obj["dbname"],
+            "schema": obj.get("schema", "public"),
+        }
+        for name, obj in db_obj.items()
+    }
+
+
+def msgs_from_obj(obj: dict[str, Any]) -> MsgsModule:
     res: MsgsModule
-    name = obj.get("name", "disk")
+    name: str = obj.get("name", "disk")
     if name == "ram":
         res = {
             "name": "ram",
@@ -29,24 +80,36 @@ def msgs_from_obj(ns_name: str, obj: dict[str, Any]) -> MsgsModule:
     elif name == "disk":
         res = {
             "name": "disk",
-            "root": obj.get("root", f"{ns_name}"),
+            "cache_size": obj.get("cache_size", 50000),
+        }
+    elif name == "cold":
+        res = {
+            "name": "cold",
+            "keep_alive": obj.get("keep_alive", 1.0),
+        }
+    elif name == "db":
+        res = {
+            "name": "db",
+            "conn": obj["conn"],
+            "cache_size": obj.get("cache_size", 1000),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res
 
 
-def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
+def links_from_obj(obj: dict[str, Any]) -> LinkModule:
     res: LinkModule
-    name = obj.get("name", "redis")
+    name: str = obj.get("name", "redis")
     if name == "redis":
         res = {
             "name": "redis",
-            "host": obj.get("host", "localhost"),
-            "port": int(obj.get("port", 6379)),
-            "passwd": obj.get("passwd", ""),
-            "prefix": obj.get("prefix", f"{ns_name}"),
-            "path": obj.get("path", f"{ns_name}"),
+            "conn": obj["conn"],
+        }
+    elif name == "cold":
+        res = {
+            "name": "cold",
+            "keep_alive": obj.get("keep_alive", 1.0),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -55,54 +118,69 @@ def links_from_obj(ns_name: str, obj: dict[str, Any]) -> LinkModule:
 
 def suggest_from_obj(obj: dict[str, Any]) -> SuggestModule:
     res: SuggestModule
-    name = obj.get("name", "random")
+    name: str = obj.get("name", "random")
     if name == "random":
         res = {
             "name": "random",
+            "max": obj.get("max", None),
         }
     elif name == "model":
         res = {
             "name": "model",
-            "count": 10,
+            "count": obj.get("count", 10),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res
 
 
-def users_from_obj(ns_name: str, obj: dict[str, Any]) -> UsersModule:
-    res: MsgsModule
-    name = obj.get("name", "disk")
+def users_from_obj(obj: dict[str, Any]) -> UsersModule:
+    res: UsersModule
+    name: str = obj.get("name", "disk")
     if name == "ram":
         res = {
             "name": "ram",
         }
+    elif name == "cold":
+        res = {
+            "name": "cold",
+            "keep_alive": obj.get("keep_alive", 1.0),
+        }
     elif name == "disk":
         res = {
             "name": "disk",
-            "root": obj.get("root", f"{ns_name}"),
+            "cache_size": obj.get("cache_size", 50000),
+        }
+    elif name == "db":
+        res = {
+            "name": "db",
+            "conn": obj["conn"],
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res
 
 
-def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
+CacheEmbedName = Literal["redis", "db"]
+CACHE_EMBED_NAMES = get_args(CacheEmbedName)
+
+
+def embed_from_obj(obj: dict[str, Any]) -> EmbedModule:
     res: EmbedModule
-    name = obj.get("name", "none")
+    name: str = obj.get("name", "none")
     if name == "none":
         res = {
             "name": "none",
         }
-    elif name == "redis":
+    elif name in CACHE_EMBED_NAMES:
         res = {
-            "name": "redis",
-            "host": obj.get("host", "localhost"),
-            "port": int(obj.get("port", 6379)),
-            "passwd": obj.get("passwd", ""),
-            "prefix": obj.get("prefix", f"{ns_name}"),
-            "path": obj.get("path", f"{ns_name}"),
+            "name": cast(CacheEmbedName, name),
+            "conn": obj["conn"],
+            "path": obj.get("path", "embed"),
             "index": obj["index"],
+            "trees": obj.get("trees", 100),
+            "shard_size": obj.get("shard_size", 100000),
+            "metric": obj.get("metric", "dot"),
         }
     else:
         raise ValueError(f"invalid name {name} {obj}")
@@ -111,7 +189,7 @@ def embed_from_obj(ns_name: str, obj: dict[str, Any]) -> EmbedModule:
 
 def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
     res: EmbeddingProviderModule
-    name = obj.get("name", "none")
+    name: str = obj.get("name", "none")
     if name == "none":
         res = {
             "name": "none",
@@ -123,25 +201,40 @@ def model_from_obj(obj: dict[str, Any]) -> EmbeddingProviderModule:
             "version": int(obj["version"]),
             "is_harness": bool(obj["is_harness"]),
         }
+    elif name == "dbtransformer":
+        res = {
+            "name": "dbtransformer",
+            "conn": obj["conn"],
+            "model_hash": obj["model_hash"],
+            "storage": parse_storage_method(
+                obj.get("storage", STORAGE_COMPRESSED)),
+        }
     else:
         raise ValueError(f"invalid name {name} {obj}")
     return res
 
 
+NS_NAME_MAX_LEN = 40
 VALID_NS_NAME = re.compile(r"^[a-z][a-z0-9_-]+$")
 
 
 def ns_from_obj(ns_name: str, obj: dict[str, Any]) -> NamespaceObj:
-    if VALID_NS_NAME.search(ns_name) is None:
+    if len(ns_name) > NS_NAME_MAX_LEN or VALID_NS_NAME.search(ns_name) is None:
         raise ValueError(f"invalid namespace name {ns_name}")
+    conns = obj.get("connections", {})
     return {
-        "msgs": msgs_from_obj(ns_name, obj.get("msgs", {})),
-        "links": links_from_obj(ns_name, obj.get("links", {})),
+        "msgs": msgs_from_obj(obj.get("msgs", {})),
+        "links": links_from_obj(obj.get("links", {})),
         "suggest": [
             suggest_from_obj(cur)
             for cur in obj.get("suggest", [])
         ],
-        "users": users_from_obj(ns_name, obj.get("users", {})),
-        "embed": embed_from_obj(ns_name, obj.get("embed", {})),
+        "users": users_from_obj(obj.get("users", {})),
+        "embed": embed_from_obj(obj.get("embed", {})),
         "model": model_from_obj(obj.get("model", {})),
+        "connections": {
+            "redis": redis_from_obj(ns_name, conns.get("redis", {})),
+            "db": db_from_obj(conns.get("db", {})),
+        },
+        "writeback": obj.get("writeback", True),
     }

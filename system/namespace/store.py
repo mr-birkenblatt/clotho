@@ -1,6 +1,5 @@
 import os
 
-from misc.env import envload_path
 from misc.io import ensure_folder, open_read, open_write
 from misc.redis import get_test_config
 from misc.util import json_load, json_pretty, NL
@@ -23,15 +22,12 @@ def get_test_namespace() -> Namespace:
             },
             "links": {
                 "name": "redis",
-                "host": cfg["host"],
-                "port": cfg["port"],
-                "passwd": cfg["passwd"],
-                "prefix": cfg["prefix"],
-                "path": cfg["path"],
+                "conn": "links",
             },
             "suggest": [
                 {
                     "name": "random",
+                    "max": None,
                 },
             ],
             "users": {
@@ -43,6 +39,19 @@ def get_test_namespace() -> Namespace:
             "model": {
                 "name": "none",
             },
+            "connections": {
+                "redis": {
+                    "links": {
+                        "host": cfg["host"],
+                        "port": cfg["port"],
+                        "passwd": cfg["passwd"],
+                        "prefix": cfg["prefix"],
+                        "path": cfg["path"],
+                    },
+                },
+                "db": {},
+            },
+            "writeback": False,
         })
     return TEST_NAMESPACE
 
@@ -53,8 +62,8 @@ NS_CACHE: dict[str, Namespace] = {}
 def get_namespace(ns_name: str) -> Namespace:
     res = NS_CACHE.get(ns_name)
     if res is None:
-        base_path = envload_path("USER_PATH", default="userdata")
-        fname = os.path.join(base_path, "namespace", f"{ns_name}.json")
+        root = Namespace.get_root_for(ns_name)
+        fname = os.path.join(root, "settings.json")
         try:
             with open_read(fname, text=True) as fin:
                 obj = json_load(fin)
@@ -63,12 +72,14 @@ def get_namespace(ns_name: str) -> Namespace:
                 raise
             obj = {}
         ns_obj = ns_from_obj(ns_name, obj)
+        is_writeback = ns_obj.get("writeback", True)
+        ns_obj["writeback"] = False
         res = Namespace(ns_name, ns_obj)
         NS_CACHE[ns_name] = res
-        if ns_name == "default":
+        if is_writeback:
             out_obj = json_pretty(ns_obj)
             if out_obj != json_pretty(obj):
-                ensure_folder(os.path.dirname(fname))
+                ensure_folder(root)
                 with open_write(fname, text=True) as fout:
                     fout.write(out_obj)
                     fout.write(NL)

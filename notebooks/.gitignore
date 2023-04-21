@@ -1,5 +1,8 @@
 /.ipynb_checkpoints/
+/final/
 /checkpoints/*
 !/checkpoints/.empty
+*.png
 *.pkl
 *.csv
+*.pq

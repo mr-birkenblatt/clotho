@@ -27,6 +27,7 @@ from misc.util import (
     get_test_salt,
     is_test,
     json_compact,
+    json_pretty,
     json_read,
     NL,
 )
@@ -62,7 +63,7 @@ def get_test_config() -> RedisConfig:
         "port": 6380,
         "passwd": "",
         "prefix": "",
-        "path": "test",
+        "path": os.path.abspath("test"),
     }
 
 
@@ -73,7 +74,7 @@ def get_api_config() -> RedisConfig:
         "port": envload_int("API_REDIS_PORT", default=6379),
         "passwd": envload_str("API_REDIS_PASSWD", default=""),
         "prefix": envload_str("API_REDIS_PREFIX", default=""),
-        "path": os.path.join(base_path, "_api"),
+        "path": os.path.abspath(os.path.join(base_path, "_api")),
     }
 
 
@@ -214,6 +215,7 @@ class RedisWrapper:
         res = REDIS_SERVICE_CONN.get(key)
         if res is None:
             with LOCK:
+                res = REDIS_SERVICE_CONN.get(key)
                 if res is None:
                     res = cls._create_connection(cfg)
                     REDIS_SERVICE_CONN[key] = res
@@ -276,7 +278,8 @@ class RedisWrapper:
                     print(
                         f"slow redis call ({conn_time:.2f}s) "
                         f"at {fun_name} ({fun_fname}:{fun_line})\n"
-                        f"{NL.join(context)}\nlocals:\n{fun_locals}")
+                        f"{NL.join(context)}\nlocals:\n{fun_locals}\n"
+                        f"conn:{json_pretty(get_redis_config(self._ns_key))}")
                     REDIS_UNIQUE.add(fun_key)
 
     def reset(self) -> None:
@@ -293,10 +296,12 @@ class RedisWrapper:
 
     @staticmethod
     def _invalidate_connection(
-            ns_key: ConfigKey, redis_module: RedisModule) -> None:
+            _ns_key: ConfigKey, _redis_module: RedisModule) -> None:
         with LOCK:
-            key = get_connection_key(ns_key, redis_module)
-            REDIS_SERVICE_CONN[key] = None
+            # key = get_connection_key(ns_key, redis_module)
+            # REDIS_SERVICE_CONN[key] = None
+            # NOTE: prevents issues from coming up multiple times
+            REDIS_SERVICE_CONN.clear()
 
     @classmethod
     @contextlib.contextmanager
@@ -725,7 +730,7 @@ class ObjectRedis(RedisConnection):
         with self.get_connection(depth=1) as conn:
             return {
                 key[len(path):]: json_read(res)
-                for (key, res) in zip(keys, conn.mget(keys))
+                for (key, res) in zip(keys, conn.mget(keys), strict=True)
                 if res is not None
             }
 

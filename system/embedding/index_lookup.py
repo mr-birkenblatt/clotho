@@ -1,222 +1,557 @@
-from contextlib import contextmanager
-from typing import Iterable, Iterator
+import math
+import threading
+import time
+from typing import Iterable, Literal
 
 import torch
 
+from misc.util import nbest
 from model.embedding import (
     EmbeddingProvider,
     EmbeddingProviderMap,
     ProviderRole,
 )
+from system.embedding.processing import RUN_EXEC, run_index_lookup
 from system.embedding.store import EmbeddingStore
 from system.msgs.message import MHash
-from system.msgs.store import MessageStore
+from system.msgs.store import get_message_store
+from system.namespace.module import UnsupportedInit
+from system.namespace.namespace import Namespace
 
 
-REBUILD_THRESHOLD = 1000
+LockState = Literal["free", "locked", "dead"]
+LOCK_FREE: LockState = "free"
+LOCK_LOCK: LockState = "locked"
+LOCK_DEAD: LockState = "dead"
+
+
+OVERSCAN = 1
 
 
 class EmbeddingCache:
-    @contextmanager
-    def get_lock(self, provider: EmbeddingProvider) -> Iterator[None]:
+    @staticmethod
+    def cache_name() -> str:
         raise NotImplementedError()
+
+    def is_cache_init(self) -> bool:
+        return True
+
+    def initialize_cache(self, *, force: bool) -> None:
+        raise UnsupportedInit(
+            f"{self.cache_name()} cache does not support initialization!")
 
     def set_map_embedding(
             self,
-            provider: EmbeddingProvider,
+            embedding_id: int,
             mhash: MHash,
             embed: torch.Tensor) -> None:
         raise NotImplementedError()
 
     def get_map_embedding(
-            self,
-            provider: EmbeddingProvider,
-            mhash: MHash) -> torch.Tensor | None:
+            self, embedding_id: int, mhash: MHash) -> torch.Tensor | None:
         raise NotImplementedError()
 
-    def get_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
+    def get_entry_by_index(self, embedding_id: int, *, index: int) -> MHash:
         raise NotImplementedError()
 
-    def add_embedding(self, provider: EmbeddingProvider, mhash: MHash) -> int:
-        raise NotImplementedError()
-
-    def embedding_count(self, provider: EmbeddingProvider) -> int:
+    def embedding_count(self, embedding_id: int) -> int:
         raise NotImplementedError()
 
     def embeddings(
             self,
-            provider: EmbeddingProvider,
+            embedding_id: int,
+            *,
+            start_ix: int,
+            limit: int | None,
             ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
         raise NotImplementedError()
 
-    def clear_embeddings(self, provider: EmbeddingProvider) -> None:
+    def get_embedding_id_for(self, provider: EmbeddingProvider) -> int:
         raise NotImplementedError()
-
-    def add_staging_embedding(
-            self, provider: EmbeddingProvider, mhash: MHash) -> int:
-        raise NotImplementedError()
-
-    def staging_embeddings(
-            self,
-            provider: EmbeddingProvider,
-            ) -> Iterable[tuple[int, MHash, torch.Tensor]]:
-        raise NotImplementedError()
-
-    def get_staging_entry_by_index(
-            self, provider: EmbeddingProvider, index: int) -> MHash:
-        raise NotImplementedError()
-
-    def staging_offset(self, provider: EmbeddingProvider) -> int:
-        return self.embedding_count(provider)
-
-    def staging_count(self, provider: EmbeddingProvider) -> int:
-        raise NotImplementedError()
-
-    def clear_staging(self, provider: EmbeddingProvider) -> None:
-        raise NotImplementedError()
-
-    def get_by_index(self, provider: EmbeddingProvider, index: int) -> MHash:
-        offset = self.staging_offset(provider)
-        if index < offset:
-            return self.get_entry_by_index(provider, index)
-        return self.get_staging_entry_by_index(provider, index - offset)
 
 
 class CachedIndexEmbeddingStore(EmbeddingStore):
     def __init__(
             self,
+            namespace: Namespace,
             providers: EmbeddingProviderMap,
-            cache: EmbeddingCache) -> None:
+            cache: EmbeddingCache,
+            shard_size: int) -> None:
         super().__init__(providers)
+        self._namespace = namespace
         self._cache = cache
-        self._bulk = False
+        self._shard_size = shard_size
 
-    def do_index_init(
-            self,
-            role: ProviderRole) -> None:
-        raise NotImplementedError()
+        self._embedding_ids: dict[ProviderRole, int] = {}
+        self._request_build: set[ProviderRole] = set()
+        self._lock = threading.RLock()
+        self._cond = threading.Condition(lock=self._lock)
+        self._th: threading.Thread | None = None
+        self._err: BaseException | None = None
 
-    def do_index_add(
+    def _start_build_loop(self) -> None:
+
+        def build_loop() -> None:
+            try:
+                while True:
+                    if th is not self._th:
+                        break
+                    while not self._request_build:
+                        with self._lock:
+                            self._cond.wait_for(
+                                lambda: self._request_build, timeout=1.0)
+                    while self._request_build:
+                        elem = None
+                        with self._lock:
+                            rbl = list(self._request_build)
+                            if rbl:
+                                elem = rbl[0]
+                                self._request_build.discard(elem)
+                        if elem is not None:
+                            self._build_index(elem)
+            except BaseException as e:  # pylint: disable=broad-except
+                self._err = e
+            finally:
+                with self._lock:
+                    if th is self._th:
+                        self._th = None
+
+        self._check_err()
+        with self._lock:
+            if self._th is not None:
+                return
+            th = threading.Thread(target=build_loop, daemon=True)
+            self._th = th
+            th.start()
+
+    def _check_err(self) -> None:
+        if self._err is not None:
+            raise self._err
+
+    def maybe_request_build(self, role: ProviderRole) -> None:
+        self._check_err()
+        if role in self._request_build:
+            return
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        shard = self.shard_of_index(cache.embedding_count(eid)) - 1
+        if shard >= 0 and not self.is_shard_available(role, shard):
+            with self._lock:
+                self._request_build.add(role)
+                self._cond.notify_all()
+                self._start_build_loop()
+
+    def shard_size(self) -> int:
+        return self._shard_size
+
+    def shard_of_index(self, index: int) -> int:
+        return index // self._shard_size
+
+    def index_in_shard(self, index: int) -> int:
+        return index % self._shard_size
+
+    def get_shard_start_ix(self, shard: int) -> int:
+        return shard * self._shard_size
+
+    def get_cache(self) -> EmbeddingCache:
+        return self._cache
+
+    def is_module_init(self) -> bool:
+        return self._cache.is_cache_init()
+
+    def initialize_module(self, *, force: bool) -> None:
+        return self._cache.initialize_cache(force=force)
+
+    def do_build_index(
             self,
             role: ProviderRole,
-            index: int,
-            embed: torch.Tensor) -> None:
-        raise NotImplementedError()
-
-    def do_index_finish(self, role: ProviderRole) -> None:
+            shard: int,
+            embeds: list[torch.Tensor]) -> None:
         raise NotImplementedError()
 
     def get_index_closest(
             self,
             role: ProviderRole,
+            shard: int,
             embed: torch.Tensor,
             count: int) -> Iterable[tuple[int, float]]:
         raise NotImplementedError()
 
-    # FIXME: could be bulk operation
-    @staticmethod
-    def get_distance(embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
+    def is_shard_available(self, role: ProviderRole, shard: int) -> bool:
         raise NotImplementedError()
 
-    @staticmethod
-    def is_bigger_better() -> bool:
+    # FIXME: could be bulk operation
+    def get_distance(
+            self, embed_a: torch.Tensor, embed_b: torch.Tensor) -> float:
+        raise NotImplementedError()
+
+    def is_bigger_better(self) -> bool:
         raise NotImplementedError()
 
     def num_dimensions(self, role: ProviderRole) -> int:
         return self.get_provider(role).num_dimensions()
 
-    def build_index(self, role: ProviderRole) -> None:
-        cache = self._cache
-        provider = self.get_provider(role)
-        with cache.get_lock(provider):
-            self.do_index_init(role)
-            for index, _, embed in cache.embeddings(provider):
-                self.do_index_add(role, index, embed)
-            for _, mhash, embed in cache.staging_embeddings(provider):
-                index = cache.add_embedding(provider, mhash)
-                self.do_index_add(role, index, embed)
-            self.do_index_finish(role)
-            cache.clear_staging(provider)
-
-    def ensure_all(
-            self,
-            msg_store: MessageStore,
-            roles: list[ProviderRole] | None = None) -> None:
-        if roles is None:
-            roles = self.get_roles()
-        cache = self._cache
-
-        def process_name(
-                role: ProviderRole, provider: EmbeddingProvider) -> None:
-            self.do_index_init(role)
-            for index, mhash in enumerate(
-                    msg_store.enumerate_messages(progress_bar=True)):
-                embed = self.get_embedding(msg_store, role, mhash)
-                self.do_index_add(role, index, embed)
-            for _, mhash, embed in cache.staging_embeddings(provider):
-                index = cache.add_embedding(provider, mhash)
-                self.do_index_add(role, index, embed)
-            self.do_index_finish(role)
-            cache.clear_staging(provider)
-
-        try:
-            self._bulk = True
-            for role in roles:
-                provider = self.get_provider(role)
-                with self._cache.get_lock(provider):
-                    process_name(role, provider)
-        finally:
-            self._bulk = False
-
-    @contextmanager
-    def bulk_add(self, role: ProviderRole) -> Iterator[None]:
-        try:
-            self._bulk = True
+    def _get_embedding_id(self, role: ProviderRole) -> int:
+        res = self._embedding_ids.get(role)
+        if res is None:
             provider = self.get_provider(role)
-            with self._cache.get_lock(provider):
-                yield
-                self.build_index(role)
-        finally:
-            self._bulk = False
+            res = self._cache.get_embedding_id_for(provider)
+            self._embedding_ids[role] = res
+        return res
+
+    def get_embedding_count(self, role: ProviderRole) -> int:
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        return cache.embedding_count(eid)
+
+    def get_embedding_at(
+            self, role: ProviderRole, pos_index: int) -> torch.Tensor:
+        """
+        Get an embedding at a specified location defined by the insertion
+        order of embeddings. This method is slow! Consider using
+        `get_all_embeddings` instead.
+
+        Args:
+            role (ProviderRole): The role.
+            pos_index (int): The index.
+
+        Raises:
+            IndexError: If trying to access out of bounds.
+
+        Returns:
+            torch.Tensor: The embedding vector.
+        """
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        mhash = cache.get_entry_by_index(eid, index=pos_index)
+        res = cache.get_map_embedding(eid, mhash)
+        if res is None:
+            raise IndexError(
+                f"could not find embedding for index: {pos_index}")
+        return res
+
+    def get_all_embeddings(
+            self,
+            role: ProviderRole,
+            *,
+            progress_bar: bool) -> Iterable[tuple[MHash, torch.Tensor]]:
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        if not progress_bar:
+            yield from (
+                (mhash, embed)
+                for _, mhash, embed in cache.embeddings(
+                    eid, start_ix=0, limit=None))
+            return
+        # FIXME: add stubs
+        from tqdm.auto import tqdm  # type: ignore
+
+        count = cache.embedding_count(eid)
+        with tqdm(total=count) as pbar:
+            for _, mhash, embed in cache.embeddings(
+                    eid, start_ix=0, limit=None):
+                yield (mhash, embed)
+                pbar.update(1)
+
+    def proc_build_index_shard(self, role: ProviderRole, shard: int) -> None:
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        shard_size = self.shard_size()
+        if self.is_shard_available(role, shard):
+            return
+        start_ix = self.get_shard_start_ix(shard)
+        cur_embeds: list[tuple[MHash, torch.Tensor]] = []
+        for _, mhash, embed in cache.embeddings(
+                eid, start_ix=start_ix, limit=shard_size):
+            cur_embeds.append((mhash, embed))
+        if len(cur_embeds) == shard_size:
+            self.do_build_index(
+                role, shard, [embed for _, embed in cur_embeds])
+
+    def set_index_lock_state(
+            self, role: ProviderRole, shard: int, pid: int | None) -> None:
+        raise NotImplementedError()
+
+    def get_index_lock_state(
+            self, role: ProviderRole, shard: int) -> LockState:
+        raise NotImplementedError()
+
+    def can_read_index(self, role: ProviderRole, shard: int) -> bool:
+        return (
+            self.is_shard_available(role, shard)
+            and self.get_index_lock_state(role, shard) == LOCK_FREE)
+
+    def can_build_index(self, role: ProviderRole, shard: int) -> bool:
+        return self.get_index_lock_state(role, shard) != LOCK_LOCK
+
+    def _build_index(self, role: ProviderRole) -> None:
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        total_count = cache.embedding_count(eid)
+        shard_count = self.shard_of_index(total_count)
+
+        def process(tix: int, line: str) -> None:
+            if not line:
+                return
+            raise ValueError(
+                f"did not expect output in process {tix}: {line}")
+
+        def on_err(err: BaseException) -> None:
+            self._err = err
+
+        tcount = 2
+        shards: list[list[int]] = [[] for _ in range(tcount)]
+        for shard in range(shard_count):
+            shards[shard % len(shards)].append(shard)
+        threads = [
+            threading.Thread(
+                target=run_index_lookup,
+                args=(
+                    RUN_EXEC,
+                    self._namespace,
+                    role,
+                    shards[tix],
+                    tix,
+                    None,
+                    0,
+                    False,
+                    process,
+                    on_err))
+            for tix in range(tcount)
+        ]
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        self._check_err()
 
     def do_add_embedding(
             self,
             role: ProviderRole,
             mhash: MHash,
-            embed: torch.Tensor) -> None:
+            embed: torch.Tensor,
+            *,
+            no_index: bool) -> None:
         cache = self._cache
-        provider = self.get_provider(role)
-        with cache.get_lock(provider):
-            cache.set_map_embedding(provider, mhash, embed)
-            cache.add_staging_embedding(provider, mhash)
-            if (not self._bulk
-                    and cache.staging_count(provider) > REBUILD_THRESHOLD):
-                self.build_index(role)
+        eid = self._get_embedding_id(role)
+        cache.set_map_embedding(eid, mhash, embed)
+        if not no_index:
+            self.maybe_request_build(role)
 
     def do_get_embedding(
             self,
             role: ProviderRole,
             mhash: MHash) -> torch.Tensor | None:
-        provider = self.get_provider(role)
-        return self._cache.get_map_embedding(provider, mhash)
+        eid = self._get_embedding_id(role)
+        return self._cache.get_map_embedding(eid, mhash)
+
+    def do_get_internal_distance(
+            self,
+            role: ProviderRole,
+            shard: int,
+            index_a: int,
+            index_b: int) -> float:
+        raise NotImplementedError()
+
+    def self_test(self, role: ProviderRole, count: int | None) -> None:
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        is_bigger_better = self.is_bigger_better()
+        any_compute = False
+        for ix_a, _, embed_a in cache.embeddings(eid, start_ix=0, limit=None):
+            min_val = None
+            max_val = None
+            same_val = None
+            line = 0
+            for ix_b, _, embed_b in cache.embeddings(
+                    eid, start_ix=0, limit=None):
+                external = self.get_distance(embed_a, embed_b)
+                # print(
+                #     ix_a,
+                #     ix_b,
+                #     external,
+                #     embed_a.ravel()[:3],
+                #     embed_b.ravel()[:3])
+                if ix_a == ix_b:
+                    same_val = external
+                else:
+                    if min_val is None or min_val > external:
+                        min_val = external
+                    if max_val is None or max_val < external:
+                        max_val = external
+                shard = 0
+                while self.is_shard_available(role, shard):
+                    internal = self.do_get_internal_distance(
+                        role, shard, ix_a, ix_b)
+                    if not math.isclose(internal, external, abs_tol=1e-3):
+                        raise ValueError(
+                            "distances are not equal: "
+                            f"{internal} != {external} "
+                            f"ix: {ix_a} {ix_b} embed: {embed_a} {embed_b}")
+                    shard += 1
+                any_compute = True
+                line += 1
+                if count is not None and ix_b >= count:
+                    break
+            if (min_val is not None
+                    and max_val is not None
+                    and same_val is not None):
+                text = f"{min_val} {same_val} {max_val} ({line} values {ix_a})"
+                if is_bigger_better:
+                    if (math.isclose(min_val, same_val)
+                            or min_val > same_val):
+                        print(f"min is bigger than same for bb {text}")
+                    if (not math.isclose(max_val, same_val)
+                            and max_val > same_val):
+                        print(f"max is bigger than same for bb {text}")
+                else:
+                    if (not math.isclose(min_val, same_val)
+                            and min_val < same_val):
+                        print(f"min is smaller than same for not bb {text}")
+                    if (math.isclose(max_val, same_val)
+                            or max_val < same_val):
+                        print(f"max is smaller than same for not bb {text}")
+            else:
+                raise ValueError("not enough values")
+            if count is not None and ix_a >= count:
+                break
+        if not any_compute:
+            raise ValueError("no computation has happened")
 
     def do_get_closest(
             self,
             role: ProviderRole,
             embed: torch.Tensor,
-            count: int) -> Iterable[MHash]:
+            count: int,
+            *,
+            precise: bool,
+            no_cache: bool) -> Iterable[MHash]:
+        if no_cache:
+
+            def get_embeds() -> Iterable[tuple[MHash, torch.Tensor]]:
+                msg_store = get_message_store(self._namespace)
+                for mhash in msg_store.enumerate_messages(
+                        progress_bar=False):
+                    msg_embed = self.get_embedding(
+                        msg_store, role, mhash, no_index=True, no_cache=True)
+                    yield (mhash, msg_embed)
+
+            yield from (
+                res_mhash
+                for res_mhash, _ in
+                self._precise_closest(embed, count, get_embeds())
+            )
+            return
+
+        start_time = time.monotonic()
         cache = self._cache
-        provider = self.get_provider(role)
-        candidates = list(self.get_index_closest(role, embed, count))
-        offset = cache.staging_offset(provider)
-        for other_ix, _, other_embed in cache.staging_embeddings(provider):
-            candidates.append(
-                (other_ix + offset, self.get_distance(embed, other_embed)))
+        eid = self._get_embedding_id(role)
+        candidates: dict[int, list[tuple[MHash, float]]] = {}
+        total_count = cache.embedding_count(eid)
+        shard_count = self.shard_of_index(total_count) + 1
+        shard_size = self.shard_size()
+
+        def process(tix: int, line: str) -> None:
+            if not line:
+                return
+            left, right = line.split(",", 1)
+            mhash = MHash.parse(left)
+            dist = float(right)
+            # print(tix, dist)
+            candidates[tix].append((mhash, dist))
+
+        def on_err(err: BaseException) -> None:
+            self._err = err
+
+        tcount = 2
+        shards: list[list[int]] = [[] for _ in range(tcount)]
+        for shard in range(shard_count):
+            shards[shard % len(shards)].append(shard)
+        threads = [
+            threading.Thread(
+                target=run_index_lookup,
+                args=(
+                    RUN_EXEC,
+                    self._namespace,
+                    role,
+                    shards[tix],
+                    tix,
+                    embed,
+                    max(count, int(count * OVERSCAN)),
+                    precise,
+                    process,
+                    on_err))
+            for tix in range(tcount)
+        ]
+        for tix in range(tcount):
+            candidates[tix] = []
+        for shard in range(shard_count):
+            end_ix = self.get_shard_start_ix(shard) + shard_size
+            if (
+                    not precise
+                    and end_ix <= total_count
+                    and not self.can_read_index(role, shard)):
+                self.maybe_request_build(role)
+        for th in threads:
+            th.start()
+        for th in threads:
+            th.join()
+        self._check_err()
+        flat_candidates = [
+            entry
+            for shard_candidates in candidates.values()
+            for entry in shard_candidates
+        ]
         yield from (
-            cache.get_by_index(provider, ix)
-            for ix, _ in sorted(
-                candidates,
+            entry[0]
+            for entry in nbest(
+                flat_candidates,
                 key=lambda entry: entry[1],
-                reverse=self.is_bigger_better())[:count]
+                count=count,
+                is_bigger_better=self.is_bigger_better())
         )
+        print(
+            "total time processing neighbors: "
+            f"{time.monotonic() - start_time:.4f}s")
+
+    def proc_get_closest(
+            self,
+            role: ProviderRole,
+            shard: int,
+            embed: torch.Tensor,
+            count: int,
+            ignore_index: bool) -> Iterable[tuple[MHash, float]]:
+        precise = ignore_index
+        cache = self._cache
+        eid = self._get_embedding_id(role)
+        start_ix = self.get_shard_start_ix(shard)
+
+        if not precise and self.can_read_index(role, shard):
+            yield from (
+                (cache.get_entry_by_index(eid, index=start_ix + ix), dist)
+                for ix, dist in self.get_index_closest(
+                    role, shard, embed, count)
+            )
+            return
+        shard_size = self.shard_size()
+        yield from self._precise_closest(embed, count, (
+            (mhash, other_embed)
+            for _, mhash, other_embed in
+            cache.embeddings(eid, start_ix=start_ix, limit=shard_size)))
+
+    def _precise_closest(
+            self,
+            embed: torch.Tensor,
+            count: int,
+            embeddings: Iterable[tuple[MHash, torch.Tensor]],
+            ) -> Iterable[tuple[MHash, float]]:
+        is_bigger_better = self.is_bigger_better()
+        dists = [
+            (mhash, self.get_distance(embed, other_embed))
+            for mhash, other_embed in embeddings
+        ]
+        yield from nbest(
+            dists,
+            key=lambda entry: entry[1],
+            count=count,
+            is_bigger_better=is_bigger_better)

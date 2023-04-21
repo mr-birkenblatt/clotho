@@ -3,6 +3,7 @@ from typing import Any, cast, TypedDict
 
 
 VALID_NAME = re.compile(r"^\S+$")
+MAX_USER_NAME_LEN = 100
 
 
 Permissions = TypedDict('Permissions', {
@@ -29,6 +30,8 @@ class User:
             permissions: Permissions) -> None:
         if VALID_NAME.search(name) is None:
             raise ValueError(f"invalid user name {name}")
+        if len(name) > MAX_USER_NAME_LEN:
+            raise ValueError(f"user name too long: {name}")
         self._user_id: str | None = None
         self._name = name
         self._permissions = permissions

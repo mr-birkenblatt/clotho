@@ -2,13 +2,11 @@ import os
 import time
 from typing import Callable, Iterable
 
-import numpy as np
-
-from misc.env import envload_path
 from misc.io import ensure_folder, get_folder, open_append, open_read
 from misc.lru import LRU
+from misc.util import escape, unescape
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore
+from system.msgs.store import MessageStore, RandomGeneratingFunction
 
 
 MSG_EXT = ".msg"
@@ -16,22 +14,21 @@ RELOAD_TOPICS_FREQ = 60 * 60  # 1h
 
 
 class DiskStore(MessageStore):
-    def __init__(self, msgs_root: str) -> None:
-        base_path = envload_path("USER_PATH", default="userdata")
-        path = os.path.join(base_path, msgs_root)
-        self._path = os.path.join(path, "msg")
-        self._topics = os.path.join(path, "topics.list")
-        self._cache: LRU[MHash, Message] = LRU(50000)
+    def __init__(self, msgs_root: str, cache_size: int) -> None:
+        super().__init__()
+        self._path = os.path.join(msgs_root, "msg")
+        self._topics = os.path.join(msgs_root, "topics.list")
+        self._cache: LRU[MHash, Message] = LRU(cache_size)
         self._topic_cache: list[Message] | None = None
         self._topic_update: float = 0.0
 
     @staticmethod
     def _escape(text: str) -> str:
-        return text.replace("\\", "\\\\").replace("\n", "\\n")
+        return escape(text, {"\n": "n"})
 
     @staticmethod
     def _unescape(text: str) -> str:
-        return text.replace("\\n", "\n").replace("\\\\", "\\")
+        return unescape(text, {"n": "\n"})
 
     def _compute_path(self, message_hash: MHash) -> str:
 
@@ -113,25 +110,33 @@ class DiskStore(MessageStore):
             return self._topic_cache[offset:]
         return self._topic_cache[offset:offset + limit]
 
+    def get_topics_count(self) -> int:
+        return len(self.get_topics(0, None))
+
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         remain = count
         cur_path = self._path
+        cur_ix = 0
         while remain > 0:
             candidates = list(get_folder(cur_path, MSG_EXT))
             if candidates:
-                seg, recurse = candidates[rng.integers(0, len(candidates))]
+                seg, recurse = candidates[get_random(
+                    high=len(candidates), for_row=cur_ix)]
                 cur_path = os.path.join(cur_path, seg)
                 if recurse:
                     continue
                 cur = list(set((
                     msg.get_hash() for msg in self._load_file(cur_path))))
                 if cur:
-                    yield cur[rng.integers(0, len(cur))]
+                    yield cur[get_random(high=len(cur), for_row=cur_ix)]
+                    cur_ix += 1
             remain -= 1
             cur_path = self._path
 
-    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
+    def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
 
         def get_level(
                 cur_path: str,
@@ -157,3 +162,9 @@ class DiskStore(MessageStore):
             first_level_size = len(list(get_folder(self._path, MSG_EXT)))
             with tqdm(total=first_level_size) as pbar:
                 yield from get_level(self._path, pbar=lambda: pbar.update(1))
+
+    def get_message_count(self) -> int:
+        count = 0
+        for _ in self.enumerate_messages(progress_bar=False):
+            count += 1
+        return count

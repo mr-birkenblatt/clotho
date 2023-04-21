@@ -1,13 +1,12 @@
 from typing import Iterable
 
-import numpy as np
-
 from system.msgs.message import Message, MHash
-from system.msgs.store import MessageStore
+from system.msgs.store import MessageStore, RandomGeneratingFunction
 
 
 class RamMessageStore(MessageStore):
     def __init__(self) -> None:
+        super().__init__()
         self._msgs: dict[MHash, Message] = {}
         self._topics: list[Message] = []
 
@@ -35,11 +34,15 @@ class RamMessageStore(MessageStore):
         return len(self._topics)
 
     def do_get_random_messages(
-            self, rng: np.random.Generator, count: int) -> Iterable[MHash]:
+            self,
+            get_random: RandomGeneratingFunction,
+            count: int) -> Iterable[MHash]:
         keys = list(self._msgs.keys())
-        yield from (keys[ix] for ix in rng.choice(len(keys), size=count))
+        yield from (
+            keys[get_random(high=len(keys), for_row=cur_row)]
+            for cur_row in range(count))
 
-    def enumerate_messages(self, progress_bar: bool) -> Iterable[MHash]:
+    def enumerate_messages(self, *, progress_bar: bool) -> Iterable[MHash]:
         if not progress_bar:
             yield from list(self._msgs.keys())
             return
@@ -50,3 +53,6 @@ class RamMessageStore(MessageStore):
             for mhash in list(self._msgs.keys()):
                 yield mhash
                 pbar.update(1)
+
+    def get_message_count(self) -> int:
+        return len(self._msgs)

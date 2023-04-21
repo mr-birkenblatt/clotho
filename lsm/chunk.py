@@ -1,7 +1,8 @@
 import os
 from typing import Iterable
 
-from db.lsm import ChunkCoordinator, KeyRange, LSM, VType
+from lsm.lsm import ChunkCoordinator, KeyRange, LSM, VType
+from misc.io import get_folder
 
 
 FILE_EXT = ".lsm"
@@ -17,17 +18,17 @@ class DiskChunk(ChunkCoordinator):
     def load_dir(self) -> None:
         children: dict[str, DiskChunk] = {}
         files: list[str] = []
-        for fname in os.listdir(self._root):
+        for fname, is_dir in get_folder(self._root, FILE_EXT):
             full = os.path.join(self._root, fname)
-            if os.path.isdir(full):
+            if is_dir:
                 children[fname] = DiskChunk(f"{self._prefix}{fname}", full)
-            elif full.endswith(FILE_EXT):
+            else:
                 files.append(full)
         self._children = children
         self._files = files
 
     def read_file(self, full: str) -> tuple[float, dict[str, VType]]:
-        pass
+        raise NotImplementedError()
 
     def write_values(
             self,

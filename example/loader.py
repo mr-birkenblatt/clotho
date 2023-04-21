@@ -18,7 +18,7 @@ from system.links.store import LinkStore
 from system.msgs.message import Message, MHash
 from system.msgs.store import MessageStore
 from system.users.store import UserStore
-from system.users.user import User
+from system.users.user import MAX_USER_NAME_LEN, User
 
 
 def actions_from_file(fname: str) -> Iterable[Action]:
@@ -64,6 +64,7 @@ def interpret_action(
         user_name = link.get("user_name")
         if user_name is None:
             user_name = "__no_user__"
+        user_name = user_name[:MAX_USER_NAME_LEN]
         user_id = user_store.get_id_from_name(user_name)
         try:
             user = user_store.get_user_by_id(user_id)
@@ -139,7 +140,7 @@ def interpret_action(
         if not text:
             text = "[missing]"
         is_topic = False
-        if text.startswith("r/") and text[2:].lower() in roots:
+        if text.startswith("r/") or text.startswith("t/"):
             tmp = Message(msg=f"t/{text[2:].lower()}")
             if tmp.is_topic():
                 text = tmp.get_text()
@@ -149,7 +150,9 @@ def interpret_action(
             topics = list(message_store.get_topics(0, None))
             if msg not in topics:
                 message_store.add_topic(msg)
-                print(f"adding topic: {msg.get_text()}")
+                text = msg.get_text()
+                print(f"adding topic: {text}")
+                print(f"is in root: {text[2:].lower() in roots}")
                 totals["new_topics"] += 1
             totals["topics"] = len(topics)
         try:
@@ -250,19 +253,38 @@ def process_action_file(
         now: pd.Timestamp,
         reference_time: float,
         roots: set[str]) -> tuple[int, pd.Timestamp]:
+    return process_actions_full(
+        actions_from_file(fname),
+        message_store=message_store,
+        link_store=link_store,
+        user_store=user_store,
+        now=now,
+        reference_time=reference_time,
+        roots=roots)
+
+
+def process_actions_full(
+        actions: Iterable[Action],
+        *,
+        message_store: MessageStore,
+        link_store: LinkStore,
+        user_store: UserStore,
+        now: pd.Timestamp,
+        reference_time: float,
+        roots: set[str]) -> tuple[int, pd.Timestamp]:
     hash_lookup: dict[str, MHash] = {}
     lookup_buffer: collections.defaultdict[str, list[Action]] = \
         collections.defaultdict(list)
     topic_counts: collections.defaultdict[str, int] = \
         collections.defaultdict(lambda: 0)
     totals: dict[str, int] = collections.defaultdict(lambda: 0)
-    user_pool: list[User] = list(user_store.get_all_users())
+    user_pool: list[User] = list(user_store.get_all_users(progress_bar=True))
     if user_pool:
         print(f"loaded {len(user_pool)} users")
     synth_pool: list[User] = []
     counter = 0
     return process_actions(
-        actions_from_file(fname),
+        actions,
         message_store=message_store,
         link_store=link_store,
         user_store=user_store,
@@ -276,10 +298,6 @@ def process_action_file(
         user_pool=user_pool,
         synth_pool=synth_pool,
         counter=counter)
-    # FIXME: process by children count first (least first) (maybe)
-    # FIXME: use temporary files to filter each pass (maybe)
-    # FIXME: analyze mhash storage (how many hashes per file / how deep?)
-    # FIXME: batch votes (100 at a time; maybe)
     # FIXME: add user inbox
-    # FIXME: add sort select
+    # FIXME: add sort select (when swiping left)
     # FIXME: total karma to user display

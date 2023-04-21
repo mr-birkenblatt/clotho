@@ -80,10 +80,10 @@ lint-pycodestyle-debug:
 
 lint-pylint:
 	./findpy.sh | sort
-	./findpy.sh | sort | xargs pylint -j 6
+	./findpy.sh | sort | xargs pylint -j 6 -v
 
 lint-type-check:
-	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ . --config-file mypy.ini
+	mypy --exclude=^userdata/ --exclude=^stubs_pre/ --exclude=^venv/ --exclude=^ui/ --config-file mypy.ini .
 
 lint-flake8:
 	flake8 --verbose --select C812,C815,I001,I002,I003,I004,I005 --exclude \
@@ -148,10 +148,10 @@ ts-build:
 	cd ui && yarn build
 
 run-redis-test:
-	PYTHON=$(PYTHON) NS=_test M=link ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_test M=links ./run_redis.sh
 
 run-redis-api:
-	PYTHON=$(PYTHON) NS=_api M=link ./run_redis.sh
+	PYTHON=$(PYTHON) NS=_api M=links ./run_redis.sh
 
 run-redis:
 	PYTHON=$(PYTHON) NS=$(NS) M=$(M) ./run_redis.sh
@@ -170,3 +170,9 @@ coverage-report-ts:
 
 stubgen:
 	PYTHON=$(PYTHON) FORCE=$(FORCE) ./stubgen.sh $(PKG)
+
+allapps:
+	./findpy.sh \
+	| xargs grep '__name__ == "__main__"' \
+	| cut -d: -f1 \
+	| sed -e 's/^.\///' -e 's/\/__main__.py$$//' -e 's/.py$$//'

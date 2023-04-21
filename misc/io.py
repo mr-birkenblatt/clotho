@@ -1,3 +1,4 @@
+import contextlib
 import errno
 import io
 import os
@@ -5,7 +6,6 @@ import shutil
 import tempfile
 import threading
 import time
-from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -20,7 +20,7 @@ from typing import (
 
 MAIN_LOCK = threading.RLock()
 STALE_FILE_RETRIES: list[float] = [0.1, 0.2, 0.5, 0.8, 1, 1.2, 1.5, 2, 3, 5]
-TMP_POSTFIX = ".tmp~"
+TMP_POSTFIX = ".~tmp"
 
 
 def when_ready(fun: Callable[[], None]) -> None:
@@ -50,7 +50,7 @@ def fastrename(src: str, dst: str) -> None:
         if not src.endswith(TMP_POSTFIX):
             print(f"move {src} to {dst}")
     except OSError:
-        for file_name in os.listdir(src):
+        for file_name in listdir(src):
             try:
                 shutil.move(os.path.join(src, file_name), dst)
             except shutil.Error as err:
@@ -59,8 +59,12 @@ def fastrename(src: str, dst: str) -> None:
                 if "destination path" in err_msg and \
                         "already exists" in err_msg:
                     raise err
-                os.remove(dest_file)
+                remove_file(dest_file)
                 shutil.move(os.path.join(src, file_name), dst)
+
+
+def copy_file(from_file: str, to_file: str) -> None:
+    shutil.copy(from_file, to_file)
 
 
 def normalize_folder(folder: str) -> str:
@@ -196,7 +200,7 @@ def open_append(
         **kwargs))
 
 
-@contextmanager
+@contextlib.contextmanager
 def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
     filename = normalize_file(filename)
 
@@ -226,27 +230,56 @@ def open_write(filename: str, *, text: bool) -> Iterator[IO[Any]]:
             if writeback:
                 fastrename(tname, filename)
             else:
-                try:
-                    os.remove(tname)
-                except FileNotFoundError:
-                    pass
+                remove_file(tname)
+
+
+@contextlib.contextmanager
+def named_write(filename: str) -> Iterator[str]:
+    filename = normalize_file(filename)
+
+    tname = None
+    writeback = False
+    try:
+        tfd, tname = tempfile.mkstemp(
+            dir=get_tmp(filename),
+            suffix=TMP_POSTFIX)
+        os.close(tfd)
+        yield tname
+        writeback = True
+    finally:
+        if tname is not None:
+            if writeback:
+                fastrename(tname, filename)
+            else:
+                remove_file(tname)
+
+
+def remove_file(fname: str) -> None:
+    try:
+        os.remove(fname)
+    except FileNotFoundError:
+        pass
 
 
 def get_subfolders(path: str) -> list[str]:
-    return [fobj.name for fobj in os.scandir(path) if fobj.is_dir()]
+    return sorted((fobj.name for fobj in os.scandir(path) if fobj.is_dir()))
 
 
 def get_files(path: str, ext: str) -> list[str]:
-    return [
+    return sorted((
         fobj.name
         for fobj in os.scandir(path)
         if fobj.is_file() and fobj.name.endswith(ext)
-    ]
+    ))
 
 
 def get_folder(path: str, ext: str) -> Iterable[tuple[str, bool]]:
-    for fobj in os.scandir(path):
+    for fobj in sorted(os.scandir(path), key=lambda fobj: fobj.name):
         if fobj.is_dir():
             yield fobj.name, True
         elif fobj.is_file() and fobj.name.endswith(ext):
             yield fobj.name, False
+
+
+def listdir(path: str) -> list[str]:
+    return sorted(os.listdir(path))

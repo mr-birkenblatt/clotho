@@ -50,9 +50,6 @@ class RangeIndex(Int64Index):
     def dtype(self) -> Any:
         ...
 
-    def is_unique(self) -> Any:
-        ...
-
     @property
     def is_monotonic_increasing(self) -> Any:
         ...

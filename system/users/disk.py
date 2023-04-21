@@ -1,41 +1,21 @@
 import os
-from typing import Any, Iterable, TypedDict
+from typing import Callable, Iterable
 
-from misc.env import envload_path
 from misc.io import ensure_folder, open_append, open_read
 from misc.lru import LRU
 from misc.util import json_compact, read_jsonl
 from system.users.store import UserStore
-from system.users.user import ensure_permissions, Permissions, User
+from system.users.user import User
 
 
 USER_EXT = ".user"
 
 
-UserDict = TypedDict('UserDict', {
-    "name": str,
-    "permissions": Permissions,
-})
-
-
-def ensure_user_dict(obj: Any) -> UserDict:
-    return {
-        "name": obj["name"],
-        "permissions": ensure_permissions(obj["permissions"]),
-    }
-
-
 class DiskUserStore(UserStore):
-    def __init__(self, user_root: str) -> None:
-        base_path = envload_path("USER_PATH", default="userdata")
-        self._path = os.path.join(base_path, user_root, "user")
-        self._cache: LRU[str, User] = LRU(50000)
-
-    def _get_user_dict(self, user: User) -> UserDict:
-        return {
-            "name": user.get_name(),
-            "permissions": user.get_permissions(),
-        }
+    def __init__(self, user_root: str, cache_size: int) -> None:
+        super().__init__()
+        self._path = user_root
+        self._cache: LRU[str, User] = LRU(cache_size)
 
     def _compute_path(self, user_id: str) -> str:
         # FIXME: create generic class with dedup and subtree creation
@@ -56,14 +36,14 @@ class DiskUserStore(UserStore):
         ensure_folder(os.path.dirname(self._compute_path(user_id)))
         with open_append(self._compute_path(user_id), text=True) as fout:
             fout.write(
-                f"{json_compact(self._get_user_dict(user)).decode('utf-8')}\n")
+                f"{json_compact(self.get_user_dict(user)).decode('utf-8')}\n")
 
     def _get_users_for_file(self, fname: str) -> Iterable[User]:
         users = set()
         try:
             with open_read(fname, text=True) as fin:
                 for obj in read_jsonl(fin):
-                    uobj = ensure_user_dict(obj)
+                    uobj = self.ensure_user_dict(obj)
                     user = User(uobj["name"], uobj["permissions"])
                     users.add(user)
         except FileNotFoundError:
@@ -83,9 +63,24 @@ class DiskUserStore(UserStore):
             raise KeyError(f"no user for the id: {user_id}")
         return res
 
-    def get_all_users(self) -> Iterable[User]:
-        for (root, _, files) in os.walk(self._path):
-            for fname in files:
-                if not fname.endswith(USER_EXT):
-                    continue
-                yield from self._get_users_for_file(os.path.join(root, fname))
+    def get_all_users(self, *, progress_bar: bool) -> Iterable[User]:
+        all_files = list(os.walk(self._path))
+
+        def get_results(*, pbar: Callable[[], None] | None) -> Iterable[User]:
+            for (root, _, files) in all_files:
+                for fname in files:
+                    if not fname.endswith(USER_EXT):
+                        continue
+                    yield from self._get_users_for_file(
+                        os.path.join(root, fname))
+                if pbar is not None:
+                    pbar()
+
+        if not progress_bar:
+            yield from get_results(pbar=None)
+        else:
+            # FIXME: add stubs
+            from tqdm.auto import tqdm  # type: ignore
+
+            with tqdm(total=len(all_files)) as pbar:
+                yield from get_results(pbar=lambda: pbar.update(1))

@@ -4,7 +4,7 @@ set -ex
 
 PYTHON="${PYTHON:-python3}"
 NS="${NS:-default}"
-M="${M:-link}"
+M="${M:-links}"
 
 REDIS_PORT=$(${PYTHON} -m "system.namespace" port --namespace "${NS}" --module "${M}")
 REDIS_PATH=$(${PYTHON} -m "system.namespace" path --namespace "${NS}" --module "${M}")

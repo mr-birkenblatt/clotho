@@ -27,7 +27,7 @@ from system.msgs.store import get_message_store
 from system.namespace.store import get_namespace
 from system.suggest.suggest import get_link_suggesters
 from system.users.store import get_user_store
-from system.users.user import User
+from system.users.user import MAX_USER_NAME_LEN, User
 
 
 LinkQuery = TypedDict('LinkQuery', {
@@ -127,6 +127,8 @@ def setup(
     def _post_signup(_req: QSRH, rargs: ReqArgs) -> LoginResponse:
         args = rargs["post"]
         user_name = args["user"]
+        if len(user_name) > MAX_USER_NAME_LEN:
+            raise ValueError(f"invalid user name: {user_name}")
         user_id = user_store.get_id_from_name(user_name)
         try:
             user_store.get_user_by_id(user_id)
@@ -266,7 +268,7 @@ def setup(
         offset = link_query["offset"]
         cur_offset = offset + len(links)
         cur_limit = limit - len(links)
-        if cur_limit == 0:
+        if cur_limit == 0 or links:
             return links
         six = 0
         cur_offset -= total
@@ -290,6 +292,8 @@ def setup(
                     offset=cur_offset,
                     limit=local_limit)
             ))
+            if suggestions:
+                break
             if len(suggestions) <= prev_size:
                 six += 1
                 continue

@@ -64,9 +64,6 @@ class CategoricalIndex(Index, accessor.PandasDelegate):
     def argsort(self, *args: Any, **kwargs: Any) -> Any:
         ...
 
-    def is_unique(self) -> Any:
-        ...
-
     @property
     def is_monotonic_increasing(self) -> Any:
         ...
